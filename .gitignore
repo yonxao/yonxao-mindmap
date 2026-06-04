@@ -1,0 +1,40 @@
+# Dependencies
+node_modules/
+
+# Package manager caches and debug logs
+.npm/
+.pnpm-store/
+.yarn/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Build, bundle, and test output
+dist/
+build/
+coverage/
+.nyc_output/
+*.tsbuildinfo
+
+# Local environment files
+.env
+.env.*
+!.env.example
+
+# Editor and IDE local state
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# macOS and Windows metadata
+.DS_Store
+._*
+Thumbs.db
+Desktop.ini
+
+# Obsidian local/plugin-development helpers
+.hotreload
+data.json
