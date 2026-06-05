@@ -3,10 +3,10 @@
 // 职责：ESLint 负责发现代码问题；Prettier 负责代码格式化。
 // 注意：不要把大量格式化规则放进 ESLint，避免和 Prettier 打架。
 
-import js from '@eslint/js';
-import globals from 'globals';
+const js = require('@eslint/js');
+const globals = require('globals');
 
-export default [
+module.exports = [
   // 全局忽略文件。
   // 这些文件/目录通常是依赖、构建产物、缓存、日志或系统文件，不需要 ESLint 检查。
   {
@@ -30,18 +30,17 @@ export default [
 
   // 项目自己的规则配置。
   {
-    // 指定 ESLint 检查哪些文件。
-    // 你现在主要是 main.js 和配置脚本，所以先覆盖 js/mjs/cjs 即可。
-    files: ['**/*.{js,mjs,cjs}'],
+    // 指定 ESLint 检查哪些 CommonJS 文件。
+    // Obsidian 插件入口 main.js 使用 require/module.exports，所以这里按 CommonJS 解析。
+    files: ['**/*.{js,cjs}'],
 
     languageOptions: {
       // 使用较新的 ECMAScript 语法能力。
       // 这样可以正常识别现代 JS 语法。
       ecmaVersion: 'latest',
 
-      // 你的 eslint.config.js 使用 import/export，所以这里按 ESM 处理。
-      // 如果某些 .cjs 文件是 CommonJS，可以在下面单独 override。
-      sourceType: 'module',
+      // main.js 和 eslint.config.js 都是 CommonJS；这样 ESLint 会正确识别 require/module.exports。
+      sourceType: 'commonjs',
 
       // 全局变量声明。
       // Obsidian 插件代码同时可能接触浏览器环境、Node 构建环境、Obsidian 提供的运行环境。
@@ -125,12 +124,12 @@ export default [
     },
   },
 
-  // CommonJS 文件单独配置。
-  // 例如某些构建脚本、旧工具配置文件可能使用 require/module.exports。
+  // ESM 文件单独配置。
+  // 如果后续增加 .mjs 构建脚本或工具配置，可以继续使用 import/export。
   {
-    files: ['**/*.cjs'],
+    files: ['**/*.mjs'],
     languageOptions: {
-      sourceType: 'commonjs',
+      sourceType: 'module',
     },
   },
 
