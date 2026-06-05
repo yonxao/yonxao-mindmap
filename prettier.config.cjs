@@ -1,43 +1,49 @@
-{
+// Prettier 配置文件。
+// 使用 .cjs 的原因：
+// 1. Prettier 可以自动识别 prettier.config.cjs。
+// 2. JS 配置文件天然支持注释，适合给每个配置项写说明。
+// 3. 当前 Obsidian 插件入口 main.js 是 CommonJS，项目工具配置也保持 CommonJS 更一致。
+
+module.exports = {
   // 单行最大宽度。100 比 80 更适合中型前端/插件项目，不会换行太碎。
-  "printWidth": 100,
+  printWidth: 100,
 
   // 缩进宽度，与 .editorconfig 的 indent_size = 2 保持一致。
-  "tabWidth": 2,
+  tabWidth: 2,
 
   // 使用空格缩进，不使用 Tab。
-  "useTabs": false,
+  useTabs: false,
 
   // 保留语句末尾分号，工业项目里更稳。
-  "semi": true,
+  semi: true,
 
   // JS / TS 使用单引号。JSON 文件仍然会保持双引号。
-  "singleQuote": true,
+  singleQuote: true,
 
   // 对象属性只有必要时才加引号。
-  "quoteProps": "as-needed",
+  quoteProps: 'as-needed',
 
   // 在 ES5 支持的位置添加尾随逗号，减少新增行时的 diff。
-  "trailingComma": "es5",
+  trailingComma: 'es5',
 
   // 对象字面量大括号内保留空格：{ foo: bar }。
-  "bracketSpacing": true,
+  bracketSpacing: true,
 
   // 多行 HTML / JSX / Vue 标签的 > 单独换行。
-  "bracketSameLine": false,
+  bracketSameLine: false,
 
   // 箭头函数参数始终加括号：(x) => x。
-  "arrowParens": "always",
+  arrowParens: 'always',
 
   // 统一使用 LF 换行，适合 macOS / Linux，也减少跨系统 diff。
-  "endOfLine": "lf",
+  endOfLine: 'lf',
 
   // Markdown 段落保持原有换行，避免中文 README 被强行重排。
-  "proseWrap": "preserve",
+  proseWrap: 'preserve',
 
   // HTML 空白按 CSS 规则处理。
-  "htmlWhitespaceSensitivity": "css",
+  htmlWhitespaceSensitivity: 'css',
 
   // 自动格式化 Markdown/HTML 等文件里的嵌入代码块。
-  "embeddedLanguageFormatting": "auto"
-}
+  embeddedLanguageFormatting: 'auto',
+};
