@@ -1,0 +1,9 @@
+{
+  "id": "yonxao-mindmap",
+  "name": "yonxao-mindmap",
+  "version": "0.1.0",
+  "minAppVersion": "1.12.7",
+  "description": "Render Markdown-heading-style mind maps from yxmm code blocks.",
+  "author": "yonxao",
+  "isDesktopOnly": false
+}
