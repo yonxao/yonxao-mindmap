@@ -29,8 +29,7 @@ yonxao-mindmap 是一个 Obsidian 思维导图显示插件。它会把 Markdown 
 ## 语法
 
 - 使用 Markdown 标题表示层级：`#` 是中心节点，`##` 是二级节点，`###` 是三级节点，依此类推。
-- 仍然兼容旧版缩进语法，方便打开已有笔记；但插件保存后会统一输出为标题语法。
-- 如果在标题语法中混入缩进普通行，插件会尽量把它解析为上一层节点的子节点，并在保存时规范化成标题。
+- `yxmm` 代码块中的非空行必须使用 Markdown 标题语法。
 - 属性写在行尾，格式为 `[key=value]`。
 - 当前支持的属性：
   - `color=#3b82f6`：节点颜色。
@@ -72,6 +71,44 @@ yonxao-mindmap 是一个 Obsidian 思维导图显示插件。它会把 Markdown 
 `book`、`brain`、`cpu`、`database`、`file`、`folder`、`tag`、`star`、`check`、`lightbulb`
 
 如果填写了未知图标名，插件会把图标名渲染成一个小文本徽标。
+
+## 开发
+
+可维护源码放在 `src/` 和 `styles/` 目录中。
+
+- `src/` 下的业务源码统一使用 ESM `import/export`。
+- `scripts/` 下的构建脚本统一使用 `.mjs`。
+- `src/main.js` 会通过 `scripts/build-js.mjs` 打包成 `dist/main.js`。
+- `styles/index.css` 会通过 `scripts/build-css.mjs` 合并成 `dist/styles.css`。
+- `npm run release:prepare` 会生成干净的发布目录 `dist/`，其中只包含 Obsidian 安装需要的核心文件。
+- 如果使用 Obsidian Hot Reload 做本地调试，可以运行 `npm run dev:obsidian`，它会先执行 `release:prepare`，再把根目录 `.hotreload` 复制到 `dist/.hotreload`。
+- 日常开发优先修改源码目录，然后运行 `npm run release:prepare`。
+- 提交前建议运行 `npm run validate`。
+
+发布、手动安装、打包 zip 或本地 Hot Reload 调试时，请使用 `dist/` 目录。
+`package.json`、`manifest.json`、`versions.json` 属于标准 JSON 文件，格式本身不支持注释；相关说明放在 README 和相邻的 `.mjs` 配置文件中。
+
+### 发布目录
+
+运行：
+
+```bash
+npm run release:prepare
+```
+
+会生成：
+
+```text
+dist/
+  .hotreload  # 仅 npm run dev:obsidian 生成，本地 Hot Reload 调试使用
+  main.js
+  manifest.json
+  styles.css
+```
+
+其中 `main.js`、`manifest.json`、`styles.css` 是 Obsidian 插件安装目录需要的核心文件。
+`.hotreload` 只在本地开发调试时复制到 `dist/`，正式发布包不需要包含它。
+用户本地可能出现的 `data.json` 是 Obsidian 保存插件设置时自动生成的，不应该放进发布包。
 
 ## 许可证
 

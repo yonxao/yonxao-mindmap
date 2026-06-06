@@ -27,7 +27,7 @@ yonxao-mindmap renders Markdown-heading-style `yxmm` code blocks as interactive 
 ## Syntax
 
 - Markdown headings define hierarchy: `#` is the center node, `##` is level 2, `###` is level 3, and so on.
-- The parser still accepts the old indentation syntax for existing notes, but saved output uses headings.
+- Non-empty lines inside `yxmm` blocks must use Markdown headings.
 - Attributes are written at the end of a line with `[key=value]`.
 - Supported attributes:
   - `color=#3b82f6`
@@ -41,7 +41,7 @@ yonxao-mindmap renders Markdown-heading-style `yxmm` code blocks as interactive 
 - Use the source/map button to switch between raw `yxmm` source and the rendered mind map.
 - In source view, edit the textarea and click save, or press Ctrl/Cmd+S.
 - In source view, Tab/Shift+Tab promotes or demotes selected heading lines.
-- Source view shows hierarchy guide lines for heading levels and old indentation levels.
+- Source view shows hierarchy guide lines for heading levels.
 - In mind map view, hover a node and click the small edit button to edit text, color, icon, or layout.
 - The node editor can also add a child node or delete the selected node.
 - Use the toolbar to fit, zoom in, zoom out, or reset collapsed nodes.
@@ -57,6 +57,44 @@ The plugin uses an open-source/commercial-friendly monospace font stack when tho
 `book`, `brain`, `cpu`, `database`, `file`, `folder`, `tag`, `star`, `check`, `lightbulb`.
 
 Unknown icon names are rendered as a small text badge.
+
+## Development
+
+The maintainable source lives in `src/` and `styles/`.
+
+- Business source files under `src/` use ESM `import/export`.
+- Build scripts under `scripts/` use `.mjs`.
+- `src/main.js` is bundled by `scripts/build-js.mjs` to `dist/main.js`.
+- `styles/index.css` is merged by `scripts/build-css.mjs` to `dist/styles.css`.
+- `npm run release:prepare` creates a clean `dist/` directory with only the core files needed by Obsidian.
+- For local development with Obsidian Hot Reload, run `npm run dev:obsidian`; it runs `release:prepare` and then copies the root `.hotreload` marker to `dist/.hotreload`.
+- Edit source files first, then run `npm run release:prepare`.
+- Run `npm run validate` before committing changes.
+
+Use `dist/` for releases, manual installs, zip packaging, and local Hot Reload development.
+`package.json`, `manifest.json`, and `versions.json` are standard JSON files, so they cannot contain comments; documentation lives here and in nearby `.mjs` config files instead.
+
+### Release Directory
+
+Run:
+
+```bash
+npm run release:prepare
+```
+
+It creates:
+
+```text
+dist/
+  .hotreload  # generated only by npm run dev:obsidian for local Hot Reload development
+  main.js
+  manifest.json
+  styles.css
+```
+
+`main.js`, `manifest.json`, and `styles.css` are the core files needed in an Obsidian plugin installation directory.
+`.hotreload` is copied into `dist/` only for local development and should not be shipped in a formal release.
+A user-local `data.json` may be created by Obsidian for plugin settings and should not be shipped.
 
 ## License
 
