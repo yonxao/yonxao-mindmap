@@ -1,3 +1,10 @@
+# 文件作用：
+# 这是 Git 忽略规则，负责排除依赖目录、构建产物、本地环境文件和编辑器缓存。
+#
+# 执行逻辑：
+# git status / git add 会读取本文件。被忽略的文件不会进入版本控制，
+# 这样仓库只保存源码、配置、文档和必要的发布清单，不保存本机状态。
+
 # Dependencies
 node_modules/
 
@@ -36,5 +43,4 @@ Thumbs.db
 Desktop.ini
 
 # Obsidian local/plugin-development helpers
-.hotreload
 data.json

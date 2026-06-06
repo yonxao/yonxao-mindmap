@@ -1,6 +1,13 @@
-# top-most EditorConfig file，避免项目被上级目录里的其他 .editorconfig 影响。
+# 文件作用：
+# 这是跨编辑器的基础排版约定，负责统一缩进、换行、编码和行尾空格。
+# 
+# 执行逻辑：
+# VS Code、JetBrains、部分命令行工具会自动读取本文件。
+# 它和 prettier.config.mjs 相互配合：EditorConfig 管编辑器输入习惯，Prettier 管最终格式化结果。
 # 
 # 配置说明：
+# root = true：top-most EditorConfig file，避免项目被上级目录里的其他 .editorconfig 影响。
+# 
 # charset = utf-8：统一文件编码，避免中文乱码。
 # end_of_line = lf：统一换行符，适合 macOS / Linux，减少跨系统 Git diff。
 # insert_final_newline = true：文件末尾自动添加换行符。
@@ -8,6 +15,7 @@
 # indent_size = 2：每一级缩进使用 2 个空格，符合前端项目常见风格。
 # tab_width = 2：Tab 字符显示宽度为 2。
 # trim_trailing_whitespace = true：删除行尾多余空格，减少无意义 diff。
+# 
 # [*.md] trim_trailing_whitespace = false：Markdown 保留行尾空格，兼容强制换行。
 
 root = true

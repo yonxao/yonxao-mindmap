@@ -1,10 +1,17 @@
-// Prettier 配置文件。
-// 使用 .cjs 的原因：
-// 1. Prettier 可以自动识别 prettier.config.cjs。
-// 2. JS 配置文件天然支持注释，适合给每个配置项写说明。
-// 3. 当前 Obsidian 插件入口 main.js 是 CommonJS，项目工具配置也保持 CommonJS 更一致。
+/*
+ * 文件作用：
+ * 这是 Prettier 的格式化配置文件，负责统一 JS、CSS、Markdown、JSON 等文件的排版风格。
+ *
+ * 为什么使用 .mjs：
+ * 项目源码和工具脚本已经统一使用 ESM import/export；这里也改成 export default，
+ * 让配置文件风格保持一致。package.json 仍然不设置 "type": "module"，所以需要用 .mjs
+ * 显式告诉 Node/Prettier：这个配置文件按 ESM 加载。
+ *
+ * 调用链位置：
+ * npm run format / npm run format:check -> prettier -> prettier.config.mjs
+ */
 
-module.exports = {
+export default {
   // 单行最大宽度。100 比 80 更适合中型前端/插件项目，不会换行太碎。
   printWidth: 100,
 
