@@ -1,0 +1,54 @@
+{
+  "name": "yonxao-mindmap",
+  "version": "0.1.0",
+  "description": "Obsidian plugin for rendering Markdown-heading-style mind maps from yxmm code blocks.",
+  "main": "dist/main.js",
+  "scripts": {
+    "clean": "node scripts/clean.mjs",
+    "build:js": "node scripts/build-js.mjs",
+    "build:css": "node scripts/build-css.mjs",
+    "build": "npm run build:js && npm run build:css",
+    "release:prepare": "npm run clean && npm run build && node scripts/prepare-release.mjs",
+    "dev:obsidian": "npm run release:prepare && node scripts/prepare-obsidian-dev.mjs",
+    "check": "npm run release:prepare && node --check dist/main.js",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "format": "prettier . --write",
+    "format:check": "prettier . --check",
+    "validate": "npm run check && npm run lint && npm run format:check"
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "README.zh-CN.md",
+    "LICENSE",
+    "COMMERCIAL-LICENSE.md"
+  ],
+  "keywords": [
+    "obsidian",
+    "mindmap",
+    "codeblock",
+    "markdown"
+  ],
+  "author": "yonxao",
+  "license": "(AGPL-3.0-only OR LicenseRef-Commercial)",
+  "engines": {
+    "node": ">=20.19.0"
+  },
+  "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "esbuild": "^0.27.1",
+    "eslint": "^10.4.1",
+    "globals": "^17.6.0",
+    "prettier": "^3.6.2"
+  },
+  "private": true,
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/yonxao/yonxao-mindmap.git"
+  },
+  "bugs": {
+    "url": "https://github.com/yonxao/yonxao-mindmap/issues"
+  },
+  "homepage": "https://github.com/yonxao/yonxao-mindmap#readme"
+}
