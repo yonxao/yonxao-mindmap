@@ -16,13 +16,17 @@
 import * as esbuild from 'esbuild';
 import fs from 'node:fs';
 
+// build:js 可以单独执行，所以这里先确保 dist/ 已创建。
 fs.mkdirSync('dist', { recursive: true });
 
 await esbuild.build({
+  // src/main.js 是源码层入口，所有业务模块都会从这个入口被 esbuild 追踪进 bundle。
   entryPoints: ['src/main.js'],
   bundle: true,
   platform: 'node',
+  // Obsidian 插件入口保持 CommonJS，避免运行时把 main.js 当成 ESM 解析。
   format: 'cjs',
+  // obsidian 由宿主应用提供，不应该被打进插件包。
   external: ['obsidian'],
   outfile: 'dist/main.js',
   banner: {

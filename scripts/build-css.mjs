@@ -22,6 +22,16 @@ const projectRoot = path.resolve(__dirname, '..');
 const entryFile = path.join(projectRoot, 'styles', 'index.css');
 const outputFile = path.join(projectRoot, 'dist', 'styles.css');
 
+/*
+ * 作用：
+ * 递归读取 CSS 文件，并把其中的 @import 相对路径展开成真实 CSS 内容。
+ *
+ * 调用链：
+ * build-css.mjs 顶层执行 -> readCssWithImports(styles/index.css) -> 写入 dist/styles.css。
+ *
+ * 实现逻辑：
+ * seen 用来记录已经读过的文件，避免循环 import 导致无限递归。
+ */
 function readCssWithImports(filePath, seen = new Set()) {
   const normalizedPath = path.normalize(filePath);
   if (seen.has(normalizedPath)) {
@@ -35,6 +45,7 @@ function readCssWithImports(filePath, seen = new Set()) {
   const chunks = [];
 
   for (const line of lines) {
+    // 这里只处理项目内部约定的简单 @import './file.css' 语法，不做完整 CSS 解析。
     const importMatch = line.match(/^@import\s+['"](.+)['"];\s*$/);
     if (!importMatch) {
       chunks.push(line);
@@ -57,5 +68,6 @@ const banner = [
 ].join('\n');
 
 const output = `${banner}${readCssWithImports(entryFile).trim()}\n`;
+// 确保 dist/ 存在，让 build-css 可以单独运行，不依赖其它脚本提前创建目录。
 fs.mkdirSync(path.dirname(outputFile), { recursive: true });
 fs.writeFileSync(outputFile, output);

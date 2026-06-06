@@ -27,13 +27,16 @@ const sourceHotReloadFile = path.join(projectRoot, '.hotreload');
 const targetHotReloadFile = path.join(distDir, '.hotreload');
 
 if (!fs.existsSync(sourceHotReloadFile)) {
+  // .hotreload 是本地调试输入文件；缺失时直接失败，避免生成一个不可热重载的调试目录。
   throw new Error('找不到根目录 .hotreload，请先创建该文件再运行 npm run dev:obsidian。');
 }
 
 if (!fs.existsSync(distDir)) {
+  // dev:obsidian 理论上会先跑 release:prepare；这里作为防御性检查，给单独运行脚本的人明确提示。
   throw new Error('找不到 dist/，请先运行 npm run release:prepare。');
 }
 
+// dist/ 被 Obsidian 当作插件目录时，Hot Reload 插件需要在 dist/ 内看到这个标记文件。
 fs.copyFileSync(sourceHotReloadFile, targetHotReloadFile);
 
 console.log('Prepared Obsidian development directory: dist/.hotreload copied.');

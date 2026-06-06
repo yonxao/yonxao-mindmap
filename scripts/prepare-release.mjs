@@ -19,8 +19,10 @@ const distDir = path.join(projectRoot, 'dist');
 const requiredFiles = ['main.js', 'styles.css', 'manifest.json'];
 
 fs.mkdirSync(distDir, { recursive: true });
+// manifest.json 不经过构建，直接复制到 dist/，让发布目录满足 Obsidian 插件三件套要求。
 fs.copyFileSync(path.join(projectRoot, 'manifest.json'), path.join(distDir, 'manifest.json'));
 
+// 检查最终发布目录，而不是只相信上游脚本成功；这样 CI 或本地构建失败时能更早暴露。
 const missingFiles = requiredFiles.filter(
   (fileName) => !fs.existsSync(path.join(distDir, fileName))
 );
