@@ -1,0 +1,19 @@
+# 文件作用：
+# 这是 Obsidian 插件开发时使用的 Hot Reload 标记文件。
+# 常见的 Obsidian Hot Reload 插件会检查插件目录下是否存在 `.hotreload`，
+# 如果存在，就在 `main.js`、`styles.css` 或插件目录内容变化后自动重新加载当前插件。
+#
+# 功能说明：
+# - 它不参与 yonxao-mindmap 的业务逻辑，也不会被正式发布包使用。
+# - 它只服务本地开发调试，帮助你减少“手动关闭插件再重新启用插件”的操作。
+# - 根目录里的本文件是 `npm run dev:obsidian` 的输入文件，会被复制到 `dist/.hotreload`。
+#
+# 执行逻辑 / 调用链：
+# 1. 本地开发时运行 `npm run dev:obsidian`。
+# 2. 该命令先执行 `release:prepare`，生成 `dist/main.js`、`dist/styles.css` 和 `dist/manifest.json`。
+# 3. 随后脚本把根目录 `.hotreload` 复制成 `dist/.hotreload`。
+# 4. 如果 Obsidian 加载的是 `dist/` 目录，Hot Reload 插件会监听到 dist 内文件变化并重新加载插件。
+# 5. Obsidian 重新读取 `dist/manifest.json`、`dist/main.js` 和 `dist/styles.css`。
+#
+# 注意：
+# 当前项目的正式发布产物位于 `dist/`，正式发布包不需要包含 `.hotreload`。
