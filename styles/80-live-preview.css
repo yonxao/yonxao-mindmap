@@ -1,0 +1,47 @@
+/*
+ * 文件作用：
+ * 这里专门处理 Obsidian Live Preview 编辑视图里的外层嵌入块兼容问题。
+ *
+ * 执行逻辑：
+ * Obsidian 编辑视图会给 Live Preview 代码块额外加“编辑这个块”等内置悬浮按钮。
+ * 这个按钮保留给 Obsidian 使用；插件自己的工具栏固定在左上角，避免和它的右上角位置冲突。
+ * 这里只调整当前 yxmm 嵌入块外层的裁剪和 pointer-events，不隐藏 Obsidian 的原生按钮。
+ *
+ * 调用链位置：
+ * markYonxaoMindmapEmbedWrapper() 给 .cm-embed-block 加 class -> 本文件让插件内部按钮和输入框可交互。
+ */
+/*
+ * 作用：
+ * 支持现代选择器的 Obsidian 环境中，解除包含脑图的 cm-embed-block 裁剪。
+ */
+.markdown-source-view.mod-cm6 .cm-embed-block:has(.yonxao-mindmap-host) {
+  overflow: visible;
+}
+
+/*
+ * 作用：
+ * 通过 JS 标记的兼容 class 解除 Live Preview 外壳裁剪。
+ */
+.markdown-source-view.mod-cm6 .yonxao-mindmap-cm-embed-block {
+  overflow: visible;
+}
+
+/*
+ * 作用：
+ * 在编辑视图中强制插件内部控件可接收鼠标/键盘事件。
+ *
+ * 关键点：
+ * Obsidian 外层 CodeMirror 会管理嵌入块事件，这里确保插件工具栏、输入框和按钮不被外层吞掉。
+ */
+.markdown-source-view.mod-cm6 .yonxao-mindmap-host,
+.markdown-source-view.mod-cm6 .yonxao-mindmap-host .yonxao-mindmap-container,
+.markdown-source-view.mod-cm6 .yonxao-mindmap-host .yonxao-mindmap-toolbar,
+.markdown-source-view.mod-cm6 .yonxao-mindmap-host .yonxao-mindmap-svg,
+.markdown-source-view.mod-cm6 .yonxao-mindmap-host .yonxao-mindmap-source-input,
+.markdown-source-view.mod-cm6 .yonxao-mindmap-host .yonxao-mindmap-node-editor,
+.markdown-source-view.mod-cm6 .yonxao-mindmap-host button,
+.markdown-source-view.mod-cm6 .yonxao-mindmap-host input,
+.markdown-source-view.mod-cm6 .yonxao-mindmap-host select,
+.markdown-source-view.mod-cm6 .yonxao-mindmap-host textarea {
+  pointer-events: auto;
+}

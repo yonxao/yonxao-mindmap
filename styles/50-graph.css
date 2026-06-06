@@ -1,0 +1,143 @@
+/*
+ * 文件作用：
+ * 这里定义思维导图 SVG 内部图形元素的样式，包括连线、节点卡片、文字、图标和折叠按钮。
+ *
+ * 执行逻辑：
+ * renderer 会创建 path/rect/text/g 等 SVG 元素，并写入 yonxao-mindmap-* class。
+ * 本文件只负责这些元素的视觉效果，不负责坐标计算，坐标来自 layoutTree。
+ *
+ * 调用链位置：
+ * YonxaoMindmapRenderer.renderGraph()/renderNode()/renderEdge() -> 本文件控制 SVG 视觉。
+ */
+
+/*
+ * 作用：
+ * 父子节点之间的曲线连线。
+ */
+.yonxao-mindmap-edge {
+  fill: none;
+  stroke-width: 2.2;
+  stroke-linecap: round;
+  opacity: 0.62;
+}
+
+/*
+ * 作用：
+ * 节点背景卡片，提供边框和轻微阴影。
+ */
+.yonxao-mindmap-node-card {
+  stroke-width: 1.4;
+  filter: drop-shadow(0 4px 12px rgba(0, 0, 0, 0.08));
+}
+
+/*
+ * 作用：
+ * 节点文字标签。
+ *
+ * 关键点：
+ * pointer-events: none 让点击事件落到节点 group 上，便于统一处理折叠和编辑。
+ */
+.yonxao-mindmap-node-label {
+  fill: var(--text-normal);
+  font-family: var(--yonxao-mindmap-mono-font);
+  font-size: 14px;
+  font-weight: 560;
+  letter-spacing: 0;
+  dominant-baseline: auto;
+  pointer-events: none;
+  user-select: none;
+}
+
+/*
+ * 作用：
+ * 有子节点的节点显示可点击光标。
+ */
+.yonxao-mindmap-node-clickable {
+  cursor: pointer;
+}
+
+/*
+ * 作用：
+ * 节点右上角编辑按钮，默认隐藏。
+ */
+.yonxao-mindmap-node-edit {
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 120ms ease;
+}
+
+/*
+ * 作用：
+ * 节点 hover 或编辑按钮聚焦时显示编辑按钮。
+ */
+.yonxao-mindmap-node:hover .yonxao-mindmap-node-edit,
+.yonxao-mindmap-node-edit:focus {
+  opacity: 1;
+}
+
+/*
+ * 作用：
+ * 编辑按钮底板样式。
+ */
+.yonxao-mindmap-node-edit rect {
+  fill: var(--background-primary);
+  stroke: var(--background-modifier-border);
+  stroke-width: 1;
+}
+
+/*
+ * 作用：
+ * 编辑按钮内部铅笔图标线条。
+ */
+.yonxao-mindmap-node-edit path {
+  fill: none;
+  stroke: var(--text-muted);
+  stroke-width: 1.5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+/*
+ * 作用：
+ * 节点内置图标的 SVG group 样式。
+ */
+.yonxao-mindmap-node-icon {
+  fill: none;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  pointer-events: none;
+}
+
+/*
+ * 作用：
+ * 未知图标 fallback 文本徽标样式。
+ */
+.yonxao-mindmap-node-icon text {
+  fill: var(--text-muted);
+  stroke: none;
+  font-family: var(--yonxao-mindmap-mono-font);
+  font-size: 8px;
+  font-weight: 700;
+}
+
+/*
+ * 作用：
+ * 折叠/展开圆形按钮外观。
+ */
+.yonxao-mindmap-toggle {
+  fill: var(--background-primary);
+  stroke: var(--background-modifier-border-hover);
+  stroke-width: 1.5;
+  pointer-events: none;
+}
+
+/*
+ * 作用：
+ * 折叠/展开按钮里的横线和竖线。
+ */
+.yonxao-mindmap-toggle path {
+  stroke: var(--text-muted);
+  stroke-width: 1.6;
+  stroke-linecap: round;
+}

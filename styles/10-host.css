@@ -1,0 +1,48 @@
+/*
+ * 文件作用：
+ * 这里定义思维导图最外层宿主容器和画布容器的基础样式。
+ *
+ * 设计思路：
+ * host 负责和 Obsidian 文档流衔接，container 负责形成插件自己的绘制区域。
+ * 字体变量也放在这里，后续源码编辑器、SVG 文本、面板输入框都复用同一套可商用等宽字体栈。
+ *
+ * 调用链位置：
+ * YonxaoMindmapRenderer.mount() 创建 .yonxao-mindmap-host/.yonxao-mindmap-container 后应用这些规则。
+ */
+
+/*
+ * 作用：
+ * 插件最外层宿主元素，承接 Obsidian Markdown 渲染区域。
+ *
+ * 关键点：
+ * overflow: visible 允许工具栏和面板越过外层边界显示；字体变量提供全插件统一等宽字体。
+ */
+.yonxao-mindmap-host {
+  --yonxao-mindmap-mono-font:
+    'Sarasa Mono SC', 'Noto Sans Mono CJK SC', 'Source Han Mono SC', 'Cascadia Mono',
+    'JetBrains Mono', 'Liberation Mono', monospace;
+  position: relative;
+  display: block;
+  width: 100%;
+  overflow: visible;
+  font-family: var(--yonxao-mindmap-mono-font);
+  pointer-events: auto;
+}
+
+/*
+ * 作用：
+ * 插件内部主画布容器，包住 SVG、源码视图、节点编辑面板和拖拽手柄。
+ *
+ * 调用链：
+ * Renderer.createSvg()/createSourceView()/createNodeEditor() 都会把元素挂到这里。
+ */
+.yonxao-mindmap-container {
+  position: relative;
+  width: 100%;
+  height: min(560px, 64vh);
+  min-height: 96px;
+  border: 1px solid var(--background-modifier-border);
+  border-radius: 8px;
+  background: var(--background-primary);
+  overflow: hidden;
+}

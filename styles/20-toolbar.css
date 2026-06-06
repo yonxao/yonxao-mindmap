@@ -1,0 +1,114 @@
+/*
+ * 文件作用：
+ * 这里定义插件左上角悬浮工具栏，以及工具栏按钮的显示、隐藏和交互状态。
+ *
+ * 执行逻辑：
+ * 工具栏默认透明且不接收点击；当鼠标进入插件区域或插件内部获得焦点时显示。
+ * 源码保存按钮只在源码模式显示，避免脑图模式出现无意义操作。
+ *
+ * 调用链位置：
+ * YonxaoMindmapRenderer.createToolbar() 创建 DOM -> 本文件控制视觉表现。
+ */
+
+/*
+ * 作用：
+ * 悬浮工具栏主体，默认隐藏在左上角。
+ *
+ * 实现逻辑：
+ * 通过 opacity/visibility 隐藏，不改变文档流，因此显示工具栏时不会把脑图主体向下挤。
+ */
+.yonxao-mindmap-toolbar {
+  position: absolute;
+  z-index: 20;
+  top: 8px;
+  left: 8px;
+  display: flex;
+  width: max-content;
+  gap: 4px;
+  padding: 4px;
+  border: 1px solid var(--background-modifier-border);
+  border-radius: 8px;
+  background: var(--background-primary);
+  box-shadow: var(--shadow-s);
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transform: none;
+  transition:
+    opacity 140ms ease,
+    visibility 140ms ease;
+}
+
+/*
+ * 作用：
+ * 插件被 hover 或内部获得焦点时显示工具栏。
+ */
+.yonxao-mindmap-host:hover .yonxao-mindmap-toolbar,
+.yonxao-mindmap-host:focus-within .yonxao-mindmap-toolbar {
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
+  transform: none;
+}
+
+/*
+ * 作用：
+ * 工具栏内的图标按钮基础样式。
+ */
+.yonxao-mindmap-toolbar-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  padding: 0;
+  color: var(--text-muted);
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  cursor: pointer;
+}
+
+/*
+ * 作用：
+ * 工具栏按钮 hover/focus 状态，给键盘和鼠标操作统一反馈。
+ */
+.yonxao-mindmap-toolbar-button:hover,
+.yonxao-mindmap-toolbar-button:focus-visible {
+  color: var(--text-normal);
+  background: var(--background-modifier-hover);
+}
+
+/*
+ * 作用：
+ * 禁用状态按钮的视觉表现，用于源码模式下禁用缩放/适配等图形操作。
+ */
+.yonxao-mindmap-toolbar-button:disabled {
+  color: var(--text-faint);
+  cursor: default;
+  opacity: 0.55;
+}
+
+/*
+ * 作用：
+ * 禁用按钮 hover 时不显示背景，避免误导用户认为按钮可点击。
+ */
+.yonxao-mindmap-toolbar-button:disabled:hover {
+  background: transparent;
+}
+
+/*
+ * 作用：
+ * 源码保存按钮默认隐藏，只在源码模式出现。
+ */
+.yonxao-mindmap-source-action {
+  display: none;
+}
+
+/*
+ * 作用：
+ * 源码模式下显示保存源码按钮。
+ */
+.yonxao-mindmap-host.is-source-mode .yonxao-mindmap-source-action {
+  display: inline-flex;
+}

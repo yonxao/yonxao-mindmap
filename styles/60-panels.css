@@ -1,0 +1,159 @@
+/*
+ * 文件作用：
+ * 这里定义插件里的消息块、错误提示和节点编辑面板。
+ *
+ * 执行逻辑：
+ * 当解析失败或运行失败时显示 message/error；当用户点击节点编辑按钮时显示 node-editor。
+ * 面板固定在画布左下角，避免遮挡 Obsidian 右上角的原生“编辑这个块”按钮。
+ *
+ * 调用链位置：
+ * YonxaoMindmapRenderer.renderMessage()/createNodeEditor() -> 本文件控制提示和面板。
+ */
+
+/*
+ * 作用：
+ * 普通提示消息块。
+ */
+.yonxao-mindmap-message {
+  padding: 12px 14px;
+  color: var(--text-muted);
+  border: 1px solid var(--background-modifier-border);
+  border-radius: 8px;
+  background: var(--background-primary);
+}
+
+/*
+ * 作用：
+ * 错误消息块，使用 Obsidian 主题错误色。
+ */
+.yonxao-mindmap-message-error {
+  color: var(--text-error);
+  border-color: var(--text-error);
+}
+
+/*
+ * 作用：
+ * 插件渲染失败时的错误提示块。
+ */
+.yonxao-mindmap-plugin-error {
+  margin: 0.5em 0;
+  padding: 10px 12px;
+  color: var(--text-error);
+  border: 1px solid var(--text-error);
+  border-radius: 8px;
+  background: var(--background-primary);
+  font-family: var(--yonxao-mindmap-mono-font);
+  font-size: var(--font-ui-small);
+  line-height: 1.5;
+}
+
+/*
+ * 作用：
+ * 节点编辑面板主体，固定在画布左下角。
+ */
+.yonxao-mindmap-node-editor {
+  position: absolute;
+  z-index: 3;
+  left: 10px;
+  bottom: 10px;
+  width: min(320px, calc(100% - 20px));
+  box-sizing: border-box;
+  padding: 12px;
+  border: 1px solid var(--background-modifier-border);
+  border-radius: 8px;
+  background: var(--background-primary);
+  box-shadow: var(--shadow-l);
+}
+
+/*
+ * 作用：
+ * 节点编辑面板标题。
+ */
+.yonxao-mindmap-node-editor-title {
+  margin-bottom: 8px;
+  color: var(--text-normal);
+  font-size: var(--font-ui-small);
+  font-weight: 700;
+}
+
+/*
+ * 作用：
+ * 节点编辑表单的一行字段布局。
+ */
+.yonxao-mindmap-node-editor-field {
+  display: grid;
+  grid-template-columns: 48px minmax(0, 1fr);
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+  color: var(--text-muted);
+  font-size: var(--font-ui-smaller);
+}
+
+/*
+ * 作用：
+ * 节点编辑面板中的 input/select 控件。
+ */
+.yonxao-mindmap-node-editor-input {
+  width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+  padding: 6px 8px;
+  color: var(--text-normal);
+  border: 1px solid var(--background-modifier-border);
+  border-radius: 6px;
+  outline: none;
+  background: var(--background-secondary);
+  font-family: var(--yonxao-mindmap-mono-font);
+}
+
+/*
+ * 作用：
+ * 节点编辑输入控件聚焦状态。
+ */
+.yonxao-mindmap-node-editor-input:focus {
+  border-color: var(--interactive-accent);
+}
+
+/*
+ * 作用：
+ * 节点编辑面板底部按钮区。
+ */
+.yonxao-mindmap-node-editor-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 10px;
+}
+
+/*
+ * 作用：
+ * 节点编辑面板中的操作按钮。
+ */
+.yonxao-mindmap-node-editor-button {
+  padding: 5px 9px;
+  color: var(--text-normal);
+  border: 1px solid var(--background-modifier-border);
+  border-radius: 6px;
+  background: var(--background-secondary);
+  cursor: pointer;
+}
+
+/*
+ * 作用：
+ * 节点编辑按钮 hover/focus 状态。
+ */
+.yonxao-mindmap-node-editor-button:hover,
+.yonxao-mindmap-node-editor-button:focus-visible {
+  background: var(--background-modifier-hover);
+}
+
+/*
+ * 作用：
+ * 节点编辑按钮禁用状态。
+ */
+.yonxao-mindmap-node-editor-button:disabled {
+  color: var(--text-faint);
+  cursor: default;
+  opacity: 0.55;
+}
