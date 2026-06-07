@@ -41,7 +41,6 @@ yonxao-mindmap renders Markdown-heading-style `yxmm` code blocks as interactive 
 - Use the source/map button to switch between raw `yxmm` source and the rendered mind map.
 - In source view, edit the textarea and click save, or press Ctrl/Cmd+S.
 - In source view, Tab/Shift+Tab promotes or demotes selected heading lines.
-- Source view shows hierarchy guide lines for heading levels.
 - In mind map view, hover a node and click the small edit button to edit text, color, icon, or layout.
 - The node editor can also add a child node or delete the selected node.
 - Use the toolbar to fit, zoom in, zoom out, or reset collapsed nodes.

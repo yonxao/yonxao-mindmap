@@ -12,7 +12,6 @@
 
 export const SVG_NS = 'http://www.w3.org/2000/svg';
 export const CODE_BLOCK_NAME = 'yxmm';
-export const SOURCE_HEADING_INDENT_CH = 4;
 
 // 布局常量集中放在这里，后面做设置页时可以直接把这些值抽成用户配置。
 export const LEVEL_GAP = 84;

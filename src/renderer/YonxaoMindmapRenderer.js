@@ -16,7 +16,6 @@ import { Component, Notice, setIcon } from 'obsidian';
 
 import {
   CODE_BLOCK_NAME,
-  SOURCE_HEADING_INDENT_CH,
   VIEWBOX_MARGIN_X,
   VIEWBOX_MARGIN_Y,
   CANVAS_MIN_HEIGHT,
@@ -33,7 +32,7 @@ import { removeNodeById, setOptionalAttr } from '../model/treeActions.js';
 import { markYonxaoMindmapEmbedWrapper } from '../obsidian/embed.js';
 import { assignIds, createMindNode, parseMind } from '../parser/parseMind.js';
 import { serializeMind } from '../parser/serializeMind.js';
-import { applyHeadingLevelKey, countHeadingGuideLevels } from '../source/headingKeys.js';
+import { applyHeadingLevelKey } from '../source/headingKeys.js';
 import { nodeColor, transparentColor } from '../utils/color.js';
 import { createLabeledField } from '../utils/dom.js';
 import { clamp } from '../utils/math.js';
@@ -61,7 +60,6 @@ export class YonxaoMindmapRenderer extends Component {
     this.sourceEl = null;
     this.resizeHandleEl = null;
     this.sourceInputEl = null;
-    this.sourceLevelGuidesEl = null;
     this.sourceStatusEl = null;
     this.nodeEditorEl = null;
     this.nodeEditorFields = null;
@@ -266,11 +264,6 @@ export class YonxaoMindmapRenderer extends Component {
     if (this.isSourceMode) {
       this.closeNodeEditor();
       this.syncSourceInput();
-      if (typeof window !== 'undefined' && typeof window.requestAnimationFrame === 'function') {
-        window.requestAnimationFrame(() => this.updateSourceLevelGuides());
-      } else {
-        this.updateSourceLevelGuides();
-      }
     }
 
     this.updateToggleViewButton();
@@ -346,10 +339,10 @@ export class YonxaoMindmapRenderer extends Component {
 
   /*
    * 作用：
-   * 创建源码模式的 textarea、层级辅助线容器和保存状态栏。
+   * 创建源码模式的 textarea 和保存状态栏。
    *
    * 实现逻辑：
-   * textarea 负责真实编辑；level guides 作为覆盖层绘制“类似 IDE 缩进线”的视觉辅助。
+   * textarea 负责真实编辑；保存状态栏提示源码是否已同步回 Markdown。
    */
   createSourceView() {
     // 源码视图从只读 <pre><code> 改成可编辑的 textarea。
@@ -359,9 +352,6 @@ export class YonxaoMindmapRenderer extends Component {
 
     const editorEl = document.createElement('div');
     editorEl.className = 'yonxao-mindmap-source-editor';
-
-    this.sourceLevelGuidesEl = document.createElement('div');
-    this.sourceLevelGuidesEl.className = 'yonxao-mindmap-level-guides';
 
     this.sourceInputEl = document.createElement('textarea');
     this.sourceInputEl.className = 'yonxao-mindmap-source-input';
@@ -374,7 +364,6 @@ export class YonxaoMindmapRenderer extends Component {
     this.sourceStatusEl.className = 'yonxao-mindmap-source-status';
     this.sourceStatusEl.textContent = '源码可编辑，点击工具栏保存按钮写回 Markdown。';
 
-    editorEl.appendChild(this.sourceLevelGuidesEl);
     editorEl.appendChild(this.sourceInputEl);
     this.sourceEl.appendChild(editorEl);
     this.sourceEl.appendChild(this.sourceStatusEl);
@@ -383,11 +372,6 @@ export class YonxaoMindmapRenderer extends Component {
     this.registerDomEvent(this.sourceInputEl, 'input', () => {
       this.sourceDirty = this.sourceInputEl.value !== this.source;
       this.updateSourceStatus();
-      this.updateSourceLevelGuides();
-    });
-
-    this.registerDomEvent(this.sourceInputEl, 'scroll', () => {
-      this.updateSourceLevelGuides();
     });
 
     this.registerDomEvent(this.sourceInputEl, 'keydown', (event) => {
@@ -396,7 +380,6 @@ export class YonxaoMindmapRenderer extends Component {
         applyHeadingLevelKey(this.sourceInputEl, event.shiftKey);
         this.sourceDirty = this.sourceInputEl.value !== this.source;
         this.updateSourceStatus();
-        this.updateSourceLevelGuides();
         return;
       }
 
@@ -408,8 +391,6 @@ export class YonxaoMindmapRenderer extends Component {
         });
       }
     });
-
-    this.updateSourceLevelGuides();
   }
 
   /*
@@ -541,50 +522,6 @@ export class YonxaoMindmapRenderer extends Component {
     this.sourceInputEl.value = this.source;
     this.sourceDirty = false;
     this.updateSourceStatus();
-    this.updateSourceLevelGuides();
-  }
-
-  /*
-   * 作用：
-   * 根据 textarea 当前可见行绘制标题级别辅助线。
-   *
-   * 实现逻辑：
-   * 只计算可视区域附近的行，避免大代码块时每次输入都重绘所有辅助线。
-   */
-  updateSourceLevelGuides() {
-    if (!this.sourceInputEl || !this.sourceLevelGuidesEl) return;
-
-    const input = this.sourceInputEl;
-    const guides = this.sourceLevelGuidesEl;
-    const computed = window.getComputedStyle(input);
-    const lineHeight = parseFloat(computed.lineHeight) || 20;
-    const paddingTop = parseFloat(computed.paddingTop) || 0;
-    const paddingLeft = parseFloat(computed.paddingLeft) || 0;
-    const scrollTop = input.scrollTop;
-    const scrollLeft = input.scrollLeft;
-    const viewportHeight = input.clientHeight || 0;
-    const lines = input.value.split(/\r?\n/);
-    const firstLine = Math.max(0, Math.floor((scrollTop - paddingTop) / lineHeight) - 1);
-    const visibleLineCount = Math.ceil(viewportHeight / lineHeight) + 3;
-    const lastLine = Math.min(lines.length - 1, firstLine + visibleLineCount);
-
-    guides.textContent = '';
-
-    for (let lineIndex = firstLine; lineIndex <= lastLine; lineIndex += 1) {
-      const line = lines[lineIndex] || '';
-      const levelCount = countHeadingGuideLevels(line);
-      if (!levelCount) continue;
-
-      const top = paddingTop + lineIndex * lineHeight - scrollTop;
-      for (let level = 1; level <= levelCount; level += 1) {
-        const guide = document.createElement('span');
-        guide.className = 'yonxao-mindmap-level-guide';
-        guide.style.top = `${top}px`;
-        guide.style.left = `calc(${paddingLeft}px + ${level * SOURCE_HEADING_INDENT_CH}ch - ${scrollLeft}px)`;
-        guide.style.height = `${lineHeight}px`;
-        guides.appendChild(guide);
-      }
-    }
   }
 
   /*

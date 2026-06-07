@@ -1,6 +1,6 @@
 /*
  * 文件作用：
- * 这里定义源码模式的编辑区域、textarea、级别辅助线和保存状态提示。
+ * 这里定义源码模式的编辑区域、textarea 和保存状态提示。
  *
  * 设计边界：
  * 工具栏样式归 20-toolbar.css，SVG 和高度手柄归 30-canvas.css。
@@ -72,7 +72,7 @@
 
 /*
  * 作用：
- * 源码编辑器外框，内部包含辅助线层和 textarea。
+ * 源码编辑器外框，内部包含 textarea。
  */
 .yonxao-mindmap-source-editor {
   position: relative;
@@ -93,28 +93,6 @@
 .yonxao-mindmap-source-editor:focus-within {
   border-color: var(--interactive-accent);
   box-shadow: 0 0 0 2px color-mix(in srgb, var(--interactive-accent) 24%, transparent);
-}
-
-/*
- * 作用：
- * 级别辅助线覆盖层，不接收鼠标事件。
- */
-.yonxao-mindmap-level-guides {
-  position: absolute;
-  inset: 0;
-  z-index: 0;
-  overflow: hidden;
-  pointer-events: none;
-}
-
-/*
- * 作用：
- * 单条级别辅助线，由 renderer 按可见行动态创建并定位。
- */
-.yonxao-mindmap-level-guide {
-  position: absolute;
-  width: 1px;
-  background: color-mix(in srgb, var(--text-faint) 44%, transparent);
 }
 
 /*

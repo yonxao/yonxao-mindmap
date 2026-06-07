@@ -1,14 +1,13 @@
 /*
  * 文件作用：
- * 这里负责源码模式里和 Markdown 标题层级有关的键盘操作与缩进辅助线计算。
+ * 这里负责源码模式里和 Markdown 标题层级有关的键盘操作。
  *
  * 执行逻辑：
  * - Tab：给选中标题增加一个 #，等价于下沉一级。
  * - Shift+Tab：删除一个 #，等价于上升一级。
- * - countHeadingGuideLevels：根据标题层级返回需要显示多少条级别辅助线。
  *
  * 调用链位置：
- * YonxaoMindmapRenderer.createSourceView() -> keydown/updateSourceLevelGuides() -> headingKeys
+ * YonxaoMindmapRenderer.createSourceView() -> keydown -> headingKeys
  */
 
 import { matchHeadingLine } from '../parser/parseMind.js';
@@ -72,13 +71,4 @@ export function adjustHeadingLevel(line, isOutdent) {
   }
 
   return `${prefix}#${hashes}${rest}`;
-}
-
-/*
- * 作用：
- * 根据标题层级计算源码模式需要绘制多少条级别辅助线。
- */
-export function countHeadingGuideLevels(line) {
-  const heading = matchHeadingLine(String(line).trim());
-  return heading ? Math.max(0, heading.level - 1) : 0;
 }
