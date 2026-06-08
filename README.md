@@ -8,6 +8,29 @@ yonxao-mindmap renders Markdown-heading-style `yxmm` code blocks as interactive 
 
 ````markdown
 ```yxmm
+---
+canvas:
+  height: 420
+toolbar:
+  x: 8
+  y: 8
+layout:
+  defaultDirection: balanced
+font:
+  size: 14
+  weight: 560
+  lineHeight: 18
+  levels:
+    1:
+      size: 16
+      weight: 700
+node:
+  maxWidth: 240
+source:
+  enableTabIndent: true
+  height: 520
+---
+
 # AI学习 [color=#3b82f6 layout=right]
 
 ## 基础 [icon=book]
@@ -33,17 +56,40 @@ yonxao-mindmap renders Markdown-heading-style `yxmm` code blocks as interactive 
   - `color=#3b82f6`
   - `layout=right`, `layout=left`, `layout=balanced`
   - `icon=book`
+  - `fontSize=16`, `fontWeight=700`, `fontFamily="..."`, `lineHeight=20`
+
+## Config Block
+
+A `yxmm` block can start with a `---` config block. The config block stores global defaults, while Markdown headings continue to describe the mind map structure.
+
+Supported config keys:
+
+- `canvas.height`: persisted canvas height. Drag the bottom handle to write it; double-click the handle to remove it and return to automatic height.
+- `toolbar.x` / `toolbar.y`: persisted floating toolbar position. Drag the toolbar grip to write it.
+- `theme`: parsed and preserved for future theme support.
+- `layout.defaultDirection`: default first-level branch direction: `balanced`, `left`, or `right`.
+- `font.family`, `font.size`, `font.weight`, `font.lineHeight`: global font defaults.
+- `font.levels.1`, `font.levels.2`: per-heading-level font overrides.
+- `node.defaultColor`: fallback node color when a node has no `color` attribute.
+- `node.maxWidth`: maximum node width before label wrapping.
+- `source.enableTabIndent`: whether Tab/Shift+Tab changes heading levels in source mode.
+- `source.height`: source-mode height, stored separately from graph-mode `canvas.height`.
+
+Font priority:
+
+`node inline attributes` > `font.levels[current level]` > `global font config` > `plugin defaults`
 
 ## Controls
 
 - The rendered mind map is available in both Reading view and editor/Live Preview.
 - Click a node to collapse or expand its children.
 - Use the source/map button to switch between raw `yxmm` source and the rendered mind map.
-- In source view, edit the textarea and click save, or press Ctrl/Cmd+S.
+- In source view, edit the textarea; switching back to the mind map auto-saves, and Ctrl/Cmd+S also saves.
 - In source view, Tab/Shift+Tab promotes or demotes selected heading lines.
 - In mind map view, hover a node and click the small edit button to edit text, color, icon, or layout.
 - The node editor can also add a child node or delete the selected node.
 - Use the toolbar to fit, zoom in, zoom out, or reset collapsed nodes.
+- Drag the toolbar grip to move the floating toolbar away from content.
 - Drag the canvas to pan. Use the mouse wheel to zoom.
 - Drag the bottom edge of the canvas to manually adjust its height. Double-click the handle to return to automatic height.
 

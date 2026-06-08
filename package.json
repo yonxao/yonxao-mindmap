@@ -15,7 +15,8 @@
     "lint:fix": "eslint . --fix",
     "format": "prettier . --write",
     "format:check": "prettier . --check",
-    "validate": "npm run check && npm run lint && npm run format:check"
+    "validate": "npm run check && npm run lint && npm run format:check",
+    "ai:validate": "npm run validate && node scripts/prepare-obsidian-dev.mjs"
   },
   "files": [
     "dist",

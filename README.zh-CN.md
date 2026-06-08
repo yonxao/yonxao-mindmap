@@ -10,6 +10,29 @@ yonxao-mindmap 是一个 Obsidian 思维导图显示插件。它会把 Markdown 
 
 ````markdown
 ```yxmm
+---
+canvas:
+  height: 420
+toolbar:
+  x: 8
+  y: 8
+layout:
+  defaultDirection: balanced
+font:
+  size: 14
+  weight: 560
+  lineHeight: 18
+  levels:
+    1:
+      size: 16
+      weight: 700
+node:
+  maxWidth: 240
+source:
+  enableTabIndent: true
+  height: 520
+---
+
 # AI学习 [color=#3b82f6 layout=right]
 
 ## 基础 [icon=book]
@@ -35,17 +58,40 @@ yonxao-mindmap 是一个 Obsidian 思维导图显示插件。它会把 Markdown 
   - `color=#3b82f6`：节点颜色。
   - `layout=right`、`layout=left`、`layout=balanced`：布局方向。
   - `icon=book`：节点图标。
+  - `fontSize=16`、`fontWeight=700`、`fontFamily="..."`、`lineHeight=20`：覆盖单个节点字体。
+
+## 配置区
+
+`yxmm` 代码块顶部可以写一段 `---` 包裹的配置区，用来保存全局默认行为。配置区和正文节点是分离的：配置区控制默认值，正文标题继续只表达脑图结构。
+
+当前支持的配置项：
+
+- `canvas.height`：幕布高度。拖动画布底部边缘后会自动写入；双击拖拽条会移除该项并恢复自动高度。
+- `toolbar.x` / `toolbar.y`：悬浮工具栏位置。拖动工具栏抓手后会自动写入。
+- `theme`：主题名称，当前会解析并保存，后续可用于扩展主题方案。
+- `layout.defaultDirection`：一级分支默认方向，可选 `balanced`、`left`、`right`。
+- `font.family`、`font.size`、`font.weight`、`font.lineHeight`：全局默认字体。
+- `font.levels.1`、`font.levels.2`：按标题级别设置字体，数字对应 `#`、`##`、`###` 的层级。
+- `node.defaultColor`：节点未写 `color` 时使用的默认颜色。
+- `node.maxWidth`：节点最大宽度，长标题会按这个宽度换行。
+- `source.enableTabIndent`：源码模式中是否启用 `Tab` / `Shift+Tab` 调整标题级别。
+- `source.height`：源码模式高度，和脑图模式的 `canvas.height` 分开保存。
+
+字体优先级从高到低是：
+
+`节点行尾属性` > `font.levels[当前级别]` > `font 全局配置` > `插件默认值`
 
 ## 操作
 
 - 阅读视图和编辑视图 Live Preview 都可以显示思维导图。
 - 点击有子节点的节点，可以折叠或展开子节点。
 - 使用插件工具栏中的源码/导图按钮，可以在源码模式和思维导图模式之间切换。
-- 源码模式中可以直接编辑 `yxmm` 文本，然后点击保存按钮，或按 `Ctrl/Cmd+S` 保存。
+- 源码模式中可以直接编辑 `yxmm` 文本，切回思维导图时会自动保存，也可以按 `Ctrl/Cmd+S` 保存。
 - 源码模式中，`Tab` / `Shift+Tab` 可以提升或降低选中标题行的层级。
 - 思维导图模式中，悬停节点并点击节点右上角的小编辑按钮，可以编辑节点文本、颜色、图标和布局。
 - 节点编辑面板支持新增子节点和删除当前节点。
 - 工具栏支持适配视图、放大、缩小和重置折叠状态。
+- 拖动工具栏左侧抓手可以移动工具栏位置，避免遮挡脑图内容。
 - 拖动画布可以平移视图，滚动鼠标滚轮可以缩放视图。
 - 拖动画布底部边缘可以手动调整幕布高度，双击拖拽条可以恢复自动高度。
 - Obsidian 自带的“编辑这个块”按钮会继续保留；插件工具栏默认放在脑图左上角，避免和它冲突。

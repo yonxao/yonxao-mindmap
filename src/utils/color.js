@@ -14,8 +14,8 @@
  * 作用：
  * 从节点 attrs 中读取并规范化节点颜色。
  */
-export function nodeColor(node) {
-  return normalizeColor(node.attrs.color);
+export function nodeColor(node, config) {
+  return normalizeColor(node.attrs.color) || normalizeColor(config?.node?.defaultColor);
 }
 
 /*

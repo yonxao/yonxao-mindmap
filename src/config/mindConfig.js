@@ -1,0 +1,491 @@
+/*
+ * 文件作用：
+ * 这里集中处理 yxmm 代码块顶部的元数据配置区。
+ *
+ * 配置区长什么样：
+ * ```yxmm
+ * ---
+ * canvas:
+ *   height: 420
+ * font:
+ *   size: 14
+ *   levels:
+ *     1:
+ *       size: 16
+ * ---
+ * # 中心节点
+ * ```
+ *
+ * 设计思路：
+ * - “配置区”只保存全局默认值，例如画布高度、工具栏位置、字体和节点默认样式。
+ * - “正文区”只保存 Markdown 标题节点，例如 #、##、###。
+ * - 节点行尾的 [color=...]、[fontSize=...] 仍然保留，用来覆盖全局配置。
+ *
+ * 调用链位置：
+ * Renderer/Parser -> splitMindSourceConfig() -> normalizeMindConfig()。
+ * 保存时则走 mergeMindConfig()/serializeMindSource()，把配置区和正文重新拼回代码块。
+ */
+
+import { CANVAS_MAX_HEIGHT, CANVAS_MIN_HEIGHT, LINE_HEIGHT, NODE_MAX_WIDTH } from '../constants.js';
+import { clamp } from '../utils/math.js';
+
+export const DEFAULT_FONT_FAMILY =
+  "'Sarasa Mono SC', 'Noto Sans Mono CJK SC', 'Source Han Mono SC', 'Cascadia Mono', 'JetBrains Mono', 'Liberation Mono', monospace";
+
+/*
+ * 作用：
+ * 插件运行时使用的完整默认配置。
+ *
+ * 关键点：
+ * 这个对象不是直接写回源码的模板，而是运行时兜底值。
+ * 用户源码里没有写某个配置时，渲染器读取这里的默认值；保存时只写用户已有或插件主动记录的配置。
+ */
+export const DEFAULT_MIND_CONFIG = Object.freeze({
+  canvas: Object.freeze({
+    height: null,
+  }),
+  toolbar: Object.freeze({
+    x: null,
+    y: null,
+  }),
+  view: Object.freeze({
+    mode: 'graph',
+  }),
+  theme: 'default',
+  layout: Object.freeze({
+    defaultDirection: 'balanced',
+  }),
+  font: Object.freeze({
+    family: DEFAULT_FONT_FAMILY,
+    size: 14,
+    weight: 560,
+    lineHeight: LINE_HEIGHT,
+    levels: Object.freeze({}),
+  }),
+  node: Object.freeze({
+    defaultColor: '',
+    maxWidth: NODE_MAX_WIDTH,
+  }),
+  source: Object.freeze({
+    enableTabIndent: true,
+    height: null,
+  }),
+});
+
+/*
+ * 作用：
+ * 将 yxmm 源码拆成“原始配置对象”和“Markdown 标题正文”。
+ *
+ * 实现逻辑：
+ * 只有代码块第一段非空内容就是 --- 时，才认为存在配置区。
+ * 这样普通节点标题里出现 --- 不会被误识别为配置。
+ */
+export function splitMindSourceConfig(source) {
+  const text = String(source || '');
+  const lines = text.split(/\r?\n/);
+  const firstContentIndex = lines.findIndex((line) => line.trim() !== '');
+
+  if (firstContentIndex === -1 || lines[firstContentIndex].trim() !== '---') {
+    return {
+      hasConfig: false,
+      rawConfig: {},
+      body: text,
+    };
+  }
+
+  const endIndex = lines.findIndex(
+    (line, index) => index > firstContentIndex && line.trim() === '---'
+  );
+
+  if (endIndex === -1) {
+    throw new Error('配置区缺少结束的 ---。');
+  }
+
+  const configLines = lines.slice(firstContentIndex + 1, endIndex);
+  const bodyLines = [...lines.slice(0, firstContentIndex), ...lines.slice(endIndex + 1)];
+
+  return {
+    hasConfig: true,
+    rawConfig: parseSimpleYaml(configLines),
+    body: bodyLines.join('\n').trimStart(),
+  };
+}
+
+/*
+ * 作用：
+ * 把用户配置和默认配置合并成渲染器可以直接读取的规范结构。
+ *
+ * 关键点：
+ * 这里会做数字、布尔值、枚举值的清洗，避免非法配置直接进入布局和 SVG 计算。
+ */
+export function normalizeMindConfig(rawConfig) {
+  const raw = isPlainObject(rawConfig) ? rawConfig : {};
+  const font = isPlainObject(raw.font) ? raw.font : {};
+  const layout = isPlainObject(raw.layout) ? raw.layout : {};
+  const node = isPlainObject(raw.node) ? raw.node : {};
+  const canvas = isPlainObject(raw.canvas) ? raw.canvas : {};
+  const toolbar = isPlainObject(raw.toolbar) ? raw.toolbar : {};
+  const view = isPlainObject(raw.view) ? raw.view : {};
+  const source = isPlainObject(raw.source) ? raw.source : {};
+
+  return {
+    ...raw,
+    canvas: {
+      ...canvas,
+      height: normalizeOptionalNumber(canvas.height, CANVAS_MIN_HEIGHT, CANVAS_MAX_HEIGHT),
+    },
+    toolbar: {
+      ...toolbar,
+      x: normalizeOptionalNumber(toolbar.x, 0, 10000),
+      y: normalizeOptionalNumber(toolbar.y, 0, 10000),
+    },
+    view: {
+      ...view,
+      mode: normalizeViewMode(view.mode) || DEFAULT_MIND_CONFIG.view.mode,
+    },
+    theme: normalizeText(raw.theme) || DEFAULT_MIND_CONFIG.theme,
+    layout: {
+      ...layout,
+      defaultDirection:
+        normalizeDirection(layout.defaultDirection) || DEFAULT_MIND_CONFIG.layout.defaultDirection,
+    },
+    font: normalizeFontConfig(font),
+    node: {
+      ...node,
+      defaultColor: normalizeText(node.defaultColor),
+      maxWidth:
+        normalizeOptionalNumber(node.maxWidth, 120, 800) || DEFAULT_MIND_CONFIG.node.maxWidth,
+    },
+    source: {
+      ...source,
+      enableTabIndent:
+        typeof source.enableTabIndent === 'boolean'
+          ? source.enableTabIndent
+          : DEFAULT_MIND_CONFIG.source.enableTabIndent,
+      height: normalizeOptionalNumber(source.height, CANVAS_MIN_HEIGHT, CANVAS_MAX_HEIGHT),
+    },
+  };
+}
+
+/*
+ * 作用：
+ * 解析 font 配置，并额外清洗 levels 下的按层级配置。
+ */
+export function normalizeFontConfig(rawFont) {
+  const font = isPlainObject(rawFont) ? rawFont : {};
+  const levels = isPlainObject(font.levels) ? font.levels : {};
+  const normalizedLevels = {};
+
+  for (const [level, value] of Object.entries(levels)) {
+    if (!isPlainObject(value)) continue;
+    normalizedLevels[level] = normalizePartialFont(value);
+  }
+
+  return {
+    ...font,
+    family: normalizeText(font.family) || DEFAULT_MIND_CONFIG.font.family,
+    size: normalizeOptionalNumber(font.size, 9, 32) || DEFAULT_MIND_CONFIG.font.size,
+    weight: normalizeOptionalNumber(font.weight, 100, 900) || DEFAULT_MIND_CONFIG.font.weight,
+    lineHeight:
+      normalizeOptionalNumber(font.lineHeight, 12, 48) || DEFAULT_MIND_CONFIG.font.lineHeight,
+    levels: normalizedLevels,
+  };
+}
+
+/*
+ * 作用：
+ * 规范化某一层级或某个节点覆盖用的字体片段。
+ */
+export function normalizePartialFont(rawFont) {
+  const font = isPlainObject(rawFont) ? rawFont : {};
+  return {
+    ...font,
+    family: normalizeText(font.family),
+    size: normalizeOptionalNumber(font.size, 9, 32),
+    weight: normalizeOptionalNumber(font.weight, 100, 900),
+    lineHeight: normalizeOptionalNumber(font.lineHeight, 12, 48),
+  };
+}
+
+/*
+ * 作用：
+ * 计算某个节点最终使用的字体。
+ *
+ * 优先级：
+ * 节点行尾属性 > font.levels[层级] > font 全局配置 > 默认值。
+ */
+export function resolveNodeFont(node, config) {
+  const safeConfig = normalizeMindConfig(config);
+  const levelKey = String(node.level || 1);
+  const levelFont = safeConfig.font.levels[levelKey] || {};
+  const attrs = node.attrs || {};
+
+  return {
+    family:
+      normalizeText(attrs.fontfamily) ||
+      normalizeText(attrs.fontFamily) ||
+      levelFont.family ||
+      safeConfig.font.family,
+    size:
+      normalizeOptionalNumber(attrs.fontsize ?? attrs.fontSize, 9, 32) ||
+      levelFont.size ||
+      safeConfig.font.size,
+    weight:
+      normalizeOptionalNumber(attrs.fontweight ?? attrs.fontWeight, 100, 900) ||
+      levelFont.weight ||
+      safeConfig.font.weight,
+    lineHeight:
+      normalizeOptionalNumber(attrs.lineheight ?? attrs.lineHeight, 12, 48) ||
+      levelFont.lineHeight ||
+      safeConfig.font.lineHeight,
+  };
+}
+
+/*
+ * 作用：
+ * 更新配置对象中的某条路径，并返回新的配置对象。
+ *
+ * 调用场景：
+ * 画布高度拖拽结束后写入 canvas.height；工具栏拖动结束后写入 toolbar.x/y。
+ */
+export function setMindConfigPath(rawConfig, path, value) {
+  const next = clonePlainObject(rawConfig);
+  let current = next;
+
+  for (let index = 0; index < path.length - 1; index += 1) {
+    const key = path[index];
+    if (!isPlainObject(current[key])) current[key] = {};
+    current = current[key];
+  }
+
+  current[path[path.length - 1]] = value;
+  return next;
+}
+
+/*
+ * 作用：
+ * 删除配置对象中的某条路径，并清理空父级。
+ *
+ * 调用场景：
+ * 用户双击高度手柄恢复自动高度时，删除 canvas.height。
+ */
+export function deleteMindConfigPath(rawConfig, path) {
+  const next = clonePlainObject(rawConfig);
+  const parents = [];
+  let current = next;
+
+  for (const key of path.slice(0, -1)) {
+    if (!isPlainObject(current[key])) return next;
+    parents.push([current, key]);
+    current = current[key];
+  }
+
+  delete current[path[path.length - 1]];
+
+  for (let index = parents.length - 1; index >= 0; index -= 1) {
+    const [parent, key] = parents[index];
+    if (isPlainObject(parent[key]) && !Object.keys(parent[key]).length) {
+      delete parent[key];
+    }
+  }
+
+  return next;
+}
+
+/*
+ * 作用：
+ * 把配置对象和正文重新拼成完整 yxmm 源码。
+ */
+export function serializeMindSource(rawConfig, body, forceConfig) {
+  const config = clonePlainObject(rawConfig);
+  const bodyText = String(body || '').trim();
+  const shouldWriteConfig = forceConfig || hasMeaningfulConfig(config);
+
+  if (!shouldWriteConfig) return bodyText;
+
+  const configText = stringifySimpleYaml(config);
+  return ['---', configText, '---', '', bodyText].join('\n').trimEnd();
+}
+
+/*
+ * 作用：
+ * 判断配置对象里是否真的有内容。
+ */
+export function hasMeaningfulConfig(config) {
+  return isPlainObject(config) && Object.keys(config).length > 0;
+}
+
+/*
+ * 作用：
+ * 解析一个小型 YAML 子集。
+ *
+ * 实现逻辑：
+ * 这里不做完整 YAML 解析，只支持插件配置需要的“缩进对象 + 标量值”。
+ * 这样可以避免引入额外依赖，同时保持配置结构足够直观。
+ */
+export function parseSimpleYaml(lines) {
+  const root = {};
+  const stack = [{ indent: -1, value: root }];
+
+  for (const rawLine of lines) {
+    const withoutComment = stripYamlComment(rawLine);
+    if (!withoutComment.trim()) continue;
+
+    const indent = withoutComment.match(/^ */)?.[0].length || 0;
+    if (indent % 2 !== 0) {
+      throw new Error('配置区缩进请使用 2 个空格。');
+    }
+
+    const line = withoutComment.trim();
+    const separatorIndex = line.indexOf(':');
+    if (separatorIndex === -1) {
+      throw new Error(`配置行缺少冒号：${line}`);
+    }
+
+    const key = line.slice(0, separatorIndex).trim();
+    const rawValue = line.slice(separatorIndex + 1).trim();
+    if (!key) {
+      throw new Error(`配置行缺少键名：${line}`);
+    }
+
+    while (stack.length && indent <= stack[stack.length - 1].indent) {
+      stack.pop();
+    }
+
+    const parent = stack[stack.length - 1].value;
+    if (rawValue === '') {
+      parent[key] = {};
+      stack.push({ indent, value: parent[key] });
+    } else {
+      parent[key] = parseYamlScalar(rawValue);
+    }
+  }
+
+  return root;
+}
+
+/*
+ * 作用：
+ * 将对象序列化为简单 YAML 文本。
+ */
+export function stringifySimpleYaml(value, depth = 0) {
+  if (!isPlainObject(value)) return '';
+
+  const indent = '  '.repeat(depth);
+  const lines = [];
+
+  for (const [key, child] of Object.entries(value)) {
+    if (child === undefined || child === null || child === '') continue;
+
+    if (isPlainObject(child)) {
+      if (!Object.keys(child).length) continue;
+      lines.push(`${indent}${key}:`);
+      lines.push(stringifySimpleYaml(child, depth + 1));
+    } else {
+      lines.push(`${indent}${key}: ${stringifyYamlScalar(child)}`);
+    }
+  }
+
+  return lines.filter(Boolean).join('\n');
+}
+
+/*
+ * 作用：
+ * 解析 YAML 标量值，支持字符串、数字和布尔值。
+ */
+function parseYamlScalar(value) {
+  if (/^(true|false)$/i.test(value)) return value.toLowerCase() === 'true';
+  if (/^-?\d+(\.\d+)?$/.test(value)) return Number(value);
+
+  const quoted = value.match(/^(['"])(.*)\1$/);
+  if (quoted) return quoted[2].replace(/\\"/g, '"').replace(/\\'/g, "'");
+
+  return value;
+}
+
+/*
+ * 作用：
+ * 序列化 YAML 标量值；包含特殊字符时自动加引号。
+ */
+function stringifyYamlScalar(value) {
+  if (typeof value === 'number' || typeof value === 'boolean') return String(value);
+  const text = String(value || '');
+  if (/^[a-zA-Z0-9_./#-]+$/.test(text)) return text;
+  return `"${text.replace(/\\/g, '\\\\').replace(/"/g, '\\"')}"`;
+}
+
+/*
+ * 作用：
+ * 移除 YAML 行尾注释，同时避免删除引号内的 #。
+ */
+function stripYamlComment(line) {
+  let quote = '';
+
+  for (let index = 0; index < line.length; index += 1) {
+    const char = line[index];
+    if ((char === '"' || char === "'") && line[index - 1] !== '\\') {
+      quote = quote === char ? '' : quote || char;
+    }
+    if (char === '#' && !quote && (index === 0 || /\s/.test(line[index - 1]))) {
+      return line.slice(0, index);
+    }
+  }
+
+  return line;
+}
+
+/*
+ * 作用：
+ * 深拷贝普通对象，避免保存配置时直接修改旧引用。
+ */
+function clonePlainObject(value) {
+  if (!isPlainObject(value)) return {};
+  return JSON.parse(JSON.stringify(value));
+}
+
+/*
+ * 作用：
+ * 判断一个值是否为普通对象。
+ */
+function isPlainObject(value) {
+  return Boolean(value) && typeof value === 'object' && !Array.isArray(value);
+}
+
+/*
+ * 作用：
+ * 把值转成去掉首尾空白的字符串。
+ */
+function normalizeText(value) {
+  return String(value || '').trim();
+}
+
+/*
+ * 作用：
+ * 读取可选数字，并限制在安全范围内。
+ */
+function normalizeOptionalNumber(value, min, max) {
+  if (value === null || value === undefined || value === '') return null;
+  const number = Number(value);
+  if (!Number.isFinite(number)) return null;
+  return clamp(number, min, max);
+}
+
+/*
+ * 作用：
+ * 规范化布局方向，只允许 left/right/balanced。
+ */
+function normalizeDirection(value) {
+  const text = normalizeText(value).toLowerCase();
+  if (text === 'left' || text === 'right' || text === 'balanced') return text;
+  return '';
+}
+
+/*
+ * 作用：
+ * 规范化视图模式，只允许 graph/source。
+ */
+function normalizeViewMode(value) {
+  const text = normalizeText(value).toLowerCase();
+  if (text === 'graph' || text === 'source') return text;
+  return '';
+}

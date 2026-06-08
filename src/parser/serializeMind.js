@@ -1,3 +1,5 @@
+import { serializeMindSource } from '../config/mindConfig.js';
+
 /*
  * 文件作用：
  * 这里负责把内存中的思维导图树重新序列化成 yxmm Markdown 标题源码。
@@ -7,7 +9,7 @@
  * 所以节点新增、删除、改名、改颜色后，都要通过 serializeMind 写回源码。
  *
  * 调用链位置：
- * YonxaoMindmapRenderer.saveTreeToSourceAndFile() -> serializeMind(root) -> saveSourceToMarkdownFile()
+ * YonxaoMindmapRenderer.saveTreeToSourceAndFile() -> serializeMindDocument() -> saveSourceToMarkdownFile()
  */
 
 /*
@@ -15,7 +17,7 @@
  * 把完整节点树序列化为 yxmm 源码。
  *
  * 调用链：
- * Renderer.saveTreeToSourceAndFile() -> serializeMind() -> serializeNode()。
+ * Renderer.saveTreeToSourceAndFile() -> serializeMindDocument() -> serializeMind() -> serializeNode()。
  */
 export function serializeMind(root) {
   // serializeMind 的作用正好和 parseMind 相反：
@@ -27,6 +29,20 @@ export function serializeMind(root) {
   // 用户在脑图里改了节点后，我们必须把内存中的树重新写成 Markdown 标题文本，再保存回 Markdown。
   const roots = root._virtual ? root.children : [root];
   return roots.map((node) => serializeNode(node, 0)).join('\n');
+}
+
+/*
+ * 作用：
+ * 把“配置区 + 节点树”一起序列化成完整 yxmm 源码。
+ *
+ * 调用链：
+ * Renderer.saveTreeToSourceAndFile()/saveRuntimeConfigToFile() -> serializeMindDocument()。
+ *
+ * 实现逻辑：
+ * 节点树先用 serializeMind 转成标题正文，再交给 serializeMindSource 包上配置区。
+ */
+export function serializeMindDocument(root, rawConfig, forceConfig) {
+  return serializeMindSource(rawConfig, serializeMind(root), forceConfig);
 }
 
 /*

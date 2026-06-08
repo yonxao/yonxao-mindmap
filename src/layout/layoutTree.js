@@ -22,10 +22,10 @@ import {
   NODE_MIN_WIDTH,
   NODE_MAX_WIDTH,
   NODE_MIN_HEIGHT,
-  LINE_HEIGHT,
   ICON_SIZE,
   ICON_GAP,
 } from '../constants.js';
+import { normalizeMindConfig, resolveNodeFont } from '../config/mindConfig.js';
 import { normalizeIcon } from '../icons/renderIcon.js';
 import { clamp } from '../utils/math.js';
 import { visualUnits, wrapLabel } from '../utils/text.js';
@@ -40,13 +40,14 @@ import { visualUnits, wrapLabel } from '../utils/text.js';
  * 实现逻辑：
  * 先测量节点，再按左右侧递归摆放，最后收集未折叠节点和 bounds。
  */
-export function layoutTree(root, collapsedIds) {
+export function layoutTree(root, collapsedIds, config) {
   // 布局总流程：
   // 1. measureNode 估算每个节点的宽高。
   // 2. 根节点放在原点。
   // 3. 根据 layout 属性把第一层子节点分配到左右两侧。
   // 4. 递归给每个子树分配坐标，并计算整体 bounds 供 fitView 使用。
-  prepareNode(root);
+  const normalizedConfig = normalizeMindConfig(config);
+  prepareNode(root, normalizedConfig);
 
   const rootBox = root._layout;
   rootBox.x = 0;
@@ -58,7 +59,7 @@ export function layoutTree(root, collapsedIds) {
   const leftChildren = [];
 
   visibleRootChildren.forEach((child, index) => {
-    const side = rootChildSide(root, child, index);
+    const side = rootChildSide(root, child, index, normalizedConfig);
     if (side === 'left') {
       leftChildren.push(child);
     } else {
@@ -87,11 +88,11 @@ export function layoutTree(root, collapsedIds) {
  * 实现逻辑：
  * 深度优先遍历整棵树；后续布局阶段只读取 _layout，不再重复测量。
  */
-export function prepareNode(node) {
+export function prepareNode(node, config) {
   // 先测量所有节点，后续布局才能根据真实盒子尺寸分配空间。
-  node._layout = measureNode(node);
+  node._layout = measureNode(node, config);
   for (const child of node.children) {
-    prepareNode(child);
+    prepareNode(child, config);
   }
 }
 
@@ -102,26 +103,32 @@ export function prepareNode(node) {
  * 调用链：
  * prepareNode() -> measureNode()；renderNode() 会直接使用这里写出的 lines/textX/textY。
  */
-export function measureNode(node) {
+export function measureNode(node, config) {
+  const normalizedConfig = normalizeMindConfig(config);
+  const font = resolveNodeFont(node, normalizedConfig);
   const icon = normalizeIcon(node.attrs.icon);
-  const maxUnits = icon ? 18 : 22;
+  const maxWidth = normalizedConfig.node.maxWidth || NODE_MAX_WIDTH;
+  const iconWidth = icon ? ICON_SIZE + ICON_GAP : 0;
+  const usableTextWidth = Math.max(48, maxWidth - NODE_PADDING_X * 2 - iconWidth);
+  const averageUnitWidth = Math.max(5, font.size * 0.54);
+  const maxUnits = clamp(Math.floor(usableTextWidth / averageUnitWidth), icon ? 10 : 12, 48);
   // SVG text 没有天然的自动换行，这里用“视觉宽度”做一个轻量估算。
   // 中文字符按 2 个单位，英文按 1 个单位，避免中文标签撑破节点。
   const lines = wrapLabel(node.text || 'Untitled', maxUnits);
   const longest = lines.reduce((max, line) => Math.max(max, visualUnits(line)), 0);
-  const iconWidth = icon ? ICON_SIZE + ICON_GAP : 0;
-  const textWidth = Math.ceil(longest * 7.5);
+  const textWidth = Math.ceil(longest * averageUnitWidth);
   // clamp 保证极短标题不会太窄，极长标题也不会撑破画布。
-  const width = clamp(textWidth + NODE_PADDING_X * 2 + iconWidth, NODE_MIN_WIDTH, NODE_MAX_WIDTH);
-  const height = Math.max(NODE_MIN_HEIGHT, lines.length * LINE_HEIGHT + NODE_PADDING_Y * 2);
+  const width = clamp(textWidth + NODE_PADDING_X * 2 + iconWidth, NODE_MIN_WIDTH, maxWidth);
+  const height = Math.max(NODE_MIN_HEIGHT, lines.length * font.lineHeight + NODE_PADDING_Y * 2);
 
   return {
     width,
     height,
     lines,
     icon,
+    font,
     textX: NODE_PADDING_X + iconWidth,
-    textY: (height - (lines.length - 1) * LINE_HEIGHT) / 2 + 5,
+    textY: (height - (lines.length - 1) * font.lineHeight) / 2 + font.size * 0.36,
     side: 'right',
     x: 0,
     y: 0,
@@ -135,12 +142,15 @@ export function measureNode(node) {
  * 实现逻辑：
  * 子节点 layout 优先级最高，其次根节点 layout；都没有时用 balanced 交替分布。
  */
-export function rootChildSide(root, child, index) {
+export function rootChildSide(root, child, index, config) {
   const childLayout = normalizeLayout(child.attrs.layout);
   if (childLayout === 'left' || childLayout === 'right') return childLayout;
 
   const rootLayout = normalizeLayout(root.attrs.layout);
   if (rootLayout === 'left' || rootLayout === 'right') return rootLayout;
+
+  const defaultDirection = normalizeLayout(config?.layout?.defaultDirection);
+  if (defaultDirection === 'left' || defaultDirection === 'right') return defaultDirection;
 
   // balanced 模式下第一层节点左右交替分布，尽量避免一侧过长。
   return index % 2 === 0 ? 'right' : 'left';

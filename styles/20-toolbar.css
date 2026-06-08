@@ -4,7 +4,8 @@
  *
  * 执行逻辑：
  * 工具栏默认透明且不接收点击；当鼠标进入插件区域或插件内部获得焦点时显示。
- * 源码保存按钮只在源码模式显示，避免脑图模式出现无意义操作。
+ * 源码模式会复用同一组工具按钮，源码保存由切回脑图或 Ctrl/Cmd+S 触发。
+ * 拖拽位置由 Renderer 写入 inline left/top，并在 yxmm 配置区持久化。
  *
  * 调用链位置：
  * YonxaoMindmapRenderer.createToolbar() 创建 DOM -> 本文件控制视觉表现。
@@ -16,6 +17,7 @@
  *
  * 实现逻辑：
  * 通过 opacity/visibility 隐藏，不改变文档流，因此显示工具栏时不会把脑图主体向下挤。
+ * 背景使用 30% 不透明度，降低工具栏遮住节点内容时的视觉压迫感。
  */
 .yonxao-mindmap-toolbar {
   position: absolute;
@@ -29,7 +31,9 @@
   border: 1px solid var(--background-modifier-border);
   border-radius: 8px;
   background: var(--background-primary);
+  background: color-mix(in srgb, var(--background-primary) 30%, transparent);
   box-shadow: var(--shadow-s);
+  backdrop-filter: blur(4px);
   opacity: 0;
   visibility: hidden;
   pointer-events: none;
@@ -56,6 +60,7 @@
  * 工具栏内的图标按钮基础样式。
  */
 .yonxao-mindmap-toolbar-button {
+  position: relative;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -67,6 +72,11 @@
   border-radius: 6px;
   background: transparent;
   cursor: pointer;
+  opacity: 0.50;
+  transition:
+    background 120ms ease,
+    color 120ms ease,
+    opacity 120ms ease;
 }
 
 /*
@@ -77,6 +87,7 @@
 .yonxao-mindmap-toolbar-button:focus-visible {
   color: var(--text-normal);
   background: var(--background-modifier-hover);
+  opacity: 0.75;
 }
 
 /*
@@ -86,7 +97,7 @@
 .yonxao-mindmap-toolbar-button:disabled {
   color: var(--text-faint);
   cursor: default;
-  opacity: 0.55;
+  opacity: 0.30;
 }
 
 /*
@@ -99,16 +110,31 @@
 
 /*
  * 作用：
- * 源码保存按钮默认隐藏，只在源码模式出现。
+ * 工具栏拖拽手柄。
+ *
+ * 关键点：
+ * 拖动只绑定在这个手柄上，普通工具按钮不参与拖拽判断，因此点击源码/缩放按钮时不会被误判为移动工具栏。
  */
-.yonxao-mindmap-source-action {
-  display: none;
+.yonxao-mindmap-toolbar-drag-handle {
+  color: var(--text-faint);
+  cursor: grab;
 }
 
 /*
  * 作用：
- * 源码模式下显示保存源码按钮。
+ * 工具栏正在拖动时的视觉状态。
  */
-.yonxao-mindmap-host.is-source-mode .yonxao-mindmap-source-action {
-  display: inline-flex;
+.yonxao-mindmap-toolbar.is-dragging-toolbar {
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
+  transition: none;
+}
+
+/*
+ * 作用：
+ * 拖动中的手柄使用 grabbing 光标，给用户明确反馈。
+ */
+.yonxao-mindmap-toolbar.is-dragging-toolbar .yonxao-mindmap-toolbar-drag-handle {
+  cursor: grabbing;
 }

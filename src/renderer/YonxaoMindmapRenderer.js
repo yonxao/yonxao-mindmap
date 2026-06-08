@@ -23,15 +23,21 @@ import {
   NODE_MIN_HEIGHT,
   NODE_PADDING_X,
   ICON_SIZE,
-  LINE_HEIGHT,
 } from '../constants.js';
+import {
+  deleteMindConfigPath,
+  hasMeaningfulConfig,
+  normalizeMindConfig,
+  serializeMindSource,
+  setMindConfigPath,
+} from '../config/mindConfig.js';
 import { renderIcon } from '../icons/renderIcon.js';
 import { layoutTree, normalizeLayout } from '../layout/layoutTree.js';
 import { replaceCodeBlockSource } from '../markdown/codeBlock.js';
 import { removeNodeById, setOptionalAttr } from '../model/treeActions.js';
 import { markYonxaoMindmapEmbedWrapper } from '../obsidian/embed.js';
-import { assignIds, createMindNode, parseMind } from '../parser/parseMind.js';
-import { serializeMind } from '../parser/serializeMind.js';
+import { assignIds, createMindNode, parseMindDocument } from '../parser/parseMind.js';
+import { serializeMindDocument } from '../parser/serializeMind.js';
 import { applyHeadingLevelKey } from '../source/headingKeys.js';
 import { nodeColor, transparentColor } from '../utils/color.js';
 import { createLabeledField } from '../utils/dom.js';
@@ -39,6 +45,8 @@ import { clamp } from '../utils/math.js';
 import { svg } from '../utils/svg.js';
 
 export class YonxaoMindmapRenderer extends Component {
+  static viewModeMemory = new Map();
+
   /*
    * 作用：
    * 保存渲染器所需的上下文、DOM 引用、交互状态和编辑状态。
@@ -54,7 +62,11 @@ export class YonxaoMindmapRenderer extends Component {
     this.ctx = ctx;
     this.editorContext = editorContext || null;
     this.root = null;
+    this.rawConfig = {};
+    this.config = normalizeMindConfig({});
+    this.hasConfigBlock = false;
     this.containerEl = null;
+    this.toolbarEl = null;
     this.svgEl = null;
     this.graphEl = null;
     this.sourceEl = null;
@@ -68,14 +80,18 @@ export class YonxaoMindmapRenderer extends Component {
     this.viewBox = null;
     this.dragState = null;
     this.resizeState = null;
+    this.toolbarDragState = null;
     this.manualCanvasHeight = false;
+    this.manualSourceHeight = false;
     this.isSourceMode = false;
+    this.didInitialGraphRender = false;
     this.sourceDirty = false;
     this.editingNodeId = null;
     this.toggleViewButton = null;
-    this.saveSourceButton = null;
     this.graphActionButtons = [];
     this.pendingFitFrame = null;
+    this.pendingToolbarFrame = null;
+    this.pendingSourceHeightFrame = null;
     this.fitRetryCount = 0;
   }
 
@@ -97,7 +113,7 @@ export class YonxaoMindmapRenderer extends Component {
 
     // 先解析，再创建 DOM。解析失败时给用户一个清晰的错误块，避免空白区域。
     try {
-      this.root = parseMind(this.source);
+      this.root = this.parseAndApplyDocument(this.source);
     } catch (error) {
       parseError = `源码解析失败：${error.message || String(error)}`;
     }
@@ -117,16 +133,156 @@ export class YonxaoMindmapRenderer extends Component {
     this.createSourceView();
     this.createNodeEditor();
     this.createResizeHandle();
+    this.applyRuntimeConfigToView();
     this.installEventBoundary();
     this.renderGraph(true);
     if (parseError) {
       this.showSourceMode(parseError);
     }
     this.scheduleFitView();
+    this.scheduleApplyToolbarPosition();
 
     this.registerDomEvent(window, 'resize', () => {
       this.scheduleFitView();
+      this.scheduleApplyToolbarPosition();
     });
+  }
+
+  /*
+   * 作用：
+   * 解析完整 yxmm 文档，并同步当前渲染器的配置状态。
+   *
+   * 调用链：
+   * mount()/saveFromSourceView() -> parseAndApplyDocument()。
+   */
+  parseAndApplyDocument(source) {
+    const document = parseMindDocument(source);
+    this.rawConfig = document.rawConfig || {};
+    this.config = document.config || normalizeMindConfig({});
+    this.hasConfigBlock = document.hasConfig;
+    return document.root;
+  }
+
+  /*
+   * 作用：
+   * 把配置区里的运行时配置应用到当前 DOM 视图。
+   *
+   * 目前接入：
+   * - canvas.height 控制画布手动高度。
+   * - toolbar.x/y 控制工具栏初始位置。
+   */
+  applyRuntimeConfigToView() {
+    this.applyConfiguredCanvasHeight();
+    this.applyConfiguredViewMode();
+    this.scheduleApplyToolbarPosition();
+  }
+
+  /*
+   * 作用：
+   * 根据配置区 canvas.height 恢复用户上次手动调整的画布高度。
+   */
+  applyConfiguredCanvasHeight() {
+    if (!this.containerEl) return;
+    if (this.isSourceMode) return;
+
+    const height = this.config.canvas.height;
+    if (height) {
+      this.manualCanvasHeight = true;
+      this.containerEl.style.height = `${Math.round(height)}px`;
+      return;
+    }
+
+    this.manualCanvasHeight = false;
+    this.containerEl.style.height = '';
+  }
+
+  /*
+   * 作用：
+   * 根据短时会话状态恢复源码/脑图视图。
+   *
+   * 为什么需要它：
+   * 工具栏位置保存会写回 Markdown，Obsidian 可能因此重建代码块 DOM。
+   * 如果重建后的实例不知道之前处于源码模式，就会回到默认脑图模式。
+   */
+  applyConfiguredViewMode() {
+    const shouldUseSourceMode = this.readSessionViewMode() === 'source';
+    this.isSourceMode = shouldUseSourceMode;
+
+    if (this.containerEl) {
+      this.containerEl.classList.toggle('is-source-mode', this.isSourceMode);
+    }
+    this.hostEl.classList.toggle('is-source-mode', this.isSourceMode);
+
+    for (const button of this.graphActionButtons) {
+      button.disabled = this.isSourceMode;
+    }
+
+    if (this.isSourceMode) {
+      this.closeNodeEditor();
+      this.syncSourceInput();
+      this.scheduleSourceModeHeight();
+    }
+
+    this.updateToggleViewButton();
+  }
+
+  /*
+   * 作用：
+   * 把当前视图模式写入 rawConfig，但不立刻保存文件。
+   *
+   * 调用场景：
+   * 用户切换源码/脑图后，后续如果拖动工具栏或调整高度触发配置保存，就能顺手保留当前模式。
+   */
+  rememberViewModeConfig() {
+    this.writeSessionViewMode(this.isSourceMode ? 'source' : 'graph');
+  }
+
+  /*
+   * 作用：
+   * 读取当前代码块的短时视图模式。
+   *
+   * 设计原因：
+   * 视图模式不再写入 Markdown 配置区，避免阅读视图打开时仍显示源码。
+   * 这里只保留几秒钟，专门应对保存工具栏/高度后 Obsidian 立即重建 DOM 的场景。
+   */
+  readSessionViewMode() {
+    const key = this.viewModeMemoryKey();
+    const record = YonxaoMindmapRenderer.viewModeMemory.get(key);
+    if (!record || record.expiresAt < Date.now()) {
+      YonxaoMindmapRenderer.viewModeMemory.delete(key);
+      return 'graph';
+    }
+
+    return record.mode;
+  }
+
+  /*
+   * 作用：
+   * 写入当前代码块的短时视图模式。
+   */
+  writeSessionViewMode(mode) {
+    YonxaoMindmapRenderer.viewModeMemory.set(this.viewModeMemoryKey(), {
+      mode,
+      expiresAt: Date.now() + 6000,
+    });
+  }
+
+  /*
+   * 作用：
+   * 生成当前代码块的短时状态 key。
+   */
+  viewModeMemoryKey() {
+    const sourcePath = this.ctx?.sourcePath || 'unknown';
+    const sectionInfo =
+      this.ctx && typeof this.ctx.getSectionInfo === 'function'
+        ? this.ctx.getSectionInfo(this.hostEl)
+        : null;
+
+    if (sectionInfo) {
+      return `${sourcePath}:${sectionInfo.lineStart}`;
+    }
+
+    return `${sourcePath}:${String(this.source || '').slice(0, 80)}`;
   }
 
   /*
@@ -139,17 +295,15 @@ export class YonxaoMindmapRenderer extends Component {
   createToolbar() {
     const toolbar = document.createElement('div');
     toolbar.className = 'yonxao-mindmap-toolbar';
+    this.toolbarEl = toolbar;
     this.hostEl.insertBefore(toolbar, this.containerEl);
+
+    this.createToolbarDragHandle(toolbar);
 
     // 源码/导图切换按钮始终可用；其它按钮只对导图视图有意义。
     this.toggleViewButton = this.createToolbarButton(toolbar, '显示源码', 'code-2', async () => {
       await this.toggleSourceMode();
     });
-
-    this.saveSourceButton = this.createToolbarButton(toolbar, '保存源码', 'save', async () => {
-      await this.saveFromSourceView();
-    });
-    this.saveSourceButton.classList.add('yonxao-mindmap-source-action');
 
     this.graphActionButtons.push(
       this.createToolbarButton(toolbar, '适配视图', 'maximize', () => this.fitView())
@@ -172,6 +326,182 @@ export class YonxaoMindmapRenderer extends Component {
 
   /*
    * 作用：
+   * 创建工具栏拖拽手柄，用来调整工具栏位置。
+   *
+   * 实现逻辑：
+   * 只让这个小手柄负责拖动，普通工具按钮仍然保持点击语义，避免拖拽逻辑抢走按钮点击。
+   */
+  createToolbarDragHandle(toolbar) {
+    const handle = document.createElement('button');
+    handle.type = 'button';
+    handle.className = 'yonxao-mindmap-toolbar-button yonxao-mindmap-toolbar-drag-handle';
+    handle.setAttribute('aria-label', '拖动工具栏');
+
+    try {
+      setIcon(handle, 'move');
+    } catch (_error) {
+      handle.textContent = '+';
+    }
+
+    toolbar.appendChild(handle);
+    this.registerDomEvent(handle, 'pointerdown', (event) => {
+      this.handleToolbarPointerDown(event);
+    });
+    this.registerDomEvent(handle, 'pointermove', (event) => {
+      this.handleToolbarPointerMove(event);
+    });
+    this.registerDomEvent(handle, 'pointerup', (event) => {
+      this.handleToolbarPointerUp(event);
+    });
+    this.registerDomEvent(handle, 'pointercancel', (event) => {
+      this.handleToolbarPointerUp(event);
+    });
+  }
+
+  /*
+   * 作用：
+   * 开始拖动工具栏，记录指针起点和工具栏当前位置。
+   */
+  handleToolbarPointerDown(event) {
+    if (!this.toolbarEl || !this.hostEl) return;
+
+    event.preventDefault();
+    event.stopPropagation();
+
+    const toolbarRect = this.toolbarEl.getBoundingClientRect();
+    const hostRect = this.hostEl.getBoundingClientRect();
+    this.toolbarDragState = {
+      pointerId: event.pointerId,
+      startClientX: event.clientX,
+      startClientY: event.clientY,
+      startX: toolbarRect.left - hostRect.left,
+      startY: toolbarRect.top - hostRect.top,
+    };
+
+    this.toolbarEl.classList.add('is-dragging-toolbar');
+
+    try {
+      event.currentTarget.setPointerCapture(event.pointerId);
+    } catch (_error) {
+      // Pointer Capture 只是增强拖拽稳定性，不支持时仍可依赖普通 pointermove。
+    }
+  }
+
+  /*
+   * 作用：
+   * 拖动过程中实时更新工具栏位置。
+   */
+  handleToolbarPointerMove(event) {
+    if (!this.toolbarDragState || !this.toolbarEl) return;
+
+    event.preventDefault();
+    const nextX = this.toolbarDragState.startX + event.clientX - this.toolbarDragState.startClientX;
+    const nextY = this.toolbarDragState.startY + event.clientY - this.toolbarDragState.startClientY;
+    this.setToolbarPosition(nextX, nextY);
+  }
+
+  /*
+   * 作用：
+   * 结束工具栏拖动，并把位置写入配置区。
+   */
+  handleToolbarPointerUp(event) {
+    if (!this.toolbarDragState || !this.toolbarEl) return;
+
+    try {
+      event.currentTarget.releasePointerCapture(event.pointerId);
+    } catch (_error) {
+      // 未捕获指针时释放会失败，可以安全忽略。
+    }
+
+    this.toolbarDragState = null;
+    this.toolbarEl.classList.remove('is-dragging-toolbar');
+
+    const position = this.currentToolbarPosition();
+    if (!position) return;
+
+    this.rawConfig = setMindConfigPath(this.rawConfig, ['toolbar', 'x'], Math.round(position.x));
+    this.rawConfig = setMindConfigPath(this.rawConfig, ['toolbar', 'y'], Math.round(position.y));
+    this.rememberViewModeConfig();
+    this.scheduleApplyToolbarPosition();
+    Promise.resolve(this.saveRuntimeConfigToFile()).catch((error) => {
+      new Notice(`yonxao-mindmap: ${error.message || String(error)}`);
+    });
+  }
+
+  /*
+   * 作用：
+   * 从配置区恢复工具栏位置；没有配置时使用 CSS 默认左上角。
+   */
+  applyToolbarPosition() {
+    if (!this.toolbarEl) return;
+
+    const { x, y } = this.config.toolbar;
+    if (x === null || y === null) {
+      this.toolbarEl.style.left = '';
+      this.toolbarEl.style.top = '';
+      return;
+    }
+
+    this.setToolbarPosition(x, y);
+  }
+
+  /*
+   * 作用：
+   * 延迟一帧恢复工具栏位置。
+   *
+   * 为什么要延迟：
+   * Obsidian 保存代码块后可能会立刻重建预览 DOM；新 DOM 刚创建时，host/container 的尺寸还未稳定。
+   * 如果这时立刻 clamp toolbar.x/y，位置可能被误夹到左上角，看起来就像拖动后“闪回”。
+   */
+  scheduleApplyToolbarPosition() {
+    if (this.pendingToolbarFrame || typeof window === 'undefined') return;
+
+    this.pendingToolbarFrame = window.requestAnimationFrame(() => {
+      this.pendingToolbarFrame = null;
+      this.applyToolbarPosition();
+    });
+  }
+
+  /*
+   * 作用：
+   * 设置工具栏坐标，并限制在插件宿主区域内。
+   */
+  setToolbarPosition(x, y) {
+    if (!this.toolbarEl || !this.hostEl) return;
+
+    const hostRect = this.hostEl.getBoundingClientRect();
+    const toolbarRect = this.toolbarEl.getBoundingClientRect();
+    if (!hostRect.width || !hostRect.height || !toolbarRect.width || !toolbarRect.height) {
+      this.scheduleApplyToolbarPosition();
+      return;
+    }
+
+    const maxX = Math.max(0, hostRect.width - toolbarRect.width - 4);
+    const maxY = Math.max(0, hostRect.height - toolbarRect.height - 4);
+    const minX = Math.min(4, maxX);
+    const minY = Math.min(4, maxY);
+
+    this.toolbarEl.style.left = `${Math.round(clamp(x, minX, maxX))}px`;
+    this.toolbarEl.style.top = `${Math.round(clamp(y, minY, maxY))}px`;
+  }
+
+  /*
+   * 作用：
+   * 读取工具栏当前坐标，供拖动结束后写入配置区。
+   */
+  currentToolbarPosition() {
+    if (!this.toolbarEl || !this.hostEl) return null;
+
+    const toolbarRect = this.toolbarEl.getBoundingClientRect();
+    const hostRect = this.hostEl.getBoundingClientRect();
+    return {
+      x: toolbarRect.left - hostRect.left,
+      y: toolbarRect.top - hostRect.top,
+    };
+  }
+
+  /*
+   * 作用：
    * 创建工具栏按钮并绑定点击事件。
    *
    * 实现逻辑：
@@ -182,7 +512,6 @@ export class YonxaoMindmapRenderer extends Component {
     button.type = 'button';
     button.className = 'yonxao-mindmap-toolbar-button';
     button.setAttribute('aria-label', label);
-    button.setAttribute('title', label);
 
     try {
       setIcon(button, icon);
@@ -255,6 +584,7 @@ export class YonxaoMindmapRenderer extends Component {
     this.isSourceMode = !this.isSourceMode;
     this.containerEl.classList.toggle('is-source-mode', this.isSourceMode);
     this.hostEl.classList.toggle('is-source-mode', this.isSourceMode);
+    this.rememberViewModeConfig();
 
     // 源码视图只是用来核对 yxmm 文本，缩放/适配这些 SVG 操作在这里禁用掉。
     for (const button of this.graphActionButtons) {
@@ -264,6 +594,10 @@ export class YonxaoMindmapRenderer extends Component {
     if (this.isSourceMode) {
       this.closeNodeEditor();
       this.syncSourceInput();
+      this.scheduleSourceModeHeight();
+    } else {
+      this.applyConfiguredCanvasHeight();
+      this.renderGraph(true);
     }
 
     this.updateToggleViewButton();
@@ -288,7 +622,9 @@ export class YonxaoMindmapRenderer extends Component {
     this.closeNodeEditor();
     this.syncSourceInput();
     this.updateSourceStatus(statusMessage);
+    this.rememberViewModeConfig();
     this.updateToggleViewButton();
+    this.scheduleSourceModeHeight();
   }
 
   /*
@@ -301,7 +637,6 @@ export class YonxaoMindmapRenderer extends Component {
     const label = this.isSourceMode ? '显示思维导图' : '显示源码';
     const icon = this.isSourceMode ? 'git-branch' : 'code-2';
     this.toggleViewButton.setAttribute('aria-label', label);
-    this.toggleViewButton.setAttribute('title', label);
     this.toggleViewButton.setAttribute('aria-pressed', String(this.isSourceMode));
     this.toggleViewButton.textContent = '';
 
@@ -362,7 +697,7 @@ export class YonxaoMindmapRenderer extends Component {
 
     this.sourceStatusEl = document.createElement('div');
     this.sourceStatusEl.className = 'yonxao-mindmap-source-status';
-    this.sourceStatusEl.textContent = '源码可编辑，点击工具栏保存按钮写回 Markdown。';
+    this.sourceStatusEl.textContent = '源码可编辑，切回思维导图或按 Ctrl/Cmd+S 写回 Markdown。';
 
     editorEl.appendChild(this.sourceInputEl);
     this.sourceEl.appendChild(editorEl);
@@ -372,14 +707,17 @@ export class YonxaoMindmapRenderer extends Component {
     this.registerDomEvent(this.sourceInputEl, 'input', () => {
       this.sourceDirty = this.sourceInputEl.value !== this.source;
       this.updateSourceStatus();
+      this.scheduleSourceModeHeight();
     });
 
     this.registerDomEvent(this.sourceInputEl, 'keydown', (event) => {
       if (event.key === 'Tab') {
+        if (!this.config.source.enableTabIndent) return;
         event.preventDefault();
         applyHeadingLevelKey(this.sourceInputEl, event.shiftKey);
         this.sourceDirty = this.sourceInputEl.value !== this.source;
         this.updateSourceStatus();
+        this.scheduleSourceModeHeight();
         return;
       }
 
@@ -443,7 +781,11 @@ export class YonxaoMindmapRenderer extends Component {
       clientY: event.clientY,
       startHeight: this.containerEl.getBoundingClientRect().height,
     };
-    this.manualCanvasHeight = true;
+    if (this.isSourceMode) {
+      this.manualSourceHeight = true;
+    } else {
+      this.manualCanvasHeight = true;
+    }
     this.containerEl.classList.add('is-resizing');
 
     try {
@@ -489,6 +831,16 @@ export class YonxaoMindmapRenderer extends Component {
     this.resizeState = null;
     if (this.containerEl) {
       this.containerEl.classList.remove('is-resizing');
+      const height = Math.round(this.containerEl.getBoundingClientRect().height);
+      this.rawConfig = setMindConfigPath(
+        this.rawConfig,
+        this.isSourceMode ? ['source', 'height'] : ['canvas', 'height'],
+        height
+      );
+      this.rememberViewModeConfig();
+      Promise.resolve(this.saveRuntimeConfigToFile()).catch((error) => {
+        new Notice(`yonxao-mindmap: ${error.message || String(error)}`);
+      });
     }
   }
 
@@ -509,8 +861,21 @@ export class YonxaoMindmapRenderer extends Component {
     if (!this.containerEl) return;
 
     this.manualCanvasHeight = false;
+    this.manualSourceHeight = false;
     this.containerEl.style.height = '';
-    this.scheduleFitView();
+    this.rawConfig = deleteMindConfigPath(
+      this.rawConfig,
+      this.isSourceMode ? ['source', 'height'] : ['canvas', 'height']
+    );
+    this.rememberViewModeConfig();
+    Promise.resolve(this.saveRuntimeConfigToFile()).catch((error) => {
+      new Notice(`yonxao-mindmap: ${error.message || String(error)}`);
+    });
+    if (this.isSourceMode) {
+      this.scheduleSourceModeHeight();
+    } else {
+      this.scheduleFitView();
+    }
   }
 
   /*
@@ -537,8 +902,70 @@ export class YonxaoMindmapRenderer extends Component {
     }
 
     this.sourceStatusEl.textContent = this.sourceDirty
-      ? '源码已修改，点击保存按钮或按 Ctrl/Cmd+S 写回 Markdown。'
+      ? '源码已修改，切回思维导图或按 Ctrl/Cmd+S 写回 Markdown。'
       : '源码已同步到当前 Markdown 代码块。';
+  }
+
+  /*
+   * 作用：
+   * 延迟一帧计算源码视图高度。
+   *
+   * 为什么要延迟：
+   * 切换源码模式时，浏览器需要先应用 is-source-mode 样式，textarea 的 scrollHeight 才是准确的。
+   */
+  scheduleSourceModeHeight() {
+    if (this.pendingSourceHeightFrame || typeof window === 'undefined') return;
+
+    this.pendingSourceHeightFrame = window.requestAnimationFrame(() => {
+      this.pendingSourceHeightFrame = null;
+      this.applySourceModeHeight();
+    });
+  }
+
+  /*
+   * 作用：
+   * 按源码内容撑开容器高度，让进入源码模式时尽量一次看到完整 yxmm 内容。
+   *
+   * 实现逻辑：
+   * textarea.scrollHeight 是真实内容高度；再加上源码区 padding、状态栏高度和一点余量。
+   * 这个高度只是源码模式临时视图高度，不会写入 canvas.height。
+   */
+  applySourceModeHeight() {
+    if (!this.isSourceMode || !this.containerEl || !this.sourceEl || !this.sourceInputEl) {
+      return;
+    }
+
+    const configuredHeight = this.config.source.height;
+    if (configuredHeight) {
+      this.manualSourceHeight = true;
+      this.containerEl.style.height = `${Math.round(configuredHeight)}px`;
+      return;
+    }
+
+    this.manualSourceHeight = false;
+
+    const sourceStyle = window.getComputedStyle(this.sourceEl);
+    const inputStyle = window.getComputedStyle(this.sourceInputEl);
+    const sourcePadding =
+      parseFloat(sourceStyle.paddingTop || '0') + parseFloat(sourceStyle.paddingBottom || '0');
+    const sourceGap = parseFloat(sourceStyle.gap || '0');
+    const statusHeight = this.sourceStatusEl
+      ? this.sourceStatusEl.getBoundingClientRect().height
+      : 0;
+    const lineHeight = parseFloat(inputStyle.lineHeight || '0') || 20;
+    const lineCount = Math.max(1, this.sourceInputEl.value.split(/\r?\n/).length);
+    const inputPadding =
+      parseFloat(inputStyle.paddingTop || '0') + parseFloat(inputStyle.paddingBottom || '0');
+    const estimatedInputHeight = lineCount * lineHeight + inputPadding;
+    const inputHeight = Math.max(this.sourceInputEl.scrollHeight, estimatedInputHeight);
+    const extraSpace = lineHeight * 2;
+    const nextHeight = clamp(
+      inputHeight + sourcePadding + sourceGap + statusHeight + extraSpace,
+      CANVAS_MIN_HEIGHT,
+      this.maxCanvasHeight()
+    );
+
+    this.containerEl.style.height = `${Math.round(nextHeight)}px`;
   }
 
   /*
@@ -546,24 +973,24 @@ export class YonxaoMindmapRenderer extends Component {
    * 从源码视图保存用户编辑，并重新解析、重绘脑图。
    *
    * 调用链：
-   * 保存按钮/Ctrl+S/toggleSourceMode() -> saveFromSourceView()。
+   * Ctrl+S/toggleSourceMode() -> saveFromSourceView()。
    */
   async saveFromSourceView() {
     if (!this.sourceInputEl) return false;
 
     const nextSource = this.sourceInputEl.value;
-    let nextRoot;
+    let nextDocument;
 
     // 保存源码前先解析一次。这样用户写错标题层级或属性时，文件不会被插件写成不可渲染状态。
     try {
-      nextRoot = parseMind(nextSource);
+      nextDocument = parseMindDocument(nextSource);
     } catch (error) {
       new Notice(`yonxao-mindmap: 源码解析失败：${error.message || String(error)}`);
       this.updateSourceStatus('源码解析失败，请修正后再保存。');
       return false;
     }
 
-    if (!nextRoot) {
+    if (!nextDocument.root) {
       new Notice('yonxao-mindmap: 源码为空，未保存。');
       this.updateSourceStatus('源码为空，未保存。');
       return false;
@@ -573,10 +1000,16 @@ export class YonxaoMindmapRenderer extends Component {
     if (!saved) return false;
 
     this.source = nextSource;
-    this.root = nextRoot;
+    this.root = nextDocument.root;
+    this.rawConfig = nextDocument.rawConfig || {};
+    this.config = nextDocument.config || normalizeMindConfig({});
+    this.hasConfigBlock = nextDocument.hasConfig;
+    this.rememberViewModeConfig();
     this.collapsedIds.clear();
     this.sourceDirty = false;
+    this.applyRuntimeConfigToView();
     this.updateSourceStatus('源码已保存，并已重新渲染脑图。');
+    this.scheduleSourceModeHeight();
     this.renderGraph(true);
     return true;
   }
@@ -758,7 +1191,7 @@ export class YonxaoMindmapRenderer extends Component {
     if (!node) return false;
 
     // 新增子节点时只改树结构，不直接拼字符串。统一走 serializeMind，可以避免标题层级出错。
-    const child = createMindNode('新节点', {}, []);
+    const child = createMindNode('新节点', {}, [], 0, (node.level || 1) + 1);
     node.children.push(child);
     this.collapsedIds.delete(node.id);
     assignIds(this.root, '0');
@@ -803,19 +1236,123 @@ export class YonxaoMindmapRenderer extends Component {
   async saveTreeToSourceAndFile(successMessage) {
     // 脑图编辑的保存流程：
     // 1. 当前内存里的 root 已经被修改。
-    // 2. serializeMind(root) 把树重新变成 yxmm 文本。
+    // 2. serializeMindDocument(root, rawConfig) 把配置区和树重新变成 yxmm 文本。
     // 3. saveSourceToMarkdownFile(nextSource) 只替换当前 Markdown 文件里的这个代码块内容。
     // 4. 更新 textarea，保证源码视图立刻看到脑图编辑后的结果。
     assignIds(this.root, '0');
-    const nextSource = serializeMind(this.root);
+    const nextSource = serializeMindDocument(
+      this.root,
+      this.documentConfigForSave(this.rawConfig),
+      this.hasConfigBlock
+    );
+    const saved = await this.saveSourceToMarkdownFile(nextSource);
+    if (!saved) return false;
+
+    this.source = nextSource;
+    this.rawConfig = this.documentConfigForSave(this.rawConfig);
+    this.refreshNormalizedConfig();
+    this.syncSourceInput();
+    this.renderGraph(true);
+    new Notice(`yonxao-mindmap: ${successMessage || '已保存。'}`);
+    return true;
+  }
+
+  /*
+   * 作用：
+   * 只保存运行时配置，不改变节点树正文。
+   *
+   * 调用场景：
+   * 画布高度拖拽、工具栏位置拖拽这类交互只更新配置区。
+   */
+  async saveRuntimeConfigToFile() {
+    const runtimeDocument = this.buildRuntimeDocumentForSave();
+    if (!runtimeDocument) return false;
+
+    if (runtimeDocument.root) {
+      this.root = runtimeDocument.root;
+    }
+    this.rawConfig = this.documentConfigForSave(runtimeDocument.rawConfig);
+    this.refreshNormalizedConfig();
+    this.hasConfigBlock = hasMeaningfulConfig(this.rawConfig);
+    const nextSource = serializeMindSource(
+      this.rawConfig,
+      runtimeDocument.body,
+      this.hasConfigBlock
+    );
     const saved = await this.saveSourceToMarkdownFile(nextSource);
     if (!saved) return false;
 
     this.source = nextSource;
     this.syncSourceInput();
-    this.renderGraph(true);
-    new Notice(`yonxao-mindmap: ${successMessage || '已保存。'}`);
     return true;
+  }
+
+  /*
+   * 作用：
+   * 生成“只保存配置”时要写回的源码片段。
+   *
+   * 关键点：
+   * 如果当前在源码模式，textarea 里可能有尚未点击保存的内容。
+   * 工具栏拖动或高度调整只想保存运行时配置，但不能用旧 root 覆盖用户正在编辑的源码。
+   */
+  buildRuntimeDocumentForSave() {
+    if (this.isSourceMode && this.sourceInputEl) {
+      try {
+        const document = parseMindDocument(this.sourceInputEl.value);
+        return {
+          root: document.root,
+          body: document.body,
+          rawConfig: this.mergeRuntimeConfig(document.rawConfig || {}, this.rawConfig),
+        };
+      } catch (error) {
+        new Notice(`yonxao-mindmap: 源码解析失败，暂未保存配置：${error.message || String(error)}`);
+        return null;
+      }
+    }
+
+    return {
+      root: null,
+      body: serializeMindDocument(this.root, {}, false),
+      rawConfig: this.documentConfigForSave(this.rawConfig),
+    };
+  }
+
+  /*
+   * 作用：
+   * 把运行时配置覆盖到源码视图刚解析出的配置上。
+   *
+   * 实现逻辑：
+   * 源码 textarea 里的用户配置是基础；拖动工具栏和高度调整是本次交互产生的新值。
+   */
+  mergeRuntimeConfig(baseConfig, runtimeConfig) {
+    const next = JSON.parse(JSON.stringify(baseConfig || {}));
+
+    for (const key of ['canvas', 'toolbar', 'source']) {
+      if (!runtimeConfig || !runtimeConfig[key]) continue;
+      next[key] = {
+        ...(next[key] || {}),
+        ...runtimeConfig[key],
+      };
+    }
+
+    delete next.view;
+    return next;
+  }
+
+  /*
+   * 作用：
+   * 生成写回 Markdown 的配置对象，移除只属于当前会话的视图模式。
+   */
+  documentConfigForSave(config) {
+    return deleteMindConfigPath(config || {}, ['view', 'mode']);
+  }
+
+  /*
+   * 作用：
+   * rawConfig 变化后刷新运行时配置。
+   */
+  refreshNormalizedConfig() {
+    this.config = normalizeMindConfig(this.rawConfig);
   }
 
   /*
@@ -931,7 +1468,7 @@ export class YonxaoMindmapRenderer extends Component {
 
     // 渲染分两步：先把树计算成带坐标的节点/连线，再把这些数据画成 SVG。
     // 这样解析、布局、绘制互相独立，后续要替换布局算法也更容易。
-    const layout = layoutTree(this.root, this.collapsedIds);
+    const layout = layoutTree(this.root, this.collapsedIds, this.config);
     const edgeLayer = svg('g', { class: 'yonxao-mindmap-edges' });
     const nodeLayer = svg('g', { class: 'yonxao-mindmap-nodes' });
 
@@ -950,6 +1487,8 @@ export class YonxaoMindmapRenderer extends Component {
     if (fitAfterRender || !this.viewBox) {
       this.fitView(layout.bounds);
     }
+
+    this.didInitialGraphRender = true;
   }
 
   /*
@@ -965,7 +1504,7 @@ export class YonxaoMindmapRenderer extends Component {
     const endX = childBox.x - (dir * childBox.width) / 2;
     const endY = childBox.y;
     const bend = Math.max(44, Math.abs(endX - startX) * 0.46);
-    const color = nodeColor(edge.child);
+    const color = nodeColor(edge.child, this.config);
 
     // 使用三次贝塞尔曲线连接父子节点，比直线更接近常见思维导图的视觉语言。
     return svg('path', {
@@ -1001,7 +1540,7 @@ export class YonxaoMindmapRenderer extends Component {
       'data-node-id': node.id,
     });
 
-    const color = nodeColor(node);
+    const color = nodeColor(node, this.config);
     const fill = color ? transparentColor(color, 0.11) : 'var(--background-primary)';
     const stroke = color || 'var(--background-modifier-border)';
 
@@ -1025,12 +1564,15 @@ export class YonxaoMindmapRenderer extends Component {
       x: box.textX,
       y: box.textY,
       'text-anchor': 'start',
+      'font-family': box.font.family,
+      'font-size': box.font.size,
+      'font-weight': box.font.weight,
     });
 
     for (let index = 0; index < box.lines.length; index += 1) {
       const tspan = svg('tspan', {
         x: box.textX,
-        dy: index === 0 ? 0 : LINE_HEIGHT,
+        dy: index === 0 ? 0 : box.font.lineHeight,
       });
       tspan.textContent = box.lines[index];
       textEl.appendChild(tspan);
@@ -1237,7 +1779,12 @@ export class YonxaoMindmapRenderer extends Component {
    * 根据布局边界计算并应用适配视图的 viewBox。
    */
   fitView(bounds) {
-    const currentBounds = bounds || layoutTree(this.root, this.collapsedIds).bounds;
+    if (this.isSourceMode) {
+      this.scheduleSourceModeHeight();
+      return;
+    }
+
+    const currentBounds = bounds || layoutTree(this.root, this.collapsedIds, this.config).bounds;
     const width = Math.max(240, currentBounds.maxX - currentBounds.minX + VIEWBOX_MARGIN_X * 2);
     const height = Math.max(
       NODE_MIN_HEIGHT + VIEWBOX_MARGIN_Y * 2,
@@ -1259,11 +1806,11 @@ export class YonxaoMindmapRenderer extends Component {
    * 根据 viewBox 宽高比自动设置容器高度。
    *
    * 实现逻辑：
-   * 如果用户手动拖过高度，自动高度会暂停，避免覆盖用户选择。
+   * 如果用户手动拖过高度，只有“当前手动高度小于布局所需高度”时才增高。
+   * 这样从源码切回脑图时能容纳新增节点，同时不会抹掉用户刻意拖大的画布高度。
    */
   updateContainerHeight(viewBoxWidth, viewBoxHeight) {
     if (!this.containerEl || !viewBoxWidth || !viewBoxHeight) return;
-    if (this.manualCanvasHeight) return;
 
     const rect = this.containerEl.getBoundingClientRect();
     if (!rect.width) {
@@ -1280,7 +1827,20 @@ export class YonxaoMindmapRenderer extends Component {
     const viewportHeight = typeof window === 'undefined' ? 800 : window.innerHeight;
     const maxHeight = Math.min(560, Math.max(220, viewportHeight * 0.7));
     const nextHeight = clamp(desiredHeight, minHeight, maxHeight);
+
+    if (this.manualCanvasHeight) {
+      const currentHeight = rect.height || Number.parseFloat(this.containerEl.style.height) || 0;
+      if (currentHeight >= nextHeight) {
+        this.scheduleApplyToolbarPosition();
+        return;
+      }
+
+      this.rawConfig = setMindConfigPath(this.rawConfig, ['canvas', 'height'], nextHeight);
+      this.refreshNormalizedConfig();
+    }
+
     this.containerEl.style.height = `${nextHeight}px`;
+    this.scheduleApplyToolbarPosition();
   }
 
   /*
@@ -1298,7 +1858,11 @@ export class YonxaoMindmapRenderer extends Component {
     if (typeof window !== 'undefined' && typeof window.requestAnimationFrame === 'function') {
       this.pendingFitFrame = window.requestAnimationFrame(() => {
         run();
-        window.setTimeout(() => this.fitView(), 80);
+        this.scheduleApplyToolbarPosition();
+        window.setTimeout(() => {
+          this.fitView();
+          this.scheduleApplyToolbarPosition();
+        }, 80);
       });
     } else {
       this.pendingFitFrame = setTimeout(run, 0);

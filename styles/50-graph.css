@@ -36,12 +36,10 @@
  *
  * 关键点：
  * pointer-events: none 让点击事件落到节点 group 上，便于统一处理折叠和编辑。
+ * 字体族、字号和字重由 renderer 根据 yxmm 配置写入 SVG 属性，本样式不再固定这些值。
  */
 .yonxao-mindmap-node-label {
   fill: var(--text-normal);
-  font-family: var(--yonxao-mindmap-mono-font);
-  font-size: 14px;
-  font-weight: 560;
   letter-spacing: 0;
   dominant-baseline: auto;
   pointer-events: none;

@@ -1,3 +1,5 @@
+import { normalizeMindConfig, splitMindSourceConfig } from '../config/mindConfig.js';
+
 /*
  * 文件作用：
  * 这里负责把 ```yxmm 代码块里的 Markdown 标题文本解析成树形数据。
@@ -18,8 +20,30 @@
  * yxmm 源码解析入口，把原始字符串切成行并转交给 Markdown 标题解析器。
  */
 export function parseMind(source) {
-  const lines = source.split(/\r?\n/);
-  return parseHeadingMind(lines);
+  return parseMindDocument(source).root;
+}
+
+/*
+ * 作用：
+ * 解析完整 yxmm 文档，包括顶部配置区和 Markdown 标题正文。
+ *
+ * 调用链：
+ * Renderer.mount()/saveFromSourceView() -> parseMindDocument()。
+ *
+ * 实现逻辑：
+ * 配置区由 splitMindSourceConfig 剥离并解析；正文仍交给 parseHeadingMind。
+ * 这样后续扩展配置项时，不需要污染标题层级解析逻辑。
+ */
+export function parseMindDocument(source) {
+  const document = splitMindSourceConfig(source);
+  const lines = document.body.split(/\r?\n/);
+  const root = parseHeadingMind(lines);
+
+  return {
+    ...document,
+    config: normalizeMindConfig(document.rawConfig),
+    root,
+  };
 }
 
 /*
@@ -53,7 +77,7 @@ export function parseHeadingMind(lines) {
     const parsed = parseNodeLine(heading.text);
     if (!parsed.text) continue;
 
-    const node = createMindNode(parsed.text, parsed.attrs, [], lineIndex + 1);
+    const node = createMindNode(parsed.text, parsed.attrs, [], lineIndex + 1, level);
 
     // 当前标题只能挂到比自己层级小的最近祖先下面，所以需要弹出同级或更深层级节点。
     while (stack.length && stack[stack.length - 1].level >= level) {
@@ -92,6 +116,7 @@ export function buildRootFromRoots(roots) {
           attrs: { layout: 'balanced' },
           children: roots,
           line: 0,
+          level: 0,
           _layout: null,
           _virtual: true,
         };
@@ -120,13 +145,14 @@ export function matchHeadingLine(line) {
  * 调用链：
  * parseHeadingMind()/Renderer.addChildFromNodeEditor() -> createMindNode()。
  */
-export function createMindNode(text, attrs, children, line) {
+export function createMindNode(text, attrs, children, line, level) {
   return {
     id: '',
     text,
     attrs: attrs || {},
     children: children || [],
     line: line || 0,
+    level: level || 1,
     _layout: null,
     _virtual: false,
   };
