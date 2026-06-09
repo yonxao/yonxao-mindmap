@@ -2441,9 +2441,15 @@ export class YonxaoMindmapRenderer extends Component {
   /*
    * 作用：
    * 处理鼠标滚轮缩放。
+   *
+   * 关键点：
+   * 默认不拦截滚轮，让 Obsidian 页面保持正常滚动。
+   * 只有配置 interaction.wheelZoom: true 时，滚轮才会缩放脑图并阻止页面滚动。
    */
   handleWheel(event) {
     if (!this.viewBox) return;
+    if (!this.config.interaction.wheelZoom) return;
+
     event.preventDefault();
 
     // SVG 缩放靠改 viewBox 完成，不使用 CSS transform；这样文字和线条始终清晰。

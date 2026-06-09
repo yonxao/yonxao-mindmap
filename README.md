@@ -68,6 +68,7 @@ Supported config keys:
 
 - `canvas.height`: persisted canvas height. Drag the bottom handle to write it; double-click the handle to remove it and return to automatic height.
 - `toolbar.x` / `toolbar.y`: persisted floating toolbar position. Drag the toolbar grip to write it.
+- `interaction.wheelZoom`: whether the mouse wheel zooms the mind map. It is off by default; enabling it writes `true`, and disabling it can remove the key.
 - `theme`: built-in theme name: `default`, `ocean`, `forest`, `sunset`, `mono`, `rainbow`, `pastel-rainbow`, or `neon-rainbow`.
 - `layout.defaultDirection`: default first-level branch direction: `balanced`, `left`, or `right`.
 - `edge.type`: connector type: `curve`, `straight`, or `elbow`. `curve` is a cubic Bezier curve, `straight` is a straight line, and `elbow` is an orthogonal connector.
@@ -108,7 +109,7 @@ Hex colors in the config block should be quoted, for example `defaultColor: '#66
 - Use the toolbar to fit, zoom in, zoom out, or reset collapsed nodes.
 - Use the toolbar settings button to open the visual config modal; common fields have select presets, and the advanced tab supports direct YAML editing.
 - Drag the toolbar grip to move the floating toolbar away from content.
-- Drag the canvas to pan. Use the mouse wheel to zoom.
+- Drag the canvas to pan. By default, the mouse wheel keeps scrolling the Obsidian page; enable mouse-wheel zoom in the Basic tab of the config modal to zoom the current mind map with the wheel.
 - Drag the bottom edge of the canvas to manually adjust its height. Double-click the handle to return to automatic height.
 
 Edits are written back to the same `yxmm` code block in the current Markdown file.

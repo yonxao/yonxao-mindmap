@@ -70,6 +70,7 @@ source:
 
 - `canvas.height`：幕布高度。拖动画布底部边缘后会自动写入；双击拖拽条会移除该项并恢复自动高度。
 - `toolbar.x` / `toolbar.y`：悬浮工具栏位置。拖动工具栏抓手后会自动写入。
+- `interaction.wheelZoom`：是否启用鼠标滚轮缩放。默认关闭；开启后会写入 `true`，关闭时可删除该项。
 - `theme`：主题名称，可选 `default`、`ocean`、`forest`、`sunset`、`mono`、`rainbow`、`pastel-rainbow`、`neon-rainbow`。
 - `layout.defaultDirection`：一级分支默认方向，可选 `balanced`、`left`、`right`。
 - `edge.type`：连线类型，可选 `curve`、`straight`、`elbow`。`curve` 是曲线，技术上是三次贝塞尔曲线；`straight` 是直线；`elbow` 是正交折线。
@@ -110,7 +111,7 @@ source:
 - 工具栏支持适配视图、放大、缩小和重置折叠状态。
 - 工具栏中的配置按钮可以打开可视化配置弹框；常用项可用下拉框选择，高级页也可以直接编辑 YAML 配置。
 - 拖动工具栏左侧抓手可以移动工具栏位置，避免遮挡脑图内容。
-- 拖动画布可以平移视图，滚动鼠标滚轮可以缩放视图。
+- 拖动画布可以平移视图。默认情况下鼠标滚轮会继续滚动 Obsidian 页面；在配置弹框“基础”页开启“启用鼠标滚轮缩放”后，滚轮会缩放当前脑图。
 - 拖动画布底部边缘可以手动调整幕布高度，双击拖拽条可以恢复自动高度。
 - Obsidian 自带的“编辑这个块”按钮会继续保留；插件工具栏默认放在脑图左上角，避免和它冲突。
 

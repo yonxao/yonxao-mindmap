@@ -184,6 +184,15 @@ export class ConfigModal extends Modal {
       step: 1,
       placeholder: '默认',
     });
+    this.createToggleField(
+      '启用鼠标滚轮缩放',
+      ['interaction', 'wheelZoom'],
+      normalized.interaction.wheelZoom,
+      {
+        omitWhenFalse: true,
+        help: '关闭时滚轮会继续滚动 Obsidian 页面；开启后滚轮会缩放当前脑图并写入 interaction.wheelZoom: true。',
+      }
+    );
     this.createInlineResetButton('重置工具栏位置', [
       ['toolbar', 'x'],
       ['toolbar', 'y'],
@@ -557,13 +566,17 @@ export class ConfigModal extends Modal {
    * 作用：
    * 创建开关配置项。
    */
-  createToggleField(label, path, value) {
-    const fieldEl = this.createField(label);
+  createToggleField(label, path, value, options = {}) {
+    const fieldEl = this.createField(label, undefined, options.help);
     const input = fieldEl.createEl('input');
     input.type = 'checkbox';
     input.checked = Boolean(getConfigValue(this.draftConfig, path, value));
     input.addEventListener('change', () => {
-      setConfigValue(this.draftConfig, path, input.checked);
+      if (options.omitWhenFalse && !input.checked) {
+        deleteConfigValue(this.draftConfig, path);
+      } else {
+        setConfigValue(this.draftConfig, path, input.checked);
+      }
     });
   }
 

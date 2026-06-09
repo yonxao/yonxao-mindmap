@@ -56,6 +56,9 @@ export const DEFAULT_MIND_CONFIG = Object.freeze({
     x: null,
     y: null,
   }),
+  interaction: Object.freeze({
+    wheelZoom: false,
+  }),
   view: Object.freeze({
     mode: 'graph',
   }),
@@ -137,6 +140,7 @@ export function normalizeMindConfig(rawConfig) {
   const node = isPlainObject(raw.node) ? raw.node : {};
   const canvas = isPlainObject(raw.canvas) ? raw.canvas : {};
   const toolbar = isPlainObject(raw.toolbar) ? raw.toolbar : {};
+  const interaction = isPlainObject(raw.interaction) ? raw.interaction : {};
   const view = isPlainObject(raw.view) ? raw.view : {};
   const source = isPlainObject(raw.source) ? raw.source : {};
 
@@ -150,6 +154,13 @@ export function normalizeMindConfig(rawConfig) {
       ...toolbar,
       x: normalizeOptionalNumber(toolbar.x, 0, 10000),
       y: normalizeOptionalNumber(toolbar.y, 0, 10000),
+    },
+    interaction: {
+      ...interaction,
+      wheelZoom:
+        typeof interaction.wheelZoom === 'boolean'
+          ? interaction.wheelZoom
+          : DEFAULT_MIND_CONFIG.interaction.wheelZoom,
     },
     view: {
       ...view,
@@ -453,9 +464,20 @@ function orderedConfigEntries(value, path) {
 function configKeyOrder(path) {
   const keyPath = path.join('.');
   if (keyPath === '') {
-    return ['canvas', 'source', 'toolbar', 'theme', 'layout', 'edge', 'node', 'font'];
+    return [
+      'canvas',
+      'source',
+      'toolbar',
+      'interaction',
+      'theme',
+      'layout',
+      'edge',
+      'node',
+      'font',
+    ];
   }
   if (keyPath === 'edge') return ['type'];
+  if (keyPath === 'interaction') return ['wheelZoom'];
   if (keyPath === 'font') return ['family', 'size', 'weight', 'lineHeight', 'levels'];
   if (/^font\.levels\.[^.]+$/.test(keyPath)) {
     return ['family', 'size', 'weight', 'lineHeight'];
