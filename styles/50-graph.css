@@ -56,7 +56,8 @@
 
 /*
  * 作用：
- * 节点右上角编辑按钮，默认隐藏。
+ * 节点编辑按钮，默认隐藏。
+ * 按钮由 renderer 放在父线进入节点的位置，避免遮挡节点文字。
  */
 .yonxao-mindmap-node-edit {
   cursor: pointer;

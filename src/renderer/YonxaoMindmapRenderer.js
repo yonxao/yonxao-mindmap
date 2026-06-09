@@ -1664,7 +1664,7 @@ export class YonxaoMindmapRenderer extends Component {
     group.appendChild(textEl);
 
     if (!node._virtual) {
-      group.appendChild(this.renderEditButton(box));
+      group.appendChild(this.renderEditButton(node, box));
     }
 
     if (node.children.length) {
@@ -1714,14 +1714,17 @@ export class YonxaoMindmapRenderer extends Component {
 
   /*
    * 作用：
-   * 绘制节点卡片右上角的 SVG 编辑按钮。
+   * 绘制节点编辑按钮。
    */
-  renderEditButton(box) {
+  renderEditButton(node, box) {
     // SVG 里不能直接放 HTML button，所以这里用一个小 <g> 分组模拟“编辑按钮”。
     // 点击事件仍然通过 handleNodeClick 统一处理，避免给每个节点单独注册事件造成额外开销。
+    // 普通节点放在“父线进入节点”的一侧；中心节点没有父线，单独避开子线出口。
+    const buttonSize = 20;
+    const position = this.editButtonPosition(node, box, buttonSize);
     const edit = svg('g', {
       class: 'yonxao-mindmap-node-edit',
-      transform: `translate(${box.width - 28} 8)`,
+      transform: `translate(${position.x} ${position.y})`,
     });
 
     const title = svg('title');
@@ -1741,6 +1744,54 @@ export class YonxaoMindmapRenderer extends Component {
     );
 
     return edit;
+  }
+
+  /*
+   * 作用：
+   * 计算节点编辑按钮位置。
+   *
+   * 实现逻辑：
+   * - 普通节点：放在父线进入节点的一侧。
+   * - 中心节点：如果子线只从一侧出去，按钮放到对侧；如果左右都有子线，放在上边框中点，避开子线交点。
+   */
+  editButtonPosition(node, box, buttonSize) {
+    if (box.side === 'root') {
+      return this.rootEditButtonPosition(node, box, buttonSize);
+    }
+
+    return {
+      x: box.side === 'right' ? -buttonSize / 2 : box.width - buttonSize / 2,
+      y: box.height / 2 - buttonSize / 2,
+    };
+  }
+
+  /*
+   * 作用：
+   * 计算中心节点编辑按钮位置。
+   */
+  rootEditButtonPosition(node, box, buttonSize) {
+    const sides = new Set((node.children || []).map((child) => child._layout?.side));
+    const hasLeftChildren = sides.has('left');
+    const hasRightChildren = sides.has('right');
+
+    if (hasLeftChildren && hasRightChildren) {
+      return {
+        x: box.width / 2 - buttonSize / 2,
+        y: -buttonSize / 2,
+      };
+    }
+
+    if (hasRightChildren) {
+      return {
+        x: -buttonSize / 2,
+        y: box.height / 2 - buttonSize / 2,
+      };
+    }
+
+    return {
+      x: box.width - buttonSize / 2,
+      y: box.height / 2 - buttonSize / 2,
+    };
   }
 
   /*
