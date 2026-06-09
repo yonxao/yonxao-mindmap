@@ -94,6 +94,7 @@ export class YonxaoMindmapRenderer extends Component {
     this.pendingFitFrame = null;
     this.pendingToolbarFrame = null;
     this.pendingSourceHeightFrame = null;
+    this.sourceLineCount = 1;
     this.fitRetryCount = 0;
   }
 
@@ -773,6 +774,7 @@ export class YonxaoMindmapRenderer extends Component {
     this.sourceInputEl.spellcheck = false;
     this.sourceInputEl.wrap = 'off';
     this.sourceInputEl.value = this.source;
+    this.sourceLineCount = this.sourceInputLineCount();
     this.sourceInputEl.setAttribute('aria-label', 'yxmm source');
 
     this.sourceStatusEl = document.createElement('div');
@@ -787,7 +789,7 @@ export class YonxaoMindmapRenderer extends Component {
     this.registerDomEvent(this.sourceInputEl, 'input', () => {
       this.sourceDirty = this.sourceInputEl.value !== this.source;
       this.updateSourceStatus();
-      this.scheduleSourceModeHeight();
+      this.scheduleSourceModeHeightIfLineCountChanged();
     });
 
     this.registerDomEvent(this.sourceInputEl, 'keydown', (event) => {
@@ -797,7 +799,7 @@ export class YonxaoMindmapRenderer extends Component {
         applyHeadingLevelKey(this.sourceInputEl, event.shiftKey);
         this.sourceDirty = this.sourceInputEl.value !== this.source;
         this.updateSourceStatus();
-        this.scheduleSourceModeHeight();
+        this.scheduleSourceModeHeightIfLineCountChanged();
         return;
       }
 
@@ -965,6 +967,7 @@ export class YonxaoMindmapRenderer extends Component {
   syncSourceInput() {
     if (!this.sourceInputEl) return;
     this.sourceInputEl.value = this.source;
+    this.sourceLineCount = this.sourceInputLineCount();
     this.sourceDirty = false;
     this.updateSourceStatus();
   }
@@ -991,7 +994,7 @@ export class YonxaoMindmapRenderer extends Component {
    * 延迟一帧计算源码视图高度。
    *
    * 为什么要延迟：
-   * 切换源码模式时，浏览器需要先应用 is-source-mode 样式，textarea 的 scrollHeight 才是准确的。
+   * 切换源码模式时，浏览器需要先应用 is-source-mode 样式，源码区的 padding 和状态栏高度才是准确的。
    */
   scheduleSourceModeHeight() {
     if (this.pendingSourceHeightFrame || typeof window === 'undefined') return;
@@ -1004,10 +1007,26 @@ export class YonxaoMindmapRenderer extends Component {
 
   /*
    * 作用：
+   * 只有源码行数变化时才重新计算源码模式高度。
+   *
+   * 为什么这样做：
+   * 普通字符输入不会改变源码需要的垂直空间；如果每次输入都重新计算高度，
+   * textarea 当前高度又会反过来影响测量结果，导致源码区越输越高。
+   */
+  scheduleSourceModeHeightIfLineCountChanged() {
+    const nextLineCount = this.sourceInputLineCount();
+    if (nextLineCount === this.sourceLineCount) return;
+
+    this.sourceLineCount = nextLineCount;
+    this.scheduleSourceModeHeight();
+  }
+
+  /*
+   * 作用：
    * 按源码内容撑开容器高度，让进入源码模式时尽量一次看到完整 yxmm 内容。
    *
    * 实现逻辑：
-   * textarea.scrollHeight 是真实内容高度；再加上源码区 padding、状态栏高度和一点余量。
+   * 根据源码行数、行高和 padding 估算内容高度；再加上源码区 padding、状态栏高度和一点余量。
    * 这个高度只是源码模式临时视图高度，不会写入 canvas.height。
    */
   applySourceModeHeight() {
@@ -1033,11 +1052,10 @@ export class YonxaoMindmapRenderer extends Component {
       ? this.sourceStatusEl.getBoundingClientRect().height
       : 0;
     const lineHeight = parseFloat(inputStyle.lineHeight || '0') || 20;
-    const lineCount = Math.max(1, this.sourceInputEl.value.split(/\r?\n/).length);
+    const lineCount = this.sourceInputLineCount();
     const inputPadding =
       parseFloat(inputStyle.paddingTop || '0') + parseFloat(inputStyle.paddingBottom || '0');
-    const estimatedInputHeight = lineCount * lineHeight + inputPadding;
-    const inputHeight = Math.max(this.sourceInputEl.scrollHeight, estimatedInputHeight);
+    const inputHeight = lineCount * lineHeight + inputPadding;
     const extraSpace = lineHeight * 2;
     const nextHeight = clamp(
       inputHeight + sourcePadding + sourceGap + statusHeight + extraSpace,
@@ -1046,6 +1064,15 @@ export class YonxaoMindmapRenderer extends Component {
     );
 
     this.containerEl.style.height = `${Math.round(nextHeight)}px`;
+  }
+
+  /*
+   * 作用：
+   * 统计源码 textarea 的行数。
+   */
+  sourceInputLineCount() {
+    if (!this.sourceInputEl) return 1;
+    return Math.max(1, this.sourceInputEl.value.split(/\r?\n/).length);
   }
 
   /*
