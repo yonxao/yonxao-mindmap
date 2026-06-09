@@ -34,18 +34,8 @@ import {
   FONT_WEIGHT_MIN,
   normalizeMindConfig,
 } from '../config/mindConfig.js';
+import { CUSTOM_FONT_VALUE, FONT_FAMILY_GROUPS, isPresetFontValue } from './fontOptions.js';
 import { MIND_THEME_OPTIONS } from '../theme/mindThemes.js';
-
-const FONT_FAMILY_OPTIONS = [
-  ['', '继承默认字体'],
-  [
-    "'Sarasa Mono SC', 'Noto Sans Mono CJK SC', 'Source Han Mono SC', 'Cascadia Mono', 'JetBrains Mono', 'Liberation Mono', monospace",
-    '中文等宽字体栈',
-  ],
-  ['var(--font-interface)', 'Obsidian 界面字体'],
-  ['var(--font-monospace)', 'Obsidian 等宽字体'],
-  ['monospace', '系统等宽字体'],
-];
 
 const RAINBOW_THEME_NAMES = new Set(['rainbow', 'pastel-rainbow', 'neon-rainbow']);
 
@@ -264,12 +254,9 @@ export class ConfigModal extends Modal {
    */
   renderFontTab(normalized) {
     this.createSection('全局字体');
-    this.createSelectTextField(
-      '字体族',
-      ['font', 'family'],
-      normalized.font.family,
-      FONT_FAMILY_OPTIONS
-    );
+    this.createFontFamilyField('字体', ['font', 'family'], normalized.font.family, {
+      help: '可以选择内置字体预设，也可以选择“自定义”后输入 CSS 字体族，例如 "LXGW WenKai", "Source Han Sans SC", sans-serif。',
+    });
     this.createNumberField('字号', ['font', 'size'], normalized.font.size, {
       min: FONT_SIZE_MIN,
       max: FONT_SIZE_MAX,
@@ -371,15 +358,9 @@ export class ConfigModal extends Modal {
       step: 1,
       parentEl: groupEl,
     });
-    this.createSelectTextField(
-      '字体族',
-      ['font', 'levels', level, 'family'],
-      '',
-      FONT_FAMILY_OPTIONS,
-      {
-        parentEl: groupEl,
-      }
-    );
+    this.createFontFamilyField('字体', ['font', 'levels', level, 'family'], '', {
+      parentEl: groupEl,
+    });
   }
 
   /*
@@ -462,6 +443,81 @@ export class ConfigModal extends Modal {
         : '';
     });
     return { select, input };
+  }
+
+  /*
+   * 作用：
+   * 创建字体选择控件。
+   *
+   * 实现逻辑：
+   * 下拉框提供常用字体预设；右侧输入框允许用户直接填写 CSS font-family。
+   * 选择“继承上级字体”会删除当前路径配置，选择“自定义”则等待用户在输入框填写具体字体。
+   */
+  createFontFamilyField(label, path, value, fieldOptions = {}) {
+    const fieldEl = this.createField(label, fieldOptions.parentEl, fieldOptions.help);
+    const rowEl = fieldEl.createDiv({ cls: 'yonxao-mindmap-config-combo' });
+    const select = rowEl.createEl('select');
+    const input = rowEl.createEl('input');
+    input.type = 'text';
+    input.placeholder = '"LXGW WenKai", "Source Han Sans SC", sans-serif';
+
+    this.appendFontOptions(select);
+
+    const rawValue = getConfigValue(this.draftConfig, path, value);
+    input.value =
+      typeof rawValue === 'string' || typeof rawValue === 'number' ? String(rawValue) : '';
+    this.syncFontSelect(select, input.value);
+
+    select.addEventListener('change', () => {
+      if (select.value === CUSTOM_FONT_VALUE) {
+        if (isPresetFontValue(input.value)) {
+          input.value = '';
+          deleteConfigValue(this.draftConfig, path);
+        }
+        input.focus();
+        return;
+      }
+
+      input.value = select.value;
+      setConfigValue(this.draftConfig, path, input.value);
+    });
+
+    input.addEventListener('input', () => {
+      const nextValue = input.value.trim();
+      setConfigValue(this.draftConfig, path, nextValue);
+      this.syncFontSelect(select, nextValue);
+    });
+
+    return { select, input };
+  }
+
+  /*
+   * 作用：
+   * 根据输入框里的字体值同步下拉框选中项。
+   */
+  syncFontSelect(select, value) {
+    if (!value) {
+      select.value = '';
+      return;
+    }
+
+    select.value = isPresetFontValue(value) ? value : CUSTOM_FONT_VALUE;
+  }
+
+  /*
+   * 作用：
+   * 把字体预设按类型渲染成 optgroup。
+   */
+  appendFontOptions(select) {
+    for (const group of FONT_FAMILY_GROUPS) {
+      const groupEl = select.createEl('optgroup');
+      groupEl.label = group.group;
+
+      for (const [optionValue, optionLabel] of group.options) {
+        const option = groupEl.createEl('option', { text: optionLabel });
+        option.value = optionValue;
+      }
+    }
   }
 
   /*
