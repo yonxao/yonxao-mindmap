@@ -59,6 +59,63 @@
 
 /*
  * 作用：
+ * 可拖拽节点的默认光标。
+ *
+ * 关键点：
+ * 根节点不加这个 class，所以中心节点不会暗示可以被移动。
+ */
+.yonxao-mindmap-node-draggable {
+  cursor: grab;
+}
+
+/*
+ * 作用：
+ * 节点拖拽过程中显示抓取光标。
+ */
+.yonxao-mindmap-svg.is-node-dragging,
+.yonxao-mindmap-svg.is-node-dragging .yonxao-mindmap-node-draggable {
+  cursor: grabbing;
+}
+
+/*
+ * 作用：
+ * 正在被拖动的节点半透明显示，降低它对投放目标的遮挡。
+ */
+.yonxao-mindmap-node.is-dragging {
+  opacity: 0.62;
+}
+
+/*
+ * 作用：
+ * 拖到目标节点中部时，表示“作为这个节点的子节点”。
+ */
+.yonxao-mindmap-node.is-drop-child .yonxao-mindmap-node-card {
+  stroke: var(--interactive-accent);
+  stroke-width: 2;
+}
+
+/*
+ * 作用：
+ * 拖到目标节点上方或下方时，目标节点保持轻微高亮，具体插入位置由插入线表达。
+ */
+.yonxao-mindmap-node.is-drop-before .yonxao-mindmap-node-card,
+.yonxao-mindmap-node.is-drop-after .yonxao-mindmap-node-card {
+  stroke: var(--interactive-accent);
+}
+
+/*
+ * 作用：
+ * 节点拖拽排序的插入线。
+ */
+.yonxao-mindmap-drop-indicator {
+  stroke: var(--interactive-accent);
+  stroke-width: 3;
+  stroke-linecap: round;
+  pointer-events: none;
+}
+
+/*
+ * 作用：
  * 节点编辑按钮，默认隐藏。
  * 按钮由 renderer 放在父线进入节点的位置，避免遮挡节点文字。
  */

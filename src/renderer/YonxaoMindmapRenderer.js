@@ -35,8 +35,10 @@ import { renderIcon } from '../icons/renderIcon.js';
 import { layoutTree, normalizeLayout } from '../layout/layoutTree.js';
 import { replaceCodeBlockSource } from '../markdown/codeBlock.js';
 import {
+  containsNodeId,
   countDescendants,
   insertSiblingNode,
+  moveNodeInTree,
   removeNodeById,
   setOptionalAttr,
 } from '../model/treeActions.js';
@@ -85,10 +87,12 @@ export class YonxaoMindmapRenderer extends Component {
     this.inlineTextEditorEl = null;
     this.inlineEditingNodeId = null;
     this.inlineTextEditorSaving = false;
+    this.nodeDropIndicatorEl = null;
     this.nodeById = new Map();
     this.collapsedIds = new Set();
     this.viewBox = null;
     this.dragState = null;
+    this.nodeDragState = null;
     this.resizeState = null;
     this.toolbarDragState = null;
     this.manualCanvasHeight = false;
@@ -99,6 +103,7 @@ export class YonxaoMindmapRenderer extends Component {
     this.editingNodeId = null;
     this.toggleViewButton = null;
     this.graphActionButtons = [];
+    this.suppressNextNodeClick = false;
     this.pendingFitFrame = null;
     this.pendingToolbarFrame = null;
     this.pendingSourceHeightFrame = null;
@@ -1804,6 +1809,7 @@ export class YonxaoMindmapRenderer extends Component {
    * mount()/保存/折叠/重置 -> renderGraph()。
    */
   renderGraph(fitAfterRender, options = {}) {
+    this.clearNodeDropHighlight();
     this.closeInlineTextEditor(false);
     this.nodeById.clear();
     this.graphEl.textContent = '';
@@ -1896,11 +1902,13 @@ export class YonxaoMindmapRenderer extends Component {
    */
   renderNode(node) {
     const box = node._layout;
+    const classNames = ['yonxao-mindmap-node'];
+    if (node.children.length) classNames.push('yonxao-mindmap-node-clickable');
+    if (!node._virtual && node !== this.root) classNames.push('yonxao-mindmap-node-draggable');
+
     // 每个节点都是一个 <g> 分组，组上保存 data-node-id，点击时用它反查原始树节点。
     const group = svg('g', {
-      class: node.children.length
-        ? 'yonxao-mindmap-node yonxao-mindmap-node-clickable'
-        : 'yonxao-mindmap-node',
+      class: classNames.join(' '),
       transform: `translate(${box.x - box.width / 2} ${box.y - box.height / 2})`,
       'data-node-id': node.id,
     });
@@ -2088,6 +2096,13 @@ export class YonxaoMindmapRenderer extends Component {
    * - 单击节点本体：暂时无动作，避免误触和双击编辑冲突。
    */
   handleNodeClick(event) {
+    if (this.suppressNextNodeClick) {
+      this.suppressNextNodeClick = false;
+      event.preventDefault();
+      event.stopPropagation();
+      return;
+    }
+
     const target = event.target;
     const nodeEl = target && target.closest ? target.closest('.yonxao-mindmap-node') : null;
     if (!nodeEl) return;
@@ -2331,7 +2346,15 @@ export class YonxaoMindmapRenderer extends Component {
     if (event.button !== 0 || !this.viewBox) return;
 
     const target = event.target;
-    if (target && target.closest && target.closest('.yonxao-mindmap-node')) return;
+    const nodeEl = target && target.closest ? target.closest('.yonxao-mindmap-node') : null;
+    if (nodeEl) {
+      const isNodeControl =
+        target.closest('.yonxao-mindmap-node-edit') || target.closest('.yonxao-mindmap-toggle');
+      if (!isNodeControl) {
+        this.startPendingNodeDrag(event, nodeEl);
+      }
+      return;
+    }
 
     this.dragState = {
       pointerId: event.pointerId,
@@ -2353,6 +2376,11 @@ export class YonxaoMindmapRenderer extends Component {
    * 根据拖拽距离更新 SVG viewBox，实现画布平移。
    */
   handlePointerMove(event) {
+    if (this.nodeDragState) {
+      this.handleNodeDragMove(event);
+      return;
+    }
+
     if (!this.dragState || !this.viewBox) return;
     const rect = this.svgEl.getBoundingClientRect();
     if (!rect.width || !rect.height) return;
@@ -2374,6 +2402,13 @@ export class YonxaoMindmapRenderer extends Component {
    * 结束画布平移拖拽。
    */
   handlePointerUp(event) {
+    if (this.nodeDragState) {
+      Promise.resolve(this.finishNodeDrag(event)).catch((error) => {
+        new Notice(`yonxao-mindmap: ${error.message || String(error)}`);
+      });
+      return;
+    }
+
     if (!this.dragState) return;
 
     try {
@@ -2384,6 +2419,237 @@ export class YonxaoMindmapRenderer extends Component {
 
     this.dragState = null;
     this.svgEl.classList.remove('is-panning');
+  }
+
+  /*
+   * 作用：
+   * 记录一次可能的节点拖拽。
+   *
+   * 实现逻辑：
+   * pointerdown 时先不立刻拖动，等 pointermove 超过阈值再进入真正拖拽。
+   * 这样单击、双击和右键菜单不会被轻微手抖误判成拖拽。
+   */
+  startPendingNodeDrag(event, nodeEl) {
+    const id = nodeEl.getAttribute('data-node-id');
+    const node = this.nodeById.get(id);
+    if (!node || node === this.root || node._virtual) return;
+
+    const box = node._layout;
+    this.nodeDragState = {
+      pointerId: event.pointerId,
+      nodeId: id,
+      nodeEl,
+      startClientX: event.clientX,
+      startClientY: event.clientY,
+      startSvgPoint: this.clientPointToSvg(event.clientX, event.clientY),
+      originX: box.x - box.width / 2,
+      originY: box.y - box.height / 2,
+      started: false,
+      drop: null,
+      highlightEl: null,
+    };
+
+    try {
+      this.svgEl.setPointerCapture(event.pointerId);
+    } catch (_error) {
+      // Pointer Capture 失败时仍然能靠普通 pointermove 完成基础拖拽。
+    }
+  }
+
+  /*
+   * 作用：
+   * 处理节点拖拽中的移动和投放目标计算。
+   */
+  handleNodeDragMove(event) {
+    const state = this.nodeDragState;
+    if (!state || event.pointerId !== state.pointerId) return;
+
+    const clientDx = event.clientX - state.startClientX;
+    const clientDy = event.clientY - state.startClientY;
+    if (!state.started && Math.hypot(clientDx, clientDy) < 4) return;
+
+    event.preventDefault();
+    event.stopPropagation();
+
+    if (!state.started) {
+      this.beginNodeDrag();
+    }
+
+    const point = this.clientPointToSvg(event.clientX, event.clientY);
+    const dx = point.x - state.startSvgPoint.x;
+    const dy = point.y - state.startSvgPoint.y;
+    state.nodeEl.setAttribute(
+      'transform',
+      `translate(${state.originX + dx} ${state.originY + dy})`
+    );
+
+    const drop = this.findNodeDropTarget(event);
+    state.drop = drop;
+    this.applyNodeDropHighlight(drop);
+  }
+
+  /*
+   * 作用：
+   * 让节点进入真实拖拽状态，并关闭可能正在显示的编辑 UI。
+   */
+  beginNodeDrag() {
+    const state = this.nodeDragState;
+    if (!state) return;
+
+    state.started = true;
+    this.closeNodeEditor();
+    this.closeInlineTextEditor(false);
+    this.svgEl.classList.add('is-node-dragging');
+    state.nodeEl.classList.add('is-dragging');
+  }
+
+  /*
+   * 作用：
+   * 根据鼠标位置寻找当前可投放的目标节点。
+   *
+   * 区域规则：
+   * - 目标上方 25%：插入到目标上方。
+   * - 目标下方 25%：插入到目标下方。
+   * - 目标中间 50%：作为目标子节点。
+   */
+  findNodeDropTarget(event) {
+    const state = this.nodeDragState;
+    const movingNode = state ? this.nodeById.get(state.nodeId) : null;
+    if (!state || !movingNode) return null;
+
+    // 拖动节点本身会跟随鼠标，为了找到它下面的目标节点，临时让它不参与命中测试。
+    const previousPointerEvents = state.nodeEl.style.pointerEvents;
+    state.nodeEl.style.pointerEvents = 'none';
+    const hitEl = document.elementFromPoint(event.clientX, event.clientY);
+    state.nodeEl.style.pointerEvents = previousPointerEvents;
+
+    const targetEl = hitEl && hitEl.closest ? hitEl.closest('.yonxao-mindmap-node') : null;
+    if (!targetEl) return null;
+
+    const targetId = targetEl.getAttribute('data-node-id');
+    const targetNode = this.nodeById.get(targetId);
+    if (!targetNode || targetNode._virtual) return null;
+    if (targetId === state.nodeId || containsNodeId(movingNode, targetId)) return null;
+
+    const cardEl = targetEl.querySelector('.yonxao-mindmap-node-card');
+    const rect = cardEl ? cardEl.getBoundingClientRect() : targetEl.getBoundingClientRect();
+    const ratio = rect.height ? (event.clientY - rect.top) / rect.height : 0.5;
+    let placement = 'child';
+
+    if (targetNode !== this.root) {
+      if (ratio < 0.25) placement = 'before';
+      if (ratio > 0.75) placement = 'after';
+    }
+
+    return {
+      targetId,
+      targetEl,
+      placement,
+    };
+  }
+
+  /*
+   * 作用：
+   * 根据当前投放目标显示拖拽反馈。
+   */
+  applyNodeDropHighlight(drop) {
+    this.clearNodeDropHighlight();
+    const state = this.nodeDragState;
+    if (!drop || !state) return;
+
+    state.highlightEl = drop.targetEl;
+    drop.targetEl.classList.add(`is-drop-${drop.placement}`);
+
+    if (drop.placement === 'child') return;
+
+    const targetNode = this.nodeById.get(drop.targetId);
+    const box = targetNode && targetNode._layout;
+    if (!box) return;
+
+    const y = drop.placement === 'before' ? box.y - box.height / 2 - 8 : box.y + box.height / 2 + 8;
+    this.nodeDropIndicatorEl = svg('line', {
+      class: 'yonxao-mindmap-drop-indicator',
+      x1: box.x - box.width / 2,
+      y1: y,
+      x2: box.x + box.width / 2,
+      y2: y,
+    });
+    this.graphEl.appendChild(this.nodeDropIndicatorEl);
+  }
+
+  /*
+   * 作用：
+   * 清理拖拽目标高亮和插入线。
+   */
+  clearNodeDropHighlight() {
+    if (this.nodeDragState && this.nodeDragState.highlightEl) {
+      this.nodeDragState.highlightEl.classList.remove(
+        'is-drop-before',
+        'is-drop-after',
+        'is-drop-child'
+      );
+      this.nodeDragState.highlightEl = null;
+    }
+
+    if (this.nodeDropIndicatorEl) {
+      this.nodeDropIndicatorEl.remove();
+      this.nodeDropIndicatorEl = null;
+    }
+  }
+
+  /*
+   * 作用：
+   * 结束节点拖拽；如果存在合法投放目标，就移动树节点并保存。
+   */
+  async finishNodeDrag(event) {
+    const state = this.nodeDragState;
+    if (!state) return;
+
+    try {
+      this.svgEl.releasePointerCapture(event.pointerId);
+    } catch (_error) {
+      // 未捕获指针时释放会失败，安全忽略。
+    }
+
+    const shouldMove = event.type !== 'pointercancel' && state.started && state.drop;
+    const drop = state.drop;
+    const movingId = state.nodeId;
+
+    this.cleanupNodeDragState(state.started);
+
+    if (!shouldMove) return;
+
+    const moved = moveNodeInTree(this.root, movingId, drop.targetId, drop.placement);
+    if (!moved) {
+      new Notice('yonxao-mindmap: 不能移动到这个位置。');
+      this.renderGraph(true);
+      return;
+    }
+
+    if (drop.placement === 'child') {
+      this.collapsedIds.delete(drop.targetId);
+    }
+    this.collapsedIds.delete(movingId);
+    await this.saveTreeToSourceAndFile('节点已移动。');
+  }
+
+  /*
+   * 作用：
+   * 清理节点拖拽状态和临时 SVG 样式。
+   */
+  cleanupNodeDragState(wasDragging) {
+    const state = this.nodeDragState;
+    if (!state) return;
+
+    this.clearNodeDropHighlight();
+    state.nodeEl.classList.remove('is-dragging');
+    this.svgEl.classList.remove('is-node-dragging');
+    state.nodeEl.setAttribute('transform', `translate(${state.originX} ${state.originY})`);
+    this.nodeDragState = null;
+
+    if (wasDragging) {
+      this.suppressNextNodeClick = true;
+    }
   }
 
   /*
