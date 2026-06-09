@@ -63,6 +63,9 @@ export const DEFAULT_MIND_CONFIG = Object.freeze({
   layout: Object.freeze({
     defaultDirection: 'balanced',
   }),
+  edge: Object.freeze({
+    type: 'curve',
+  }),
   font: Object.freeze({
     family: DEFAULT_FONT_FAMILY,
     size: 14,
@@ -130,6 +133,7 @@ export function normalizeMindConfig(rawConfig) {
   const raw = isPlainObject(rawConfig) ? rawConfig : {};
   const font = isPlainObject(raw.font) ? raw.font : {};
   const layout = isPlainObject(raw.layout) ? raw.layout : {};
+  const edge = isPlainObject(raw.edge) ? raw.edge : {};
   const node = isPlainObject(raw.node) ? raw.node : {};
   const canvas = isPlainObject(raw.canvas) ? raw.canvas : {};
   const toolbar = isPlainObject(raw.toolbar) ? raw.toolbar : {};
@@ -156,6 +160,10 @@ export function normalizeMindConfig(rawConfig) {
       ...layout,
       defaultDirection:
         normalizeDirection(layout.defaultDirection) || DEFAULT_MIND_CONFIG.layout.defaultDirection,
+    },
+    edge: {
+      ...edge,
+      type: normalizeEdgeType(edge.type) || DEFAULT_MIND_CONFIG.edge.type,
     },
     font: normalizeFontConfig(font),
     node: {
@@ -444,6 +452,10 @@ function orderedConfigEntries(value, path) {
  */
 function configKeyOrder(path) {
   const keyPath = path.join('.');
+  if (keyPath === '') {
+    return ['canvas', 'source', 'toolbar', 'theme', 'layout', 'edge', 'node', 'font'];
+  }
+  if (keyPath === 'edge') return ['type'];
   if (keyPath === 'font') return ['family', 'size', 'weight', 'lineHeight', 'levels'];
   if (/^font\.levels\.[^.]+$/.test(keyPath)) {
     return ['family', 'size', 'weight', 'lineHeight'];
@@ -542,6 +554,16 @@ function normalizeOptionalNumber(value, min, max) {
 function normalizeDirection(value) {
   const text = normalizeText(value).toLowerCase();
   if (text === 'left' || text === 'right' || text === 'balanced') return text;
+  return '';
+}
+
+/*
+ * 作用：
+ * 规范化连线类型。
+ */
+function normalizeEdgeType(value) {
+  const text = normalizeText(value).toLowerCase();
+  if (text === 'curve' || text === 'straight' || text === 'elbow') return text;
   return '';
 }
 

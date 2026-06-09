@@ -18,6 +18,8 @@ toolbar:
   y: 8
 layout:
   defaultDirection: balanced
+edge:
+  type: curve
 font:
   size: 14
   weight: 560
@@ -70,6 +72,7 @@ source:
 - `toolbar.x` / `toolbar.y`：悬浮工具栏位置。拖动工具栏抓手后会自动写入。
 - `theme`：主题名称，可选 `default`、`ocean`、`forest`、`sunset`、`mono`、`rainbow`、`pastel-rainbow`、`neon-rainbow`。
 - `layout.defaultDirection`：一级分支默认方向，可选 `balanced`、`left`、`right`。
+- `edge.type`：连线类型，可选 `curve`、`straight`、`elbow`。`curve` 是曲线，技术上是三次贝塞尔曲线；`straight` 是直线；`elbow` 是正交折线。
 - `font.family`、`font.size`、`font.weight`、`font.lineHeight`：全局默认字体。
 - `font.levels.1`、`font.levels.2`：按标题级别设置字体，数字对应 `#`、`##`、`###` 的层级。
 - `node.defaultColor`：统一节点颜色，会覆盖主题自动配色；节点属性 `color` 仍然优先。

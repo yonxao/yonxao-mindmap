@@ -246,6 +246,11 @@ export class ConfigModal extends Modal {
       max: 800,
       step: 10,
     });
+    this.createSelectField('连线类型', ['edge', 'type'], normalized.edge.type, [
+      ['curve', '曲线（贝塞尔）'],
+      ['straight', '直线'],
+      ['elbow', '折线'],
+    ]);
   }
 
   /*

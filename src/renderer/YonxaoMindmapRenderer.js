@@ -1610,27 +1610,49 @@ export class YonxaoMindmapRenderer extends Component {
     const startY = parentBox.y;
     const endX = childBox.x - (dir * childBox.width) / 2;
     const endY = childBox.y;
-    const bend = Math.max(44, Math.abs(endX - startX) * 0.46);
     const color = edgeColor(edge.child, this.config);
 
-    // 使用三次贝塞尔曲线连接父子节点，比直线更接近常见思维导图的视觉语言。
+    // 默认使用三次贝塞尔曲线；也可通过 edge.type 切换为直线或正交折线。
     return svg('path', {
       class: 'yonxao-mindmap-edge',
-      d: [
-        'M',
-        startX,
-        startY,
-        'C',
-        startX + dir * bend,
-        startY,
-        endX - dir * bend,
-        endY,
-        endX,
-        endY,
-      ].join(' '),
+      d: this.edgePath(startX, startY, endX, endY, dir),
       stroke: color || 'currentColor',
       style: `opacity: ${themeEdgeOpacity(this.config)}`,
     });
+  }
+
+  /*
+   * 作用：
+   * 根据配置生成连线路径。
+   *
+   * 类型说明：
+   * - curve: 三次贝塞尔曲线，也就是当前默认的柔和曲线。
+   * - straight: 直线。
+   * - elbow: 正交折线，也常叫 elbow connector。
+   */
+  edgePath(startX, startY, endX, endY, dir) {
+    if (this.config.edge.type === 'straight') {
+      return ['M', startX, startY, 'L', endX, endY].join(' ');
+    }
+
+    if (this.config.edge.type === 'elbow') {
+      const midX = startX + (endX - startX) / 2;
+      return ['M', startX, startY, 'H', midX, 'V', endY, 'H', endX].join(' ');
+    }
+
+    const bend = Math.max(44, Math.abs(endX - startX) * 0.46);
+    return [
+      'M',
+      startX,
+      startY,
+      'C',
+      startX + dir * bend,
+      startY,
+      endX - dir * bend,
+      endY,
+      endX,
+      endY,
+    ].join(' ');
   }
 
   /*

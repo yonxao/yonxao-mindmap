@@ -16,6 +16,8 @@ toolbar:
   y: 8
 layout:
   defaultDirection: balanced
+edge:
+  type: curve
 font:
   size: 14
   weight: 560
@@ -68,6 +70,7 @@ Supported config keys:
 - `toolbar.x` / `toolbar.y`: persisted floating toolbar position. Drag the toolbar grip to write it.
 - `theme`: built-in theme name: `default`, `ocean`, `forest`, `sunset`, `mono`, `rainbow`, `pastel-rainbow`, or `neon-rainbow`.
 - `layout.defaultDirection`: default first-level branch direction: `balanced`, `left`, or `right`.
+- `edge.type`: connector type: `curve`, `straight`, or `elbow`. `curve` is a cubic Bezier curve, `straight` is a straight line, and `elbow` is an orthogonal connector.
 - `font.family`, `font.size`, `font.weight`, `font.lineHeight`: global font defaults.
 - `font.levels.1`, `font.levels.2`: per-heading-level font overrides.
 - `node.defaultColor`: unified node color that overrides theme auto colors; node attribute `color` still wins.
