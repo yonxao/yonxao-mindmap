@@ -53,7 +53,7 @@ source:
 
 - 使用 Markdown 标题表示层级：`#` 是中心节点，`##` 是二级节点，`###` 是三级节点，依此类推。
 - `yxmm` 代码块中的非空行必须使用 Markdown 标题语法。
-- 属性写在行尾，格式为 `[key=value]`。
+- 节点属性写在标题后面，格式为 `[key=value]`。
 - 当前支持的属性：
   - `color=#3b82f6`：节点颜色。
   - `layout=right`、`layout=left`、`layout=balanced`：布局方向。
@@ -72,21 +72,28 @@ source:
 - `layout.defaultDirection`：一级分支默认方向，可选 `balanced`、`left`、`right`。
 - `font.family`、`font.size`、`font.weight`、`font.lineHeight`：全局默认字体。
 - `font.levels.1`、`font.levels.2`：按标题级别设置字体，数字对应 `#`、`##`、`###` 的层级。
-- `node.defaultColor`：节点未写 `color` 时使用的默认颜色。
+- `node.defaultColor`：统一节点颜色，会覆盖主题自动配色；节点属性 `color` 仍然优先。
 - `node.maxWidth`：节点最大宽度，长标题会按这个宽度换行。
 - `source.enableTabIndent`：源码模式中是否启用 `Tab` / `Shift+Tab` 调整标题级别。
 - `source.height`：源码模式高度，和脑图模式的 `canvas.height` 分开保存。
 
 字体优先级从高到低是：
 
-`节点行尾属性` > `font.levels[当前级别]` > `font 全局配置` > `插件默认值`
+`节点属性` > `font.levels[当前级别]` > `font 全局配置` > `插件默认值`
+
+字体范围：
+
+- `size`：字号，范围 `9` 到 `96`。
+- `weight`：字重，范围 `100` 到 `900`，遵循 CSS 字重标准。
+- `lineHeight`：行高，范围 `12` 到 `160`，表示 SVG 文本每行之间的像素距离。建议约为字号的 `1.3` 到 `1.5` 倍。
 
 主题颜色优先级从高到低是：
 
-`节点行尾 color` > `node.defaultColor` > `theme 自动配色`
+`节点属性 color` > `node.defaultColor` > `theme 自动配色`
 
 其中 `rainbow`、`pastel-rainbow`、`neon-rainbow` 会按一级分支自动分配不同颜色。
-中心节点会使用主题独立中心色；节点行尾 `color` 只改变节点本身，不改变它和父节点之间的连接线颜色。
+中心节点会使用主题独立中心色；节点属性 `color` 只改变节点本身，不改变它和父节点之间的连接线颜色。
+配置区中的 hex 颜色建议写成带引号的字符串，例如 `defaultColor: '#66ed0c'`；通过配置弹框保存时会自动加引号。
 
 ## 操作
 

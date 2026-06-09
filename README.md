@@ -70,21 +70,28 @@ Supported config keys:
 - `layout.defaultDirection`: default first-level branch direction: `balanced`, `left`, or `right`.
 - `font.family`, `font.size`, `font.weight`, `font.lineHeight`: global font defaults.
 - `font.levels.1`, `font.levels.2`: per-heading-level font overrides.
-- `node.defaultColor`: fallback node color when a node has no `color` attribute.
+- `node.defaultColor`: unified node color that overrides theme auto colors; node attribute `color` still wins.
 - `node.maxWidth`: maximum node width before label wrapping.
 - `source.enableTabIndent`: whether Tab/Shift+Tab changes heading levels in source mode.
 - `source.height`: source-mode height, stored separately from graph-mode `canvas.height`.
 
 Font priority:
 
-`node inline attributes` > `font.levels[current level]` > `global font config` > `plugin defaults`
+`node attributes` > `font.levels[current level]` > `global font config` > `plugin defaults`
+
+Font ranges:
+
+- `size`: font size, from `9` to `96`.
+- `weight`: CSS font weight, from `100` to `900`.
+- `lineHeight`: SVG text line spacing in pixels, from `12` to `160`. A practical value is usually `1.3` to `1.5` times the font size.
 
 Theme color priority:
 
-`node inline color` > `node.defaultColor` > `theme auto color`
+`node attribute color` > `node.defaultColor` > `theme auto color`
 
 `rainbow`, `pastel-rainbow`, and `neon-rainbow` automatically assign colors by first-level branch.
-The center node uses an independent center color from the theme. Inline node `color` changes only the node itself, not the edge from its parent.
+The center node uses an independent center color from the theme. Node attribute `color` changes only the node itself, not the edge from its parent.
+Hex colors in the config block should be quoted, for example `defaultColor: '#66ed0c'`; the visual config modal writes quoted colors automatically.
 
 ## Controls
 

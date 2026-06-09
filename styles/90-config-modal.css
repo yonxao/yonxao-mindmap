@@ -134,6 +134,20 @@
 }
 
 /*
+ * 警告提示用于说明配置项之间的覆盖关系。
+ * 这里不使用强烈的错误色，因为这不是错误，只是提醒用户当前选择会影响主题效果。
+ */
+.yonxao-mindmap-config-warning {
+  padding: 8px 10px;
+  color: var(--text-warning);
+  font-size: var(--font-ui-smaller);
+  line-height: 1.45;
+  border: 1px solid var(--background-modifier-border);
+  border-radius: 6px;
+  background: var(--background-secondary);
+}
+
+/*
  * 输入控件铺满右侧列，保证长配置值可编辑。
  */
 .yonxao-mindmap-config-field input,

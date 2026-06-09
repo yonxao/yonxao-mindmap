@@ -25,7 +25,15 @@ import {
   setConfigValue,
   stringifyDraftConfig,
 } from '../config/configDraft.js';
-import { normalizeMindConfig } from '../config/mindConfig.js';
+import {
+  FONT_LINE_HEIGHT_MAX,
+  FONT_LINE_HEIGHT_MIN,
+  FONT_SIZE_MAX,
+  FONT_SIZE_MIN,
+  FONT_WEIGHT_MAX,
+  FONT_WEIGHT_MIN,
+  normalizeMindConfig,
+} from '../config/mindConfig.js';
 import { MIND_THEME_OPTIONS } from '../theme/mindThemes.js';
 
 const FONT_FAMILY_OPTIONS = [
@@ -38,6 +46,8 @@ const FONT_FAMILY_OPTIONS = [
   ['var(--font-monospace)', 'Obsidian 等宽字体'],
   ['monospace', '系统等宽字体'],
 ];
+
+const RAINBOW_THEME_NAMES = new Set(['rainbow', 'pastel-rainbow', 'neon-rainbow']);
 
 /*
  * 作用：
@@ -196,12 +206,33 @@ export class ConfigModal extends Modal {
    */
   renderThemeTab(normalized) {
     this.createSection('主题');
-    this.createSelectTextField('主题方案', ['theme'], normalized.theme, MIND_THEME_OPTIONS);
-    this.createColorTextField(
-      '默认节点颜色',
-      ['node', 'defaultColor'],
-      normalized.node.defaultColor
+    const themeField = this.createSelectTextField(
+      '主题方案',
+      ['theme'],
+      normalized.theme,
+      MIND_THEME_OPTIONS
     );
+    const colorField = this.createColorTextField(
+      '统一节点颜色',
+      ['node', 'defaultColor'],
+      normalized.node.defaultColor,
+      '留空则使用当前主题的自动配色。填写后会覆盖主题自动配色，但节点属性 color 仍然优先。'
+    );
+    const warningEl = this.createWarning('');
+    const updateWarning = () => {
+      this.updateThemeOverrideWarning(warningEl);
+    };
+
+    for (const element of [
+      themeField.select,
+      themeField.input,
+      colorField.colorInput,
+      colorField.textInput,
+    ]) {
+      element.addEventListener('input', updateWarning);
+      element.addEventListener('change', updateWarning);
+    }
+    updateWarning();
   }
 
   /*
@@ -240,19 +271,22 @@ export class ConfigModal extends Modal {
       FONT_FAMILY_OPTIONS
     );
     this.createNumberField('字号', ['font', 'size'], normalized.font.size, {
-      min: 9,
-      max: 32,
+      min: FONT_SIZE_MIN,
+      max: FONT_SIZE_MAX,
       step: 1,
+      help: '字号单位是像素，控制节点文字大小。',
     });
     this.createNumberField('字重', ['font', 'weight'], normalized.font.weight, {
-      min: 100,
-      max: 900,
+      min: FONT_WEIGHT_MIN,
+      max: FONT_WEIGHT_MAX,
       step: 10,
+      help: '字重遵循 CSS 标准范围 100-900。',
     });
     this.createNumberField('行高', ['font', 'lineHeight'], normalized.font.lineHeight, {
-      min: 12,
-      max: 48,
+      min: FONT_LINE_HEIGHT_MIN,
+      max: FONT_LINE_HEIGHT_MAX,
       step: 1,
+      help: '行高是 SVG 文本每行之间的像素距离，建议约为字号的 1.3-1.5 倍。',
     });
 
     this.createSection('按层级覆盖');
@@ -320,20 +354,20 @@ export class ConfigModal extends Modal {
     });
 
     this.createNumberField('字号', ['font', 'levels', level, 'size'], '', {
-      min: 9,
-      max: 32,
+      min: FONT_SIZE_MIN,
+      max: FONT_SIZE_MAX,
       step: 1,
       parentEl: groupEl,
     });
     this.createNumberField('字重', ['font', 'levels', level, 'weight'], '', {
-      min: 100,
-      max: 900,
+      min: FONT_WEIGHT_MIN,
+      max: FONT_WEIGHT_MAX,
       step: 10,
       parentEl: groupEl,
     });
     this.createNumberField('行高', ['font', 'levels', level, 'lineHeight'], '', {
-      min: 12,
-      max: 48,
+      min: FONT_LINE_HEIGHT_MIN,
+      max: FONT_LINE_HEIGHT_MAX,
       step: 1,
       parentEl: groupEl,
     });
@@ -354,6 +388,14 @@ export class ConfigModal extends Modal {
    */
   createSection(title) {
     this.formEl.createDiv({ cls: 'yonxao-mindmap-config-section', text: title });
+  }
+
+  /*
+   * 作用：
+   * 创建一条轻量提示，用于解释配置项之间的影响关系。
+   */
+  createWarning(message) {
+    return this.formEl.createDiv({ cls: 'yonxao-mindmap-config-warning', text: message });
   }
 
   /*
@@ -419,20 +461,23 @@ export class ConfigModal extends Modal {
         ? input.value
         : '';
     });
+    return { select, input };
   }
 
   /*
    * 作用：
    * 创建颜色选择 + 文本输入组合。
    */
-  createColorTextField(label, path, value) {
-    const fieldEl = this.createField(label);
+  createColorTextField(label, path, value, help) {
+    const fieldEl = this.createField(label, undefined, help);
     const rowEl = fieldEl.createDiv({ cls: 'yonxao-mindmap-config-combo' });
     const colorInput = rowEl.createEl('input');
     const textInput = rowEl.createEl('input');
     colorInput.type = 'color';
     textInput.type = 'text';
-    const currentValue = String(getConfigValue(this.draftConfig, path, value) || '');
+    const rawValue = getConfigValue(this.draftConfig, path, value);
+    const currentValue =
+      typeof rawValue === 'string' || typeof rawValue === 'number' ? String(rawValue) : '';
 
     textInput.value = currentValue;
     colorInput.value = /^#[0-9a-f]{6}$/i.test(currentValue) ? currentValue : '#3b82f6';
@@ -444,6 +489,7 @@ export class ConfigModal extends Modal {
     textInput.addEventListener('input', () => {
       setConfigValue(this.draftConfig, path, textInput.value.trim());
     });
+    return { colorInput, textInput };
   }
 
   /*
@@ -548,5 +594,32 @@ export class ConfigModal extends Modal {
       source: '源码',
       advanced: '高级',
     }[tab];
+  }
+
+  /*
+   * 作用：
+   * 判断是否需要提示“统一节点颜色会覆盖彩虹主题自动配色”。
+   */
+  shouldWarnUnifiedColorOverridesTheme() {
+    const theme = String(getConfigValue(this.draftConfig, ['theme'], '') || '').trim();
+    const defaultColor = getConfigValue(this.draftConfig, ['node', 'defaultColor'], '');
+    const hasDefaultColor =
+      typeof defaultColor === 'string'
+        ? defaultColor.trim() !== ''
+        : typeof defaultColor === 'number';
+
+    return RAINBOW_THEME_NAMES.has(theme) && hasDefaultColor;
+  }
+
+  /*
+   * 作用：
+   * 按当前草稿配置更新主题冲突提示。
+   */
+  updateThemeOverrideWarning(warningEl) {
+    const shouldWarn = this.shouldWarnUnifiedColorOverridesTheme();
+    warningEl.setText(
+      shouldWarn ? '当前主题会按分支自动配色；填写统一节点颜色后，主题的彩虹分支色将不会显示。' : ''
+    );
+    warningEl.hidden = !shouldWarn;
   }
 }

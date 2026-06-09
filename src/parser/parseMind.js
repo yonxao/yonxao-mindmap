@@ -11,7 +11,7 @@ import { normalizeMindConfig, splitMindSourceConfig } from '../config/mindConfig
  * 执行逻辑：
  * 1. parseMind 按行切分源码。
  * 2. parseHeadingMind 使用标题层级维护一个 stack，把节点挂到正确父节点下面。
- * 3. parseNodeLine 解析节点文本和行尾属性块。
+ * 3. parseNodeLine 解析节点文本和节点属性。
  * 4. assignIds 用结构路径生成稳定 id，供折叠状态和点击编辑使用。
  */
 
@@ -160,16 +160,16 @@ export function createMindNode(text, attrs, children, line, level) {
 
 /*
  * 作用：
- * 解析单个标题行中的节点文本和行尾属性块。
+ * 解析单个标题行中的节点文本和节点属性。
  *
  * 实现逻辑：
- * 从行尾向前剥离 [key=value] 属性块，剩余部分就是节点文本。
+ * 从标题末尾向前剥离 [key=value] 节点属性块，剩余部分就是节点文本。
  */
 export function parseNodeLine(line) {
   let current = line;
   const attrs = {};
 
-  // 属性必须写在行尾，例如：节点文本 [color=#3b82f6 icon=book]
+  // 节点属性必须写在标题文本后面，例如：节点文本 [color=#3b82f6 icon=book]
   // 这里用循环是为了允许多个属性块连续出现，后面的属性会覆盖前面的同名属性。
   while (true) {
     const match = current.match(/\s*\[([^[\]]+)]\s*$/);

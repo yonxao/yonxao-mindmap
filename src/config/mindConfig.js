@@ -19,7 +19,7 @@
  * 设计思路：
  * - “配置区”只保存全局默认值，例如画布高度、工具栏位置、字体和节点默认样式。
  * - “正文区”只保存 Markdown 标题节点，例如 #、##、###。
- * - 节点行尾的 [color=...]、[fontSize=...] 仍然保留，用来覆盖全局配置。
+ * - 标题后的节点属性 [color=...]、[fontSize=...] 仍然保留，用来覆盖全局配置。
  *
  * 调用链位置：
  * Renderer/Parser -> splitMindSourceConfig() -> normalizeMindConfig()。
@@ -29,6 +29,13 @@
 import { CANVAS_MAX_HEIGHT, CANVAS_MIN_HEIGHT, LINE_HEIGHT, NODE_MAX_WIDTH } from '../constants.js';
 import { DEFAULT_THEME_NAME, normalizeMindThemeName } from '../theme/mindThemes.js';
 import { clamp } from '../utils/math.js';
+
+export const FONT_SIZE_MIN = 9;
+export const FONT_SIZE_MAX = 96;
+export const FONT_WEIGHT_MIN = 100;
+export const FONT_WEIGHT_MAX = 900;
+export const FONT_LINE_HEIGHT_MIN = 12;
+export const FONT_LINE_HEIGHT_MAX = 160;
 
 export const DEFAULT_FONT_FAMILY =
   "'Sarasa Mono SC', 'Noto Sans Mono CJK SC', 'Source Han Mono SC', 'Cascadia Mono', 'JetBrains Mono', 'Liberation Mono', monospace";
@@ -185,10 +192,15 @@ export function normalizeFontConfig(rawFont) {
   return {
     ...font,
     family: normalizeText(font.family) || DEFAULT_MIND_CONFIG.font.family,
-    size: normalizeOptionalNumber(font.size, 9, 32) || DEFAULT_MIND_CONFIG.font.size,
-    weight: normalizeOptionalNumber(font.weight, 100, 900) || DEFAULT_MIND_CONFIG.font.weight,
+    size:
+      normalizeOptionalNumber(font.size, FONT_SIZE_MIN, FONT_SIZE_MAX) ||
+      DEFAULT_MIND_CONFIG.font.size,
+    weight:
+      normalizeOptionalNumber(font.weight, FONT_WEIGHT_MIN, FONT_WEIGHT_MAX) ||
+      DEFAULT_MIND_CONFIG.font.weight,
     lineHeight:
-      normalizeOptionalNumber(font.lineHeight, 12, 48) || DEFAULT_MIND_CONFIG.font.lineHeight,
+      normalizeOptionalNumber(font.lineHeight, FONT_LINE_HEIGHT_MIN, FONT_LINE_HEIGHT_MAX) ||
+      DEFAULT_MIND_CONFIG.font.lineHeight,
     levels: normalizedLevels,
   };
 }
@@ -202,9 +214,13 @@ export function normalizePartialFont(rawFont) {
   return {
     ...font,
     family: normalizeText(font.family),
-    size: normalizeOptionalNumber(font.size, 9, 32),
-    weight: normalizeOptionalNumber(font.weight, 100, 900),
-    lineHeight: normalizeOptionalNumber(font.lineHeight, 12, 48),
+    size: normalizeOptionalNumber(font.size, FONT_SIZE_MIN, FONT_SIZE_MAX),
+    weight: normalizeOptionalNumber(font.weight, FONT_WEIGHT_MIN, FONT_WEIGHT_MAX),
+    lineHeight: normalizeOptionalNumber(
+      font.lineHeight,
+      FONT_LINE_HEIGHT_MIN,
+      FONT_LINE_HEIGHT_MAX
+    ),
   };
 }
 
@@ -213,7 +229,7 @@ export function normalizePartialFont(rawFont) {
  * 计算某个节点最终使用的字体。
  *
  * 优先级：
- * 节点行尾属性 > font.levels[层级] > font 全局配置 > 默认值。
+ * 节点属性 > font.levels[层级] > font 全局配置 > 默认值。
  */
 export function resolveNodeFont(node, config) {
   const safeConfig = normalizeMindConfig(config);
@@ -228,15 +244,23 @@ export function resolveNodeFont(node, config) {
       levelFont.family ||
       safeConfig.font.family,
     size:
-      normalizeOptionalNumber(attrs.fontsize ?? attrs.fontSize, 9, 32) ||
+      normalizeOptionalNumber(attrs.fontsize ?? attrs.fontSize, FONT_SIZE_MIN, FONT_SIZE_MAX) ||
       levelFont.size ||
       safeConfig.font.size,
     weight:
-      normalizeOptionalNumber(attrs.fontweight ?? attrs.fontWeight, 100, 900) ||
+      normalizeOptionalNumber(
+        attrs.fontweight ?? attrs.fontWeight,
+        FONT_WEIGHT_MIN,
+        FONT_WEIGHT_MAX
+      ) ||
       levelFont.weight ||
       safeConfig.font.weight,
     lineHeight:
-      normalizeOptionalNumber(attrs.lineheight ?? attrs.lineHeight, 12, 48) ||
+      normalizeOptionalNumber(
+        attrs.lineheight ?? attrs.lineHeight,
+        FONT_LINE_HEIGHT_MIN,
+        FONT_LINE_HEIGHT_MAX
+      ) ||
       levelFont.lineHeight ||
       safeConfig.font.lineHeight,
   };
@@ -369,25 +393,62 @@ export function parseSimpleYaml(lines) {
  * 作用：
  * 将对象序列化为简单 YAML 文本。
  */
-export function stringifySimpleYaml(value, depth = 0) {
+export function stringifySimpleYaml(value, depth = 0, path = []) {
   if (!isPlainObject(value)) return '';
 
   const indent = '  '.repeat(depth);
   const lines = [];
 
-  for (const [key, child] of Object.entries(value)) {
+  for (const [key, child] of orderedConfigEntries(value, path)) {
     if (child === undefined || child === null || child === '') continue;
 
     if (isPlainObject(child)) {
       if (!Object.keys(child).length) continue;
       lines.push(`${indent}${key}:`);
-      lines.push(stringifySimpleYaml(child, depth + 1));
+      lines.push(stringifySimpleYaml(child, depth + 1, [...path, key]));
     } else {
       lines.push(`${indent}${key}: ${stringifyYamlScalar(child)}`);
     }
   }
 
   return lines.filter(Boolean).join('\n');
+}
+
+/*
+ * 作用：
+ * 让配置区输出保持稳定顺序。
+ *
+ * 关键点：
+ * font 下先输出全局字体字段，再输出 levels；每个 level 内也按 family/size/weight/lineHeight 排序。
+ * 这样配置区读起来像“先全局、再局部覆盖”，不会出现 levels 插在 size 和 weight 中间的情况。
+ */
+function orderedConfigEntries(value, path) {
+  const entries = Object.entries(value);
+  const order = configKeyOrder(path);
+  if (!order.length) return entries;
+
+  return entries.sort(([left], [right]) => {
+    const leftIndex = order.indexOf(left);
+    const rightIndex = order.indexOf(right);
+    const safeLeftIndex = leftIndex === -1 ? Number.POSITIVE_INFINITY : leftIndex;
+    const safeRightIndex = rightIndex === -1 ? Number.POSITIVE_INFINITY : rightIndex;
+
+    if (safeLeftIndex !== safeRightIndex) return safeLeftIndex - safeRightIndex;
+    return left.localeCompare(right);
+  });
+}
+
+/*
+ * 作用：
+ * 根据当前 YAML 路径返回推荐的键顺序。
+ */
+function configKeyOrder(path) {
+  const keyPath = path.join('.');
+  if (keyPath === 'font') return ['family', 'size', 'weight', 'lineHeight', 'levels'];
+  if (/^font\.levels\.[^.]+$/.test(keyPath)) {
+    return ['family', 'size', 'weight', 'lineHeight'];
+  }
+  return [];
 }
 
 /*
@@ -411,13 +472,15 @@ function parseYamlScalar(value) {
 function stringifyYamlScalar(value) {
   if (typeof value === 'number' || typeof value === 'boolean') return String(value);
   const text = String(value || '');
-  if (/^[a-zA-Z0-9_./#-]+$/.test(text)) return text;
+  // YAML 中冒号后面的 # 会被当成注释开头。
+  // 因此 hex 颜色这类包含 # 的字符串必须加引号，否则 defaultColor: #66ed0c 会被读成空值。
+  if (/^[a-zA-Z0-9_./-]+$/.test(text)) return text;
   return `"${text.replace(/\\/g, '\\\\').replace(/"/g, '\\"')}"`;
 }
 
 /*
  * 作用：
- * 移除 YAML 行尾注释，同时避免删除引号内的 #。
+ * 移除 YAML 行内注释，同时避免删除引号内的 #。
  */
 function stripYamlComment(line) {
   let quote = '';
@@ -457,6 +520,7 @@ function isPlainObject(value) {
  * 把值转成去掉首尾空白的字符串。
  */
 function normalizeText(value) {
+  if (value && typeof value === 'object') return '';
   return String(value || '').trim();
 }
 

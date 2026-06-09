@@ -59,7 +59,7 @@ export function serializeNode(node, depth) {
 
 /*
  * 作用：
- * 把节点 attrs 对象序列化成行尾属性块。
+ * 把节点 attrs 对象序列化成节点属性块。
  *
  * 实现逻辑：
  * 常用属性固定顺序输出，其它属性按字母排序，减少无意义 diff。
