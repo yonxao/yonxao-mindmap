@@ -12,7 +12,7 @@
  * YonxaoMindmapPlugin -> new YonxaoMindmapRenderer(...) -> mount() -> renderGraph()
  */
 
-import { Component, Notice, setIcon } from 'obsidian';
+import { Component, Menu, Notice, setIcon } from 'obsidian';
 
 import {
   CODE_BLOCK_NAME,
@@ -34,7 +34,12 @@ import {
 import { renderIcon } from '../icons/renderIcon.js';
 import { layoutTree, normalizeLayout } from '../layout/layoutTree.js';
 import { replaceCodeBlockSource } from '../markdown/codeBlock.js';
-import { removeNodeById, setOptionalAttr } from '../model/treeActions.js';
+import {
+  countDescendants,
+  insertSiblingNode,
+  removeNodeById,
+  setOptionalAttr,
+} from '../model/treeActions.js';
 import { markYonxaoMindmapEmbedWrapper } from '../obsidian/embed.js';
 import { assignIds, createMindNode, parseMindDocument } from '../parser/parseMind.js';
 import { serializeMindDocument } from '../parser/serializeMind.js';
@@ -750,6 +755,7 @@ export class YonxaoMindmapRenderer extends Component {
 
     this.registerDomEvent(this.svgEl, 'click', (event) => this.handleNodeClick(event));
     this.registerDomEvent(this.svgEl, 'dblclick', (event) => this.handleNodeDoubleClick(event));
+    this.registerDomEvent(this.svgEl, 'contextmenu', (event) => this.handleNodeContextMenu(event));
     this.registerDomEvent(this.svgEl, 'wheel', (event) => this.handleWheel(event));
     this.registerDomEvent(this.svgEl, 'pointerdown', (event) => this.handlePointerDown(event));
     this.registerDomEvent(this.svgEl, 'pointermove', (event) => this.handlePointerMove(event));
@@ -1460,6 +1466,55 @@ export class YonxaoMindmapRenderer extends Component {
 
   /*
    * 作用：
+   * 从右键菜单新增子节点。
+   *
+   * 和编辑面板新增子节点的区别：
+   * 右键菜单不依赖当前打开的编辑面板，而是直接使用菜单命中的节点。
+   * 保存成功后立即进入内联改名，让用户可以顺手把“新节点”改成真实内容。
+   */
+  async addChildFromContextMenu(node) {
+    if (!node || node._virtual) return false;
+
+    const child = createMindNode('新节点', {}, [], 0, (node.level || 1) + 1);
+    node.children.push(child);
+    this.collapsedIds.delete(node.id);
+    assignIds(this.root, '0');
+
+    const saved = await this.saveTreeToSourceAndFile('已新增子节点。');
+    if (saved) {
+      this.openInlineTextEditor(child);
+    }
+    return saved;
+  }
+
+  /*
+   * 作用：
+   * 从右键菜单在当前节点上方或下方新增兄弟节点。
+   *
+   * 实现逻辑：
+   * 兄弟节点需要插入到父节点 children 数组的相邻位置，所以具体插入由
+   * treeActions.insertSiblingNode 负责；渲染器只负责创建节点、保存和进入改名。
+   */
+  async addSiblingFromContextMenu(node, position) {
+    if (!node || node === this.root || node._virtual) return false;
+
+    const sibling = createMindNode('新节点', {}, [], 0, node.level || 1);
+    const inserted = insertSiblingNode(this.root, node.id, sibling, position);
+    if (!inserted) {
+      new Notice('yonxao-mindmap: 根节点不能新增兄弟节点。');
+      return false;
+    }
+
+    assignIds(this.root, '0');
+    const saved = await this.saveTreeToSourceAndFile('已新增兄弟节点。');
+    if (saved) {
+      this.openInlineTextEditor(sibling);
+    }
+    return saved;
+  }
+
+  /*
+   * 作用：
    * 删除当前编辑节点并保存。
    *
    * 实现逻辑：
@@ -1479,6 +1534,37 @@ export class YonxaoMindmapRenderer extends Component {
     const saved = await this.saveTreeToSourceAndFile('节点已删除。');
     if (saved) this.closeNodeEditor();
     return saved;
+  }
+
+  /*
+   * 作用：
+   * 从右键菜单删除节点。
+   *
+   * 关键点：
+   * 删除分支会同时删除所有子节点，所以当存在后代节点时先弹出浏览器确认框。
+   * 这里使用 window.confirm 是为了保持实现轻量，后续如果需要更精致的 UI 可以替换为 Obsidian Modal。
+   */
+  async deleteNodeFromContextMenu(node) {
+    if (!node || node === this.root || node._virtual) {
+      new Notice('yonxao-mindmap: 根节点不能删除。');
+      return false;
+    }
+
+    const descendantCount = countDescendants(node);
+    if (
+      descendantCount > 0 &&
+      !window.confirm(`确定删除“${node.text}”及其 ${descendantCount} 个子节点吗？`)
+    ) {
+      return false;
+    }
+
+    this.closeNodeEditor();
+    this.closeInlineTextEditor(false);
+    const removed = removeNodeById(this.root, node.id);
+    if (!removed) return false;
+
+    assignIds(this.root, '0');
+    return this.saveTreeToSourceAndFile('节点已删除。');
   }
 
   /*
@@ -2054,6 +2140,119 @@ export class YonxaoMindmapRenderer extends Component {
 
   /*
    * 作用：
+   * 处理节点右键菜单。
+   *
+   * 实现逻辑：
+   * 只在右键点到真实节点时弹出菜单；右键空白画布仍交给 Obsidian 或浏览器默认行为。
+   * 菜单使用 Obsidian 原生 Menu，能自动适配不同主题和平台。
+   */
+  handleNodeContextMenu(event) {
+    const target = event.target;
+    const nodeEl = target && target.closest ? target.closest('.yonxao-mindmap-node') : null;
+    if (!nodeEl) return;
+
+    const id = nodeEl.getAttribute('data-node-id');
+    const node = this.nodeById.get(id);
+    if (!node || node._virtual) return;
+
+    event.preventDefault();
+    event.stopPropagation();
+    this.openNodeContextMenu(event, node);
+  }
+
+  /*
+   * 作用：
+   * 根据节点状态创建右键上下文菜单。
+   *
+   * 菜单分组：
+   * - 编辑：快速改名、完整属性、复制文本。
+   * - 新增：子节点、上方兄弟、下方兄弟。
+   * - 展开折叠：单层切换、递归展开、递归折叠。
+   * - 删除：删除当前节点和其子树。
+   */
+  openNodeContextMenu(event, node) {
+    const menu = new Menu();
+    const canHaveSibling = node !== this.root;
+    const hasChildren = node.children.length > 0;
+    const isCollapsed = this.collapsedIds.has(node.id);
+
+    this.addNodeContextMenuItem(menu, '重命名节点', 'pencil', () =>
+      this.openInlineTextEditor(node)
+    );
+    this.addNodeContextMenuItem(menu, '编辑节点属性', 'sliders-horizontal', () =>
+      this.openNodeEditor(node)
+    );
+    this.addNodeContextMenuItem(menu, '复制节点文本', 'copy', () => this.copyNodeText(node));
+    menu.addSeparator();
+
+    this.addNodeContextMenuItem(menu, '添加子节点', 'plus', () =>
+      this.addChildFromContextMenu(node)
+    );
+    if (canHaveSibling) {
+      this.addNodeContextMenuItem(menu, '在上方添加兄弟节点', 'arrow-up', () =>
+        this.addSiblingFromContextMenu(node, 'before')
+      );
+      this.addNodeContextMenuItem(menu, '在下方添加兄弟节点', 'arrow-down', () =>
+        this.addSiblingFromContextMenu(node, 'after')
+      );
+    }
+
+    if (hasChildren) {
+      menu.addSeparator();
+      this.addNodeContextMenuItem(
+        menu,
+        isCollapsed ? '展开子节点' : '折叠子节点',
+        'list-tree',
+        () => this.toggleNodeCollapse(node)
+      );
+      this.addNodeContextMenuItem(menu, '展开全部子节点', 'chevrons-down', () =>
+        this.expandNodeDescendants(node)
+      );
+      this.addNodeContextMenuItem(menu, '折叠全部子节点', 'chevrons-up', () =>
+        this.collapseNodeDescendants(node)
+      );
+    }
+
+    if (canHaveSibling) {
+      menu.addSeparator();
+      this.addNodeContextMenuItem(menu, '删除节点', 'trash-2', () =>
+        this.deleteNodeFromContextMenu(node)
+      );
+    }
+
+    menu.showAtMouseEvent(event);
+  }
+
+  /*
+   * 作用：
+   * 给 Obsidian Menu 添加菜单项，并统一异步错误提示。
+   */
+  addNodeContextMenuItem(menu, title, icon, onClick) {
+    menu.addItem((item) => {
+      item.setTitle(title);
+      if (icon) item.setIcon(icon);
+      item.onClick(() => {
+        Promise.resolve(onClick()).catch((error) => {
+          new Notice(`yonxao-mindmap: ${error.message || String(error)}`);
+        });
+      });
+    });
+  }
+
+  /*
+   * 作用：
+   * 复制节点文本到系统剪贴板。
+   */
+  async copyNodeText(node) {
+    if (!node) return false;
+
+    await navigator.clipboard.writeText(node.text || '');
+    new Notice('yonxao-mindmap: 节点文本已复制。');
+    return true;
+  }
+
+  /*
+   * 作用：
    * 折叠或展开一个节点的子树。
    */
   toggleNodeCollapse(node) {
@@ -2067,6 +2266,44 @@ export class YonxaoMindmapRenderer extends Component {
       this.collapsedIds.add(id);
     }
     this.renderGraph(true);
+  }
+
+  /*
+   * 作用：
+   * 递归折叠当前节点及其所有有子节点的后代节点。
+   */
+  collapseNodeDescendants(node) {
+    this.forEachNodeWithChildren(node, (current) => {
+      this.collapsedIds.add(current.id);
+    });
+    this.renderGraph(true);
+  }
+
+  /*
+   * 作用：
+   * 递归展开当前节点及其所有后代节点。
+   */
+  expandNodeDescendants(node) {
+    this.forEachNodeWithChildren(node, (current) => {
+      this.collapsedIds.delete(current.id);
+    });
+    this.renderGraph(true);
+  }
+
+  /*
+   * 作用：
+   * 遍历当前节点和后代中所有“有子节点”的节点。
+   *
+   * 调用场景：
+   * 右键菜单的“展开全部子节点”和“折叠全部子节点”只需要处理能折叠的节点。
+   */
+  forEachNodeWithChildren(node, callback) {
+    if (!node || !node.children.length) return;
+
+    callback(node);
+    for (const child of node.children) {
+      this.forEachNodeWithChildren(child, callback);
+    }
   }
 
   /*
