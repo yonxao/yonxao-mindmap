@@ -677,7 +677,7 @@ export class YonxaoMindmapRenderer extends Component {
       this.scheduleSourceModeHeight();
     } else {
       this.applyConfiguredCanvasHeight();
-      this.renderGraph(true);
+      this.renderGraph(true, { growManualHeight: true });
     }
 
     this.updateToggleViewButton();
@@ -1542,7 +1542,7 @@ export class YonxaoMindmapRenderer extends Component {
    * 调用链：
    * mount()/保存/折叠/重置 -> renderGraph()。
    */
-  renderGraph(fitAfterRender) {
+  renderGraph(fitAfterRender, options = {}) {
     this.nodeById.clear();
     this.graphEl.textContent = '';
 
@@ -1565,7 +1565,7 @@ export class YonxaoMindmapRenderer extends Component {
     this.graphEl.appendChild(nodeLayer);
 
     if (fitAfterRender || !this.viewBox) {
-      this.fitView(layout.bounds);
+      this.fitView(layout.bounds, options);
     }
 
     this.didInitialGraphRender = true;
@@ -1861,7 +1861,7 @@ export class YonxaoMindmapRenderer extends Component {
    * 作用：
    * 根据布局边界计算并应用适配视图的 viewBox。
    */
-  fitView(bounds) {
+  fitView(bounds, options = {}) {
     if (this.isSourceMode) {
       this.scheduleSourceModeHeight();
       return;
@@ -1880,7 +1880,7 @@ export class YonxaoMindmapRenderer extends Component {
       width,
       height,
     };
-    this.updateContainerHeight(width, height);
+    this.updateContainerHeight(width, height, options);
     this.applyViewBox();
   }
 
@@ -1889,10 +1889,10 @@ export class YonxaoMindmapRenderer extends Component {
    * 根据 viewBox 宽高比自动设置容器高度。
    *
    * 实现逻辑：
-   * 如果用户手动拖过高度，只有“当前手动高度小于布局所需高度”时才增高。
-   * 这样从源码切回脑图时能容纳新增节点，同时不会抹掉用户刻意拖大的画布高度。
+   * 如果用户手动拖过高度，普通重绘会完全尊重手动高度，哪怕它小于自动计算高度。
+   * 只有从源码切回脑图这类明确传入 growManualHeight 的场景，才会在高度不够时自动增高。
    */
-  updateContainerHeight(viewBoxWidth, viewBoxHeight) {
+  updateContainerHeight(viewBoxWidth, viewBoxHeight, options = {}) {
     if (!this.containerEl || !viewBoxWidth || !viewBoxHeight) return;
 
     const rect = this.containerEl.getBoundingClientRect();
@@ -1913,7 +1913,7 @@ export class YonxaoMindmapRenderer extends Component {
 
     if (this.manualCanvasHeight) {
       const currentHeight = rect.height || Number.parseFloat(this.containerEl.style.height) || 0;
-      if (currentHeight >= nextHeight) {
+      if (!options.growManualHeight || currentHeight >= nextHeight) {
         this.scheduleApplyToolbarPosition();
         return;
       }
