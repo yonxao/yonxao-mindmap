@@ -39,6 +39,7 @@ import { markYonxaoMindmapEmbedWrapper } from '../obsidian/embed.js';
 import { assignIds, createMindNode, parseMindDocument } from '../parser/parseMind.js';
 import { serializeMindDocument } from '../parser/serializeMind.js';
 import { applyHeadingLevelKey } from '../source/headingKeys.js';
+import { ConfigModal } from '../ui/ConfigModal.js';
 import { nodeColor, transparentColor } from '../utils/color.js';
 import { createLabeledField } from '../utils/dom.js';
 import { clamp } from '../utils/math.js';
@@ -300,9 +301,13 @@ export class YonxaoMindmapRenderer extends Component {
 
     this.createToolbarDragHandle(toolbar);
 
-    // 源码/导图切换按钮始终可用；其它按钮只对导图视图有意义。
+    // 源码/导图切换按钮和配置按钮始终可用；其它按钮只对导图视图有意义。
     this.toggleViewButton = this.createToolbarButton(toolbar, '显示源码', 'code-2', async () => {
       await this.toggleSourceMode();
+    });
+
+    this.createToolbarButton(toolbar, '配置', 'settings', () => {
+      this.openConfigModal();
     });
 
     this.graphActionButtons.push(
@@ -528,6 +533,80 @@ export class YonxaoMindmapRenderer extends Component {
       });
     });
     return button;
+  }
+
+  /*
+   * 作用：
+   * 打开当前代码块的可视化配置弹框。
+   *
+   * 调用链：
+   * createToolbar() -> 配置按钮 click -> openConfigModal() -> ConfigModal.onOpen()。
+   */
+  openConfigModal() {
+    const modal = new ConfigModal(this.plugin.app, {
+      rawConfig: this.documentConfigForSave(this.rawConfig),
+      onApply: async (nextConfig) => this.applyConfigFromModal(nextConfig),
+    });
+    modal.open();
+  }
+
+  /*
+   * 作用：
+   * 保存配置弹框提交的配置，并保留当前正文内容。
+   *
+   * 实现逻辑：
+   * - 源码模式：先解析 textarea，保留用户正在编辑的标题正文，只替换配置区。
+   * - 脑图模式：以内存树为准重新序列化正文，再写入新的配置区。
+   * - 写回成功后刷新运行时配置和当前视图。
+   */
+  async applyConfigFromModal(nextConfig) {
+    const rawConfig = this.documentConfigForSave(nextConfig);
+    const shouldWriteConfig = hasMeaningfulConfig(rawConfig);
+    let nextRoot = this.root;
+    let nextSource;
+
+    if (this.isSourceMode && this.sourceInputEl) {
+      let document;
+
+      try {
+        document = parseMindDocument(this.sourceInputEl.value);
+      } catch (error) {
+        new Notice(`yonxao-mindmap: 源码解析失败，暂未保存配置：${error.message || String(error)}`);
+        this.updateSourceStatus('源码解析失败，请修正后再保存配置。');
+        return false;
+      }
+
+      if (!document.root) {
+        new Notice('yonxao-mindmap: 源码为空，暂未保存配置。');
+        this.updateSourceStatus('源码为空，暂未保存配置。');
+        return false;
+      }
+
+      nextRoot = document.root;
+      nextSource = serializeMindSource(rawConfig, document.body, shouldWriteConfig);
+    } else {
+      nextSource = serializeMindDocument(this.root, rawConfig, shouldWriteConfig);
+    }
+
+    const saved = await this.saveSourceToMarkdownFile(nextSource);
+    if (!saved) return false;
+
+    this.root = nextRoot;
+    this.source = nextSource;
+    this.rawConfig = rawConfig;
+    this.refreshNormalizedConfig();
+    this.hasConfigBlock = shouldWriteConfig;
+    this.syncSourceInput();
+    this.applyRuntimeConfigToView();
+
+    if (this.isSourceMode) {
+      this.scheduleSourceModeHeight();
+    } else {
+      this.renderGraph(true);
+    }
+
+    new Notice('yonxao-mindmap: 配置已保存。');
+    return true;
   }
 
   /*

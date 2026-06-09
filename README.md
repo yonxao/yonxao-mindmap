@@ -89,6 +89,7 @@ Font priority:
 - In mind map view, hover a node and click the small edit button to edit text, color, icon, or layout.
 - The node editor can also add a child node or delete the selected node.
 - Use the toolbar to fit, zoom in, zoom out, or reset collapsed nodes.
+- Use the toolbar settings button to open the visual config modal; common fields have select presets, and the advanced tab supports direct YAML editing.
 - Drag the toolbar grip to move the floating toolbar away from content.
 - Drag the canvas to pan. Use the mouse wheel to zoom.
 - Drag the bottom edge of the canvas to manually adjust its height. Double-click the handle to return to automatic height.

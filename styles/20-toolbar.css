@@ -72,7 +72,7 @@
   border-radius: 6px;
   background: transparent;
   cursor: pointer;
-  opacity: 0.50;
+  opacity: 0.5;
   transition:
     background 120ms ease,
     color 120ms ease,
@@ -97,7 +97,7 @@
 .yonxao-mindmap-toolbar-button:disabled {
   color: var(--text-faint);
   cursor: default;
-  opacity: 0.30;
+  opacity: 0.3;
 }
 
 /*

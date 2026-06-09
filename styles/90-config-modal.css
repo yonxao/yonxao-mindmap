@@ -1,0 +1,235 @@
+/*
+ * 文件作用：
+ * 可视化配置弹框的样式分层。
+ *
+ * 功能范围：
+ * - 设置弹框宽度、tab、表单字段、组合输入和底部按钮。
+ * - 尽量复用 Obsidian 的 CSS 变量，让浅色/深色主题都能自然适配。
+ *
+ * 调用链：
+ * styles/index.css -> build-css.mjs -> dist/styles.css -> ConfigModal 生成的 DOM class。
+ */
+
+/*
+ * 弹框宿主只控制宽度，不直接写死高度。
+ * 内容区内部滚动，避免配置项变多时把 Obsidian 整个弹窗撑出屏幕。
+ */
+.yonxao-mindmap-config-modal-host {
+  width: min(760px, calc(100vw - 48px));
+}
+
+/*
+ * 弹框内容采用纵向布局：
+ * header 固定在上方，tab 和操作按钮固定可见，中间表单区域滚动。
+ */
+.yonxao-mindmap-config-modal {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+/*
+ * 标题区域保持克制，只承担信息层级，不做额外装饰。
+ */
+.yonxao-mindmap-config-header h2 {
+  margin: 0;
+  font-size: var(--font-ui-large);
+  font-weight: var(--font-semibold);
+}
+
+/*
+ * Tab 使用 Obsidian 变量模拟分段控件。
+ * flex-wrap 让窄屏时自动换行，避免按钮挤压到不可点击。
+ */
+.yonxao-mindmap-config-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--background-modifier-border);
+}
+
+/*
+ * 每个 tab 是普通 button，保留键盘焦点和主题按钮状态。
+ */
+.yonxao-mindmap-config-tab {
+  min-height: 30px;
+  padding: 4px 10px;
+  border-radius: 6px;
+}
+
+/*
+ * 激活态直接使用主题强调色。
+ * 这样不同主题下不会出现固定蓝色和主题色打架的问题。
+ */
+.yonxao-mindmap-config-tab.is-active {
+  color: var(--text-on-accent);
+  background: var(--interactive-accent);
+}
+
+/*
+ * 表单主体滚动。
+ * max-height 使用视口单位，保证小屏也能看到底部按钮。
+ */
+.yonxao-mindmap-config-body {
+  display: grid;
+  gap: 10px;
+  max-height: min(62vh, 640px);
+  padding-right: 4px;
+  overflow: auto;
+}
+
+/*
+ * 分区标题用于把配置项分组。
+ * 它不是卡片，只是表单中的轻量分隔。
+ */
+.yonxao-mindmap-config-section {
+  margin-top: 4px;
+  padding-top: 8px;
+  color: var(--text-muted);
+  font-size: var(--font-ui-smaller);
+  font-weight: var(--font-semibold);
+  border-top: 1px solid var(--background-modifier-border);
+}
+
+.yonxao-mindmap-config-section:first-child {
+  margin-top: 0;
+  padding-top: 0;
+  border-top: 0;
+}
+
+/*
+ * 普通字段用两列：左侧标签，右侧控件。
+ * minmax(0, 1fr) 可以避免长字体栈把弹框横向撑开。
+ */
+.yonxao-mindmap-config-field {
+  display: grid;
+  grid-template-columns: 156px minmax(0, 1fr);
+  gap: 8px;
+  align-items: center;
+}
+
+.yonxao-mindmap-config-field > label {
+  color: var(--text-normal);
+  font-size: var(--font-ui-small);
+}
+
+/*
+ * 控件列负责承载输入框、下拉框和字段帮助文本。
+ * 单独包一层可以保证帮助文本不会打乱外层 label/input 两列布局。
+ */
+.yonxao-mindmap-config-control {
+  display: grid;
+  gap: 5px;
+  min-width: 0;
+}
+
+/*
+ * 帮助文本放在控件列内，用来解释“为什么有这个配置”。
+ */
+.yonxao-mindmap-config-help {
+  color: var(--text-faint);
+  font-size: var(--font-ui-smaller);
+  line-height: 1.45;
+}
+
+/*
+ * 输入控件铺满右侧列，保证长配置值可编辑。
+ */
+.yonxao-mindmap-config-field input,
+.yonxao-mindmap-config-field select,
+.yonxao-mindmap-config-yaml {
+  width: 100%;
+}
+
+/*
+ * “下拉 + 自由输入”组合：
+ * 左边给新手选择预设，右边给熟悉 YAML 的用户直接输入。
+ */
+.yonxao-mindmap-config-combo {
+  display: grid;
+  grid-template-columns: minmax(132px, 0.38fr) minmax(0, 1fr);
+  gap: 8px;
+}
+
+/*
+ * 按层级字体覆盖是一组重复字段。
+ * 使用轻背景和边框，表示它是一个局部配置块。
+ */
+.yonxao-mindmap-config-level {
+  display: grid;
+  gap: 8px;
+  padding: 10px;
+  border: 1px solid var(--background-modifier-border);
+  border-radius: 8px;
+  background: var(--background-secondary);
+}
+
+.yonxao-mindmap-config-level-title {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  color: var(--text-muted);
+  font-size: var(--font-ui-small);
+  font-weight: var(--font-semibold);
+}
+
+/*
+ * 小按钮只用于“清除本层”这类低频动作。
+ */
+.yonxao-mindmap-config-small-button,
+.yonxao-mindmap-config-secondary-button {
+  width: fit-content;
+}
+
+/*
+ * 高级 YAML 编辑区使用等宽字体，方便对齐嵌套层级。
+ */
+.yonxao-mindmap-config-yaml {
+  min-height: 280px;
+  resize: vertical;
+  font-family: var(--font-monospace);
+  line-height: 1.55;
+}
+
+/*
+ * 状态文本预留最小高度，避免“配置已保存”出现时按钮区上下跳动。
+ */
+.yonxao-mindmap-config-status {
+  min-height: 18px;
+  color: var(--text-muted);
+  font-size: var(--font-ui-smaller);
+}
+
+.yonxao-mindmap-config-status.is-error {
+  color: var(--text-error);
+}
+
+/*
+ * 底部操作区靠右排列，符合 Obsidian 设置弹框的常见操作习惯。
+ */
+.yonxao-mindmap-config-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  padding-top: 8px;
+  border-top: 1px solid var(--background-modifier-border);
+}
+
+/*
+ * 窄屏下改成单列字段，避免标签挤压输入框。
+ */
+@media (max-width: 640px) {
+  .yonxao-mindmap-config-modal-host {
+    width: calc(100vw - 24px);
+  }
+
+  .yonxao-mindmap-config-field {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .yonxao-mindmap-config-combo {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
