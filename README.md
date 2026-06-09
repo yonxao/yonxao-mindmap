@@ -66,7 +66,7 @@ Supported config keys:
 
 - `canvas.height`: persisted canvas height. Drag the bottom handle to write it; double-click the handle to remove it and return to automatic height.
 - `toolbar.x` / `toolbar.y`: persisted floating toolbar position. Drag the toolbar grip to write it.
-- `theme`: parsed and preserved for future theme support.
+- `theme`: built-in theme name: `default`, `ocean`, `forest`, `sunset`, `mono`, `rainbow`, `pastel-rainbow`, or `neon-rainbow`.
 - `layout.defaultDirection`: default first-level branch direction: `balanced`, `left`, or `right`.
 - `font.family`, `font.size`, `font.weight`, `font.lineHeight`: global font defaults.
 - `font.levels.1`, `font.levels.2`: per-heading-level font overrides.
@@ -78,6 +78,13 @@ Supported config keys:
 Font priority:
 
 `node inline attributes` > `font.levels[current level]` > `global font config` > `plugin defaults`
+
+Theme color priority:
+
+`node inline color` > `node.defaultColor` > `theme auto color`
+
+`rainbow`, `pastel-rainbow`, and `neon-rainbow` automatically assign colors by first-level branch.
+The center node uses an independent center color from the theme. Inline node `color` changes only the node itself, not the edge from its parent.
 
 ## Controls
 

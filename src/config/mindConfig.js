@@ -27,6 +27,7 @@
  */
 
 import { CANVAS_MAX_HEIGHT, CANVAS_MIN_HEIGHT, LINE_HEIGHT, NODE_MAX_WIDTH } from '../constants.js';
+import { DEFAULT_THEME_NAME, normalizeMindThemeName } from '../theme/mindThemes.js';
 import { clamp } from '../utils/math.js';
 
 export const DEFAULT_FONT_FAMILY =
@@ -51,7 +52,7 @@ export const DEFAULT_MIND_CONFIG = Object.freeze({
   view: Object.freeze({
     mode: 'graph',
   }),
-  theme: 'default',
+  theme: DEFAULT_THEME_NAME,
   layout: Object.freeze({
     defaultDirection: 'balanced',
   }),
@@ -143,7 +144,7 @@ export function normalizeMindConfig(rawConfig) {
       ...view,
       mode: normalizeViewMode(view.mode) || DEFAULT_MIND_CONFIG.view.mode,
     },
-    theme: normalizeText(raw.theme) || DEFAULT_MIND_CONFIG.theme,
+    theme: normalizeMindThemeName(raw.theme),
     layout: {
       ...layout,
       defaultDirection:

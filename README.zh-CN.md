@@ -68,7 +68,7 @@ source:
 
 - `canvas.height`：幕布高度。拖动画布底部边缘后会自动写入；双击拖拽条会移除该项并恢复自动高度。
 - `toolbar.x` / `toolbar.y`：悬浮工具栏位置。拖动工具栏抓手后会自动写入。
-- `theme`：主题名称，当前会解析并保存，后续可用于扩展主题方案。
+- `theme`：主题名称，可选 `default`、`ocean`、`forest`、`sunset`、`mono`、`rainbow`、`pastel-rainbow`、`neon-rainbow`。
 - `layout.defaultDirection`：一级分支默认方向，可选 `balanced`、`left`、`right`。
 - `font.family`、`font.size`、`font.weight`、`font.lineHeight`：全局默认字体。
 - `font.levels.1`、`font.levels.2`：按标题级别设置字体，数字对应 `#`、`##`、`###` 的层级。
@@ -80,6 +80,13 @@ source:
 字体优先级从高到低是：
 
 `节点行尾属性` > `font.levels[当前级别]` > `font 全局配置` > `插件默认值`
+
+主题颜色优先级从高到低是：
+
+`节点行尾 color` > `node.defaultColor` > `theme 自动配色`
+
+其中 `rainbow`、`pastel-rainbow`、`neon-rainbow` 会按一级分支自动分配不同颜色。
+中心节点会使用主题独立中心色；节点行尾 `color` 只改变节点本身，不改变它和父节点之间的连接线颜色。
 
 ## 操作
 

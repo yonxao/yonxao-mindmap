@@ -26,6 +26,7 @@ import {
   stringifyDraftConfig,
 } from '../config/configDraft.js';
 import { normalizeMindConfig } from '../config/mindConfig.js';
+import { MIND_THEME_OPTIONS } from '../theme/mindThemes.js';
 
 const FONT_FAMILY_OPTIONS = [
   ['', '继承默认字体'],
@@ -195,12 +196,7 @@ export class ConfigModal extends Modal {
    */
   renderThemeTab(normalized) {
     this.createSection('主题');
-    this.createSelectTextField('主题方案', ['theme'], normalized.theme, [
-      ['', '默认'],
-      ['default', 'default'],
-      ['minimal', 'minimal'],
-      ['contrast', 'contrast'],
-    ]);
+    this.createSelectTextField('主题方案', ['theme'], normalized.theme, MIND_THEME_OPTIONS);
     this.createColorTextField(
       '默认节点颜色',
       ['node', 'defaultColor'],

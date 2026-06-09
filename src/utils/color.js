@@ -10,12 +10,38 @@
  * YonxaoMindmapRenderer.renderNode()/renderEdge() -> nodeColor()/transparentColor()
  */
 
+import { themeColorForNode } from '../theme/mindThemes.js';
+
 /*
  * 作用：
  * 从节点 attrs 中读取并规范化节点颜色。
+ *
+ * 优先级：
+ * 节点行尾 color > 配置区 node.defaultColor > 当前主题自动配色。
  */
 export function nodeColor(node, config) {
-  return normalizeColor(node.attrs.color) || normalizeColor(config?.node?.defaultColor);
+  return (
+    normalizeColor(node.attrs.color) ||
+    normalizeColor(config?.node?.defaultColor) ||
+    normalizeColor(themeColorForNode(node, config))
+  );
+}
+
+/*
+ * 作用：
+ * 计算父子连接线颜色。
+ *
+ * 为什么不直接复用 nodeColor：
+ * 用户在节点行尾写 [color=...] 时，语义是“单独强调这个节点”。
+ * 如果连线也跟着变色，整条分支的主题节奏会被打断，所以连线刻意忽略节点行尾 color。
+ *
+ * 优先级：
+ * 配置区 node.defaultColor > 当前主题自动配色。
+ */
+export function edgeColor(node, config) {
+  return (
+    normalizeColor(config?.node?.defaultColor) || normalizeColor(themeColorForNode(node, config))
+  );
 }
 
 /*

@@ -39,8 +39,9 @@ import { markYonxaoMindmapEmbedWrapper } from '../obsidian/embed.js';
 import { assignIds, createMindNode, parseMindDocument } from '../parser/parseMind.js';
 import { serializeMindDocument } from '../parser/serializeMind.js';
 import { applyHeadingLevelKey } from '../source/headingKeys.js';
+import { themeEdgeOpacity, themeNodeFillAlpha } from '../theme/mindThemes.js';
 import { ConfigModal } from '../ui/ConfigModal.js';
-import { nodeColor, transparentColor } from '../utils/color.js';
+import { edgeColor, nodeColor, transparentColor } from '../utils/color.js';
 import { createLabeledField } from '../utils/dom.js';
 import { clamp } from '../utils/math.js';
 import { svg } from '../utils/svg.js';
@@ -1583,7 +1584,7 @@ export class YonxaoMindmapRenderer extends Component {
     const endX = childBox.x - (dir * childBox.width) / 2;
     const endY = childBox.y;
     const bend = Math.max(44, Math.abs(endX - startX) * 0.46);
-    const color = nodeColor(edge.child, this.config);
+    const color = edgeColor(edge.child, this.config);
 
     // 使用三次贝塞尔曲线连接父子节点，比直线更接近常见思维导图的视觉语言。
     return svg('path', {
@@ -1601,6 +1602,7 @@ export class YonxaoMindmapRenderer extends Component {
         endY,
       ].join(' '),
       stroke: color || 'currentColor',
+      style: `opacity: ${themeEdgeOpacity(this.config)}`,
     });
   }
 
@@ -1620,7 +1622,9 @@ export class YonxaoMindmapRenderer extends Component {
     });
 
     const color = nodeColor(node, this.config);
-    const fill = color ? transparentColor(color, 0.11) : 'var(--background-primary)';
+    const fill = color
+      ? transparentColor(color, themeNodeFillAlpha(this.config))
+      : 'var(--background-primary)';
     const stroke = color || 'var(--background-modifier-border)';
 
     group.appendChild(
