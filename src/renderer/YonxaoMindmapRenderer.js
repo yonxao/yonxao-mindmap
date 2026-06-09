@@ -1959,6 +1959,14 @@ export class YonxaoMindmapRenderer extends Component {
       group.appendChild(this.renderEditButton(node, box));
     }
 
+    if (!node._virtual && node !== this.root) {
+      group.appendChild(this.renderSiblingButtons(box));
+    }
+
+    if (!node._virtual && !node.children.length) {
+      group.appendChild(this.renderChildButton(box));
+    }
+
     if (node.children.length) {
       group.appendChild(this.renderToggle(node));
     }
@@ -2002,6 +2010,91 @@ export class YonxaoMindmapRenderer extends Component {
     }
 
     return toggle;
+  }
+
+  /*
+   * 作用：
+   * 绘制“新增兄弟节点”的两个小按钮。
+   *
+   * 实现逻辑：
+   * 当前思维导图是左右展开布局，同级节点在垂直方向排列，所以按钮放在节点上/下边框。
+   * 如果后续加入 top/bottom/vertical 竖向结构，同级节点会更偏横向排列，此函数会把按钮切到左/右边框。
+   */
+  renderSiblingButtons(box) {
+    const group = svg('g', { class: 'yonxao-mindmap-node-sibling-actions' });
+    const horizontal = this.shouldPlaceSiblingButtonsHorizontally(box);
+    const positions = horizontal
+      ? [
+          { placement: 'before', label: '在左侧添加兄弟节点', x: 0, y: box.height / 2 },
+          { placement: 'after', label: '在右侧添加兄弟节点', x: box.width, y: box.height / 2 },
+        ]
+      : [
+          { placement: 'before', label: '在上方添加兄弟节点', x: box.width / 2, y: 0 },
+          { placement: 'after', label: '在下方添加兄弟节点', x: box.width / 2, y: box.height },
+        ];
+
+    for (const position of positions) {
+      group.appendChild(this.renderSiblingButton(position));
+    }
+
+    return group;
+  }
+
+  /*
+   * 作用：
+   * 判断兄弟节点按钮应该放在左右还是上下。
+   *
+   * 当前 layoutTree 只会输出 root/left/right，所以默认是上下按钮。
+   * 这里保留 top/bottom/vertical 判断，是为了后续真正支持竖向结构时不用再重写按钮渲染。
+   */
+  shouldPlaceSiblingButtonsHorizontally(box) {
+    return ['top', 'bottom', 'vertical'].includes(String(box.side || '').toLowerCase());
+  }
+
+  /*
+   * 作用：
+   * 绘制单个兄弟节点新增按钮。
+   */
+  renderSiblingButton(position) {
+    const button = svg('g', {
+      class: 'yonxao-mindmap-node-sibling-add',
+      transform: `translate(${position.x} ${position.y})`,
+      'data-sibling-position': position.placement,
+    });
+
+    const title = svg('title');
+    title.textContent = position.label;
+    button.appendChild(title);
+    button.appendChild(svg('circle', { cx: 0, cy: 0, r: 7 }));
+    button.appendChild(svg('path', { d: 'M -3 0 H 3 M 0 -3 V 3' }));
+
+    return button;
+  }
+
+  /*
+   * 作用：
+   * 绘制“新增子节点”的小按钮。
+   *
+   * 位置策略：
+   * 没有子节点时才显示这个按钮；如果已有子节点，同一位置会显示折叠/展开圆点。
+   * 右侧分支放在右边框中点，左侧分支放在左边框中点，中心节点默认放在右边框中点。
+   */
+  renderChildButton(box) {
+    const side = box.side === 'left' ? 'left' : 'right';
+    const x = side === 'left' ? 0 : box.width;
+    const button = svg('g', {
+      class: 'yonxao-mindmap-node-child-add',
+      transform: `translate(${x} ${box.height / 2})`,
+      'data-child-side': side,
+    });
+
+    const title = svg('title');
+    title.textContent = '添加子节点';
+    button.appendChild(title);
+    button.appendChild(svg('circle', { cx: 0, cy: 0, r: 8 }));
+    button.appendChild(svg('path', { d: 'M -3.5 0 H 3.5 M 0 -3.5 V 3.5' }));
+
+    return button;
   }
 
   /*
@@ -2111,6 +2204,27 @@ export class YonxaoMindmapRenderer extends Component {
     const node = this.nodeById.get(id);
     if (!node) return;
 
+    if (target && target.closest && target.closest('.yonxao-mindmap-node-child-add')) {
+      event.preventDefault();
+      event.stopPropagation();
+      Promise.resolve(this.addChildFromContextMenu(node)).catch((error) => {
+        new Notice(`yonxao-mindmap: ${error.message || String(error)}`);
+      });
+      return;
+    }
+
+    const siblingButton =
+      target && target.closest ? target.closest('.yonxao-mindmap-node-sibling-add') : null;
+    if (siblingButton) {
+      event.preventDefault();
+      event.stopPropagation();
+      const position = siblingButton.getAttribute('data-sibling-position') || 'after';
+      Promise.resolve(this.addSiblingFromContextMenu(node, position)).catch((error) => {
+        new Notice(`yonxao-mindmap: ${error.message || String(error)}`);
+      });
+      return;
+    }
+
     if (target && target.closest && target.closest('.yonxao-mindmap-node-edit')) {
       event.preventDefault();
       event.stopPropagation();
@@ -2138,7 +2252,10 @@ export class YonxaoMindmapRenderer extends Component {
     if (
       target &&
       target.closest &&
-      (target.closest('.yonxao-mindmap-node-edit') || target.closest('.yonxao-mindmap-toggle'))
+      (target.closest('.yonxao-mindmap-node-child-add') ||
+        target.closest('.yonxao-mindmap-node-sibling-add') ||
+        target.closest('.yonxao-mindmap-node-edit') ||
+        target.closest('.yonxao-mindmap-toggle'))
     ) {
       return;
     }
@@ -2349,7 +2466,10 @@ export class YonxaoMindmapRenderer extends Component {
     const nodeEl = target && target.closest ? target.closest('.yonxao-mindmap-node') : null;
     if (nodeEl) {
       const isNodeControl =
-        target.closest('.yonxao-mindmap-node-edit') || target.closest('.yonxao-mindmap-toggle');
+        target.closest('.yonxao-mindmap-node-child-add') ||
+        target.closest('.yonxao-mindmap-node-sibling-add') ||
+        target.closest('.yonxao-mindmap-node-edit') ||
+        target.closest('.yonxao-mindmap-toggle');
       if (!isNodeControl) {
         this.startPendingNodeDrag(event, nodeEl);
       }

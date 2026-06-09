@@ -158,6 +158,76 @@
 
 /*
  * 作用：
+ * 新增兄弟节点按钮组，默认隐藏。
+ *
+ * 交互逻辑：
+ * Renderer 会把 before/after 两个按钮放到节点上/下边框；
+ * 后续竖向布局时会改为左/右边框。
+ */
+.yonxao-mindmap-node-sibling-actions {
+  opacity: 0;
+  transition: opacity 120ms ease;
+}
+
+/*
+ * 作用：
+ * 新增子节点按钮，默认隐藏。
+ *
+ * 显示条件：
+ * Renderer 只会在没有子节点的真实节点上渲染它；已有子节点的节点保留折叠/展开圆点。
+ */
+.yonxao-mindmap-node-child-add {
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 120ms ease;
+  pointer-events: auto;
+}
+
+/*
+ * 作用：
+ * 节点 hover 时显示新增节点按钮。
+ */
+.yonxao-mindmap-node:hover .yonxao-mindmap-node-sibling-actions,
+.yonxao-mindmap-node-sibling-actions:focus,
+.yonxao-mindmap-node:hover .yonxao-mindmap-node-child-add,
+.yonxao-mindmap-node-child-add:focus {
+  opacity: 1;
+}
+
+/*
+ * 作用：
+ * 新增兄弟节点的小圆形加号按钮。
+ */
+.yonxao-mindmap-node-sibling-add {
+  cursor: pointer;
+  pointer-events: auto;
+}
+
+/*
+ * 作用：
+ * 加号按钮圆形底板。
+ */
+.yonxao-mindmap-node-sibling-add circle,
+.yonxao-mindmap-node-child-add circle {
+  fill: var(--background-primary);
+  stroke: var(--interactive-accent);
+  stroke-width: 1.4;
+}
+
+/*
+ * 作用：
+ * 加号按钮中的横竖线。
+ */
+.yonxao-mindmap-node-sibling-add path,
+.yonxao-mindmap-node-child-add path {
+  fill: none;
+  stroke: var(--interactive-accent);
+  stroke-width: 1.4;
+  stroke-linecap: round;
+}
+
+/*
+ * 作用：
  * 节点内置图标的 SVG group 样式。
  */
 .yonxao-mindmap-node-icon {
