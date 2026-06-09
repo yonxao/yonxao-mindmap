@@ -157,3 +157,32 @@
   cursor: default;
   opacity: 0.55;
 }
+
+/*
+ * 作用：
+ * 双击节点时覆盖在 SVG 节点上方的快速改名输入框。
+ *
+ * 实现逻辑：
+ * Renderer 会读取 SVG 节点卡片的屏幕坐标，把这个 HTML input 绝对定位到同一位置。
+ * 文字输入仍由浏览器原生 input 处理，能获得更稳定的光标、选区和中文输入法体验。
+ */
+.yonxao-mindmap-inline-text-editor {
+  position: absolute;
+  z-index: 6;
+  box-sizing: border-box;
+  padding: 0 12px;
+  color: var(--text-normal);
+  border: 1px solid var(--interactive-accent);
+  border-radius: 8px;
+  outline: none;
+  background: var(--background-primary);
+  box-shadow: 0 0 0 2px rgba(var(--interactive-accent-rgb), 0.22);
+}
+
+/*
+ * 作用：
+ * 内联改名输入框聚焦时保持清晰边界。
+ */
+.yonxao-mindmap-inline-text-editor:focus {
+  border-color: var(--interactive-accent);
+}

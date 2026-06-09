@@ -77,6 +77,9 @@ export class YonxaoMindmapRenderer extends Component {
     this.sourceStatusEl = null;
     this.nodeEditorEl = null;
     this.nodeEditorFields = null;
+    this.inlineTextEditorEl = null;
+    this.inlineEditingNodeId = null;
+    this.inlineTextEditorSaving = false;
     this.nodeById = new Map();
     this.collapsedIds = new Set();
     this.viewBox = null;
@@ -746,6 +749,7 @@ export class YonxaoMindmapRenderer extends Component {
     this.containerEl.appendChild(this.svgEl);
 
     this.registerDomEvent(this.svgEl, 'click', (event) => this.handleNodeClick(event));
+    this.registerDomEvent(this.svgEl, 'dblclick', (event) => this.handleNodeDoubleClick(event));
     this.registerDomEvent(this.svgEl, 'wheel', (event) => this.handleWheel(event));
     this.registerDomEvent(this.svgEl, 'pointerdown', (event) => this.handlePointerDown(event));
     this.registerDomEvent(this.svgEl, 'pointermove', (event) => this.handlePointerMove(event));
@@ -1243,6 +1247,7 @@ export class YonxaoMindmapRenderer extends Component {
       return;
     }
 
+    this.closeInlineTextEditor(false);
     this.editingNodeId = node.id;
     this.nodeEditorFields.text.value = node.text || '';
     this.nodeEditorFields.color.value = node.attrs.color || '';
@@ -1263,6 +1268,149 @@ export class YonxaoMindmapRenderer extends Component {
     if (this.nodeEditorEl) {
       this.nodeEditorEl.hidden = true;
     }
+  }
+
+  /*
+   * 作用：
+   * 在 SVG 节点上方覆盖一个 HTML input，用于“双击直接改节点文字”。
+   *
+   * 为什么这样实现：
+   * SVG 的 <text> 元素本身没有稳定好用的文本编辑能力；如果把节点改成
+   * contenteditable，还会遇到光标、中文输入法、选区和换行兼容性问题。
+   * 因此这里把真实输入交给浏览器原生 input，再用节点 rect 的屏幕坐标把它覆盖到节点上。
+   *
+   * 调用链：
+   * handleNodeDoubleClick() -> openInlineTextEditor() -> saveInlineTextEditor() ->
+   * saveTreeToSourceAndFile() -> serializeMindDocument()/saveSourceToMarkdownFile()。
+   */
+  openInlineTextEditor(node) {
+    if (!node || node._virtual || !this.containerEl) return;
+
+    this.closeNodeEditor();
+    this.closeInlineTextEditor(false);
+
+    const nodeEl = Array.from(this.graphEl.querySelectorAll('.yonxao-mindmap-node')).find(
+      (element) => element.getAttribute('data-node-id') === node.id
+    );
+    const cardEl = nodeEl ? nodeEl.querySelector('.yonxao-mindmap-node-card') : null;
+    if (!cardEl) return;
+
+    const cardRect = cardEl.getBoundingClientRect();
+    const containerRect = this.containerEl.getBoundingClientRect();
+    const box = node._layout;
+
+    const inputEl = document.createElement('input');
+    inputEl.type = 'text';
+    inputEl.className = 'yonxao-mindmap-inline-text-editor';
+    inputEl.value = node.text || '';
+    inputEl.spellcheck = false;
+    inputEl.setAttribute('aria-label', '编辑节点文本');
+
+    // input 是 HTML 元素，坐标系来自容器；cardRect 是浏览器屏幕坐标，所以要减去容器坐标。
+    inputEl.style.left = `${cardRect.left - containerRect.left}px`;
+    inputEl.style.top = `${cardRect.top - containerRect.top}px`;
+    inputEl.style.width = `${cardRect.width}px`;
+    inputEl.style.height = `${cardRect.height}px`;
+
+    // 字体使用当前节点布局计算出的配置，确保覆盖输入框和 SVG 节点尽量同高同宽。
+    if (box && box.font) {
+      inputEl.style.fontFamily = box.font.family;
+      inputEl.style.fontSize = `${box.font.size}px`;
+      inputEl.style.fontWeight = String(box.font.weight);
+      inputEl.style.lineHeight = `${box.font.lineHeight}px`;
+    }
+
+    const stopEvent = (event) => event.stopPropagation();
+    inputEl.addEventListener('pointerdown', stopEvent);
+    inputEl.addEventListener('click', stopEvent);
+    inputEl.addEventListener('dblclick', stopEvent);
+
+    inputEl.addEventListener('keydown', (event) => {
+      event.stopPropagation();
+      if (event.key === 'Enter') {
+        event.preventDefault();
+        Promise.resolve(this.saveInlineTextEditor()).catch((error) => {
+          new Notice(`yonxao-mindmap: ${error.message || String(error)}`);
+        });
+      }
+
+      if (event.key === 'Escape') {
+        event.preventDefault();
+        this.closeInlineTextEditor(false);
+      }
+    });
+
+    inputEl.addEventListener('blur', () => {
+      if (this.inlineTextEditorSaving) return;
+      Promise.resolve(this.saveInlineTextEditor()).catch((error) => {
+        new Notice(`yonxao-mindmap: ${error.message || String(error)}`);
+      });
+    });
+
+    this.inlineTextEditorEl = inputEl;
+    this.inlineEditingNodeId = node.id;
+    this.containerEl.appendChild(inputEl);
+    inputEl.focus();
+    inputEl.select();
+  }
+
+  /*
+   * 作用：
+   * 保存内联 input 中的节点文字，并同步回当前 yxmm 源码。
+   *
+   * 实现逻辑：
+   * 只更新 node.text，不碰颜色、图标、布局等节点属性；这样双击编辑就是“快速改名”，
+   * 完整属性仍然交给铅笔按钮打开的节点编辑面板。
+   */
+  async saveInlineTextEditor() {
+    const inputEl = this.inlineTextEditorEl;
+    const node = this.nodeById.get(this.inlineEditingNodeId);
+    if (!inputEl || !node) return false;
+
+    const nextText = inputEl.value.trim();
+    if (!nextText) {
+      new Notice('yonxao-mindmap: 节点文本不能为空。');
+      inputEl.focus();
+      return false;
+    }
+
+    if (nextText === (node.text || '')) {
+      this.closeInlineTextEditor(false);
+      return true;
+    }
+
+    this.inlineTextEditorSaving = true;
+    node.text = nextText;
+    this.closeInlineTextEditor(false);
+
+    try {
+      return await this.saveTreeToSourceAndFile('节点文本已保存。');
+    } finally {
+      this.inlineTextEditorSaving = false;
+    }
+  }
+
+  /*
+   * 作用：
+   * 移除内联文字编辑框，并清理双击编辑状态。
+   *
+   * 参数说明：
+   * saveOnClose 预留给后续扩展；当前 blur/Enter 已经直接调用 saveInlineTextEditor，
+   * Escape 和重绘场景传 false 表示只关闭不保存。
+   */
+  closeInlineTextEditor(saveOnClose = false) {
+    if (saveOnClose && this.inlineTextEditorEl) {
+      Promise.resolve(this.saveInlineTextEditor()).catch((error) => {
+        new Notice(`yonxao-mindmap: ${error.message || String(error)}`);
+      });
+      return;
+    }
+
+    if (this.inlineTextEditorEl) {
+      this.inlineTextEditorEl.remove();
+    }
+    this.inlineTextEditorEl = null;
+    this.inlineEditingNodeId = null;
   }
 
   /*
@@ -1570,6 +1718,7 @@ export class YonxaoMindmapRenderer extends Component {
    * mount()/保存/折叠/重置 -> renderGraph()。
    */
   renderGraph(fitAfterRender, options = {}) {
+    this.closeInlineTextEditor(false);
     this.nodeById.clear();
     this.graphEl.textContent = '';
 
@@ -1845,15 +1994,17 @@ export class YonxaoMindmapRenderer extends Component {
 
   /*
    * 作用：
-   * 处理 SVG 节点点击：编辑按钮打开编辑器，节点本体折叠/展开子节点。
+   * 处理 SVG 节点单击事件。
+   *
+   * 当前交互规则：
+   * - 单击铅笔按钮：打开完整节点编辑面板。
+   * - 单击折叠圆点：折叠/展开子节点。
+   * - 单击节点本体：暂时无动作，避免误触和双击编辑冲突。
    */
   handleNodeClick(event) {
     const target = event.target;
     const nodeEl = target && target.closest ? target.closest('.yonxao-mindmap-node') : null;
     if (!nodeEl) return;
-
-    event.preventDefault();
-    event.stopPropagation();
 
     const id = nodeEl.getAttribute('data-node-id');
     const node = this.nodeById.get(id);
@@ -1866,8 +2017,49 @@ export class YonxaoMindmapRenderer extends Component {
       return;
     }
 
-    if (!node.children.length) return;
+    if (target && target.closest && target.closest('.yonxao-mindmap-toggle')) {
+      event.preventDefault();
+      event.stopPropagation();
+      this.toggleNodeCollapse(node);
+    }
+  }
 
+  /*
+   * 作用：
+   * 处理节点双击事件，直接进入节点文字的内联编辑状态。
+   */
+  handleNodeDoubleClick(event) {
+    const target = event.target;
+    const nodeEl = target && target.closest ? target.closest('.yonxao-mindmap-node') : null;
+    if (!nodeEl) return;
+
+    // 铅笔按钮和折叠圆点已经有自己的单击语义，双击它们时不进入快速改名。
+    if (
+      target &&
+      target.closest &&
+      (target.closest('.yonxao-mindmap-node-edit') || target.closest('.yonxao-mindmap-toggle'))
+    ) {
+      return;
+    }
+
+    event.preventDefault();
+    event.stopPropagation();
+
+    const id = nodeEl.getAttribute('data-node-id');
+    const node = this.nodeById.get(id);
+    if (node) {
+      this.openInlineTextEditor(node);
+    }
+  }
+
+  /*
+   * 作用：
+   * 折叠或展开一个节点的子树。
+   */
+  toggleNodeCollapse(node) {
+    if (!node || !node.children.length) return;
+
+    const id = node.id;
     // 折叠状态只保存节点 id，不改原始树。这样重置和重新布局都很直接。
     if (this.collapsedIds.has(id)) {
       this.collapsedIds.delete(id);

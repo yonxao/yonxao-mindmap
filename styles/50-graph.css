@@ -48,10 +48,13 @@
 
 /*
  * 作用：
- * 有子节点的节点显示可点击光标。
+ * 标记“有子节点”的节点。
+ *
+ * 关键点：
+ * 当前节点本体单击不做动作，真正可点击的是折叠/展开圆点，所以这里保持默认光标。
  */
 .yonxao-mindmap-node-clickable {
-  cursor: pointer;
+  cursor: default;
 }
 
 /*
@@ -128,7 +131,8 @@
   fill: var(--background-primary);
   stroke: var(--background-modifier-border-hover);
   stroke-width: 1.5;
-  pointer-events: none;
+  cursor: pointer;
+  pointer-events: auto;
 }
 
 /*
