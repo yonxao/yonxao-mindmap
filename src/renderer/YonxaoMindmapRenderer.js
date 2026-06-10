@@ -1532,6 +1532,8 @@ export class YonxaoMindmapRenderer extends Component {
       return false;
     }
 
+    if (!this.confirmDeleteNode(node)) return false;
+
     const removed = removeNodeById(this.root, node.id);
     if (!removed) return false;
 
@@ -1546,7 +1548,7 @@ export class YonxaoMindmapRenderer extends Component {
    * 从右键菜单删除节点。
    *
    * 关键点：
-   * 删除分支会同时删除所有子节点，所以当存在后代节点时先弹出浏览器确认框。
+   * 删除节点不可撤销，所以无论是否存在子节点都先弹出浏览器确认框。
    * 这里使用 window.confirm 是为了保持实现轻量，后续如果需要更精致的 UI 可以替换为 Obsidian Modal。
    */
   async deleteNodeFromContextMenu(node) {
@@ -1555,13 +1557,7 @@ export class YonxaoMindmapRenderer extends Component {
       return false;
     }
 
-    const descendantCount = countDescendants(node);
-    if (
-      descendantCount > 0 &&
-      !window.confirm(`确定删除“${node.text}”及其 ${descendantCount} 个子节点吗？`)
-    ) {
-      return false;
-    }
+    if (!this.confirmDeleteNode(node)) return false;
 
     this.closeNodeEditor();
     this.closeInlineTextEditor(false);
@@ -1570,6 +1566,26 @@ export class YonxaoMindmapRenderer extends Component {
 
     assignIds(this.root, '0');
     return this.saveTreeToSourceAndFile('节点已删除。');
+  }
+
+  /*
+   * 作用：
+   * 删除节点前统一二次确认。
+   *
+   * 调用链：
+   * deleteNodeFromEditor()/deleteNodeFromContextMenu() -> confirmDeleteNode()。
+   *
+   * 实现逻辑：
+   * 普通节点也确认；有后代节点时额外提示会同时删除多少个子节点。
+   */
+  confirmDeleteNode(node) {
+    const descendantCount = countDescendants(node);
+    const message =
+      descendantCount > 0
+        ? `确定删除“${node.text}”及其 ${descendantCount} 个子节点吗？`
+        : `确定删除“${node.text}”吗？`;
+
+    return window.confirm(message);
   }
 
   /*
