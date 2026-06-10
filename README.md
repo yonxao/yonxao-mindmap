@@ -100,11 +100,12 @@ Hex colors in the config block should be quoted, for example `defaultColor: '#66
 ## Controls
 
 - The rendered mind map is available in both Reading view and editor/Live Preview.
-- Click a node to collapse or expand its children.
+- Reading view is browse-focused; node rename, add, delete, drag-sort, and node context menus are enabled only in editor/Live Preview.
+- Click the collapse/expand dot next to a node to collapse or expand its children.
 - Use the source/map button to switch between raw `yxmm` source and the rendered mind map.
 - In source view, edit the textarea; switching back to the mind map auto-saves, and Ctrl/Cmd+S also saves.
 - In source view, Tab/Shift+Tab promotes or demotes selected heading lines.
-- In mind map view, hover a node and click the small edit button to edit text, color, icon, or layout.
+- In editor/Live Preview mind map view, hover a node and click the small edit button to edit text, color, icon, or layout.
 - The node editor can also add a child node or delete the selected node.
 - Use the toolbar to fit, zoom in, zoom out, or reset collapsed nodes.
 - Use the toolbar settings button to open the visual config modal; common fields have select presets, and the advanced tab supports direct YAML editing.

@@ -181,6 +181,30 @@ export class YonxaoMindmapRenderer extends Component {
 
   /*
    * 作用：
+   * 判断当前渲染器是否允许修改节点正文和树结构。
+   *
+   * 实现逻辑：
+   * editorContext 是最直接的编辑器上下文；但当前插件主要走 Obsidian 官方
+   * Markdown code block processor，Live Preview 下也可能拿不到 editorContext。
+   * 因此这里再用 DOM 外壳判断：Live Preview 通常位于 .markdown-source-view/.cm-embed-block，
+   * 阅读视图通常位于 .markdown-reading-view/.markdown-preview-view。
+   *
+   * 注意：
+   * 折叠/展开、画布平移、工具栏缩放这类浏览行为不依赖这个判断。
+   */
+  canEditMindMap() {
+    if (this.editorContext) return true;
+    if (!this.hostEl || !this.hostEl.closest) return false;
+
+    if (this.hostEl.closest('.markdown-reading-view, .markdown-preview-view')) {
+      return false;
+    }
+
+    return Boolean(this.hostEl.closest('.markdown-source-view, .cm-embed-block, .cm-editor'));
+  }
+
+  /*
+   * 作用：
    * 把配置区里的运行时配置应用到当前 DOM 视图。
    *
    * 目前接入：
@@ -1254,6 +1278,7 @@ export class YonxaoMindmapRenderer extends Component {
    * 打开节点编辑面板，并把选中节点数据填入表单。
    */
   openNodeEditor(node) {
+    if (!this.canEditMindMap()) return;
     if (!node || node._virtual || !this.nodeEditorEl || !this.nodeEditorFields) {
       return;
     }
@@ -1295,6 +1320,7 @@ export class YonxaoMindmapRenderer extends Component {
    * saveTreeToSourceAndFile() -> serializeMindDocument()/saveSourceToMarkdownFile()。
    */
   openInlineTextEditor(node) {
+    if (!this.canEditMindMap()) return;
     if (!node || node._virtual || !this.containerEl) return;
 
     this.closeNodeEditor();
@@ -1374,6 +1400,8 @@ export class YonxaoMindmapRenderer extends Component {
    * 完整属性仍然交给铅笔按钮打开的节点编辑面板。
    */
   async saveInlineTextEditor() {
+    if (!this.canEditMindMap()) return false;
+
     const inputEl = this.inlineTextEditorEl;
     const node = this.nodeById.get(this.inlineEditingNodeId);
     if (!inputEl || !node) return false;
@@ -1429,6 +1457,8 @@ export class YonxaoMindmapRenderer extends Component {
    * 保存节点编辑面板中的文本、颜色、图标和布局。
    */
   async saveNodeEditor() {
+    if (!this.canEditMindMap()) return false;
+
     const node = this.nodeById.get(this.editingNodeId);
     if (!node || !this.nodeEditorFields) return false;
 
@@ -1453,6 +1483,8 @@ export class YonxaoMindmapRenderer extends Component {
    * 在当前编辑节点下新增一个子节点并保存。
    */
   async addChildFromNodeEditor() {
+    if (!this.canEditMindMap()) return false;
+
     const node = this.nodeById.get(this.editingNodeId);
     if (!node) return false;
 
@@ -1478,6 +1510,7 @@ export class YonxaoMindmapRenderer extends Component {
    * 保存成功后立即进入内联改名，让用户可以顺手把“新节点”改成真实内容。
    */
   async addChildFromContextMenu(node) {
+    if (!this.canEditMindMap()) return false;
     if (!node || node._virtual) return false;
 
     const child = createMindNode('新节点', {}, [], 0, (node.level || 1) + 1);
@@ -1501,6 +1534,7 @@ export class YonxaoMindmapRenderer extends Component {
    * treeActions.insertSiblingNode 负责；渲染器只负责创建节点、保存和进入改名。
    */
   async addSiblingFromContextMenu(node, position) {
+    if (!this.canEditMindMap()) return false;
     if (!node || node === this.root || node._virtual) return false;
 
     const sibling = createMindNode('新节点', {}, [], 0, node.level || 1);
@@ -1526,6 +1560,8 @@ export class YonxaoMindmapRenderer extends Component {
    * 根节点和虚拟根不能删除，避免生成空树或破坏多根结构。
    */
   async deleteNodeFromEditor() {
+    if (!this.canEditMindMap()) return false;
+
     const node = this.nodeById.get(this.editingNodeId);
     if (!node || node === this.root || node._virtual) {
       new Notice('yonxao-mindmap: 根节点不能在脑图视图中删除。');
@@ -1552,6 +1588,8 @@ export class YonxaoMindmapRenderer extends Component {
    * 这里使用 window.confirm 是为了保持实现轻量，后续如果需要更精致的 UI 可以替换为 Obsidian Modal。
    */
   async deleteNodeFromContextMenu(node) {
+    if (!this.canEditMindMap()) return false;
+
     if (!node || node === this.root || node._virtual) {
       new Notice('yonxao-mindmap: 根节点不能删除。');
       return false;
@@ -1918,9 +1956,12 @@ export class YonxaoMindmapRenderer extends Component {
    */
   renderNode(node) {
     const box = node._layout;
+    const canEdit = this.canEditMindMap();
     const classNames = ['yonxao-mindmap-node'];
     if (node.children.length) classNames.push('yonxao-mindmap-node-clickable');
-    if (!node._virtual && node !== this.root) classNames.push('yonxao-mindmap-node-draggable');
+    if (canEdit && !node._virtual && node !== this.root) {
+      classNames.push('yonxao-mindmap-node-draggable');
+    }
 
     // 每个节点都是一个 <g> 分组，组上保存 data-node-id，点击时用它反查原始树节点。
     const group = svg('g', {
@@ -1971,15 +2012,15 @@ export class YonxaoMindmapRenderer extends Component {
 
     group.appendChild(textEl);
 
-    if (!node._virtual) {
+    if (canEdit && !node._virtual) {
       group.appendChild(this.renderEditButton(node, box));
     }
 
-    if (!node._virtual && node !== this.root) {
+    if (canEdit && !node._virtual && node !== this.root) {
       group.appendChild(this.renderSiblingButtons(box));
     }
 
-    if (!node._virtual && !node.children.length) {
+    if (canEdit && !node._virtual && !node.children.length) {
       group.appendChild(this.renderChildButton(box));
     }
 
@@ -2220,7 +2261,9 @@ export class YonxaoMindmapRenderer extends Component {
     const node = this.nodeById.get(id);
     if (!node) return;
 
-    if (target && target.closest && target.closest('.yonxao-mindmap-node-child-add')) {
+    const canEdit = this.canEditMindMap();
+
+    if (canEdit && target && target.closest && target.closest('.yonxao-mindmap-node-child-add')) {
       event.preventDefault();
       event.stopPropagation();
       Promise.resolve(this.addChildFromContextMenu(node)).catch((error) => {
@@ -2231,7 +2274,7 @@ export class YonxaoMindmapRenderer extends Component {
 
     const siblingButton =
       target && target.closest ? target.closest('.yonxao-mindmap-node-sibling-add') : null;
-    if (siblingButton) {
+    if (canEdit && siblingButton) {
       event.preventDefault();
       event.stopPropagation();
       const position = siblingButton.getAttribute('data-sibling-position') || 'after';
@@ -2241,7 +2284,7 @@ export class YonxaoMindmapRenderer extends Component {
       return;
     }
 
-    if (target && target.closest && target.closest('.yonxao-mindmap-node-edit')) {
+    if (canEdit && target && target.closest && target.closest('.yonxao-mindmap-node-edit')) {
       event.preventDefault();
       event.stopPropagation();
       this.openNodeEditor(node);
@@ -2260,6 +2303,8 @@ export class YonxaoMindmapRenderer extends Component {
    * 处理节点双击事件，直接进入节点文字的内联编辑状态。
    */
   handleNodeDoubleClick(event) {
+    if (!this.canEditMindMap()) return;
+
     const target = event.target;
     const nodeEl = target && target.closest ? target.closest('.yonxao-mindmap-node') : null;
     if (!nodeEl) return;
@@ -2295,6 +2340,8 @@ export class YonxaoMindmapRenderer extends Component {
    * 菜单使用 Obsidian 原生 Menu，能自动适配不同主题和平台。
    */
   handleNodeContextMenu(event) {
+    if (!this.canEditMindMap()) return;
+
     const target = event.target;
     const nodeEl = target && target.closest ? target.closest('.yonxao-mindmap-node') : null;
     if (!nodeEl) return;
@@ -2492,7 +2539,7 @@ export class YonxaoMindmapRenderer extends Component {
         target.closest('.yonxao-mindmap-node-sibling-add') ||
         target.closest('.yonxao-mindmap-node-edit') ||
         target.closest('.yonxao-mindmap-toggle');
-      if (!isNodeControl) {
+      if (this.canEditMindMap() && !isNodeControl) {
         this.startPendingNodeDrag(event, nodeEl);
       }
       return;
