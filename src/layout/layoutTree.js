@@ -40,6 +40,7 @@ export const LAYOUT_MODES = Object.freeze([
   'tree-left',
   'tree-balanced',
   'org',
+  'org-right',
   'timeline',
   'radial',
 ]);
@@ -66,8 +67,8 @@ export function layoutTree(root, collapsedIds, config) {
     layoutVerticalMind(root, collapsedIds, mode);
   } else if (mode === 'tree' || mode === 'tree-left' || mode === 'tree-balanced') {
     layoutOutlineTree(root, collapsedIds, mode);
-  } else if (mode === 'org') {
-    layoutOrgChart(root, collapsedIds);
+  } else if (mode === 'org' || mode === 'org-right') {
+    layoutOrgChart(root, collapsedIds, mode);
   } else if (mode === 'timeline') {
     layoutTimeline(root, collapsedIds);
   } else if (mode === 'radial') {
@@ -505,37 +506,82 @@ export function treeSubtreeHeight(node, side, collapsedIds) {
 
 /*
  * 作用：
- * 组织架构图布局，父节点在上，子节点横向排布在下。
+ * 组织架构图布局。
+ *
+ * 结构区别：
+ * - org：标准组织结构图，父节点在上，子节点横向排布在下一层。
+ * - org-right：下右展开结构，一级节点横向排列，后代从各自分支向右下展开。
  */
-export function layoutOrgChart(root, collapsedIds) {
-  placeOrgSubtree(root, 0, 0, collapsedIds);
+export function layoutOrgChart(root, collapsedIds, mode = 'org') {
+  if (mode === 'org-right') {
+    placeOrgRightRootChildren(root, visibleChildren(root, collapsedIds), collapsedIds);
+    return;
+  }
+
+  const levelTops = orgLevelTops(root, collapsedIds);
+  placeOrgSubtree(root, 0, 0, levelTops, collapsedIds);
 }
 
 /*
  * 作用：
  * 递归摆放组织架构图子树，并返回子树宽度。
+ *
+ * 实现逻辑：
+ * 标准组织结构图需要按“层级”对齐，而不是按每个父节点的高度单独下移。
+ * 因此 y 坐标先从 levelTops 读取同层统一顶部，再加上节点自身高度的一半。
+ * 这样长文案节点只会向下撑开，不会向上顶到父级连线区域。
  */
-export function placeOrgSubtree(node, centerX, y, collapsedIds) {
+export function placeOrgSubtree(node, centerX, depth, levelTops, collapsedIds) {
   const box = node._layout;
   const children = visibleChildren(node, collapsedIds);
   const subtreeWidth = orgSubtreeWidth(node, collapsedIds);
 
-  box.side = box.side === 'root' ? 'root' : 'bottom';
+  box.side = box.side === 'root' ? 'root' : 'org-bottom';
   box.x = centerX;
-  box.y = y;
+  box.y = (levelTops[depth] || 0) + box.height / 2;
 
   if (!children.length) return subtreeWidth;
 
-  const childY = y + box.height / 2 + LEVEL_GAP + maxNodeHeight(children) / 2;
-  let x = centerX - subtreeWidth / 2;
+  const childGroupWidth = orgChildrenWidth(children, collapsedIds);
+  let x = centerX - childGroupWidth / 2;
 
   for (const child of children) {
     const width = orgSubtreeWidth(child, collapsedIds);
-    placeOrgSubtree(child, x + width / 2, childY, collapsedIds);
+    placeOrgSubtree(child, x + width / 2, depth + 1, levelTops, collapsedIds);
     x += width + SIBLING_GAP;
   }
 
   return subtreeWidth;
+}
+
+/*
+ * 作用：
+ * 计算标准组织结构图每一层的统一顶部 y 坐标。
+ *
+ * 关键点：
+ * 组织结构图更适合顶部对齐：长文案节点会向下变高，而不是围绕中心线上下扩张。
+ * 下一层根据上一层最大高度统一下移，所以不同父节点下的同层子节点仍然保持齐平。
+ */
+export function orgLevelTops(root, collapsedIds) {
+  const levelHeights = [];
+
+  const visit = (node, depth) => {
+    const box = node._layout;
+    levelHeights[depth] = Math.max(levelHeights[depth] || 0, box.height);
+
+    for (const child of visibleChildren(node, collapsedIds)) {
+      visit(child, depth + 1);
+    }
+  };
+
+  visit(root, 0);
+
+  const levelTops = [0];
+  for (let depth = 1; depth < levelHeights.length; depth += 1) {
+    levelTops[depth] = levelTops[depth - 1] + levelHeights[depth - 1] + LEVEL_GAP;
+  }
+
+  return levelTops;
 }
 
 /*
@@ -547,11 +593,153 @@ export function orgSubtreeWidth(node, collapsedIds) {
   const children = visibleChildren(node, collapsedIds);
   if (!children.length) return box.width;
 
-  const childWidth =
-    children.reduce((sum, child) => sum + orgSubtreeWidth(child, collapsedIds), 0) +
-    Math.max(0, children.length - 1) * SIBLING_GAP;
+  const childWidth = orgChildrenWidth(children, collapsedIds);
 
   return Math.max(box.width, childWidth);
+}
+
+/*
+ * 作用：
+ * 计算一组组织结构图子节点横向排布所需的总宽度。
+ */
+export function orgChildrenWidth(children, collapsedIds) {
+  return (
+    children.reduce((sum, child) => sum + orgSubtreeWidth(child, collapsedIds), 0) +
+    Math.max(0, children.length - 1) * SIBLING_GAP
+  );
+}
+
+/*
+ * 作用：
+ * 摆放“下右展开”组织结构图的一级节点。
+ *
+ * 实现逻辑：
+ * 一级分支主题和标准组织图一样横向排列；每个一级分支再把自己的后代向右下展开。
+ * 因此横向槽位不能只看一级节点宽度，还要把该分支右侧子树的宽度算进去。
+ */
+export function placeOrgRightRootChildren(root, children, collapsedIds) {
+  if (!children.length) return;
+
+  const rootBox = root._layout;
+  const widths = children.map((child) => orgRightSubtreeWidth(child, collapsedIds));
+  const totalWidth =
+    widths.reduce((sum, width) => sum + width, 0) + Math.max(0, children.length - 1) * BRANCH_GAP;
+  const maxRootChildHeight = children.reduce(
+    (max, child) => Math.max(max, child._layout.height),
+    NODE_MIN_HEIGHT
+  );
+  const childY = rootBox.y + rootBox.height / 2 + LEVEL_GAP + maxRootChildHeight / 2;
+  const descendantStartTop = childY - maxRootChildHeight / 2 + maxRootChildHeight + SIBLING_GAP;
+  const rowTops = orgRightDescendantGridTops(children, descendantStartTop, collapsedIds);
+  let x = rootBox.x - totalWidth / 2;
+
+  for (let index = 0; index < children.length; index += 1) {
+    const child = children[index];
+    const childBox = child._layout;
+    const width = widths[index];
+
+    childBox.side = 'org-right-branch';
+    childBox.x = x + childBox.width / 2;
+    childBox.y = childY - maxRootChildHeight / 2 + childBox.height / 2;
+
+    placeOrgRightDescendants(child, collapsedIds, rowTops);
+    x += width + BRANCH_GAP;
+  }
+}
+
+/*
+ * 作用：
+ * 递归摆放“下右展开”组织结构图的后代节点。
+ *
+ * 实现逻辑：
+ * 子节点不是从父节点右侧展开，而是从父节点下方的竖向主线挂出。
+ * 因此子节点的左边界按“父节点中心 + 缩进”计算，形成竖线向下、横线向右的目录树观感。
+ * rowTops 是全局行表：按“层级 + 兄弟序号”共享同一个顶部 y。
+ * 这样不同分支里的同级节点会自然横向对齐，长文案只会撑开当前行高。
+ */
+export function placeOrgRightDescendants(parent, collapsedIds, rowTops, depth = 0) {
+  const children = visibleChildren(parent, collapsedIds);
+  if (!children.length) return;
+
+  const parentBox = parent._layout;
+
+  for (let index = 0; index < children.length; index += 1) {
+    const child = children[index];
+    const childBox = child._layout;
+    const top =
+      rowTops[depth]?.[index] ?? parentBox.y + parentBox.height / 2 + SIBLING_GAP + index * 48;
+
+    childBox.side = 'org-right';
+    childBox.x = parentBox.x + LEVEL_GAP + childBox.width / 2;
+    childBox.y = top + childBox.height / 2;
+
+    placeOrgRightDescendants(child, collapsedIds, rowTops, depth + 1);
+  }
+}
+
+/*
+ * 作用：
+ * 计算 org-right 后代的全局网格行顶部。
+ *
+ * 设计思路：
+ * 第一维是相对层级，第二维是兄弟序号。
+ * 例如所有一级分支下的第一个子节点共享 depth=0/index=0 的行。
+ */
+export function orgRightDescendantGridTops(rootChildren, startTop, collapsedIds) {
+  const gridHeights = [];
+
+  for (const child of rootChildren) {
+    collectOrgRightGridHeights(child, collapsedIds, gridHeights);
+  }
+
+  const rowTops = [];
+  let y = startTop;
+  for (let depth = 0; depth < gridHeights.length; depth += 1) {
+    rowTops[depth] = [];
+    const heights = gridHeights[depth] || [];
+    for (let index = 0; index < heights.length; index += 1) {
+      const height = heights[index] || NODE_MIN_HEIGHT;
+      rowTops[depth][index] = y;
+      y += height + SIBLING_GAP;
+    }
+  }
+
+  return rowTops;
+}
+
+/*
+ * 作用：
+ * 按“层级 + 兄弟序号”统计 org-right 每个网格行所需高度。
+ */
+export function collectOrgRightGridHeights(parent, collapsedIds, gridHeights, depth = 0) {
+  const children = visibleChildren(parent, collapsedIds);
+  if (!children.length) return;
+
+  if (!gridHeights[depth]) {
+    gridHeights[depth] = [];
+  }
+
+  children.forEach((child, index) => {
+    gridHeights[depth][index] = Math.max(gridHeights[depth][index] || 0, child._layout.height);
+    collectOrgRightGridHeights(child, collapsedIds, gridHeights, depth + 1);
+  });
+}
+
+/*
+ * 作用：
+ * 计算“下右展开”组织结构图中一个分支向右展开后需要占用的水平宽度。
+ */
+export function orgRightSubtreeWidth(node, collapsedIds) {
+  const box = node._layout;
+  const children = visibleChildren(node, collapsedIds);
+  if (!children.length) return box.width;
+
+  const childWidth = children.reduce(
+    (max, child) => Math.max(max, orgRightSubtreeWidth(child, collapsedIds)),
+    0
+  );
+
+  return Math.max(box.width, box.width / 2 + LEVEL_GAP + childWidth);
 }
 
 /*
@@ -669,14 +857,6 @@ function centerVisibleNodes(root, collapsedIds) {
     node._layout.x += offsetX;
     node._layout.y += offsetY;
   }
-}
-
-/*
- * 作用：
- * 返回一组节点中的最大高度。
- */
-function maxNodeHeight(nodes) {
-  return nodes.reduce((max, node) => Math.max(max, node._layout.height), NODE_MIN_HEIGHT);
 }
 
 /*

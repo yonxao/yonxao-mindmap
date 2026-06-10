@@ -266,7 +266,10 @@ export class ConfigModal extends Modal {
         },
         {
           group: '组织结构图',
-          options: [['org', '向下展开']],
+          options: [
+            ['org', '向下展开'],
+            ['org-right', '下右展开'],
+          ],
         },
         {
           group: '时间轴',

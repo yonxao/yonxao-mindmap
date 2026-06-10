@@ -1878,6 +1878,14 @@ export class YonxaoMindmapRenderer extends Component {
     if (treeTrunk) {
       edgeLayer.appendChild(treeTrunk);
     }
+    const orgRightTrunk = this.renderOrgRightTrunk(layout);
+    if (orgRightTrunk) {
+      edgeLayer.appendChild(orgRightTrunk);
+    }
+    const orgRightBranchTrunks = this.renderOrgRightBranchTrunks(layout);
+    if (orgRightBranchTrunks) {
+      edgeLayer.appendChild(orgRightBranchTrunks);
+    }
 
     for (const edge of layout.edges) {
       edgeLayer.appendChild(this.renderEdge(edge));
@@ -1940,6 +1948,91 @@ export class YonxaoMindmapRenderer extends Component {
 
   /*
    * 作用：
+   * 兼容旧版“下右展开”组织结构图的纵向主干。
+   *
+   * 当前 org-right 已调整为一级分支横向排列，因此正常情况下不会再命中
+   * org-down-right；保留这个函数是为了让旧状态重绘时自然退化为空结果。
+   */
+  renderOrgRightTrunk(layout) {
+    if (layout.mode !== 'org-right') return null;
+
+    const rootBox = this.root?._layout;
+    if (!rootBox) return null;
+
+    const rootChildEdges = layout.edges.filter(
+      (edge) => edge.parent === this.root && edge.child?._layout?.side === 'org-down-right'
+    );
+    if (!rootChildEdges.length) return null;
+
+    const startY = rootBox.y + rootBox.height / 2;
+    const endY = Math.max(...rootChildEdges.map((edge) => edge.child._layout.y));
+    if (endY <= startY) return null;
+
+    return svg('path', {
+      class: 'yonxao-mindmap-edge yonxao-mindmap-org-trunk',
+      d: ['M', rootBox.x, startY, 'V', endY].join(' '),
+      stroke: 'currentColor',
+      style: `opacity: ${themeEdgeOpacity(this.config)}`,
+    });
+  }
+
+  /*
+   * 作用：
+   * 在 org-right 的二级及更深层级里绘制共享的目录树式分支线。
+   *
+   * 实现逻辑：
+   * 普通 elbow 连线会让每个子节点都从父节点右侧单独折出去，线条显得杂乱。
+   * 这里按父节点分组：父节点底部先向下形成一条竖向主线，再由主线横向接到每个子节点。
+   */
+  renderOrgRightBranchTrunks(layout) {
+    if (layout.mode !== 'org-right') return null;
+
+    const groups = new Map();
+    for (const edge of layout.edges) {
+      if (edge.child?._layout?.side !== 'org-right') continue;
+      if (!groups.has(edge.parent.id)) {
+        groups.set(edge.parent.id, []);
+      }
+      groups.get(edge.parent.id).push(edge);
+    }
+
+    if (!groups.size) return null;
+
+    const groupEl = svg('g', { class: 'yonxao-mindmap-org-right-trunks' });
+
+    for (const edges of groups.values()) {
+      const parent = edges[0]?.parent;
+      const parentBox = parent?._layout;
+      if (!parentBox || !edges.length) continue;
+
+      const startX = parentBox.x;
+      const startY = parentBox.y + parentBox.height / 2;
+      const endY = Math.max(...edges.map((edge) => edge.child._layout.y));
+      const color = edgeColor(parent, this.config);
+
+      groupEl.appendChild(
+        svg('path', {
+          class: 'yonxao-mindmap-edge yonxao-mindmap-org-right-trunk',
+          d: ['M', startX, startY, 'V', endY].join(' '),
+          stroke: color || 'currentColor',
+          style: `opacity: ${themeEdgeOpacity(this.config)}`,
+        })
+      );
+    }
+
+    return groupEl;
+  }
+
+  /*
+   * 作用：
+   * 计算 org-right 后代分支的共享竖线 x 坐标。
+   */
+  orgRightBranchX(parentBox) {
+    return parentBox.x;
+  }
+
+  /*
+   * 作用：
    * 根据父子节点布局信息绘制一条贝塞尔曲线连线。
    */
   renderEdge(edge) {
@@ -1971,6 +2064,46 @@ export class YonxaoMindmapRenderer extends Component {
         startY: childBox.y,
         endX:
           side === 'tree-left' ? childBox.x + childBox.width / 2 : childBox.x - childBox.width / 2,
+        endY: childBox.y,
+      };
+    }
+
+    if (parentBox.side === 'root' && side === 'org-down-right') {
+      return {
+        kind: 'trunk-branch',
+        startX: parentBox.x,
+        startY: childBox.y,
+        endX: childBox.x - childBox.width / 2,
+        endY: childBox.y,
+      };
+    }
+
+    if (parentBox.side === 'root' && side === 'org-right-branch') {
+      return {
+        kind: 'org-down',
+        startX: parentBox.x,
+        startY: parentBox.y + parentBox.height / 2,
+        endX: childBox.x,
+        endY: childBox.y - childBox.height / 2,
+      };
+    }
+
+    if (side === 'org-bottom') {
+      return {
+        kind: 'org-down',
+        startX: parentBox.x,
+        startY: parentBox.y + parentBox.height / 2,
+        endX: childBox.x,
+        endY: childBox.y - childBox.height / 2,
+      };
+    }
+
+    if (side === 'org-right') {
+      return {
+        kind: 'org-right-child',
+        startX: this.orgRightBranchX(parentBox),
+        startY: childBox.y,
+        endX: childBox.x - childBox.width / 2,
         endY: childBox.y,
       };
     }
@@ -2030,7 +2163,16 @@ export class YonxaoMindmapRenderer extends Component {
   edgePath(anchors) {
     const { kind, startX, startY, endX, endY, axis, sign } = anchors;
 
-    if (kind === 'tree-branch') {
+    if (kind === 'tree-branch' || kind === 'trunk-branch') {
+      return ['M', startX, startY, 'H', endX].join(' ');
+    }
+
+    if (kind === 'org-down') {
+      const midY = startY + (endY - startY) / 2;
+      return ['M', startX, startY, 'V', midY, 'H', endX, 'V', endY].join(' ');
+    }
+
+    if (kind === 'org-right-child') {
       return ['M', startX, startY, 'H', endX].join(' ');
     }
 
@@ -2233,7 +2375,9 @@ export class YonxaoMindmapRenderer extends Component {
    * 这里保留 top/bottom/vertical 判断，是为了后续真正支持竖向结构时不用再重写按钮渲染。
    */
   shouldPlaceSiblingButtonsHorizontally(box) {
-    return ['top', 'bottom', 'vertical', 'timeline'].includes(String(box.side || '').toLowerCase());
+    return ['top', 'bottom', 'vertical', 'timeline', 'org-bottom', 'org-right-branch'].includes(
+      String(box.side || '').toLowerCase()
+    );
   }
 
   /*
@@ -2301,12 +2445,17 @@ export class YonxaoMindmapRenderer extends Component {
     const side = String(box.side || '');
     if (side === 'left' || side === 'right' || side === 'top' || side === 'bottom') return side;
     if (side === 'tree-left') return 'left';
+    if (side === 'org-bottom') return 'bottom';
+    if (side === 'org-down-right' || side === 'org-right' || side === 'org-right-branch') {
+      return 'right';
+    }
     if (side === 'timeline' || side === 'tree' || side === 'tree-right') return 'right';
 
     const mode = this.config.layout.defaultDirection;
     if (mode === 'left') return 'left';
     if (mode === 'up') return 'top';
     if (mode === 'down' || mode === 'org') return 'bottom';
+    if (mode === 'org-right') return 'right';
     return 'right';
   }
 
@@ -2364,14 +2513,20 @@ export class YonxaoMindmapRenderer extends Component {
       };
     }
 
-    if (box.side === 'bottom') {
+    if (box.side === 'bottom' || box.side === 'org-bottom' || box.side === 'org-right-branch') {
       return {
         x: box.width / 2 - buttonSize / 2,
         y: -buttonSize / 2,
       };
     }
 
-    if (box.side === 'tree' || box.side === 'tree-right' || box.side === 'timeline') {
+    if (
+      box.side === 'tree' ||
+      box.side === 'tree-right' ||
+      box.side === 'timeline' ||
+      box.side === 'org-down-right' ||
+      box.side === 'org-right'
+    ) {
       return {
         x: -buttonSize / 2,
         y: box.height / 2 - buttonSize / 2,
@@ -2397,7 +2552,7 @@ export class YonxaoMindmapRenderer extends Component {
    */
   rootEditButtonPosition(node, box, buttonSize) {
     const mode = this.config.layout.defaultDirection;
-    if (mode === 'down' || mode === 'org') {
+    if (mode === 'down' || mode === 'org' || mode === 'org-right') {
       return {
         x: box.width / 2 - buttonSize / 2,
         y: -buttonSize / 2,
@@ -2951,7 +3106,15 @@ export class YonxaoMindmapRenderer extends Component {
    */
   dropAxisForNode(node) {
     const side = node?._layout?.side;
-    if (side === 'top' || side === 'bottom' || side === 'timeline') return 'x';
+    if (
+      side === 'top' ||
+      side === 'bottom' ||
+      side === 'timeline' ||
+      side === 'org-bottom' ||
+      side === 'org-right-branch'
+    ) {
+      return 'x';
+    }
     return 'y';
   }
 
