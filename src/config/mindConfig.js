@@ -64,7 +64,7 @@ export const DEFAULT_MIND_CONFIG = Object.freeze({
   }),
   theme: DEFAULT_THEME_NAME,
   layout: Object.freeze({
-    defaultDirection: 'balanced',
+    defaultDirection: 'right',
   }),
   edge: Object.freeze({
     type: 'curve',
@@ -571,11 +571,26 @@ function normalizeOptionalNumber(value, min, max) {
 
 /*
  * 作用：
- * 规范化布局方向，只允许 left/right/balanced。
+ * 规范化布局方向。
  */
 function normalizeDirection(value) {
   const text = normalizeText(value).toLowerCase();
-  if (text === 'left' || text === 'right' || text === 'balanced') return text;
+  if (
+    [
+      'left',
+      'right',
+      'balanced',
+      'down',
+      'up',
+      'vertical',
+      'tree',
+      'org',
+      'timeline',
+      'radial',
+    ].includes(text)
+  ) {
+    return text;
+  }
   return '';
 }
 

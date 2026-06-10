@@ -15,7 +15,7 @@ toolbar:
   x: 8
   y: 8
 layout:
-  defaultDirection: balanced
+  defaultDirection: right
 edge:
   type: curve
 font:
@@ -70,7 +70,7 @@ Supported config keys:
 - `toolbar.x` / `toolbar.y`: persisted floating toolbar position. Drag the toolbar grip to write it.
 - `interaction.wheelZoom`: whether the mouse wheel zooms the mind map. It is off by default; enabling it writes `true`, and disabling it can remove the key.
 - `theme`: built-in theme name: `default`, `ocean`, `forest`, `sunset`, `mono`, `rainbow`, `pastel-rainbow`, or `neon-rainbow`.
-- `layout.defaultDirection`: default first-level branch direction: `balanced`, `left`, or `right`.
+- `layout.defaultDirection`: layout structure: `right`, `left`, `balanced`, `down`, `up`, `vertical`, `tree`, `org`, `timeline`, or `radial`.
 - `edge.type`: connector type: `curve`, `straight`, or `elbow`. `curve` is a cubic Bezier curve, `straight` is a straight line, and `elbow` is an orthogonal connector.
 - `font.family`, `font.size`, `font.weight`, `font.lineHeight`: global font defaults.
 - `font.levels.1`, `font.levels.2`: per-heading-level font overrides.
@@ -96,6 +96,14 @@ Theme color priority:
 `rainbow`, `pastel-rainbow`, and `neon-rainbow` automatically assign colors by first-level branch.
 The center node uses an independent center color from the theme. Node attribute `color` changes only the node itself, not the edge from its parent.
 Hex colors in the config block should be quoted, for example `defaultColor: '#66ed0c'`; the visual config modal writes quoted colors automatically.
+
+Layout structures:
+
+- Mind map: `right` right expansion, `left` left expansion, `balanced` left-right balance, `down` downward expansion, `up` upward expansion, `vertical` up-down balance.
+- Tree structures: `tree` rightward tree.
+- Organization charts: `org` downward org chart.
+- Timelines: `timeline` timeline with details below the axis.
+- Other: `radial` radial map.
 
 ## Controls
 

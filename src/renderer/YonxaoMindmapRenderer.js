@@ -1900,20 +1900,66 @@ export class YonxaoMindmapRenderer extends Component {
   renderEdge(edge) {
     const parentBox = edge.parent._layout;
     const childBox = edge.child._layout;
-    const dir = childBox.side === 'left' ? -1 : 1;
-    const startX = parentBox.x + (dir * parentBox.width) / 2;
-    const startY = parentBox.y;
-    const endX = childBox.x - (dir * childBox.width) / 2;
-    const endY = childBox.y;
+    const anchors = this.edgeAnchors(parentBox, childBox);
     const color = edgeColor(edge.child, this.config);
 
     // 默认使用三次贝塞尔曲线；也可通过 edge.type 切换为直线或正交折线。
     return svg('path', {
       class: 'yonxao-mindmap-edge',
-      d: this.edgePath(startX, startY, endX, endY, dir),
+      d: this.edgePath(anchors),
       stroke: color || 'currentColor',
       style: `opacity: ${themeEdgeOpacity(this.config)}`,
     });
+  }
+
+  /*
+   * 作用：
+   * 根据子节点所在方向计算父子连线的起点和终点锚点。
+   */
+  edgeAnchors(parentBox, childBox) {
+    const side = childBox.side;
+
+    if (side === 'left') {
+      return {
+        startX: parentBox.x - parentBox.width / 2,
+        startY: parentBox.y,
+        endX: childBox.x + childBox.width / 2,
+        endY: childBox.y,
+        axis: 'x',
+        sign: -1,
+      };
+    }
+
+    if (side === 'top') {
+      return {
+        startX: parentBox.x,
+        startY: parentBox.y - parentBox.height / 2,
+        endX: childBox.x,
+        endY: childBox.y + childBox.height / 2,
+        axis: 'y',
+        sign: -1,
+      };
+    }
+
+    if (side === 'bottom') {
+      return {
+        startX: parentBox.x,
+        startY: parentBox.y + parentBox.height / 2,
+        endX: childBox.x,
+        endY: childBox.y - childBox.height / 2,
+        axis: 'y',
+        sign: 1,
+      };
+    }
+
+    return {
+      startX: parentBox.x + parentBox.width / 2,
+      startY: parentBox.y,
+      endX: childBox.x - childBox.width / 2,
+      endY: childBox.y,
+      axis: 'x',
+      sign: 1,
+    };
   }
 
   /*
@@ -1925,25 +1971,47 @@ export class YonxaoMindmapRenderer extends Component {
    * - straight: 直线。
    * - elbow: 正交折线，也常叫 elbow connector。
    */
-  edgePath(startX, startY, endX, endY, dir) {
+  edgePath(anchors) {
+    const { startX, startY, endX, endY, axis, sign } = anchors;
+
     if (this.config.edge.type === 'straight') {
       return ['M', startX, startY, 'L', endX, endY].join(' ');
     }
 
     if (this.config.edge.type === 'elbow') {
+      if (axis === 'y') {
+        const midY = startY + (endY - startY) / 2;
+        return ['M', startX, startY, 'V', midY, 'H', endX, 'V', endY].join(' ');
+      }
+
       const midX = startX + (endX - startX) / 2;
       return ['M', startX, startY, 'H', midX, 'V', endY, 'H', endX].join(' ');
     }
 
-    const bend = Math.max(44, Math.abs(endX - startX) * 0.46);
+    const bend = Math.max(44, Math.abs(axis === 'y' ? endY - startY : endX - startX) * 0.46);
+    if (axis === 'y') {
+      return [
+        'M',
+        startX,
+        startY,
+        'C',
+        startX,
+        startY + sign * bend,
+        endX,
+        endY - sign * bend,
+        endX,
+        endY,
+      ].join(' ');
+    }
+
     return [
       'M',
       startX,
       startY,
       'C',
-      startX + dir * bend,
+      startX + sign * bend,
       startY,
-      endX - dir * bend,
+      endX - sign * bend,
       endY,
       endX,
       endY,
@@ -2038,11 +2106,11 @@ export class YonxaoMindmapRenderer extends Component {
   renderToggle(node) {
     const box = node._layout;
     const collapsed = this.collapsedIds.has(node.id);
+    const outlet = this.nodeOutletPoint(box);
     const dir = box.side === 'left' ? -1 : 1;
-    const cx = box.side === 'left' ? 0 : box.width;
     const toggle = svg('g', {
       class: 'yonxao-mindmap-toggle',
-      transform: `translate(${cx} ${box.height / 2})`,
+      transform: `translate(${outlet.x} ${outlet.y})`,
     });
 
     toggle.appendChild(
@@ -2105,7 +2173,7 @@ export class YonxaoMindmapRenderer extends Component {
    * 这里保留 top/bottom/vertical 判断，是为了后续真正支持竖向结构时不用再重写按钮渲染。
    */
   shouldPlaceSiblingButtonsHorizontally(box) {
-    return ['top', 'bottom', 'vertical'].includes(String(box.side || '').toLowerCase());
+    return ['top', 'bottom', 'vertical', 'timeline'].includes(String(box.side || '').toLowerCase());
   }
 
   /*
@@ -2137,12 +2205,11 @@ export class YonxaoMindmapRenderer extends Component {
    * 右侧分支放在右边框中点，左侧分支放在左边框中点，中心节点默认放在右边框中点。
    */
   renderChildButton(box) {
-    const side = box.side === 'left' ? 'left' : 'right';
-    const x = side === 'left' ? 0 : box.width;
+    const outlet = this.nodeOutletPoint(box);
     const button = svg('g', {
       class: 'yonxao-mindmap-node-child-add',
-      transform: `translate(${x} ${box.height / 2})`,
-      'data-child-side': side,
+      transform: `translate(${outlet.x} ${outlet.y})`,
+      'data-child-side': outlet.side,
     });
 
     const title = svg('title');
@@ -2152,6 +2219,34 @@ export class YonxaoMindmapRenderer extends Component {
     button.appendChild(svg('path', { d: 'M -3.5 0 H 3.5 M 0 -3.5 V 3.5' }));
 
     return button;
+  }
+
+  /*
+   * 作用：
+   * 计算一个节点的“子线出口”位置。
+   */
+  nodeOutletPoint(box) {
+    const side = this.nodeOutletSide(box);
+    if (side === 'left') return { side, x: 0, y: box.height / 2 };
+    if (side === 'top') return { side, x: box.width / 2, y: 0 };
+    if (side === 'bottom') return { side, x: box.width / 2, y: box.height };
+    return { side: 'right', x: box.width, y: box.height / 2 };
+  }
+
+  /*
+   * 作用：
+   * 根据当前布局和节点所在方向判断子节点应该从哪一侧长出去。
+   */
+  nodeOutletSide(box) {
+    const side = String(box.side || '');
+    if (side === 'left' || side === 'right' || side === 'top' || side === 'bottom') return side;
+    if (side === 'timeline' || side === 'tree') return 'right';
+
+    const mode = this.config.layout.defaultDirection;
+    if (mode === 'left') return 'left';
+    if (mode === 'up') return 'top';
+    if (mode === 'down' || mode === 'org') return 'bottom';
+    return 'right';
   }
 
   /*
@@ -2201,6 +2296,27 @@ export class YonxaoMindmapRenderer extends Component {
       return this.rootEditButtonPosition(node, box, buttonSize);
     }
 
+    if (box.side === 'top') {
+      return {
+        x: box.width / 2 - buttonSize / 2,
+        y: box.height - buttonSize / 2,
+      };
+    }
+
+    if (box.side === 'bottom') {
+      return {
+        x: box.width / 2 - buttonSize / 2,
+        y: -buttonSize / 2,
+      };
+    }
+
+    if (box.side === 'tree' || box.side === 'timeline') {
+      return {
+        x: -buttonSize / 2,
+        y: box.height / 2 - buttonSize / 2,
+      };
+    }
+
     return {
       x: box.side === 'right' ? -buttonSize / 2 : box.width - buttonSize / 2,
       y: box.height / 2 - buttonSize / 2,
@@ -2212,6 +2328,21 @@ export class YonxaoMindmapRenderer extends Component {
    * 计算中心节点编辑按钮位置。
    */
   rootEditButtonPosition(node, box, buttonSize) {
+    const mode = this.config.layout.defaultDirection;
+    if (mode === 'down' || mode === 'org') {
+      return {
+        x: box.width / 2 - buttonSize / 2,
+        y: -buttonSize / 2,
+      };
+    }
+
+    if (mode === 'up') {
+      return {
+        x: box.width / 2 - buttonSize / 2,
+        y: box.height - buttonSize / 2,
+      };
+    }
+
     const sides = new Set((node.children || []).map((child) => child._layout?.side));
     const hasLeftChildren = sides.has('left');
     const hasRightChildren = sides.has('right');
@@ -2722,7 +2853,15 @@ export class YonxaoMindmapRenderer extends Component {
 
     const cardEl = targetEl.querySelector('.yonxao-mindmap-node-card');
     const rect = cardEl ? cardEl.getBoundingClientRect() : targetEl.getBoundingClientRect();
-    const ratio = rect.height ? (event.clientY - rect.top) / rect.height : 0.5;
+    const axis = this.dropAxisForNode(targetNode);
+    const ratio =
+      axis === 'x'
+        ? rect.width
+          ? (event.clientX - rect.left) / rect.width
+          : 0.5
+        : rect.height
+          ? (event.clientY - rect.top) / rect.height
+          : 0.5;
     let placement = 'child';
 
     if (targetNode !== this.root) {
@@ -2734,7 +2873,18 @@ export class YonxaoMindmapRenderer extends Component {
       targetId,
       targetEl,
       placement,
+      axis,
     };
+  }
+
+  /*
+   * 作用：
+   * 判断某个节点的兄弟排序投放区域应该按横向还是纵向切分。
+   */
+  dropAxisForNode(node) {
+    const side = node?._layout?.side;
+    if (side === 'top' || side === 'bottom' || side === 'timeline') return 'x';
+    return 'y';
   }
 
   /*
@@ -2755,14 +2905,26 @@ export class YonxaoMindmapRenderer extends Component {
     const box = targetNode && targetNode._layout;
     if (!box) return;
 
-    const y = drop.placement === 'before' ? box.y - box.height / 2 - 8 : box.y + box.height / 2 + 8;
-    this.nodeDropIndicatorEl = svg('line', {
-      class: 'yonxao-mindmap-drop-indicator',
-      x1: box.x - box.width / 2,
-      y1: y,
-      x2: box.x + box.width / 2,
-      y2: y,
-    });
+    if (drop.axis === 'x') {
+      const x = drop.placement === 'before' ? box.x - box.width / 2 - 8 : box.x + box.width / 2 + 8;
+      this.nodeDropIndicatorEl = svg('line', {
+        class: 'yonxao-mindmap-drop-indicator',
+        x1: x,
+        y1: box.y - box.height / 2,
+        x2: x,
+        y2: box.y + box.height / 2,
+      });
+    } else {
+      const y =
+        drop.placement === 'before' ? box.y - box.height / 2 - 8 : box.y + box.height / 2 + 8;
+      this.nodeDropIndicatorEl = svg('line', {
+        class: 'yonxao-mindmap-drop-indicator',
+        x1: box.x - box.width / 2,
+        y1: y,
+        x2: box.x + box.width / 2,
+        y2: y,
+      });
+    }
     this.graphEl.appendChild(this.nodeDropIndicatorEl);
   }
 

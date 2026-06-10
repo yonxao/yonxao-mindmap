@@ -17,7 +17,7 @@ toolbar:
   x: 8
   y: 8
 layout:
-  defaultDirection: balanced
+  defaultDirection: right
 edge:
   type: curve
 font:
@@ -72,7 +72,7 @@ source:
 - `toolbar.x` / `toolbar.y`：悬浮工具栏位置。拖动工具栏抓手后会自动写入。
 - `interaction.wheelZoom`：是否启用鼠标滚轮缩放。默认关闭；开启后会写入 `true`，关闭时可删除该项。
 - `theme`：主题名称，可选 `default`、`ocean`、`forest`、`sunset`、`mono`、`rainbow`、`pastel-rainbow`、`neon-rainbow`。
-- `layout.defaultDirection`：一级分支默认方向，可选 `balanced`、`left`、`right`。
+- `layout.defaultDirection`：布局结构，可选 `right`、`left`、`balanced`、`down`、`up`、`vertical`、`tree`、`org`、`timeline`、`radial`。
 - `edge.type`：连线类型，可选 `curve`、`straight`、`elbow`。`curve` 是曲线，技术上是三次贝塞尔曲线；`straight` 是直线；`elbow` 是正交折线。
 - `font.family`、`font.size`、`font.weight`、`font.lineHeight`：全局默认字体。
 - `font.levels.1`、`font.levels.2`：按标题级别设置字体，数字对应 `#`、`##`、`###` 的层级。
@@ -98,6 +98,14 @@ source:
 其中 `rainbow`、`pastel-rainbow`、`neon-rainbow` 会按一级分支自动分配不同颜色。
 中心节点会使用主题独立中心色；节点属性 `color` 只改变节点本身，不改变它和父节点之间的连接线颜色。
 配置区中的 hex 颜色建议写成带引号的字符串，例如 `defaultColor: '#66ed0c'`；通过配置弹框保存时会自动加引号。
+
+布局结构说明：
+
+- 思维导图：`right` 右向展开、`left` 左向展开、`balanced` 左右平衡、`down` 向下展开、`up` 向上展开、`vertical` 上下平衡。
+- 树状结构：`tree` 向右树。
+- 组织结构图：`org` 向下展开。
+- 时间轴：`timeline` 轴下展开。
+- 其他：`radial` 放射图。
 
 ## 操作
 

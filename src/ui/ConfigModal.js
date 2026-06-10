@@ -5,7 +5,7 @@
  * 主要功能：
  * - 基础：画布高度、源码高度、工具栏位置。
  * - 主题：主题名、默认节点颜色。
- * - 结构：一级分支方向、节点最大宽度。
+ * - 结构：布局结构、节点最大宽度。
  * - 字体：全局字体与 1/2/3 级标题字体。
  * - 源码：Tab 调整标题级别开关。
  * - 高级：直接编辑配置 YAML。
@@ -241,13 +241,37 @@ export class ConfigModal extends Modal {
   renderLayoutTab(normalized) {
     this.createSection('结构');
     this.createSelectField(
-      '一级分支方向',
+      '布局结构',
       ['layout', 'defaultDirection'],
       normalized.layout.defaultDirection,
       [
-        ['balanced', '平衡'],
-        ['right', '全部右侧'],
-        ['left', '全部左侧'],
+        {
+          group: '思维导图',
+          options: [
+            ['right', '右向展开'],
+            ['left', '左向展开'],
+            ['balanced', '左右平衡'],
+            ['down', '向下展开'],
+            ['up', '向上展开'],
+            ['vertical', '上下平衡'],
+          ],
+        },
+        {
+          group: '树状结构',
+          options: [['tree', '向右树']],
+        },
+        {
+          group: '组织结构图',
+          options: [['org', '向下展开']],
+        },
+        {
+          group: '时间轴',
+          options: [['timeline', '轴下展开']],
+        },
+        {
+          group: '其他',
+          options: [['radial', '放射图']],
+        },
       ]
     );
     this.createNumberField('节点最大宽度', ['node', 'maxWidth'], normalized.node.maxWidth, {
@@ -418,9 +442,20 @@ export class ConfigModal extends Modal {
   createSelectField(label, path, value, options) {
     const fieldEl = this.createField(label);
     const select = fieldEl.createEl('select');
-    for (const [optionValue, optionLabel] of options) {
-      const option = select.createEl('option', { text: optionLabel });
-      option.value = optionValue;
+    for (const optionConfig of options) {
+      if (Array.isArray(optionConfig)) {
+        const [optionValue, optionLabel] = optionConfig;
+        const option = select.createEl('option', { text: optionLabel });
+        option.value = optionValue;
+        continue;
+      }
+
+      const group = select.createEl('optgroup');
+      group.label = optionConfig.group;
+      for (const [optionValue, optionLabel] of optionConfig.options) {
+        const option = group.createEl('option', { text: optionLabel });
+        option.value = optionValue;
+      }
     }
     select.value = String(getConfigValue(this.draftConfig, path, value));
     select.addEventListener('change', () => {
