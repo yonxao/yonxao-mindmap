@@ -1874,6 +1874,11 @@ export class YonxaoMindmapRenderer extends Component {
     const edgeLayer = svg('g', { class: 'yonxao-mindmap-edges' });
     const nodeLayer = svg('g', { class: 'yonxao-mindmap-nodes' });
 
+    const treeTrunk = this.renderTreeTrunk(layout);
+    if (treeTrunk) {
+      edgeLayer.appendChild(treeTrunk);
+    }
+
     for (const edge of layout.edges) {
       edgeLayer.appendChild(this.renderEdge(edge));
     }
@@ -1891,6 +1896,46 @@ export class YonxaoMindmapRenderer extends Component {
     }
 
     this.didInitialGraphRender = true;
+  }
+
+  /*
+   * 作用：
+   * 在树状结构中绘制 root 下方的纵向主干。
+   *
+   * 实现逻辑：
+   * root -> 一级节点的每条边只负责横向分支；主干单独画一次。
+   * 这样可以避免多条 root 边重复覆盖同一段竖线，导致主干颜色越来越深。
+   */
+  renderTreeTrunk(layout) {
+    if (!this.isTreeLayoutMode(layout.mode)) return null;
+
+    const rootBox = this.root?._layout;
+    if (!rootBox) return null;
+
+    const rootChildEdges = layout.edges.filter((edge) => {
+      const side = edge.child?._layout?.side;
+      return edge.parent === this.root && (side === 'tree-left' || side === 'tree-right');
+    });
+    if (!rootChildEdges.length) return null;
+
+    const startY = rootBox.y + rootBox.height / 2;
+    const endY = Math.max(...rootChildEdges.map((edge) => edge.child._layout.y));
+    if (endY <= startY) return null;
+
+    return svg('path', {
+      class: 'yonxao-mindmap-edge yonxao-mindmap-tree-trunk',
+      d: ['M', rootBox.x, startY, 'V', endY].join(' '),
+      stroke: 'currentColor',
+      style: `opacity: ${themeEdgeOpacity(this.config)}`,
+    });
+  }
+
+  /*
+   * 作用：
+   * 判断当前布局是否属于“树状结构”系列。
+   */
+  isTreeLayoutMode(mode) {
+    return mode === 'tree' || mode === 'tree-left' || mode === 'tree-balanced';
   }
 
   /*
@@ -1919,7 +1964,18 @@ export class YonxaoMindmapRenderer extends Component {
   edgeAnchors(parentBox, childBox) {
     const side = childBox.side;
 
-    if (side === 'left') {
+    if (parentBox.side === 'root' && (side === 'tree-left' || side === 'tree-right')) {
+      return {
+        kind: 'tree-branch',
+        startX: parentBox.x,
+        startY: childBox.y,
+        endX:
+          side === 'tree-left' ? childBox.x + childBox.width / 2 : childBox.x - childBox.width / 2,
+        endY: childBox.y,
+      };
+    }
+
+    if (side === 'left' || side === 'tree-left') {
       return {
         startX: parentBox.x - parentBox.width / 2,
         startY: parentBox.y,
@@ -1972,7 +2028,11 @@ export class YonxaoMindmapRenderer extends Component {
    * - elbow: 正交折线，也常叫 elbow connector。
    */
   edgePath(anchors) {
-    const { startX, startY, endX, endY, axis, sign } = anchors;
+    const { kind, startX, startY, endX, endY, axis, sign } = anchors;
+
+    if (kind === 'tree-branch') {
+      return ['M', startX, startY, 'H', endX].join(' ');
+    }
 
     if (this.config.edge.type === 'straight') {
       return ['M', startX, startY, 'L', endX, endY].join(' ');
@@ -2240,7 +2300,8 @@ export class YonxaoMindmapRenderer extends Component {
   nodeOutletSide(box) {
     const side = String(box.side || '');
     if (side === 'left' || side === 'right' || side === 'top' || side === 'bottom') return side;
-    if (side === 'timeline' || side === 'tree') return 'right';
+    if (side === 'tree-left') return 'left';
+    if (side === 'timeline' || side === 'tree' || side === 'tree-right') return 'right';
 
     const mode = this.config.layout.defaultDirection;
     if (mode === 'left') return 'left';
@@ -2310,9 +2371,16 @@ export class YonxaoMindmapRenderer extends Component {
       };
     }
 
-    if (box.side === 'tree' || box.side === 'timeline') {
+    if (box.side === 'tree' || box.side === 'tree-right' || box.side === 'timeline') {
       return {
         x: -buttonSize / 2,
+        y: box.height / 2 - buttonSize / 2,
+      };
+    }
+
+    if (box.side === 'tree-left') {
+      return {
+        x: box.width - buttonSize / 2,
         y: box.height / 2 - buttonSize / 2,
       };
     }
@@ -2344,8 +2412,8 @@ export class YonxaoMindmapRenderer extends Component {
     }
 
     const sides = new Set((node.children || []).map((child) => child._layout?.side));
-    const hasLeftChildren = sides.has('left');
-    const hasRightChildren = sides.has('right');
+    const hasLeftChildren = sides.has('left') || sides.has('tree-left');
+    const hasRightChildren = sides.has('right') || sides.has('tree') || sides.has('tree-right');
 
     if (hasLeftChildren && hasRightChildren) {
       return {

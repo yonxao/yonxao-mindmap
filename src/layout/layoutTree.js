@@ -37,6 +37,8 @@ export const LAYOUT_MODES = Object.freeze([
   'up',
   'vertical',
   'tree',
+  'tree-left',
+  'tree-balanced',
   'org',
   'timeline',
   'radial',
@@ -62,8 +64,8 @@ export function layoutTree(root, collapsedIds, config) {
   const mode = resolveLayoutMode(root, normalizedConfig);
   if (mode === 'down' || mode === 'up' || mode === 'vertical') {
     layoutVerticalMind(root, collapsedIds, mode);
-  } else if (mode === 'tree') {
-    layoutOutlineTree(root, collapsedIds);
+  } else if (mode === 'tree' || mode === 'tree-left' || mode === 'tree-balanced') {
+    layoutOutlineTree(root, collapsedIds, mode);
   } else if (mode === 'org') {
     layoutOrgChart(root, collapsedIds);
   } else if (mode === 'timeline') {
@@ -384,30 +386,121 @@ export function verticalSubtreeWidth(node, side, collapsedIds) {
 
 /*
  * 作用：
- * 树形大纲布局，类似文件树或幕布目录。
+ * 树形结构布局，覆盖向右树、向左树和平衡树。
  *
  * 实现逻辑：
- * 节点按深度优先顺序从上到下排列，层级越深 x 越靠右。
+ * 旧版 tree 是按深度优先逐行摆放，节点多时不会给子树预留空间，容易挤在一起。
+ * 这里改成先计算每棵子树需要的高度，再把父节点放在子树高度的中线位置。
+ * 这样每个分支都拥有自己的纵向空间，后代节点不会和相邻分支重叠。
  */
-export function layoutOutlineTree(root, collapsedIds) {
-  const rowGap = SIBLING_GAP + NODE_MIN_HEIGHT;
-  const indent = LEVEL_GAP;
-  let row = 0;
+export function layoutOutlineTree(root, collapsedIds, mode = 'tree') {
+  const rootChildren = visibleChildren(root, collapsedIds);
+  placeTreeTrunkChildren(root, rootChildren, mode, collapsedIds);
+}
 
-  const visit = (node, depth) => {
-    const box = node._layout;
-    box.side = depth === 0 ? 'root' : 'tree';
-    box.x = depth * indent;
-    box.y = row * rowGap;
-    row += 1;
+/*
+ * 作用：
+ * 沿中心节点下方的纵向主干摆放一级分支。
+ *
+ * 关键点：
+ * 树状结构和普通脑图的最大区别在一级分支：普通脑图从中心点左右展开，
+ * 树状结构则先形成一条自上而下的主干，再把一级分支挂在主干左右。
+ */
+export function placeTreeTrunkChildren(root, children, mode, collapsedIds) {
+  if (!children.length) return;
 
-    for (const child of visibleChildren(node, collapsedIds)) {
-      visit(child, depth + 1);
-    }
-  };
+  const rootBox = root._layout;
+  const sides = children.map((child, index) => rootChildTreeSide(child, index, mode));
+  const heights = children.map((child, index) =>
+    treeSubtreeHeight(child, sides[index], collapsedIds)
+  );
+  let y = rootBox.y + rootBox.height / 2 + LEVEL_GAP;
 
-  visit(root, 0);
-  centerVisibleNodes(root, collapsedIds);
+  for (let index = 0; index < children.length; index += 1) {
+    const child = children[index];
+    const childBox = child._layout;
+    const height = heights[index];
+    const side = sides[index];
+    const dir = side === 'tree-left' ? -1 : 1;
+
+    childBox.side = side;
+    childBox.x = rootBox.x + dir * (LEVEL_GAP + childBox.width / 2);
+    childBox.y = y + height / 2;
+
+    placeTreeDescendants(child, side, collapsedIds);
+    y += height + BRANCH_GAP;
+  }
+
+  // 中心节点保持在树的顶部中间；整体 bounds 会自然包含下方所有一级分支。
+  // 这里不调用 centerVisibleNodes，避免把顶部根节点又拉回普通脑图的视觉中心。
+}
+
+/*
+ * 作用：
+ * 判断树状结构的一级分支挂在主干哪一侧。
+ */
+export function rootChildTreeSide(child, index, mode) {
+  const childLayout = normalizeLayout(child.attrs.layout);
+  if (childLayout === 'left' || childLayout === 'tree-left') return 'tree-left';
+  if (childLayout === 'right' || childLayout === 'tree') return 'tree-right';
+
+  if (mode === 'tree-left') return 'tree-left';
+  if (mode === 'tree-balanced') return index % 2 === 0 ? 'tree-right' : 'tree-left';
+  return 'tree-right';
+}
+
+/*
+ * 作用：
+ * 递归摆放树状结构中的后代节点。
+ *
+ * 实现逻辑：
+ * 同一个父节点下的所有子节点先计算总高度，再围绕父节点的 y 坐标上下展开。
+ * 父节点因此会自然位于子树的视觉中线，连线也更像常见树图结构。
+ */
+export function placeTreeDescendants(parent, side, collapsedIds) {
+  const children = visibleChildren(parent, collapsedIds);
+  if (!children.length) return;
+
+  const parentBox = parent._layout;
+  const heights = children.map((child) => treeSubtreeHeight(child, side, collapsedIds));
+  const totalHeight =
+    heights.reduce((sum, height) => sum + height, 0) +
+    Math.max(0, children.length - 1) * SIBLING_GAP;
+  const dir = side === 'tree-left' ? -1 : 1;
+  let y = parentBox.y - totalHeight / 2;
+
+  for (let index = 0; index < children.length; index += 1) {
+    const child = children[index];
+    const childBox = child._layout;
+    const height = heights[index];
+
+    childBox.side = side;
+    childBox.x = parentBox.x + dir * (parentBox.width / 2 + LEVEL_GAP + childBox.width / 2);
+    childBox.y = y + height / 2;
+
+    placeTreeDescendants(child, side, collapsedIds);
+    y += height + SIBLING_GAP;
+  }
+}
+
+/*
+ * 作用：
+ * 计算树状结构中一个子树实际需要占用的高度。
+ *
+ * 为什么不直接复用节点高度：
+ * 一个节点本身可能只有一行高，但它下面可能挂着很多后代。
+ * 如果只看节点高度，兄弟分支就会彼此重叠；所以这里递归累加可见子树高度。
+ */
+export function treeSubtreeHeight(node, side, collapsedIds) {
+  const box = node._layout;
+  const children = visibleChildren(node, collapsedIds);
+  if (!children.length) return box.height;
+
+  const childHeight =
+    children.reduce((sum, child) => sum + treeSubtreeHeight(child, side, collapsedIds), 0) +
+    Math.max(0, children.length - 1) * SIBLING_GAP;
+
+  return Math.max(box.height, childHeight);
 }
 
 /*

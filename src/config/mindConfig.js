@@ -584,6 +584,8 @@ function normalizeDirection(value) {
       'up',
       'vertical',
       'tree',
+      'tree-left',
+      'tree-balanced',
       'org',
       'timeline',
       'radial',

@@ -258,7 +258,11 @@ export class ConfigModal extends Modal {
         },
         {
           group: '树状结构',
-          options: [['tree', '向右树']],
+          options: [
+            ['tree', '向右树'],
+            ['tree-left', '向左树'],
+            ['tree-balanced', '平衡树'],
+          ],
         },
         {
           group: '组织结构图',
