@@ -167,6 +167,7 @@
 .yonxao-mindmap-node-sibling-actions {
   opacity: 0;
   transition: opacity 120ms ease;
+  pointer-events: none;
 }
 
 /*
@@ -180,7 +181,7 @@
   cursor: pointer;
   opacity: 0;
   transition: opacity 120ms ease;
-  pointer-events: auto;
+  pointer-events: none;
 }
 
 /*
@@ -192,6 +193,7 @@
 .yonxao-mindmap-node:hover .yonxao-mindmap-node-child-add,
 .yonxao-mindmap-node-child-add:focus {
   opacity: 1;
+  pointer-events: auto;
 }
 
 /*

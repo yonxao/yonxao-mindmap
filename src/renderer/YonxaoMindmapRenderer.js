@@ -2590,12 +2590,6 @@ export class YonxaoMindmapRenderer extends Component {
       drop: null,
       highlightEl: null,
     };
-
-    try {
-      this.svgEl.setPointerCapture(event.pointerId);
-    } catch (_error) {
-      // Pointer Capture 失败时仍然能靠普通 pointermove 完成基础拖拽。
-    }
   }
 
   /*
@@ -2643,6 +2637,12 @@ export class YonxaoMindmapRenderer extends Component {
     this.closeInlineTextEditor(false);
     this.svgEl.classList.add('is-node-dragging');
     state.nodeEl.classList.add('is-dragging');
+
+    try {
+      this.svgEl.setPointerCapture(state.pointerId);
+    } catch (_error) {
+      // Pointer Capture 失败时仍然能靠普通 pointermove 完成基础拖拽。
+    }
   }
 
   /*
