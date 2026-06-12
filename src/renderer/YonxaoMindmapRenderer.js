@@ -2071,6 +2071,27 @@ export class YonxaoMindmapRenderer extends Component {
 
   /*
    * 作用：
+   * 根据放射图射线角度计算节点矩形边框上的交点。
+   *
+   * 实现逻辑：
+   * 放射图的分支可能是斜向的，不能只用 left/right/top/bottom 四类锚点。
+   * 这里把节点矩形看作中心点加宽高边界，沿 angle 方向找到射线离开矩形的位置。
+   */
+  radialEdgePoint(box, angle) {
+    const dx = Math.cos(angle);
+    const dy = Math.sin(angle);
+    const tx = Math.abs(dx) > 0.0001 ? box.width / 2 / Math.abs(dx) : Infinity;
+    const ty = Math.abs(dy) > 0.0001 ? box.height / 2 / Math.abs(dy) : Infinity;
+    const distance = Math.min(tx, ty);
+
+    return {
+      x: box.x + dx * distance,
+      y: box.y + dy * distance,
+    };
+  }
+
+  /*
+   * 作用：
    * 绘制时间轴布局的横向轴线和 root 到轴线的连接线。
    */
   renderTimelineAxis(layout) {
@@ -2276,6 +2297,18 @@ export class YonxaoMindmapRenderer extends Component {
       };
     }
 
+    if (Number.isFinite(childBox.radialAngle)) {
+      const start = this.radialEdgePoint(parentBox, childBox.radialAngle);
+      const end = this.radialEdgePoint(childBox, childBox.radialAngle + Math.PI);
+      return {
+        kind: 'radial',
+        startX: start.x,
+        startY: start.y,
+        endX: end.x,
+        endY: end.y,
+      };
+    }
+
     if (side === 'timeline-detail-top' || side === 'timeline-detail-bottom') {
       const startX = this.timelineDetailBranchX(parentBox, [childBox]);
       return {
@@ -2377,6 +2410,10 @@ export class YonxaoMindmapRenderer extends Component {
 
     if (kind === 'timeline-detail') {
       return ['M', startX, startY, 'H', endX].join(' ');
+    }
+
+    if (kind === 'radial') {
+      return ['M', startX, startY, 'L', endX, endY].join(' ');
     }
 
     if (kind === 'skip') {

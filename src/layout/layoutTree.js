@@ -889,40 +889,160 @@ export function timelineDetailSubtreeHeight(node, branchSide, collapsedIds) {
 
 /*
  * 作用：
- * 放射布局，一级分支环绕中心节点分布，后代沿同一射线向外延伸。
+ * 放射布局，一级分支环绕中心节点分布，后代沿各自射线向外延伸。
+ *
+ * 实现逻辑：
+ * 一级节点决定一条从中心向外发散的主射线。
+ * 后代不再继续绕圆旋转，而是沿这条主射线向外推进；
+ * 同级节点沿射线的垂直方向排开，形成真正的“中心发散”结构。
  */
 export function layoutRadial(root, collapsedIds) {
   const children = visibleChildren(root, collapsedIds);
-  const radius = Math.max(180, root._layout.width + LEVEL_GAP);
+  const radius = Math.max(220, root._layout.width / 2 + LEVEL_GAP + 110);
+  const stats = children.map((child) => radialBranchStats(child, collapsedIds));
+  const weights = stats.map((stat) => radialBranchWeight(stat));
+  const totalWeight = weights.reduce((sum, weight) => sum + weight, 0) || 1;
+  const slices = weights.map((weight) => (weight / totalWeight) * Math.PI * 2);
+  let cursor = -Math.PI / 2 - (slices[0] || 0) / 2;
 
   children.forEach((child, index) => {
-    const angle = -Math.PI / 2 + (index * Math.PI * 2) / Math.max(children.length, 1);
-    placeRadialBranch(child, angle, radius, 1, collapsedIds);
+    const slice = slices[index];
+    const angle = cursor + slice / 2;
+    const branchRadius = radialBranchRadius(radius, child, angle, slice, collapsedIds);
+
+    placeRadialRootBranch(root, child, angle, branchRadius, collapsedIds);
+    cursor += slice;
   });
 }
 
 /*
  * 作用：
- * 递归摆放放射布局的一条分支。
+ * 摆放放射图的一级分支。
  */
-export function placeRadialBranch(node, angle, radius, depth, collapsedIds) {
+export function placeRadialRootBranch(root, node, angle, radius, collapsedIds) {
   const box = node._layout;
-  box.side = radialSide(angle);
-  box.x = Math.cos(angle) * radius;
-  box.y = Math.sin(angle) * radius;
+  const unit = radialUnit(angle);
 
-  const children = visibleChildren(node, collapsedIds);
+  box.side = radialSide(angle);
+  box.radialAngle = angle;
+  box.x = root._layout.x + unit.x * radius;
+  box.y = root._layout.y + unit.y * radius;
+
+  placeRadialDescendants(node, angle, collapsedIds);
+}
+
+/*
+ * 作用：
+ * 递归摆放放射图某条射线上的后代节点。
+ *
+ * 实现逻辑：
+ * 当前节点作为父节点，子节点整体沿同一射线继续向外；
+ * 多个子节点沿射线垂直方向分散，并让子节点组的中线对齐父节点出口。
+ */
+export function placeRadialDescendants(parent, angle, collapsedIds) {
+  const children = visibleChildren(parent, collapsedIds);
   if (!children.length) return;
 
-  const spread = Math.min(Math.PI / 2, Math.PI / Math.max(3, depth + children.length));
-  const start = angle - spread / 2;
-  const nextRadius = radius + LEVEL_GAP + Math.max(box.width, box.height);
+  const parentBox = parent._layout;
+  const unit = radialUnit(angle);
+  const normal = radialNormal(angle);
+  const breadths = children.map((child) => radialSubtreeBreadth(child, angle, collapsedIds));
+  const totalBreadth =
+    breadths.reduce((sum, breadth) => sum + breadth, 0) +
+    Math.max(0, children.length - 1) * SIBLING_GAP;
+  const parentForward = radialExtent(parentBox, angle);
+  let offset = -totalBreadth / 2;
 
   children.forEach((child, index) => {
-    const childAngle =
-      children.length === 1 ? angle : start + (spread * index) / Math.max(1, children.length - 1);
-    placeRadialBranch(child, childAngle, nextRadius, depth + 1, collapsedIds);
+    const childBox = child._layout;
+    const breadth = breadths[index];
+    const childForward = radialExtent(childBox, angle);
+    const along = parentForward + LEVEL_GAP + childForward;
+    const cross = offset + breadth / 2;
+
+    childBox.side = radialSide(angle);
+    childBox.radialAngle = angle;
+    childBox.x = parentBox.x + unit.x * along + normal.x * cross;
+    childBox.y = parentBox.y + unit.y * along + normal.y * cross;
+
+    placeRadialDescendants(child, angle, collapsedIds);
+    offset += breadth + SIBLING_GAP;
   });
+}
+
+/*
+ * 作用：
+ * 计算放射图中某棵子树沿射线垂直方向需要占用的宽度。
+ */
+export function radialSubtreeBreadth(node, angle, collapsedIds) {
+  const box = node._layout;
+  const children = visibleChildren(node, collapsedIds);
+  const ownBreadth = radialPerpendicularExtent(box, angle) * 2;
+  if (!children.length) return ownBreadth;
+
+  const childBreadth =
+    children.reduce((sum, child) => sum + radialSubtreeBreadth(child, angle, collapsedIds), 0) +
+    Math.max(0, children.length - 1) * SIBLING_GAP;
+
+  return Math.max(ownBreadth, childBreadth);
+}
+
+/*
+ * 作用：
+ * 统计一级放射分支的复杂度，供角度动态分配使用。
+ */
+export function radialBranchStats(node, collapsedIds) {
+  const box = node._layout;
+  const children = visibleChildren(node, collapsedIds);
+  let descendantCount = children.length;
+  let maxDepth = children.length ? 1 : 0;
+
+  for (const child of children) {
+    const childStats = radialBranchStats(child, collapsedIds);
+    descendantCount += childStats.descendantCount;
+    maxDepth = Math.max(maxDepth, childStats.maxDepth + 1);
+  }
+
+  return {
+    directChildCount: children.length,
+    descendantCount,
+    maxDepth,
+    sizeScore: Math.max(0, (box.width - NODE_MIN_WIDTH) / NODE_MIN_WIDTH) + box.height / 120,
+  };
+}
+
+/*
+ * 作用：
+ * 根据分支复杂度计算角度权重。
+ *
+ * 设计思路：
+ * 直接子节点数量对扇区大小影响最大；后代数量用平方根压缩，避免超大分支吃掉整圈；
+ * 深度和节点尺寸作为补偿，照顾长文本节点和深层分支。
+ */
+export function radialBranchWeight(stat) {
+  return (
+    1 +
+    stat.directChildCount * 0.75 +
+    Math.sqrt(stat.descendantCount) * 0.55 +
+    stat.maxDepth * 0.35 +
+    stat.sizeScore * 0.35
+  );
+}
+
+/*
+ * 作用：
+ * 根据分支内容和扇区宽度微调一级分支半径。
+ *
+ * 为什么需要半径补偿：
+ * 有些分支虽然已经拿到更大角度，但如果子树非常宽，仍然可能靠近相邻扇区。
+ * 适当把它推远，可以让同样的垂直展开宽度占据更小的视觉角度。
+ */
+export function radialBranchRadius(baseRadius, node, angle, slice, collapsedIds) {
+  const breadth = radialSubtreeBreadth(node, angle, collapsedIds);
+  const safeHalfAngle = Math.max(0.18, Math.min(slice * 0.36, Math.PI / 3));
+  const requiredRadius = breadth / 2 / Math.tan(safeHalfAngle);
+
+  return Math.max(baseRadius, Math.min(baseRadius + 220, requiredRadius));
 }
 
 /*
@@ -934,6 +1054,46 @@ function radialSide(angle) {
   const cos = Math.cos(angle);
   if (Math.abs(cos) >= Math.abs(sin)) return cos >= 0 ? 'right' : 'left';
   return sin >= 0 ? 'bottom' : 'top';
+}
+
+/*
+ * 作用：
+ * 计算射线方向单位向量。
+ */
+function radialUnit(angle) {
+  return {
+    x: Math.cos(angle),
+    y: Math.sin(angle),
+  };
+}
+
+/*
+ * 作用：
+ * 计算与射线垂直的单位向量，用来分散同级节点。
+ */
+function radialNormal(angle) {
+  return {
+    x: -Math.sin(angle),
+    y: Math.cos(angle),
+  };
+}
+
+/*
+ * 作用：
+ * 计算节点矩形在射线方向上的半径投影。
+ */
+function radialExtent(box, angle) {
+  const unit = radialUnit(angle);
+  return (Math.abs(unit.x) * box.width + Math.abs(unit.y) * box.height) / 2;
+}
+
+/*
+ * 作用：
+ * 计算节点矩形在射线垂直方向上的半径投影。
+ */
+function radialPerpendicularExtent(box, angle) {
+  const normal = radialNormal(angle);
+  return (Math.abs(normal.x) * box.width + Math.abs(normal.y) * box.height) / 2;
 }
 
 /*
