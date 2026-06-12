@@ -273,7 +273,11 @@ export class ConfigModal extends Modal {
         },
         {
           group: '时间轴',
-          options: [['timeline', '轴下展开']],
+          options: [
+            ['timeline-up', '轴上展开'],
+            ['timeline', '轴下展开'],
+            ['timeline-balanced', '上下平衡轴'],
+          ],
         },
         {
           group: '其他',

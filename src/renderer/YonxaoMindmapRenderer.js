@@ -1886,9 +1886,20 @@ export class YonxaoMindmapRenderer extends Component {
     if (orgRightBranchTrunks) {
       edgeLayer.appendChild(orgRightBranchTrunks);
     }
+    const timelineAxis = this.renderTimelineAxis(layout);
+    if (timelineAxis) {
+      edgeLayer.appendChild(timelineAxis);
+    }
+    const timelineDetailTrunks = this.renderTimelineDetailTrunks(layout);
+    if (timelineDetailTrunks) {
+      edgeLayer.appendChild(timelineDetailTrunks);
+    }
 
     for (const edge of layout.edges) {
-      edgeLayer.appendChild(this.renderEdge(edge));
+      const edgeEl = this.renderEdge(edge);
+      if (edgeEl) {
+        edgeLayer.appendChild(edgeEl);
+      }
     }
 
     for (const node of layout.nodes) {
@@ -2033,13 +2044,168 @@ export class YonxaoMindmapRenderer extends Component {
 
   /*
    * 作用：
+   * 计算时间轴详情节点继续展开子节点时的右侧分支线位置。
+   *
+   * 实现逻辑：
+   * - 时间点节点本身仍使用中心竖线，保持时间轴主分支的视觉稳定。
+   * - 详情节点再展开后代时，分支线放在节点右侧，形成“父节点右侧出口 -> 竖线 -> 子节点”的结构。
+   * - 如果父节点很宽导致父子间距不足，则把分支线夹在父节点右边缘和子节点左边缘之间，避免横线反向。
+   */
+  timelineDetailBranchX(parentBox, childBoxes = []) {
+    if (parentBox.side !== 'timeline-detail-top' && parentBox.side !== 'timeline-detail-bottom') {
+      return parentBox.x;
+    }
+
+    const parentRight = parentBox.x + parentBox.width / 2;
+    const preferredX = parentRight + NODE_PADDING_X;
+    if (!childBoxes.length) return preferredX;
+
+    const firstChildLeft = Math.min(...childBoxes.map((box) => box.x - box.width / 2));
+    const available = firstChildLeft - parentRight;
+    if (available <= NODE_PADDING_X) {
+      return parentRight + Math.max(6, available / 2);
+    }
+
+    return Math.min(preferredX, firstChildLeft - NODE_PADDING_X / 2);
+  }
+
+  /*
+   * 作用：
+   * 绘制时间轴布局的横向轴线和 root 到轴线的连接线。
+   */
+  renderTimelineAxis(layout) {
+    if (!this.isTimelineLayoutMode(layout.mode)) return null;
+
+    const rootBox = this.root?._layout;
+    const axisY = rootBox?.timelineAxisY;
+    if (!rootBox || !Number.isFinite(axisY)) return null;
+
+    const eventNodes = layout.nodes.filter((node) => {
+      const side = node._layout?.side;
+      return side === 'timeline-point';
+    });
+    if (!eventNodes.length) return null;
+
+    const groupEl = svg('g', { class: 'yonxao-mindmap-timeline-axis' });
+    const sortedNodes = [...eventNodes].sort((left, right) => left._layout.x - right._layout.x);
+    let segmentStart = rootBox.timelineAxisMinX ?? rootBox.x + rootBox.width / 2;
+
+    for (const node of sortedNodes) {
+      const box = node._layout;
+      const segmentEnd = box.x - box.width / 2;
+      const segmentEl = this.renderTimelineAxisSegment(segmentStart, segmentEnd, axisY, node);
+
+      if (segmentEl) {
+        groupEl.appendChild(segmentEl);
+      }
+
+      segmentStart = box.x + box.width / 2;
+    }
+
+    return groupEl;
+  }
+
+  /*
+   * 作用：
+   * 绘制一段按时间点着色的时间轴线。
+   */
+  renderTimelineAxisSegment(startX, endX, axisY, node) {
+    if (!Number.isFinite(startX) || !Number.isFinite(endX) || endX <= startX) return null;
+
+    const color = edgeColor(node, this.config);
+    return svg('path', {
+      class: 'yonxao-mindmap-edge yonxao-mindmap-timeline-line',
+      d: ['M', startX, axisY, 'H', endX].join(' '),
+      stroke: color || 'currentColor',
+      style: `opacity: ${themeEdgeOpacity(this.config)}`,
+    });
+  }
+
+  /*
+   * 作用：
+   * 绘制时间轴详情区的目录树式竖向主线。
+   */
+  renderTimelineDetailTrunks(layout) {
+    if (!this.isTimelineLayoutMode(layout.mode)) return null;
+
+    const groups = new Map();
+    for (const edge of layout.edges) {
+      const side = edge.child?._layout?.side;
+      if (side !== 'timeline-detail-top' && side !== 'timeline-detail-bottom') continue;
+      if (!groups.has(edge.parent.id)) {
+        groups.set(edge.parent.id, []);
+      }
+      groups.get(edge.parent.id).push(edge);
+    }
+
+    if (!groups.size) return null;
+
+    const groupEl = svg('g', { class: 'yonxao-mindmap-timeline-detail-trunks' });
+    for (const edges of groups.values()) {
+      const parent = edges[0]?.parent;
+      const parentBox = parent?._layout;
+      if (!parentBox || !edges.length) continue;
+
+      const firstSide = edges[0].child._layout.side;
+      const childBoxes = edges.map((edge) => edge.child._layout);
+      const trunkX = this.timelineDetailBranchX(parentBox, childBoxes);
+      const isDetailParent =
+        parentBox.side === 'timeline-detail-top' || parentBox.side === 'timeline-detail-bottom';
+      const startX = isDetailParent ? parentBox.x + parentBox.width / 2 : parentBox.x;
+      const childYs = edges.map((edge) => edge.child._layout.y);
+      const minChildY = Math.min(...childYs);
+      const maxChildY = Math.max(...childYs);
+      const startY = isDetailParent
+        ? parentBox.y
+        : firstSide === 'timeline-detail-top'
+          ? parentBox.y - parentBox.height / 2
+          : parentBox.y + parentBox.height / 2;
+      const trunkStartY = isDetailParent ? minChildY : startY;
+      const trunkEndY = isDetailParent
+        ? maxChildY
+        : firstSide === 'timeline-detail-top'
+          ? minChildY
+          : maxChildY;
+      const color = edgeColor(parent, this.config);
+      const commands = [];
+
+      if (startX !== trunkX) {
+        commands.push('M', startX, startY, 'H', trunkX);
+      }
+
+      commands.push('M', trunkX, trunkStartY, 'V', trunkEndY);
+
+      groupEl.appendChild(
+        svg('path', {
+          class: 'yonxao-mindmap-edge yonxao-mindmap-timeline-detail-trunk',
+          d: commands.join(' '),
+          stroke: color || 'currentColor',
+          style: `opacity: ${themeEdgeOpacity(this.config)}`,
+        })
+      );
+    }
+
+    return groupEl;
+  }
+
+  /*
+   * 作用：
+   * 判断当前布局是否属于“时间轴”系列。
+   */
+  isTimelineLayoutMode(mode) {
+    return mode === 'timeline-up' || mode === 'timeline' || mode === 'timeline-balanced';
+  }
+
+  /*
+   * 作用：
    * 根据父子节点布局信息绘制一条贝塞尔曲线连线。
    */
   renderEdge(edge) {
     const parentBox = edge.parent._layout;
     const childBox = edge.child._layout;
     const anchors = this.edgeAnchors(parentBox, childBox);
-    const color = edgeColor(edge.child, this.config);
+    if (anchors.kind === 'skip') return null;
+    const color = this.renderEdgeColor(edge, anchors);
 
     // 默认使用三次贝塞尔曲线；也可通过 edge.type 切换为直线或正交折线。
     return svg('path', {
@@ -2048,6 +2214,18 @@ export class YonxaoMindmapRenderer extends Component {
       stroke: color || 'currentColor',
       style: `opacity: ${themeEdgeOpacity(this.config)}`,
     });
+  }
+
+  /*
+   * 作用：
+   * 根据特殊结构决定连线颜色。
+   */
+  renderEdgeColor(edge, anchors) {
+    if (anchors.kind === 'timeline-detail') {
+      return edgeColor(edge.parent, this.config);
+    }
+
+    return edgeColor(edge.child, this.config);
   }
 
   /*
@@ -2085,6 +2263,27 @@ export class YonxaoMindmapRenderer extends Component {
         startY: parentBox.y + parentBox.height / 2,
         endX: childBox.x,
         endY: childBox.y - childBox.height / 2,
+      };
+    }
+
+    if (parentBox.side === 'root' && side === 'timeline-point') {
+      return {
+        kind: 'skip',
+        startX: childBox.x,
+        startY: childBox.y,
+        endX: childBox.x,
+        endY: childBox.y,
+      };
+    }
+
+    if (side === 'timeline-detail-top' || side === 'timeline-detail-bottom') {
+      const startX = this.timelineDetailBranchX(parentBox, [childBox]);
+      return {
+        kind: 'timeline-detail',
+        startX,
+        startY: childBox.y,
+        endX: childBox.x - childBox.width / 2,
+        endY: childBox.y,
       };
     }
 
@@ -2174,6 +2373,14 @@ export class YonxaoMindmapRenderer extends Component {
 
     if (kind === 'org-right-child') {
       return ['M', startX, startY, 'H', endX].join(' ');
+    }
+
+    if (kind === 'timeline-detail') {
+      return ['M', startX, startY, 'H', endX].join(' ');
+    }
+
+    if (kind === 'skip') {
+      return '';
     }
 
     if (this.config.edge.type === 'straight') {
@@ -2375,9 +2582,17 @@ export class YonxaoMindmapRenderer extends Component {
    * 这里保留 top/bottom/vertical 判断，是为了后续真正支持竖向结构时不用再重写按钮渲染。
    */
   shouldPlaceSiblingButtonsHorizontally(box) {
-    return ['top', 'bottom', 'vertical', 'timeline', 'org-bottom', 'org-right-branch'].includes(
-      String(box.side || '').toLowerCase()
-    );
+    return [
+      'top',
+      'bottom',
+      'vertical',
+      'timeline',
+      'timeline-point',
+      'timeline-top',
+      'timeline-bottom',
+      'org-bottom',
+      'org-right-branch',
+    ].includes(String(box.side || '').toLowerCase());
   }
 
   /*
@@ -2449,6 +2664,10 @@ export class YonxaoMindmapRenderer extends Component {
     if (side === 'org-down-right' || side === 'org-right' || side === 'org-right-branch') {
       return 'right';
     }
+    if (side === 'timeline-point') return 'right';
+    if (side === 'timeline-top') return 'top';
+    if (side === 'timeline-bottom') return 'bottom';
+    if (side === 'timeline-detail-top' || side === 'timeline-detail-bottom') return 'right';
     if (side === 'timeline' || side === 'tree' || side === 'tree-right') return 'right';
 
     const mode = this.config.layout.defaultDirection;
@@ -2506,14 +2725,19 @@ export class YonxaoMindmapRenderer extends Component {
       return this.rootEditButtonPosition(node, box, buttonSize);
     }
 
-    if (box.side === 'top') {
+    if (box.side === 'top' || box.side === 'timeline-top') {
       return {
         x: box.width / 2 - buttonSize / 2,
         y: box.height - buttonSize / 2,
       };
     }
 
-    if (box.side === 'bottom' || box.side === 'org-bottom' || box.side === 'org-right-branch') {
+    if (
+      box.side === 'bottom' ||
+      box.side === 'timeline-bottom' ||
+      box.side === 'org-bottom' ||
+      box.side === 'org-right-branch'
+    ) {
       return {
         x: box.width / 2 - buttonSize / 2,
         y: -buttonSize / 2,
@@ -2523,7 +2747,9 @@ export class YonxaoMindmapRenderer extends Component {
     if (
       box.side === 'tree' ||
       box.side === 'tree-right' ||
-      box.side === 'timeline' ||
+      box.side === 'timeline-point' ||
+      box.side === 'timeline-detail-top' ||
+      box.side === 'timeline-detail-bottom' ||
       box.side === 'org-down-right' ||
       box.side === 'org-right'
     ) {
@@ -2552,7 +2778,14 @@ export class YonxaoMindmapRenderer extends Component {
    */
   rootEditButtonPosition(node, box, buttonSize) {
     const mode = this.config.layout.defaultDirection;
-    if (mode === 'down' || mode === 'org' || mode === 'org-right') {
+    if (
+      mode === 'down' ||
+      mode === 'org' ||
+      mode === 'org-right' ||
+      mode === 'timeline-up' ||
+      mode === 'timeline' ||
+      mode === 'timeline-balanced'
+    ) {
       return {
         x: box.width / 2 - buttonSize / 2,
         y: -buttonSize / 2,
@@ -3110,6 +3343,9 @@ export class YonxaoMindmapRenderer extends Component {
       side === 'top' ||
       side === 'bottom' ||
       side === 'timeline' ||
+      side === 'timeline-point' ||
+      side === 'timeline-top' ||
+      side === 'timeline-bottom' ||
       side === 'org-bottom' ||
       side === 'org-right-branch'
     ) {

@@ -41,7 +41,9 @@ export const LAYOUT_MODES = Object.freeze([
   'tree-balanced',
   'org',
   'org-right',
+  'timeline-up',
   'timeline',
+  'timeline-balanced',
   'radial',
 ]);
 
@@ -69,8 +71,8 @@ export function layoutTree(root, collapsedIds, config) {
     layoutOutlineTree(root, collapsedIds, mode);
   } else if (mode === 'org' || mode === 'org-right') {
     layoutOrgChart(root, collapsedIds, mode);
-  } else if (mode === 'timeline') {
-    layoutTimeline(root, collapsedIds);
+  } else if (mode === 'timeline-up' || mode === 'timeline' || mode === 'timeline-balanced') {
+    layoutTimeline(root, collapsedIds, mode);
   } else if (mode === 'radial') {
     layoutRadial(root, collapsedIds);
   } else {
@@ -744,52 +746,145 @@ export function orgRightSubtreeWidth(node, collapsedIds) {
 
 /*
  * 作用：
- * 时间线布局，一级节点沿横轴排列，子节点作为事件详情向下展开。
+ * 时间轴布局，覆盖轴上展开、轴下展开和上下平衡轴。
+ *
+ * 实现逻辑：
+ * 二级节点是时间轴上的时间点，始终落在同一条水平轴线上。
+ * 三级及更深节点才根据模式展开到轴上方或轴下方，并向右递进。
  */
-export function layoutTimeline(root, collapsedIds) {
+export function layoutTimeline(root, collapsedIds, mode = 'timeline') {
   const rootBox = root._layout;
   const children = visibleChildren(root, collapsedIds);
-  rootBox.x = 0;
-  rootBox.y = 0;
-  rootBox.side = 'root';
-
-  let x = rootBox.x + rootBox.width / 2 + LEVEL_GAP;
-  for (const child of children) {
-    const width = Math.max(child._layout.width, orgSubtreeWidth(child, collapsedIds));
-    child._layout.side = 'timeline';
-    child._layout.x = x + width / 2;
-    child._layout.y = 0;
-    placeTimelineDetails(child, collapsedIds);
-    x += width + LEVEL_GAP;
-  }
-
-  centerVisibleNodes(root, collapsedIds);
-}
-
-/*
- * 作用：
- * 时间线一级节点的详情子树向下展开。
- */
-export function placeTimelineDetails(parent, collapsedIds) {
-  const children = visibleChildren(parent, collapsedIds);
   if (!children.length) return;
 
-  const parentBox = parent._layout;
-  const widths = children.map((child) => verticalSubtreeWidth(child, 'bottom', collapsedIds));
+  const branchSides = children.map((child, index) => rootChildTimelineSide(child, index, mode));
+  const widths = children.map((child) => timelinePointWidth(child, collapsedIds));
   const totalWidth =
-    widths.reduce((sum, width) => sum + width, 0) + Math.max(0, children.length - 1) * SIBLING_GAP;
-  let x = parentBox.x - totalWidth / 2;
+    widths.reduce((sum, width) => sum + width, 0) + Math.max(0, children.length - 1) * BRANCH_GAP;
 
+  const axisY = rootBox.y;
+  rootBox.timelineAxisY = axisY;
+  rootBox.timelineAxisMinX = rootBox.x + rootBox.width / 2;
+  rootBox.timelineAxisMaxX = rootBox.x + rootBox.width / 2 + LEVEL_GAP + totalWidth;
+
+  let x = rootBox.x + rootBox.width / 2 + LEVEL_GAP;
   for (let index = 0; index < children.length; index += 1) {
     const child = children[index];
     const childBox = child._layout;
     const width = widths[index];
-    childBox.side = 'bottom';
-    childBox.x = x + width / 2;
-    childBox.y = parentBox.y + parentBox.height / 2 + LEVEL_GAP + childBox.height / 2;
-    placeVerticalDescendants(child, 'bottom', collapsedIds);
-    x += width + SIBLING_GAP;
+    const branchSide = branchSides[index];
+
+    childBox.side = 'timeline-point';
+    childBox.timelineBranchSide = branchSide;
+    childBox.x = x + childBox.width / 2;
+    childBox.y = axisY;
+    childBox.timelineAxisY = axisY;
+
+    placeTimelineDetails(child, branchSide, collapsedIds);
+    x += width + BRANCH_GAP;
   }
+}
+
+/*
+ * 作用：
+ * 判断时间轴一级节点挂在轴线上方还是下方。
+ */
+export function rootChildTimelineSide(child, index, mode) {
+  const childLayout = normalizeLayout(child.attrs.layout);
+  if (childLayout === 'timeline-up' || childLayout === 'up') return 'timeline-top';
+  if (childLayout === 'timeline' || childLayout === 'down') return 'timeline-bottom';
+
+  if (mode === 'timeline-up') return 'timeline-top';
+  if (mode === 'timeline-balanced') return index % 2 === 0 ? 'timeline-top' : 'timeline-bottom';
+  return 'timeline-bottom';
+}
+
+/*
+ * 作用：
+ * 摆放某个时间点的详情子树。
+ *
+ * 实现逻辑：
+ * 时间点本身在轴线上；详情节点从时间点上方或下方拉出一条竖线，
+ * 再在竖线右侧逐层递进，形成时间轴常见的事件详情区。
+ */
+export function placeTimelineDetails(parent, branchSide, collapsedIds) {
+  const children = visibleChildren(parent, collapsedIds);
+  if (!children.length) return;
+
+  const parentBox = parent._layout;
+  const heights = children.map((child) =>
+    timelineDetailSubtreeHeight(child, branchSide, collapsedIds)
+  );
+  const totalHeight =
+    heights.reduce((sum, height) => sum + height, 0) +
+    Math.max(0, children.length - 1) * SIBLING_GAP;
+  const isDetailParent =
+    parentBox.side === 'timeline-detail-top' || parentBox.side === 'timeline-detail-bottom';
+  let y = isDetailParent
+    ? parentBox.y - totalHeight / 2
+    : branchSide === 'timeline-top'
+      ? parentBox.y - parentBox.height / 2 - SIBLING_GAP - totalHeight
+      : parentBox.y + parentBox.height / 2 + SIBLING_GAP;
+
+  for (let index = 0; index < children.length; index += 1) {
+    const child = children[index];
+    const childBox = child._layout;
+    const height = heights[index];
+    const isTopBranch = branchSide === 'timeline-top';
+
+    childBox.side = isTopBranch ? 'timeline-detail-top' : 'timeline-detail-bottom';
+    childBox.timelineBranchSide = branchSide;
+    childBox.x = parentBox.x + LEVEL_GAP + childBox.width / 2;
+    /*
+     * 每个节点都放在自己完整子树占位块的中线位置。
+     * 这样当某个详情节点继续展开子节点时，父节点右侧出口能自然对齐子节点组的总高度中线。
+     */
+    childBox.y = y + height / 2;
+
+    placeTimelineDetails(child, branchSide, collapsedIds);
+    y += height + SIBLING_GAP;
+  }
+}
+
+/*
+ * 作用：
+ * 计算某个时间点连同详情区需要占用的横向宽度。
+ */
+export function timelinePointWidth(node, collapsedIds) {
+  const box = node._layout;
+  const children = visibleChildren(node, collapsedIds);
+  if (!children.length) return box.width;
+
+  const childWidth = children.reduce(
+    (max, child) => Math.max(max, timelinePointWidth(child, collapsedIds)),
+    0
+  );
+
+  return Math.max(box.width, box.width / 2 + LEVEL_GAP + childWidth);
+}
+
+/*
+ * 作用：
+ * 计算时间轴详情子树需要占用的垂直高度。
+ */
+export function timelineDetailSubtreeHeight(node, branchSide, collapsedIds) {
+  const box = node._layout;
+  const children = visibleChildren(node, collapsedIds);
+  if (!children.length) return box.height;
+
+  const childHeight =
+    children.reduce(
+      (sum, child) => sum + timelineDetailSubtreeHeight(child, branchSide, collapsedIds),
+      0
+    ) +
+    Math.max(0, children.length - 1) * SIBLING_GAP;
+
+  /*
+   * 详情树是向右展开的：父节点和子节点组在横向上分列，垂直占位取二者较大值。
+   * 如果继续使用“父节点高度 + 子节点组高度”，会把子树块算得过高，
+   * 也会让父节点出口无法对齐子节点组中线。
+   */
+  return Math.max(box.height, childHeight);
 }
 
 /*
@@ -839,24 +934,6 @@ function radialSide(angle) {
   const cos = Math.cos(angle);
   if (Math.abs(cos) >= Math.abs(sin)) return cos >= 0 ? 'right' : 'left';
   return sin >= 0 ? 'bottom' : 'top';
-}
-
-/*
- * 作用：
- * 将树形/时间线这类自然从左上展开的布局居中到根节点附近。
- */
-function centerVisibleNodes(root, collapsedIds) {
-  const nodes = [];
-  collectVisible(root, collapsedIds, nodes, []);
-  const bounds = computeBounds(nodes);
-  const rootBox = root._layout;
-  const offsetX = rootBox.x - (bounds.minX + bounds.maxX) / 2;
-  const offsetY = rootBox.y - (bounds.minY + bounds.maxY) / 2;
-
-  for (const node of nodes) {
-    node._layout.x += offsetX;
-    node._layout.y += offsetY;
-  }
 }
 
 /*

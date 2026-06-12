@@ -588,7 +588,9 @@ function normalizeDirection(value) {
       'tree-balanced',
       'org',
       'org-right',
+      'timeline-up',
       'timeline',
+      'timeline-balanced',
       'radial',
     ].includes(text)
   ) {
