@@ -51,41 +51,50 @@ export function serializeMindDocument(root, rawConfig, forceConfig) {
  */
 export function serializeTopic(topic, depth) {
   const topicLevelMarker = '#'.repeat(depth + 1);
-  const attrs = serializeAttrs(topic.attrs);
-  const currentLine = `${topicLevelMarker} ${topic.text}${attrs}`;
+  const topicAttributes = serializeTopicAttributes(topic.attributes);
+  const currentLine = `${topicLevelMarker} ${topic.text}${topicAttributes}`;
   const subtopicLines = topic.subtopics.map((subtopic) => serializeTopic(subtopic, depth + 1));
   return [currentLine, ...subtopicLines].join('\n');
 }
 
 /*
  * 作用：
- * 把主题 attrs 对象序列化成主题属性块。
+ * 把主题 attributes 对象序列化成主题属性块。
  *
  * 实现逻辑：
  * 常用属性固定顺序输出，其它属性按字母排序，减少无意义 diff。
  */
-export function serializeAttrs(attrs) {
+export function serializeTopicAttributes(attributes) {
+  const topicAttributes = attributes || {};
   // 为了输出稳定、易读，常用属性固定顺序：color -> icon -> layout。
   // 如果后续扩展了其它属性，也会继续保留下来，避免导图编辑时误删用户写的自定义字段。
-  const orderedKeys = ['color', 'icon', 'layout'];
+  const orderedKeys = [
+    'color',
+    'icon',
+    'layout',
+    'fontFamily',
+    'fontSize',
+    'fontWeight',
+    'lineHeight',
+  ];
   const keys = [
-    ...orderedKeys.filter((key) => attrs[key]),
-    ...Object.keys(attrs)
-      .filter((key) => attrs[key] && !orderedKeys.includes(key))
+    ...orderedKeys.filter((key) => topicAttributes[key]),
+    ...Object.keys(topicAttributes)
+      .filter((key) => topicAttributes[key] && !orderedKeys.includes(key))
       .sort(),
   ];
 
   if (!keys.length) return '';
 
-  const parts = keys.map((key) => `${key}=${serializeAttrValue(attrs[key])}`);
+  const parts = keys.map((key) => `${key}=${serializeTopicAttributeValue(topicAttributes[key])}`);
   return ` [${parts.join(' ')}]`;
 }
 
 /*
  * 作用：
- * 序列化单个属性值，必要时自动加双引号并转义内部引号。
+ * 序列化单个主题属性值，必要时自动加双引号并转义内部引号。
  */
-export function serializeAttrValue(value) {
+export function serializeTopicAttributeValue(value) {
   const text = String(value || '');
   if (/^[^\s"'[\]]+$/.test(text)) return text;
   return `"${text.replace(/"/g, '\\"')}"`;

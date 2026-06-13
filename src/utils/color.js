@@ -14,14 +14,14 @@ import { themeColorForTopic } from '../theme/mindThemes.js';
 
 /*
  * 作用：
- * 从主题 attrs 中读取并规范化主题颜色。
+ * 从主题属性 attributes 中读取并规范化主题颜色。
  *
  * 优先级：
  * 主题属性 color > 配置区 topic.defaultColor > 当前主题自动配色。
  */
 export function topicColor(topic, config) {
   return (
-    normalizeColor(topic.attrs.color) ||
+    normalizeColor(topic.attributes.color) ||
     normalizeColor(config?.topic?.defaultColor) ||
     normalizeColor(themeColorForTopic(topic, config))
   );

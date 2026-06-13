@@ -27,7 +27,7 @@ import {
 import { normalizeMindConfig, resolveTopicFont } from '../config/mindConfig.js';
 import { normalizeIcon } from '../icons/renderIcon.js';
 import { clamp } from '../utils/math.js';
-import { visualUnits, wrapLabel } from '../utils/text.js';
+import { visualUnits, wrapTopicText } from '../utils/text.js';
 
 export const LAYOUT_MODES = Object.freeze([
   'right',
@@ -118,13 +118,13 @@ export function prepareTopic(topic, config) {
 export function measureTopic(topic, config) {
   const normalizedConfig = normalizeMindConfig(config);
   const font = resolveTopicFont(topic, normalizedConfig);
-  const icon = normalizeIcon(topic.attrs.icon);
+  const icon = normalizeIcon(topic.attributes.icon);
   const maxWidth = normalizedConfig.topic.maxWidth || TOPIC_MAX_WIDTH;
   const iconWidth = icon ? ICON_SIZE + ICON_GAP : 0;
   const usableTextWidth = Math.max(48, maxWidth - TOPIC_PADDING_X * 2 - iconWidth);
   const averageUnitWidth = Math.max(5, font.size * 0.54);
   const maxUnits = clamp(Math.floor(usableTextWidth / averageUnitWidth), icon ? 10 : 12, 48);
-  const lines = wrapLabel(topic.text || 'Untitled', maxUnits);
+  const lines = wrapTopicText(topic.text || 'Untitled', maxUnits);
   const longest = lines.reduce((max, line) => Math.max(max, visualUnits(line)), 0);
   const textWidth = Math.ceil(longest * averageUnitWidth);
   const width = clamp(textWidth + TOPIC_PADDING_X * 2 + iconWidth, TOPIC_MIN_WIDTH, maxWidth);
@@ -153,7 +153,7 @@ export function measureTopic(topic, config) {
  */
 export function resolveLayoutMode(root, config) {
   return (
-    normalizeLayout(root?.attrs?.layout) ||
+    normalizeLayout(root?.attributes?.layout) ||
     normalizeLayout(config?.layout?.defaultDirection) ||
     'balanced'
   );
@@ -200,10 +200,10 @@ export function layoutHorizontalMind(root, collapsedIds, mode) {
  * 判断一级主题应该在左侧还是右侧。
  */
 export function rootSubtopicHorizontalSide(root, subtopic, index, mode) {
-  const subtopicLayout = normalizeLayout(subtopic.attrs.layout);
+  const subtopicLayout = normalizeLayout(subtopic.attributes.layout);
   if (subtopicLayout === 'left' || subtopicLayout === 'right') return subtopicLayout;
 
-  const rootLayout = normalizeLayout(root.attrs.layout);
+  const rootLayout = normalizeLayout(root.attributes.layout);
   if (rootLayout === 'left' || rootLayout === 'right') return rootLayout;
 
   if (mode === 'left' || mode === 'right') return mode;
@@ -321,7 +321,7 @@ export function layoutVerticalMind(root, collapsedIds, mode) {
  * 判断一级主题应该在上方还是下方。
  */
 export function rootSubtopicVerticalSide(subtopic, index, mode) {
-  const subtopicLayout = normalizeLayout(subtopic.attrs.layout);
+  const subtopicLayout = normalizeLayout(subtopic.attributes.layout);
   if (subtopicLayout === 'up') return 'top';
   if (subtopicLayout === 'down') return 'bottom';
 
@@ -461,7 +461,7 @@ export function placeTreeTrunkSubtopics(root, subtopics, mode, collapsedIds) {
  * 判断树状结构的一级分支挂在主干哪一侧。
  */
 export function rootSubtopicTreeSide(subtopic, index, mode) {
-  const subtopicLayout = normalizeLayout(subtopic.attrs.layout);
+  const subtopicLayout = normalizeLayout(subtopic.attributes.layout);
   if (subtopicLayout === 'left' || subtopicLayout === 'tree-left') return 'tree-left';
   if (subtopicLayout === 'right' || subtopicLayout === 'tree') return 'tree-right';
 
@@ -811,7 +811,7 @@ export function layoutTimeline(root, collapsedIds, mode = 'timeline') {
  * 判断时间轴一级主题挂在轴线上方还是下方。
  */
 export function rootSubtopicTimelineSide(subtopic, index, mode) {
-  const subtopicLayout = normalizeLayout(subtopic.attrs.layout);
+  const subtopicLayout = normalizeLayout(subtopic.attributes.layout);
   if (subtopicLayout === 'timeline-up' || subtopicLayout === 'up') return 'timeline-top';
   if (subtopicLayout === 'timeline' || subtopicLayout === 'down') return 'timeline-bottom';
 

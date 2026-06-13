@@ -5,10 +5,10 @@
  * 执行逻辑：
  * SVG text 默认不会自动换行，所以渲染前必须先把长标题切成多行。
  * visualUnits 会把中文/全角字符按 2 个单位估算，英文按 1 个单位估算，
- * wrapLabel 再根据最大单位数拆行，让中英文混排的主题宽度更稳定。
+ * wrapTopicText 再根据最大单位数拆行，让中英文混排的主题宽度更稳定。
  *
  * 调用链位置：
- * layoutTree.measureTopic() -> wrapLabel()/visualUnits() -> renderer.renderTopic()
+ * layoutTree.measureTopic() -> wrapTopicText()/visualUnits() -> renderer.renderTopic()
  */
 
 /*
@@ -18,7 +18,7 @@
  * 实现逻辑：
  * 英文优先按单词拆，中文或无空格文本按字符拆，并限制最多 4 行。
  */
-export function wrapLabel(text, maxUnits) {
+export function wrapTopicText(text, maxUnits) {
   const normalized = String(text).replace(/\s+/g, ' ').trim();
   if (!normalized) return ['Untitled'];
 
@@ -54,7 +54,7 @@ export function wrapLabel(text, maxUnits) {
  * 按视觉单位把一段文本拆成 head/tail 两段。
  *
  * 调用链：
- * wrapLabel() 在单行仍超过 maxUnits 时调用本函数。
+ * wrapTopicText() 在单行仍超过 maxUnits 时调用本函数。
  */
 export function splitByUnits(text, maxUnits) {
   let units = 0;

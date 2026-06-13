@@ -192,7 +192,7 @@ source:
 - `connector.style`：连线线型，可选 `curve`、`straight`、`elbow`。`curve` 是曲线，技术上是三次贝塞尔曲线；`straight` 是直线；`elbow` 是正交折线。
 - `font.family`、`font.size`、`font.weight`、`font.lineHeight`：全局默认字体。
 - `font.levels.1`、`font.levels.2`：按主题级别设置字体，数字对应 `#`、`##`、`###` 的层级。
-- `topic.defaultColor`：统一主题颜色，会覆盖主题自动配色；主题属性 `color` 仍然优先。
+- `topic.defaultColor`：默认主题颜色，会覆盖主题自动配色；主题属性 `color` 仍然优先。
 - `topic.maxWidth`：主题最大宽度，长标题会按这个宽度换行。
 - `source.enableTabIndent`：源码模式中是否启用 `Tab` / `Shift+Tab` 调整主题级别。
 - `source.height`：源码模式高度，和导图模式的 `canvas.height` 分开保存。

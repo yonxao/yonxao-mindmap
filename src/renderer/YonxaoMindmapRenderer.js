@@ -41,7 +41,7 @@ import {
   insertSiblingTopic,
   moveTopicInTree,
   removeTopicById,
-  setOptionalAttr,
+  setOptionalTopicAttribute,
 } from '../model/topicTreeActions.js';
 import { markYonxaoMindmapEmbedWrapper } from '../obsidian/embed.js';
 import { assignIds, createMindTopic, parseMindDocument } from '../parser/parseMind.js';
@@ -1230,9 +1230,9 @@ export class YonxaoMindmapRenderer extends Component {
     actions.appendChild(cancelButton);
 
     this.topicEditorEl.appendChild(titleEl);
-    this.topicEditorEl.appendChild(createLabeledField('文本', textInput));
-    this.topicEditorEl.appendChild(createLabeledField('颜色', colorInput));
-    this.topicEditorEl.appendChild(createLabeledField('图标', iconInput));
+    this.topicEditorEl.appendChild(createLabeledField('主题文本', textInput));
+    this.topicEditorEl.appendChild(createLabeledField('主题颜色', colorInput));
+    this.topicEditorEl.appendChild(createLabeledField('主题图标', iconInput));
     this.topicEditorEl.appendChild(createLabeledField('布局', layoutSelect));
     this.topicEditorEl.appendChild(actions);
     this.containerEl.appendChild(this.topicEditorEl);
@@ -1287,9 +1287,9 @@ export class YonxaoMindmapRenderer extends Component {
     this.closeInlineTextEditor(false);
     this.editingTopicId = topic.id;
     this.topicEditorFields.text.value = topic.text || '';
-    this.topicEditorFields.color.value = topic.attrs.color || '';
-    this.topicEditorFields.icon.value = topic.attrs.icon || '';
-    this.topicEditorFields.layout.value = normalizeLayout(topic.attrs.layout) || '';
+    this.topicEditorFields.color.value = topic.attributes.color || '';
+    this.topicEditorFields.icon.value = topic.attributes.icon || '';
+    this.topicEditorFields.layout.value = normalizeLayout(topic.attributes.layout) || '';
     this.topicEditorFields.deleteButton.disabled = topic === this.root;
     this.topicEditorEl.hidden = false;
     this.topicEditorFields.text.focus();
@@ -1470,9 +1470,9 @@ export class YonxaoMindmapRenderer extends Component {
     }
 
     topic.text = text;
-    setOptionalAttr(topic.attrs, 'color', this.topicEditorFields.color.value);
-    setOptionalAttr(topic.attrs, 'icon', this.topicEditorFields.icon.value);
-    setOptionalAttr(topic.attrs, 'layout', this.topicEditorFields.layout.value);
+    setOptionalTopicAttribute(topic.attributes, 'color', this.topicEditorFields.color.value);
+    setOptionalTopicAttribute(topic.attributes, 'icon', this.topicEditorFields.icon.value);
+    setOptionalTopicAttribute(topic.attributes, 'layout', this.topicEditorFields.layout.value);
 
     const saved = await this.saveTreeToSourceAndFile('主题已保存。');
     if (saved) this.closeTopicEditor();
@@ -2693,7 +2693,7 @@ export class YonxaoMindmapRenderer extends Component {
     }
 
     const textEl = svg('text', {
-      class: 'yonxao-mindmap-topic-label',
+      class: 'yonxao-mindmap-topic-text',
       x: box.textX,
       y: box.textY,
       'text-anchor': 'start',

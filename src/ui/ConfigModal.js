@@ -212,7 +212,7 @@ export class ConfigModal extends Modal {
       MIND_THEME_OPTIONS
     );
     const colorField = this.createColorTextField(
-      '统一主题颜色',
+      '默认主题颜色',
       ['topic', 'defaultColor'],
       normalized.topic.defaultColor,
       '留空则使用当前主题的自动配色。填写后会覆盖主题自动配色，但主题属性 color 仍然优先。'
@@ -307,23 +307,23 @@ export class ConfigModal extends Modal {
    * 字体配置：全局字体和按层级覆盖。
    */
   renderFontTab(normalized) {
-    this.createSection('全局字体');
-    this.createFontFamilyField('字体', ['font', 'family'], normalized.font.family, {
+    this.createSection('全局主题字体');
+    this.createFontFamilyField('主题字体', ['font', 'family'], normalized.font.family, {
       help: '可以选择内置字体预设，也可以选择“自定义”后输入 CSS 字体族，例如 "LXGW WenKai", "Source Han Sans SC", sans-serif。',
     });
-    this.createNumberField('字号', ['font', 'size'], normalized.font.size, {
+    this.createNumberField('主题字号', ['font', 'size'], normalized.font.size, {
       min: FONT_SIZE_MIN,
       max: FONT_SIZE_MAX,
       step: 1,
       help: '字号单位是像素，控制主题文字大小。',
     });
-    this.createNumberField('字重', ['font', 'weight'], normalized.font.weight, {
+    this.createNumberField('主题字重', ['font', 'weight'], normalized.font.weight, {
       min: FONT_WEIGHT_MIN,
       max: FONT_WEIGHT_MAX,
       step: 10,
       help: '字重遵循 CSS 标准范围 100-900。',
     });
-    this.createNumberField('行高', ['font', 'lineHeight'], normalized.font.lineHeight, {
+    this.createNumberField('主题行高', ['font', 'lineHeight'], normalized.font.lineHeight, {
       min: FONT_LINE_HEIGHT_MIN,
       max: FONT_LINE_HEIGHT_MAX,
       step: 1,
@@ -394,25 +394,25 @@ export class ConfigModal extends Modal {
       this.render();
     });
 
-    this.createNumberField('字号', ['font', 'levels', level, 'size'], '', {
+    this.createNumberField('主题字号', ['font', 'levels', level, 'size'], '', {
       min: FONT_SIZE_MIN,
       max: FONT_SIZE_MAX,
       step: 1,
       parentEl: groupEl,
     });
-    this.createNumberField('字重', ['font', 'levels', level, 'weight'], '', {
+    this.createNumberField('主题字重', ['font', 'levels', level, 'weight'], '', {
       min: FONT_WEIGHT_MIN,
       max: FONT_WEIGHT_MAX,
       step: 10,
       parentEl: groupEl,
     });
-    this.createNumberField('行高', ['font', 'levels', level, 'lineHeight'], '', {
+    this.createNumberField('主题行高', ['font', 'levels', level, 'lineHeight'], '', {
       min: FONT_LINE_HEIGHT_MIN,
       max: FONT_LINE_HEIGHT_MAX,
       step: 1,
       parentEl: groupEl,
     });
-    this.createFontFamilyField('字体', ['font', 'levels', level, 'family'], '', {
+    this.createFontFamilyField('主题字体', ['font', 'levels', level, 'family'], '', {
       parentEl: groupEl,
     });
   }
@@ -723,9 +723,9 @@ export class ConfigModal extends Modal {
 
   /*
    * 作用：
-   * 判断是否需要提示“统一主题颜色会覆盖彩虹主题自动配色”。
+   * 判断是否需要提示“默认主题颜色会覆盖彩虹主题自动配色”。
    */
-  shouldWarnUnifiedColorOverridesTheme() {
+  shouldWarnDefaultColorOverridesTheme() {
     const theme = String(getConfigValue(this.draftConfig, ['theme'], '') || '').trim();
     const defaultColor = getConfigValue(this.draftConfig, ['topic', 'defaultColor'], '');
     const hasDefaultColor =
@@ -741,9 +741,9 @@ export class ConfigModal extends Modal {
    * 按当前草稿配置更新主题冲突提示。
    */
   updateThemeOverrideWarning(warningEl) {
-    const shouldWarn = this.shouldWarnUnifiedColorOverridesTheme();
+    const shouldWarn = this.shouldWarnDefaultColorOverridesTheme();
     warningEl.setText(
-      shouldWarn ? '当前主题会按分支自动配色；填写统一主题颜色后，主题的彩虹分支色将不会显示。' : ''
+      shouldWarn ? '当前主题会按分支自动配色；填写默认主题颜色后，主题的彩虹分支色将不会显示。' : ''
     );
     warningEl.hidden = !shouldWarn;
   }

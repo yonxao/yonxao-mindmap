@@ -6,7 +6,9 @@ import { normalizeMindConfig, splitMindSourceConfig } from '../config/mindConfig
  *
  * 输入与输出：
  * 输入是类似 "# 中心主题"、"## 子主题" 的纯文本；输出是 renderer/layout 都能理解的主题树。
- * 每个主题会包含 text、attrs、subtopics、line、id 等字段。
+ * 每个主题会包含 text、attributes、subtopics、line、id 等字段：
+ * - text 是主题文本，来自标题标记后面的正文。
+ * - attributes 是主题属性，来自主题文本末尾的 [key=value] 配置块。
  *
  * 执行逻辑：
  * 1. parseMind 按行切分源码。
@@ -77,7 +79,7 @@ export function parseTopicMind(lines) {
     const parsed = parseTopicLine(topicLine.text);
     if (!parsed.text) continue;
 
-    const topic = createMindTopic(parsed.text, parsed.attrs, [], lineIndex + 1, level);
+    const topic = createMindTopic(parsed.text, parsed.attributes, [], lineIndex + 1, level);
 
     // 当前标题只能挂到比自己层级小的最近祖先下面，所以需要弹出同级或更深层级主题。
     while (stack.length && stack[stack.length - 1].level >= level) {
@@ -113,7 +115,7 @@ export function buildRootFromRoots(roots) {
       : {
           id: '',
           text: 'Mind',
-          attrs: { layout: 'balanced' },
+          attributes: { layout: 'balanced' },
           subtopics: roots,
           line: 0,
           level: 0,
@@ -145,11 +147,13 @@ export function matchTopicLevelLine(line) {
  * 调用链：
  * parseTopicMind()/Renderer.addSubtopicFromTopicEditor() -> createMindTopic()。
  */
-export function createMindTopic(text, attrs, subtopics, line, level) {
+export function createMindTopic(text, attributes, subtopics, line, level) {
+  // attributes 是 yxmm 的“主题属性”，只影响当前主题；
+  // 这里直接使用新字段，不保留旧命名兼容，避免未发布阶段留下两套数据结构。
   return {
     id: '',
     text,
-    attrs: attrs || {},
+    attributes: attributes || {},
     subtopics: subtopics || [],
     line: line || 0,
     level: level || 1,
@@ -167,7 +171,7 @@ export function createMindTopic(text, attrs, subtopics, line, level) {
  */
 export function parseTopicLine(line) {
   let current = line;
-  const attrs = {};
+  const attributes = {};
 
   // 主题属性必须写在标题文本后面，例如：主题文本 [color=#3b82f6 icon=book]
   // 这里用循环是为了允许多个属性块连续出现，后面的属性会覆盖前面的同名属性。
@@ -176,13 +180,13 @@ export function parseTopicLine(line) {
     if (!match) break;
     if (!/[a-zA-Z][\w-]*\s*=/.test(match[1])) break;
 
-    Object.assign(attrs, parseAttrs(match[1]));
+    Object.assign(attributes, parseTopicAttributes(match[1]));
     current = current.slice(0, match.index).trimEnd();
   }
 
   return {
     text: current.trim(),
-    attrs,
+    attributes,
   };
 }
 
@@ -190,19 +194,21 @@ export function parseTopicLine(line) {
  * 作用：
  * 把属性块内容解析成对象，例如 color=#3b82f6 icon=book。
  */
-export function parseAttrs(source) {
-  const attrs = {};
+export function parseTopicAttributes(source) {
+  const attributes = {};
   // 支持 key=value、key="value with space"、key='value with space' 三种写法。
-  const attrPattern = /([a-zA-Z][\w-]*)\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s]+))/g;
+  const topicAttributePattern = /([a-zA-Z][\w-]*)\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s]+))/g;
   let match;
 
-  while ((match = attrPattern.exec(source))) {
-    const key = match[1].toLowerCase();
+  while ((match = topicAttributePattern.exec(source))) {
+    // 主题属性 key 保留用户写法；正式语法使用 fontFamily/fontSize/fontWeight/lineHeight 等驼峰字段。
+    // 这里不再做小写兼容，避免源码保存后出现 fontfamily 这类非标准配置项。
+    const key = match[1];
     const value = match[2] ?? match[3] ?? match[4] ?? '';
-    attrs[key] = value.trim();
+    attributes[key] = value.trim();
   }
 
-  return attrs;
+  return attributes;
 }
 
 /*

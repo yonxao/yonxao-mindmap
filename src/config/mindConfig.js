@@ -258,32 +258,20 @@ export function resolveTopicFont(topic, config) {
   const safeConfig = normalizeMindConfig(config);
   const levelKey = String(topic.level || 1);
   const levelFont = safeConfig.font.levels[levelKey] || {};
-  const attrs = topic.attrs || {};
+  const attributes = topic.attributes || {};
 
   return {
-    family:
-      normalizeText(attrs.fontfamily) ||
-      normalizeText(attrs.fontFamily) ||
-      levelFont.family ||
-      safeConfig.font.family,
+    family: normalizeText(attributes.fontFamily) || levelFont.family || safeConfig.font.family,
     size:
-      normalizeOptionalNumber(attrs.fontsize ?? attrs.fontSize, FONT_SIZE_MIN, FONT_SIZE_MAX) ||
+      normalizeOptionalNumber(attributes.fontSize, FONT_SIZE_MIN, FONT_SIZE_MAX) ||
       levelFont.size ||
       safeConfig.font.size,
     weight:
-      normalizeOptionalNumber(
-        attrs.fontweight ?? attrs.fontWeight,
-        FONT_WEIGHT_MIN,
-        FONT_WEIGHT_MAX
-      ) ||
+      normalizeOptionalNumber(attributes.fontWeight, FONT_WEIGHT_MIN, FONT_WEIGHT_MAX) ||
       levelFont.weight ||
       safeConfig.font.weight,
     lineHeight:
-      normalizeOptionalNumber(
-        attrs.lineheight ?? attrs.lineHeight,
-        FONT_LINE_HEIGHT_MIN,
-        FONT_LINE_HEIGHT_MAX
-      ) ||
+      normalizeOptionalNumber(attributes.lineHeight, FONT_LINE_HEIGHT_MIN, FONT_LINE_HEIGHT_MAX) ||
       levelFont.lineHeight ||
       safeConfig.font.lineHeight,
   };

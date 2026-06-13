@@ -3,7 +3,7 @@
  * 这里保存对思维导图树进行修改的小型业务操作。
  *
  * 当前功能：
- * - setOptionalAttr：设置可选属性，空值时删除属性，避免序列化出 color= 这样的无意义内容。
+ * - setOptionalTopicAttribute：设置可选主题属性，空值时删除属性，避免序列化出 color= 这样的无意义内容。
  * - removeTopicById：递归查找并删除指定主题。
  * - findTopicContext：查找主题及其父主题、所在下标，供“添加兄弟主题”等操作使用。
  * - insertSiblingTopic：在目标主题前后插入同级主题。
@@ -21,14 +21,14 @@
  * 设置主题可选属性；当值为空时删除该属性。
  *
  * 调用链：
- * Renderer.saveTopicEditor() -> setOptionalAttr()。
+ * Renderer.saveTopicEditor() -> setOptionalTopicAttribute()。
  */
-export function setOptionalAttr(attrs, key, value) {
+export function setOptionalTopicAttribute(attributes, key, value) {
   const normalized = String(value || '').trim();
   if (normalized) {
-    attrs[key] = normalized;
+    attributes[key] = normalized;
   } else {
-    delete attrs[key];
+    delete attributes[key];
   }
 }
 

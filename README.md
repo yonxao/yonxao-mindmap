@@ -77,17 +77,23 @@ yonxao-mindmap uses these terms consistently across docs, config, UI text, and c
 
 ### Content Components
 
-| 中文术语 | English Term    | yxmm Term / Config Key    | Purpose                                                   |
-| -------- | --------------- | ------------------------- | --------------------------------------------------------- |
-| 主题     | topic           | heading line              | A visual unit generated from one Markdown heading line.   |
-| 中心主题 | center topic    | `#`                       | The root topic and core topic.                            |
-| 分支主题 | branch topic    | `##`                      | A first-level branch under the center topic.              |
-| 子主题   | subtopic        | `###` and deeper headings | A descendant topic under a branch topic.                  |
-| 主题标签 | topic label     | heading text              | The text displayed inside a topic.                        |
-| 主题属性 | topic attribute | `[key=value]`             | A per-topic setting written at the end of a heading line. |
-| 主题颜色 | topic color     | `[color=#...]`            | Sets a single topic's color.                              |
-| 主题图标 | topic icon      | `[icon=book]`             | Sets a single topic's icon.                               |
-| 主题字体 | topic font      | `[fontSize=...]`          | Overrides a single topic's font.                          |
+| 中文术语 | English Term      | yxmm Term / Config Key                | Purpose                                                 |
+| -------- | ----------------- | ------------------------------------- | ------------------------------------------------------- |
+| 主题     | topic             | heading line                          | A visual unit generated from one Markdown heading line. |
+| 中心主题 | center topic      | `#`                                   | The root topic and core topic.                          |
+| 分支主题 | branch topic      | `##`                                  | A first-level branch under the center topic.            |
+| 子主题   | subtopic          | `###` and deeper headings             | A descendant topic under a branch topic.                |
+| 文本     | Text              | topic text                            | The text displayed inside a topic.                      |
+| 主题属性 | Topic Attribute   | `[key=value]`                         | A per-topic setting written at the end of a topic text. |
+| 主题颜色 | Topic Color       | `[color=#...]`                        | Sets a single topic's color.                            |
+| 主题图标 | Topic Icon        | `[icon=book]`                         | Sets a single topic's icon.                             |
+| 主题字体 | Topic Font Family | `[fontFamily="..."]` / `font.family`  | Sets the topic text font family.                        |
+| 主题字号 | Topic Font Size   | `[fontSize=16]` / `font.size`         | Sets the topic text font size.                          |
+| 主题字重 | Topic Font Weight | `[fontWeight=700]` / `font.weight`    | Sets the topic text font weight.                        |
+| 主题行高 | Topic Line Height | `[lineHeight=20]` / `font.lineHeight` | Sets line spacing for multi-line topic text.            |
+| 局部配置 | Local Config      | topic attribute                       | A setting that only affects a single topic.             |
+| 全局配置 | Global Config     | config block                          | A setting that affects the whole map by default.        |
+| 配置项   | Config Key        | YAML key                              | A concrete field inside the config block.               |
 
 ### Relationship Structure
 
