@@ -281,7 +281,10 @@ export class ConfigModal extends Modal {
         },
         {
           group: '其他',
-          options: [['radial', '放射图']],
+          options: [
+            ['radial', '放射图'],
+            ['fishbone', '鱼骨图'],
+          ],
         },
       ]
     );

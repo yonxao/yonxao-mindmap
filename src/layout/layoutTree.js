@@ -45,6 +45,7 @@ export const LAYOUT_MODES = Object.freeze([
   'timeline',
   'timeline-balanced',
   'radial',
+  'fishbone',
 ]);
 
 /*
@@ -75,6 +76,8 @@ export function layoutTree(root, collapsedIds, config) {
     layoutTimeline(root, collapsedIds, mode);
   } else if (mode === 'radial') {
     layoutRadial(root, collapsedIds);
+  } else if (mode === 'fishbone') {
+    layoutFishbone(root, collapsedIds);
   } else {
     layoutHorizontalMind(root, collapsedIds, mode);
   }
@@ -1094,6 +1097,192 @@ function radialExtent(box, angle) {
 function radialPerpendicularExtent(box, angle) {
   const normal = radialNormal(angle);
   return (Math.abs(normal.x) * box.width + Math.abs(normal.y) * box.height) / 2;
+}
+
+/*
+ * 作用：
+ * 鱼骨图布局，中心主题在左侧，一级分支交替挂在主骨上下。
+ *
+ * 实现逻辑：
+ * - 根节点右侧延伸出一条水平主骨。
+ * - 一级节点按照上下交替的方式挂到主骨上，形成鱼骨的大斜骨。
+ * - 二级节点挂在斜骨中段。
+ * - 三级及更深节点从二级节点右侧继续树状展开。
+ */
+export function layoutFishbone(root, collapsedIds) {
+  const rootBox = root._layout;
+  const children = visibleChildren(root, collapsedIds);
+  if (!children.length) return;
+
+  const diagonalX = Math.max(72, LEVEL_GAP);
+  const firstAttachX = rootBox.x + rootBox.width / 2 + LEVEL_GAP;
+  const sideCursors = {
+    top: firstAttachX,
+    bottom: firstAttachX + LEVEL_GAP * 0.45,
+  };
+
+  children.forEach((child, index) => {
+    const childBox = child._layout;
+    const sign = index % 2 === 0 ? -1 : 1;
+    const sideKey = sign < 0 ? 'top' : 'bottom';
+    const subtreeHeight = fishboneSubtreeHeight(child, collapsedIds);
+    const subtreeWidth = fishboneSubtreeWidth(child, collapsedIds);
+    const attachX = sideCursors[sideKey];
+    const childLeft = attachX + diagonalX + Math.max(0, subtreeHeight - NODE_MIN_HEIGHT) * 0.18;
+
+    childBox.side = sign < 0 ? 'fishbone-top' : 'fishbone-bottom';
+    childBox.fishboneSign = sign;
+    childBox.fishboneAttachX = attachX;
+    childBox.x = childLeft + childBox.width / 2;
+    childBox.y =
+      rootBox.y + sign * (NODE_MIN_HEIGHT + SIBLING_GAP * 2 + subtreeHeight + childBox.height / 2);
+    childBox.fishboneBoneStartX = attachX;
+    childBox.fishboneBoneStartY = rootBox.y;
+    childBox.fishboneBoneEndX = childBox.x;
+    childBox.fishboneBoneEndY =
+      sign < 0 ? childBox.y + childBox.height / 2 : childBox.y - childBox.height / 2;
+
+    placeFishboneRibs(child, sign, collapsedIds);
+    sideCursors[sideKey] += diagonalX + subtreeWidth + BRANCH_GAP * 0.35;
+  });
+}
+
+/*
+ * 作用：
+ * 摆放鱼骨图中挂在斜骨上的二级节点。
+ */
+export function placeFishboneRibs(parent, sign, collapsedIds) {
+  const children = visibleChildren(parent, collapsedIds);
+  if (!children.length) return;
+
+  const parentBox = parent._layout;
+  const boneStartX = parentBox.fishboneBoneStartX;
+  const boneStartY = parentBox.fishboneBoneStartY;
+  const boneEndX = parentBox.fishboneBoneEndX;
+  const boneEndY = parentBox.fishboneBoneEndY;
+  const ribHeights = children.map((child) => fishboneDetailSubtreeHeight(child, collapsedIds));
+  const totalRibHeight =
+    ribHeights.reduce((sum, height) => sum + height, 0) +
+    Math.max(0, children.length - 1) * SIBLING_GAP;
+  const boneHeight = Math.abs(boneEndY - boneStartY);
+  const usableHeight = Math.max(1, boneHeight - parentBox.height - SIBLING_GAP * 2);
+  const contentStart = SIBLING_GAP + Math.max(0, (usableHeight - totalRibHeight) / 2);
+  let offset = 0;
+
+  children.forEach((child, index) => {
+    const childBox = child._layout;
+    const height = ribHeights[index];
+    const centerOnBone = contentStart + offset + height / 2;
+    const childY = boneEndY - sign * centerOnBone;
+    const ratio = clamp((childY - boneStartY) / (boneEndY - boneStartY || 1), 0, 1);
+    const attachX = boneStartX + (boneEndX - boneStartX) * ratio;
+    const attachY = childY;
+
+    childBox.side = 'fishbone-rib';
+    childBox.fishboneSign = sign;
+    childBox.fishboneAttachX = attachX;
+    childBox.fishboneAttachY = attachY;
+    childBox.x = attachX + LEVEL_GAP + childBox.width / 2;
+    childBox.y = childY;
+
+    placeFishboneDetails(child, sign, collapsedIds);
+    offset += height + SIBLING_GAP;
+  });
+}
+
+/*
+ * 作用：
+ * 摆放鱼骨图三级及更深节点。
+ */
+export function placeFishboneDetails(parent, sign, collapsedIds) {
+  const children = visibleChildren(parent, collapsedIds);
+  if (!children.length) return;
+
+  const parentBox = parent._layout;
+  const heights = children.map((child) => fishboneDetailSubtreeHeight(child, collapsedIds));
+  const totalHeight =
+    heights.reduce((sum, height) => sum + height, 0) +
+    Math.max(0, children.length - 1) * SIBLING_GAP;
+  let y = parentBox.y - totalHeight / 2;
+
+  children.forEach((child, index) => {
+    const childBox = child._layout;
+    const height = heights[index];
+
+    childBox.side = 'fishbone-detail';
+    childBox.fishboneSign = sign;
+    childBox.x = parentBox.x + parentBox.width / 2 + LEVEL_GAP + childBox.width / 2;
+    childBox.y = y + height / 2;
+
+    placeFishboneDetails(child, sign, collapsedIds);
+    y += height + SIBLING_GAP;
+  });
+}
+
+/*
+ * 作用：
+ * 计算鱼骨图子树需要占用的垂直高度。
+ */
+export function fishboneSubtreeHeight(node, collapsedIds) {
+  const box = node._layout;
+  const children = visibleChildren(node, collapsedIds);
+  if (!children.length) return box.height;
+
+  const ribHeight =
+    children.reduce((sum, child) => sum + fishboneDetailSubtreeHeight(child, collapsedIds), 0) +
+    Math.max(0, children.length - 1) * SIBLING_GAP;
+
+  return Math.max(box.height, ribHeight);
+}
+
+/*
+ * 作用：
+ * 计算鱼骨图三级及更深节点需要占用的垂直高度。
+ */
+export function fishboneDetailSubtreeHeight(node, collapsedIds) {
+  const box = node._layout;
+  const children = visibleChildren(node, collapsedIds);
+  if (!children.length) return box.height;
+
+  const childHeight =
+    children.reduce((sum, child) => sum + fishboneDetailSubtreeHeight(child, collapsedIds), 0) +
+    Math.max(0, children.length - 1) * SIBLING_GAP;
+
+  return Math.max(box.height, childHeight);
+}
+
+/*
+ * 作用：
+ * 计算鱼骨图子树从一级分支节点开始向右延伸的宽度。
+ */
+export function fishboneSubtreeWidth(node, collapsedIds) {
+  const box = node._layout;
+  const children = visibleChildren(node, collapsedIds);
+  if (!children.length) return box.width;
+
+  const childWidth = children.reduce(
+    (max, child) => Math.max(max, fishboneDetailSubtreeWidth(child, collapsedIds)),
+    0
+  );
+
+  return Math.max(box.width, LEVEL_GAP + childWidth);
+}
+
+/*
+ * 作用：
+ * 计算鱼骨图三级及更深节点向右延伸的宽度。
+ */
+export function fishboneDetailSubtreeWidth(node, collapsedIds) {
+  const box = node._layout;
+  const children = visibleChildren(node, collapsedIds);
+  if (!children.length) return box.width;
+
+  const childWidth = children.reduce(
+    (max, child) => Math.max(max, fishboneDetailSubtreeWidth(child, collapsedIds)),
+    0
+  );
+
+  return box.width + LEVEL_GAP + childWidth;
 }
 
 /*

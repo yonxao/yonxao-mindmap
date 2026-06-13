@@ -592,6 +592,7 @@ function normalizeDirection(value) {
       'timeline',
       'timeline-balanced',
       'radial',
+      'fishbone',
     ].includes(text)
   ) {
     return text;

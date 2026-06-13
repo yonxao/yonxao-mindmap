@@ -22,6 +22,7 @@ import {
   CANVAS_MAX_HEIGHT,
   NODE_MIN_HEIGHT,
   NODE_PADDING_X,
+  LEVEL_GAP,
   ICON_SIZE,
 } from '../constants.js';
 import {
@@ -1890,6 +1891,10 @@ export class YonxaoMindmapRenderer extends Component {
     if (timelineAxis) {
       edgeLayer.appendChild(timelineAxis);
     }
+    const fishboneSpine = this.renderFishboneSpine(layout);
+    if (fishboneSpine) {
+      edgeLayer.appendChild(fishboneSpine);
+    }
     const timelineDetailTrunks = this.renderTimelineDetailTrunks(layout);
     if (timelineDetailTrunks) {
       edgeLayer.appendChild(timelineDetailTrunks);
@@ -2144,6 +2149,114 @@ export class YonxaoMindmapRenderer extends Component {
 
   /*
    * 作用：
+   * 绘制鱼骨图的水平主骨，并按一级分支分段着色。
+   *
+   * 实现逻辑：
+   * root -> 一级分支的普通连线只负责斜骨；主骨在这里单独绘制。
+   * 每一段从上一个挂点延伸到当前挂点，颜色使用当前一级分支颜色，
+   * 避免后面的分支反复覆盖前面的主骨颜色。
+   */
+  renderFishboneSpine(layout) {
+    if (layout.mode !== 'fishbone') return null;
+
+    const rootBox = this.root?._layout;
+    if (!rootBox) return null;
+
+    const branchNodes = layout.nodes
+      .filter((node) => {
+        const side = node._layout?.side;
+        return side === 'fishbone-top' || side === 'fishbone-bottom';
+      })
+      .sort((left, right) => left._layout.fishboneAttachX - right._layout.fishboneAttachX);
+
+    if (!branchNodes.length) return null;
+
+    const groupEl = svg('g', { class: 'yonxao-mindmap-fishbone-spine' });
+    let segmentStart = rootBox.x + rootBox.width / 2;
+
+    for (const node of branchNodes) {
+      const segmentEnd = node._layout.fishboneAttachX;
+      const segmentEl = this.renderFishboneSpineSegment(segmentStart, segmentEnd, rootBox.y, node);
+
+      if (segmentEl) {
+        groupEl.appendChild(segmentEl);
+      }
+
+      segmentStart = segmentEnd;
+    }
+
+    const lastNode = branchNodes[branchNodes.length - 1];
+    const tailEnd = Math.max(
+      segmentStart + LEVEL_GAP * 1.7,
+      // this.visibleSubtreeRightBoundary(lastNode) + LEVEL_GAP * 0.45
+      this.visibleSubtreeRightBoundary(lastNode)
+    );
+    const tailEl = this.renderFishboneSpineSegment(segmentStart, tailEnd, rootBox.y, this.root);
+    if (tailEl) {
+      groupEl.appendChild(tailEl);
+    }
+    groupEl.appendChild(this.renderFishboneTail(tailEnd, rootBox.y));
+
+    return groupEl;
+  }
+
+  /*
+   * 作用：
+   * 绘制一段鱼骨图主骨。
+   */
+  renderFishboneSpineSegment(startX, endX, y, node) {
+    if (!Number.isFinite(startX) || !Number.isFinite(endX) || endX <= startX) return null;
+
+    const color = edgeColor(node, this.config);
+    return svg('path', {
+      class: 'yonxao-mindmap-edge yonxao-mindmap-fishbone-spine-segment',
+      d: ['M', startX, y, 'H', endX].join(' '),
+      stroke: color || 'currentColor',
+      style: `opacity: ${themeEdgeOpacity(this.config)}`,
+    });
+  }
+
+  /*
+   * 作用：
+   * 绘制鱼骨图尾端的鱼尾形状。
+   */
+  renderFishboneTail(x, y) {
+    const color = edgeColor(this.root, this.config);
+    const wingX = 18;
+    const wingY = 10;
+
+    return svg('path', {
+      class: 'yonxao-mindmap-edge yonxao-mindmap-fishbone-tail',
+      d: ['M', x, y, 'L', x + wingX, y - wingY, 'M', x, y, 'L', x + wingX, y + wingY].join(' '),
+      stroke: color || 'currentColor',
+      style: `opacity: ${themeEdgeOpacity(this.config)}`,
+    });
+  }
+
+  /*
+   * 作用：
+   * 计算当前可见子树的最右侧边界。
+   *
+   * 调用场景：
+   * 鱼骨图尾巴需要根据最后一个分支的可见内容自动延长。
+   * 折叠节点的后代不会显示，所以这里遇到 collapsedIds 时停止递归。
+   */
+  visibleSubtreeRightBoundary(node) {
+    const box = node?._layout;
+    if (!box) return -Infinity;
+
+    let maxRight = box.x + box.width / 2;
+    if (this.collapsedIds.has(node.id)) return maxRight;
+
+    for (const child of node.children || []) {
+      maxRight = Math.max(maxRight, this.visibleSubtreeRightBoundary(child));
+    }
+
+    return maxRight;
+  }
+
+  /*
+   * 作用：
    * 绘制时间轴详情区的目录树式竖向主线。
    */
   renderTimelineDetailTrunks(layout) {
@@ -2297,6 +2410,19 @@ export class YonxaoMindmapRenderer extends Component {
       };
     }
 
+    if (parentBox.side === 'root' && (side === 'fishbone-top' || side === 'fishbone-bottom')) {
+      return {
+        kind: 'fishbone-primary',
+        startX: childBox.fishboneAttachX,
+        startY: parentBox.y,
+        endX: childBox.x,
+        endY:
+          side === 'fishbone-top'
+            ? childBox.y + childBox.height / 2
+            : childBox.y - childBox.height / 2,
+      };
+    }
+
     if (Number.isFinite(childBox.radialAngle)) {
       const start = this.radialEdgePoint(parentBox, childBox.radialAngle);
       const end = this.radialEdgePoint(childBox, childBox.radialAngle + Math.PI);
@@ -2306,6 +2432,26 @@ export class YonxaoMindmapRenderer extends Component {
         startY: start.y,
         endX: end.x,
         endY: end.y,
+      };
+    }
+
+    if (side === 'fishbone-detail') {
+      return {
+        kind: 'fishbone-detail',
+        startX: parentBox.x + parentBox.width / 2,
+        startY: parentBox.y,
+        endX: childBox.x - childBox.width / 2,
+        endY: childBox.y,
+      };
+    }
+
+    if (side === 'fishbone-rib') {
+      return {
+        kind: 'fishbone-rib',
+        startX: childBox.fishboneAttachX,
+        startY: childBox.fishboneAttachY,
+        endX: childBox.x - childBox.width / 2,
+        endY: childBox.y,
       };
     }
 
@@ -2414,6 +2560,19 @@ export class YonxaoMindmapRenderer extends Component {
 
     if (kind === 'radial') {
       return ['M', startX, startY, 'L', endX, endY].join(' ');
+    }
+
+    if (kind === 'fishbone-primary') {
+      return ['M', startX, startY, 'L', endX, endY].join(' ');
+    }
+
+    if (kind === 'fishbone-detail') {
+      const midX = startX + (endX - startX) / 2;
+      return ['M', startX, startY, 'H', midX, 'V', endY, 'H', endX].join(' ');
+    }
+
+    if (kind === 'fishbone-rib') {
+      return ['M', startX, startY, 'H', endX].join(' ');
     }
 
     if (kind === 'skip') {

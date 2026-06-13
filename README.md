@@ -70,7 +70,7 @@ Supported config keys:
 - `toolbar.x` / `toolbar.y`: persisted floating toolbar position. Drag the toolbar grip to write it.
 - `interaction.wheelZoom`: whether the mouse wheel zooms the mind map. It is off by default; enabling it writes `true`, and disabling it can remove the key.
 - `theme`: built-in theme name: `default`, `ocean`, `forest`, `sunset`, `mono`, `rainbow`, `pastel-rainbow`, or `neon-rainbow`.
-- `layout.defaultDirection`: layout structure: `right`, `left`, `balanced`, `down`, `up`, `vertical`, `tree`, `tree-left`, `tree-balanced`, `org`, `org-right`, `timeline-up`, `timeline`, `timeline-balanced`, or `radial`.
+- `layout.defaultDirection`: layout structure: `right`, `left`, `balanced`, `down`, `up`, `vertical`, `tree`, `tree-left`, `tree-balanced`, `org`, `org-right`, `timeline-up`, `timeline`, `timeline-balanced`, `radial`, or `fishbone`.
 - `edge.type`: connector type: `curve`, `straight`, or `elbow`. `curve` is a cubic Bezier curve, `straight` is a straight line, and `elbow` is an orthogonal connector.
 - `font.family`, `font.size`, `font.weight`, `font.lineHeight`: global font defaults.
 - `font.levels.1`, `font.levels.2`: per-heading-level font overrides.
@@ -103,7 +103,7 @@ Layout structures:
 - Tree structures: `tree` rightward tree, `tree-left` leftward tree, `tree-balanced` balanced tree.
 - Organization charts: `org` downward org chart, `org-right` down-right compact org chart.
 - Timelines: `timeline-up` above-axis timeline, `timeline` below-axis timeline, `timeline-balanced` balanced timeline.
-- Other: `radial` radial map.
+- Other: `radial` radial map, `fishbone` fishbone diagram.
 
 `down` is still a mind-map layout focused on downward branching. `org` is an organization-chart layout focused on aligned hierarchy rows. `org-right` is a down-right organization-chart layout where first-level branches are arranged horizontally and deeper levels expand down-right from each branch.
 
