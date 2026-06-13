@@ -46,6 +46,8 @@ export const LAYOUT_MODES = Object.freeze([
   'timeline-balanced',
   'radial',
   'fishbone',
+  'tree-table',
+  'tree-table-stepped',
 ]);
 
 /*
@@ -78,6 +80,10 @@ export function layoutTree(root, collapsedIds, config) {
     layoutRadial(root, collapsedIds);
   } else if (mode === 'fishbone') {
     layoutFishbone(root, collapsedIds);
+  } else if (mode === 'tree-table') {
+    layoutTreeTable(root, collapsedIds, { fillLeafRemainderColumns: true });
+  } else if (mode === 'tree-table-stepped') {
+    layoutTreeTable(root, collapsedIds, { fillLeafRemainderColumns: false });
   } else {
     layoutHorizontalMind(root, collapsedIds, mode);
   }
@@ -1283,6 +1289,197 @@ export function fishboneDetailSubtreeWidth(node, collapsedIds) {
   );
 
   return box.width + LEVEL_GAP + childWidth;
+}
+
+/*
+ * 作用：
+ * 树形表格布局，根节点作为表头，后代节点按层级展开为表格列。
+ *
+ * 实现逻辑：
+ * 1. 先统计每一列需要的宽度，避免同列单元格忽宽忽窄。
+ * 2. 再递归计算每个节点的子树高度；有子节点的父单元格会纵向合并。
+ * 3. 最后按照 top/height 把每个节点放进自己的单元格。
+ *
+ * 参数说明：
+ * fillLeafRemainderColumns 控制叶子节点是否横向填满剩余列。
+ * - true：标准树形表格，叶子节点合并右侧空列，表格外轮廓更规整。
+ * - false：树形阶梯表格，叶子节点只占当前列，保留阶梯状轮廓。
+ */
+export function layoutTreeTable(root, collapsedIds, options = {}) {
+  const fillLeafRemainderColumns = options.fillLeafRemainderColumns !== false;
+  const rootBox = root._layout;
+  const columnWidths = treeTableColumnWidths(root, collapsedIds);
+  const tableWidth = columnWidths.reduce((sum, width) => sum + width, 0);
+  const headerHeight = Math.max(rootBox.height + NODE_PADDING_Y * 2, NODE_MIN_HEIGHT * 1.6);
+
+  rootBox.side = 'tree-table-root';
+  rootBox.width = Math.max(rootBox.width, tableWidth);
+  rootBox.height = headerHeight;
+  rootBox.x = 0;
+  rootBox.y = headerHeight / 2;
+  recenterNodeText(rootBox);
+
+  const children = visibleChildren(root, collapsedIds);
+  if (!children.length) return;
+
+  const bodyTop = headerHeight;
+  const tableLeft = -tableWidth / 2;
+  const columnLefts = treeTableColumnLefts(columnWidths, tableLeft);
+  const childHeights = children.map((child) => treeTableSubtreeHeight(child, collapsedIds));
+  let cursorTop = bodyTop;
+
+  children.forEach((child, index) => {
+    const allocatedHeight = childHeights[index];
+    placeTreeTableNode(
+      child,
+      0,
+      cursorTop,
+      allocatedHeight,
+      columnLefts,
+      columnWidths,
+      collapsedIds,
+      { fillLeafRemainderColumns }
+    );
+    cursorTop += allocatedHeight;
+  });
+}
+
+/*
+ * 作用：
+ * 统计树形表格每一列的宽度。
+ *
+ * 变量说明：
+ * columnIndex 从 0 开始；根节点是表头，不占正文列，所以根节点的直接子节点在第 0 列。
+ * 每列取该列所有节点宽度的最大值，并设置一个最小宽度，保证表格不会因为短文本变得太窄。
+ */
+export function treeTableColumnWidths(root, collapsedIds) {
+  const columnWidths = [];
+  const minColumnWidth = Math.max(NODE_MIN_WIDTH, 120);
+
+  const visit = (node, columnIndex) => {
+    const box = node._layout;
+    columnWidths[columnIndex] = Math.max(columnWidths[columnIndex] || minColumnWidth, box.width);
+
+    for (const child of visibleChildren(node, collapsedIds)) {
+      visit(child, columnIndex + 1);
+    }
+  };
+
+  for (const child of visibleChildren(root, collapsedIds)) {
+    visit(child, 0);
+  }
+
+  return columnWidths.length ? columnWidths : [minColumnWidth];
+}
+
+/*
+ * 作用：
+ * 根据列宽和表格左边界，计算每一列的左侧 x 坐标。
+ */
+export function treeTableColumnLefts(columnWidths, tableLeft) {
+  const columnLefts = [];
+  let cursorX = tableLeft;
+
+  columnWidths.forEach((width, index) => {
+    columnLefts[index] = cursorX;
+    cursorX += width;
+  });
+
+  return columnLefts;
+}
+
+/*
+ * 作用：
+ * 计算树形表格中一个节点需要占用的总高度。
+ *
+ * 实现逻辑：
+ * - 叶子节点至少占自己文本需要的高度。
+ * - 父节点高度等于所有子节点高度之和。
+ * - 如果父节点文本更高，则用父节点高度兜底，后续布局时会把多出的高度分摊给子节点。
+ */
+export function treeTableSubtreeHeight(node, collapsedIds) {
+  const box = node._layout;
+  const ownHeight = Math.max(NODE_MIN_HEIGHT, box.height);
+  const children = visibleChildren(node, collapsedIds);
+  if (!children.length) return ownHeight;
+
+  const childrenHeight = children.reduce(
+    (sum, child) => sum + treeTableSubtreeHeight(child, collapsedIds),
+    0
+  );
+
+  return Math.max(ownHeight, childrenHeight);
+}
+
+/*
+ * 作用：
+ * 把节点和它的子树放入树形表格。
+ *
+ * 变量说明：
+ * allocatedHeight 是当前节点拿到的完整单元格高度，类似表格 rowspan 后的高度。
+ * childExtraHeight 是父单元格比子节点总高度多出来的部分；平均分给子节点，避免长文案父节点压住右侧子表格。
+ */
+export function placeTreeTableNode(
+  node,
+  columnIndex,
+  topY,
+  allocatedHeight,
+  columnLefts,
+  columnWidths,
+  collapsedIds,
+  options = {}
+) {
+  const box = node._layout;
+  const fillLeafRemainderColumns = options.fillLeafRemainderColumns !== false;
+  const children = visibleChildren(node, collapsedIds);
+  const isLeafNode = children.length === 0;
+  const lastColumnIndex = Math.max(0, columnWidths.length - 1);
+  const shouldFillRemainingColumns = fillLeafRemainderColumns && isLeafNode;
+  const columnWidth = shouldFillRemainingColumns
+    ? columnWidths.slice(columnIndex).reduce((sum, width) => sum + width, 0)
+    : columnWidths[columnIndex] || columnWidths[lastColumnIndex];
+  const columnLeft = columnLefts[columnIndex] || columnLefts[columnLefts.length - 1];
+
+  box.side = 'tree-table-cell';
+  box.treeTableColumn = columnIndex;
+  box.treeTableColumnSpan = shouldFillRemainingColumns ? lastColumnIndex - columnIndex + 1 : 1;
+  box.width = columnWidth;
+  box.height = allocatedHeight;
+  box.x = columnLeft + columnWidth / 2;
+  box.y = topY + allocatedHeight / 2;
+  recenterNodeText(box);
+
+  if (!children.length) return;
+
+  const childBaseHeights = children.map((child) => treeTableSubtreeHeight(child, collapsedIds));
+  const childBaseTotal = childBaseHeights.reduce((sum, height) => sum + height, 0);
+  const childExtraHeight = Math.max(0, allocatedHeight - childBaseTotal);
+  const childExtraHeightPerNode = childExtraHeight / children.length;
+  let childTop = topY;
+
+  children.forEach((child, index) => {
+    const childAllocatedHeight = childBaseHeights[index] + childExtraHeightPerNode;
+    placeTreeTableNode(
+      child,
+      columnIndex + 1,
+      childTop,
+      childAllocatedHeight,
+      columnLefts,
+      columnWidths,
+      collapsedIds,
+      { fillLeafRemainderColumns }
+    );
+    childTop += childAllocatedHeight;
+  });
+}
+
+/*
+ * 作用：
+ * 节点宽高被布局策略改写后，重新把多行文本垂直居中。
+ */
+export function recenterNodeText(box) {
+  box.textY =
+    (box.height - (box.lines.length - 1) * box.font.lineHeight) / 2 + box.font.size * 0.36;
 }
 
 /*

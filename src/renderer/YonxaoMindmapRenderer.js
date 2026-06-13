@@ -1900,10 +1900,12 @@ export class YonxaoMindmapRenderer extends Component {
       edgeLayer.appendChild(timelineDetailTrunks);
     }
 
-    for (const edge of layout.edges) {
-      const edgeEl = this.renderEdge(edge);
-      if (edgeEl) {
-        edgeLayer.appendChild(edgeEl);
+    if (!this.isTreeTableLayoutMode(layout.mode)) {
+      for (const edge of layout.edges) {
+        const edgeEl = this.renderEdge(edge);
+        if (edgeEl) {
+          edgeLayer.appendChild(edgeEl);
+        }
       }
     }
 
@@ -1960,6 +1962,18 @@ export class YonxaoMindmapRenderer extends Component {
    */
   isTreeLayoutMode(mode) {
     return mode === 'tree' || mode === 'tree-left' || mode === 'tree-balanced';
+  }
+
+  /*
+   * 作用：
+   * 判断当前布局是否属于树形表格系列。
+   *
+   * 说明：
+   * tree-table 是规整表格，叶子节点会填满剩余列；
+   * tree-table-stepped 是阶梯表格，保留层级展开形成的阶梯轮廓。
+   */
+  isTreeTableLayoutMode(mode) {
+    return mode === 'tree-table' || mode === 'tree-table-stepped';
   }
 
   /*
@@ -2635,6 +2649,12 @@ export class YonxaoMindmapRenderer extends Component {
     if (canEdit && !node._virtual && node !== this.root) {
       classNames.push('yonxao-mindmap-node-draggable');
     }
+    if (this.isTreeTableBox(box)) {
+      classNames.push('yonxao-mindmap-node-tree-table');
+    }
+    if (this.isTreeTableRootBox(box)) {
+      classNames.push('yonxao-mindmap-node-tree-table-root');
+    }
 
     // 每个节点都是一个 <g> 分组，组上保存 data-node-id，点击时用它反查原始树节点。
     const group = svg('g', {
@@ -2654,7 +2674,7 @@ export class YonxaoMindmapRenderer extends Component {
         class: 'yonxao-mindmap-node-card',
         width: box.width,
         height: box.height,
-        rx: 8,
+        rx: this.isTreeTableBox(box) ? 0 : 8,
         fill,
         stroke,
       })
@@ -2685,7 +2705,7 @@ export class YonxaoMindmapRenderer extends Component {
 
     group.appendChild(textEl);
 
-    if (canEdit && !node._virtual) {
+    if (canEdit && !node._virtual && !this.shouldHideEditControl(node)) {
       group.appendChild(this.renderEditButton(node, box));
     }
 
@@ -2751,7 +2771,39 @@ export class YonxaoMindmapRenderer extends Component {
    * 如果继续显示新增按钮，按钮会和鱼骨结构的交点互相干扰，所以这里统一隐藏。
    */
   shouldHideAddControls(node) {
-    return this.isFishbonePrimaryBranchBox(node?._layout);
+    const box = node?._layout;
+    return this.isFishbonePrimaryBranchBox(box) || this.isTreeTableBox(box);
+  }
+
+  /*
+   * 作用：
+   * 判断节点是否属于树形表格布局。
+   *
+   * 树形表格的单元格空间更紧凑，悬浮新增按钮容易遮挡文本和边框；
+   * 因此节点新增动作优先通过右键菜单完成。
+   */
+  isTreeTableBox(box) {
+    const side = String(box?.side || '');
+    return side === 'tree-table-root' || side === 'tree-table-cell';
+  }
+
+  /*
+   * 作用：
+   * 判断节点是否是树形表格的表头节点。
+   */
+  isTreeTableRootBox(box) {
+    return String(box?.side || '') === 'tree-table-root';
+  }
+
+  /*
+   * 作用：
+   * 判断某个节点是否应该隐藏“编辑节点”控件。
+   *
+   * 树形表格当前采用单元格密集排布，右上角编辑按钮会破坏表格视觉，
+   * 所以这个布局先隐藏编辑按钮；折叠按钮仍然保留，用于控制子树显示。
+   */
+  shouldHideEditControl(node) {
+    return this.isTreeTableBox(node?._layout);
   }
 
   /*
@@ -2987,6 +3039,7 @@ export class YonxaoMindmapRenderer extends Component {
       const mode = this.config.layout.defaultDirection;
       if (mode === 'fishbone') return this.fishboneChildOutletSide();
     }
+    if (this.isTreeTableBox(box)) return 'right';
     if (side === 'tree-left') return 'left';
     if (side === 'org-bottom') return 'bottom';
     if (side === 'org-down-right' || side === 'org-right' || side === 'org-right-branch') {
@@ -3056,6 +3109,13 @@ export class YonxaoMindmapRenderer extends Component {
 
     if (this.isFishboneNodeBox(box)) {
       return this.fishboneEditButtonPosition(box, buttonSize);
+    }
+
+    if (this.isTreeTableBox(box)) {
+      return {
+        x: box.width - buttonSize / 2,
+        y: -buttonSize / 2,
+      };
     }
 
     if (box.side === 'top' || box.side === 'timeline-top') {

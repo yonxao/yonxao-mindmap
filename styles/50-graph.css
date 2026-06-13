@@ -32,6 +32,30 @@
 
 /*
  * 作用：
+ * 树形表格节点的单元格外观。
+ *
+ * 实现逻辑：
+ * 树形表格用“单元格边框”表达层级关系，不再依赖连线。
+ * 因此这里去掉卡片阴影并收敛边框，让相邻单元格拼接时更像一张表。
+ */
+.yonxao-mindmap-node-tree-table .yonxao-mindmap-node-card {
+  filter: none;
+  stroke-width: 1.5;
+}
+
+/*
+ * 作用：
+ * 树形表格表头样式。
+ *
+ * 说明：
+ * 表头对应 Markdown 一级标题，占满整张表格宽度。
+ */
+.yonxao-mindmap-node-tree-table-root .yonxao-mindmap-node-card {
+  stroke-width: 2;
+}
+
+/*
+ * 作用：
  * 节点文字标签。
  *
  * 关键点：

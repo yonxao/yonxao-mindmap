@@ -284,6 +284,8 @@ export class ConfigModal extends Modal {
           options: [
             ['radial', '放射图'],
             ['fishbone', '鱼骨图'],
+            ['tree-table', '树形表格'],
+            ['tree-table-stepped', '树形阶梯表格'],
           ],
         },
       ]
