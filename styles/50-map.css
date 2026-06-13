@@ -7,14 +7,14 @@
  * 本文件只负责这些元素的视觉效果，不负责坐标计算，坐标来自 layoutTree。
  *
  * 调用链位置：
- * YonxaoMindmapRenderer.renderMap()/renderTopic()/renderEdge() -> 本文件控制 SVG 视觉。
+ * YonxaoMindmapRenderer.renderMap()/renderTopic()/renderConnector() -> 本文件控制 SVG 视觉。
  */
 
 /*
  * 作用：
  * 父子主题之间的曲线连线。
  */
-.yonxao-mindmap-edge {
+.yonxao-mindmap-connector {
   fill: none;
   stroke-width: 2.2;
   stroke-linecap: round;
@@ -113,7 +113,7 @@
  * 作用：
  * 拖到目标主题中部时，表示“作为这个主题的子主题”。
  */
-.yonxao-mindmap-topic.is-drop-child .yonxao-mindmap-topic-card {
+.yonxao-mindmap-topic.is-drop-subtopic .yonxao-mindmap-topic-card {
   stroke: var(--interactive-accent);
   stroke-width: 2;
 }
@@ -201,7 +201,7 @@
  * 显示条件：
  * Renderer 只会在没有子主题的真实主题上渲染它；已有子主题的主题保留折叠/展开圆点。
  */
-.yonxao-mindmap-topic-child-add {
+.yonxao-mindmap-topic-subtopic-add {
   cursor: pointer;
   opacity: 0;
   transition: opacity 120ms ease;
@@ -214,8 +214,8 @@
  */
 .yonxao-mindmap-topic:hover .yonxao-mindmap-topic-sibling-actions,
 .yonxao-mindmap-topic-sibling-actions:focus,
-.yonxao-mindmap-topic:hover .yonxao-mindmap-topic-child-add,
-.yonxao-mindmap-topic-child-add:focus {
+.yonxao-mindmap-topic:hover .yonxao-mindmap-topic-subtopic-add,
+.yonxao-mindmap-topic-subtopic-add:focus {
   opacity: 1;
   pointer-events: auto;
 }
@@ -234,7 +234,7 @@
  * 加号按钮圆形底板。
  */
 .yonxao-mindmap-topic-sibling-add circle,
-.yonxao-mindmap-topic-child-add circle {
+.yonxao-mindmap-topic-subtopic-add circle {
   fill: var(--background-primary);
   stroke: var(--interactive-accent);
   stroke-width: 1.4;
@@ -245,7 +245,7 @@
  * 加号按钮中的横竖线。
  */
 .yonxao-mindmap-topic-sibling-add path,
-.yonxao-mindmap-topic-child-add path {
+.yonxao-mindmap-topic-subtopic-add path {
   fill: none;
   stroke: var(--interactive-accent);
   stroke-width: 1.4;

@@ -37,19 +37,19 @@ export function setOptionalAttr(attrs, key, value) {
  * 从树中递归删除指定 id 的主题。
  *
  * 实现逻辑：
- * 在父主题 children 数组中找到目标后 splice 删除，并返回 true 终止递归。
+ * 在父主题 subtopics 数组中找到目标后 splice 删除，并返回 true 终止递归。
  */
 export function removeTopicById(root, id) {
-  // 删除主题时从父主题的 children 数组里移除。
+  // 删除主题时从父主题的 subtopics 数组里移除。
   // 这里用递归查找，因为思维导图天然就是树结构。
-  for (let index = 0; index < root.children.length; index += 1) {
-    const child = root.children[index];
-    if (child.id === id) {
-      root.children.splice(index, 1);
+  for (let index = 0; index < root.subtopics.length; index += 1) {
+    const subtopic = root.subtopics[index];
+    if (subtopic.id === id) {
+      root.subtopics.splice(index, 1);
       return true;
     }
 
-    if (removeTopicById(child, id)) return true;
+    if (removeTopicById(subtopic, id)) return true;
   }
 
   return false;
@@ -60,7 +60,7 @@ export function removeTopicById(root, id) {
  * 在树里查找指定主题，并返回它的父主题和兄弟数组下标。
  *
  * 为什么需要父主题：
- * “添加兄弟主题”不能只知道当前主题本身，还必须知道当前主题在父主题 children
+ * “添加兄弟主题”不能只知道当前主题本身，还必须知道当前主题在父主题 subtopics
  * 数组里的位置，才能准确插入到它的上方或下方。
  *
  * 调用链：
@@ -76,17 +76,17 @@ export function findTopicContext(root, id, parent = null) {
     };
   }
 
-  for (let index = 0; index < root.children.length; index += 1) {
-    const child = root.children[index];
-    if (child.id === id) {
+  for (let index = 0; index < root.subtopics.length; index += 1) {
+    const subtopic = root.subtopics[index];
+    if (subtopic.id === id) {
       return {
-        topic: child,
+        topic: subtopic,
         parent: root,
         index,
       };
     }
 
-    const found = findTopicContext(child, id, child);
+    const found = findTopicContext(subtopic, id, subtopic);
     if (found) return found;
   }
 
@@ -98,7 +98,7 @@ export function findTopicContext(root, id, parent = null) {
  * 在指定主题的上方或下方插入一个兄弟主题。
  *
  * 实现逻辑：
- * 先用 findTopicContext 找到父主题和下标，再用 splice 修改父主题 children。
+ * 先用 findTopicContext 找到父主题和下标，再用 splice 修改父主题 subtopics。
  * 这里不负责 assignIds 和保存，调用方会在完成业务操作后统一序列化。
  */
 export function insertSiblingTopic(root, targetId, sibling, position = 'after') {
@@ -106,7 +106,7 @@ export function insertSiblingTopic(root, targetId, sibling, position = 'after') 
   if (!context || !context.parent || context.index < 0) return false;
 
   const insertIndex = position === 'before' ? context.index : context.index + 1;
-  context.parent.children.splice(insertIndex, 0, sibling);
+  context.parent.subtopics.splice(insertIndex, 0, sibling);
   return true;
 }
 
@@ -118,10 +118,10 @@ export function insertSiblingTopic(root, targetId, sibling, position = 'after') 
  * 主题拖拽时不能把父主题拖到自己的子主题下面，否则树会形成循环结构，序列化和布局都会出错。
  */
 export function containsTopicId(parentTopic, targetId) {
-  if (!parentTopic || !parentTopic.children.length) return false;
+  if (!parentTopic || !parentTopic.subtopics.length) return false;
 
-  for (const child of parentTopic.children) {
-    if (child.id === targetId || containsTopicId(child, targetId)) {
+  for (const subtopic of parentTopic.subtopics) {
+    if (subtopic.id === targetId || containsTopicId(subtopic, targetId)) {
       return true;
     }
   }
@@ -134,7 +134,7 @@ export function containsTopicId(parentTopic, targetId) {
  * 根据拖拽结果移动主题。
  *
  * placement 说明：
- * - child：把移动主题放到目标主题最后一个子主题位置。
+ * - subtopic：把移动主题放到目标主题最后一个子主题位置。
  * - before：把移动主题插入到目标主题上方，也就是目标主题前一个兄弟位置。
  * - after：把移动主题插入到目标主题下方，也就是目标主题后一个兄弟位置。
  *
@@ -153,29 +153,29 @@ export function moveTopicInTree(root, movingTopicId, targetId, placement) {
   }
 
   const movingTopic = movingTopicContext.topic;
-  movingTopicContext.parent.children.splice(movingTopicContext.index, 1);
+  movingTopicContext.parent.subtopics.splice(movingTopicContext.index, 1);
 
-  if (placement === 'child') {
+  if (placement === 'subtopic') {
     const targetTopicContext = findTopicContext(root, targetId);
     if (!targetTopicContext || !targetTopicContext.topic) {
-      movingTopicContext.parent.children.splice(movingTopicContext.index, 0, movingTopic);
+      movingTopicContext.parent.subtopics.splice(movingTopicContext.index, 0, movingTopic);
       return false;
     }
 
-    targetTopicContext.topic.children.push(movingTopic);
+    targetTopicContext.topic.subtopics.push(movingTopic);
     refreshTreeLevels(root);
     return true;
   }
 
   const targetTopicContext = findTopicContext(root, targetId);
   if (!targetTopicContext || !targetTopicContext.parent || targetTopicContext.index < 0) {
-    movingTopicContext.parent.children.splice(movingTopicContext.index, 0, movingTopic);
+    movingTopicContext.parent.subtopics.splice(movingTopicContext.index, 0, movingTopic);
     return false;
   }
 
   const insertIndex =
     placement === 'before' ? targetTopicContext.index : targetTopicContext.index + 1;
-  targetTopicContext.parent.children.splice(insertIndex, 0, movingTopic);
+  targetTopicContext.parent.subtopics.splice(insertIndex, 0, movingTopic);
   refreshTreeLevels(root);
   return true;
 }
@@ -192,8 +192,8 @@ export function refreshTreeLevels(root, level = root && root._virtual ? 0 : 1) {
   if (!root) return;
 
   root.level = level;
-  for (const child of root.children) {
-    refreshTreeLevels(child, level + 1);
+  for (const subtopic of root.subtopics) {
+    refreshTreeLevels(subtopic, level + 1);
   }
 }
 
@@ -205,7 +205,10 @@ export function refreshTreeLevels(root, level = root && root._virtual ? 0 : 1) {
  * 删除带子主题的分支前，用这个数量给用户一个明确确认提示。
  */
 export function countTopicDescendants(topic) {
-  if (!topic || !topic.children.length) return 0;
+  if (!topic || !topic.subtopics.length) return 0;
 
-  return topic.children.reduce((total, child) => total + 1 + countTopicDescendants(child), 0);
+  return topic.subtopics.reduce(
+    (total, subtopic) => total + 1 + countTopicDescendants(subtopic),
+    0
+  );
 }

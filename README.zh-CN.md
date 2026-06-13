@@ -18,7 +18,7 @@ toolbar:
   y: 8
 layout:
   defaultDirection: right
-edge:
+connector:
   type: curve
 font:
   size: 14
@@ -170,7 +170,7 @@ source:
 | 主题方案     | theme                | `theme`              | 控制整体颜色方案，避免和“主题 / Topic”混淆。            |
 | 默认主题颜色 | default topic color  | `topic.defaultColor` | 覆盖主题自动配色；主题属性 `color` 仍然优先。           |
 | 字体         | font                 | `font.*`             | 控制主题文字样式。                                      |
-| 连线类型     | connector type       | `edge.type`          | 控制连线为曲线、直线或折线。                            |
+| 连线线型     | connector style      | `connector.style`    | 控制连线为曲线、直线或折线。                            |
 | 平移         | pan                  | -                    | 拖动画布改变视口位置。                                  |
 | 缩放         | zoom                 | -                    | 放大或缩小当前视口。                                    |
 | 适配视图     | fit view             | -                    | 自动调整视口，让导图尽量完整显示。                      |
@@ -189,7 +189,7 @@ source:
 - `interaction.wheelZoom`：是否启用鼠标滚轮缩放。默认关闭；开启后会写入 `true`，关闭时可删除该项。
 - `theme`：主题名称，可选 `default`、`ocean`、`forest`、`sunset`、`mono`、`rainbow`、`pastel-rainbow`、`neon-rainbow`。
 - `layout.defaultDirection`：布局结构，可选 `right`、`left`、`balanced`、`down`、`up`、`vertical`、`tree`、`tree-left`、`tree-balanced`、`org`、`org-right`、`timeline-up`、`timeline`、`timeline-balanced`、`radial`、`fishbone`、`tree-table`、`tree-table-stepped`。
-- `edge.type`：连线类型，可选 `curve`、`straight`、`elbow`。`curve` 是曲线，技术上是三次贝塞尔曲线；`straight` 是直线；`elbow` 是正交折线。
+- `connector.style`：连线线型，可选 `curve`、`straight`、`elbow`。`curve` 是曲线，技术上是三次贝塞尔曲线；`straight` 是直线；`elbow` 是正交折线。
 - `font.family`、`font.size`、`font.weight`、`font.lineHeight`：全局默认字体。
 - `font.levels.1`、`font.levels.2`：按主题级别设置字体，数字对应 `#`、`##`、`###` 的层级。
 - `topic.defaultColor`：统一主题颜色，会覆盖主题自动配色；主题属性 `color` 仍然优先。

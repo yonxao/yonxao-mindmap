@@ -6,7 +6,7 @@ import { normalizeMindConfig, splitMindSourceConfig } from '../config/mindConfig
  *
  * 输入与输出：
  * 输入是类似 "# 中心主题"、"## 子主题" 的纯文本；输出是 renderer/layout 都能理解的主题树。
- * 每个主题会包含 text、attrs、children、line、id 等字段。
+ * 每个主题会包含 text、attrs、subtopics、line、id 等字段。
  *
  * 执行逻辑：
  * 1. parseMind 按行切分源码。
@@ -63,7 +63,7 @@ export function parseTopicMind(lines) {
   // 主题级别标记语法解析：
   // # 是中心主题，## 是二级主题，### 是三级主题。
   // 这里不限制 # 的数量，因为内容在代码块里，属于 yxmm 自己的 DSL；
-  // 这样深层级也不用回到大量空格缩进。旧版缩进语法已经移除，避免同一份源码存在两套层级规则。
+  // 这样深层级也不用依赖空格缩进，源码里始终只有一套清晰的层级规则。
   for (let lineIndex = 0; lineIndex < lines.length; lineIndex += 1) {
     const rawLine = lines[lineIndex];
     if (!rawLine.trim()) continue;
@@ -85,7 +85,7 @@ export function parseTopicMind(lines) {
     }
 
     if (stack.length) {
-      stack[stack.length - 1].topic.children.push(topic);
+      stack[stack.length - 1].topic.subtopics.push(topic);
     } else {
       roots.push(topic);
     }
@@ -114,7 +114,7 @@ export function buildRootFromRoots(roots) {
           id: '',
           text: 'Mind',
           attrs: { layout: 'balanced' },
-          children: roots,
+          subtopics: roots,
           line: 0,
           level: 0,
           _layout: null,
@@ -143,14 +143,14 @@ export function matchTopicLevelLine(line) {
  * 创建统一的思维导图主题对象。
  *
  * 调用链：
- * parseTopicMind()/Renderer.addChildFromTopicEditor() -> createMindTopic()。
+ * parseTopicMind()/Renderer.addSubtopicFromTopicEditor() -> createMindTopic()。
  */
-export function createMindTopic(text, attrs, children, line, level) {
+export function createMindTopic(text, attrs, subtopics, line, level) {
   return {
     id: '',
     text,
     attrs: attrs || {},
-    children: children || [],
+    subtopics: subtopics || [],
     line: line || 0,
     level: level || 1,
     _layout: null,
@@ -215,7 +215,7 @@ export function parseAttrs(source) {
 export function assignIds(topic, id) {
   // 使用结构路径作为 id，比如 0.1.2。源码不变时 id 稳定，折叠状态也就稳定。
   topic.id = id;
-  for (let index = 0; index < topic.children.length; index += 1) {
-    assignIds(topic.children[index], `${id}.${index}`);
+  for (let index = 0; index < topic.subtopics.length; index += 1) {
+    assignIds(topic.subtopics[index], `${id}.${index}`);
   }
 }

@@ -295,7 +295,7 @@ export class ConfigModal extends Modal {
       max: 800,
       step: 10,
     });
-    this.createSelectField('连线类型', ['edge', 'type'], normalized.edge.type, [
+    this.createSelectField('连线线型', ['connector', 'style'], normalized.connector.style, [
       ['curve', '曲线（贝塞尔）'],
       ['straight', '直线'],
       ['elbow', '折线'],

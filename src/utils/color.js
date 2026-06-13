@@ -7,7 +7,7 @@
  * - transparentColor 把 hex 颜色转换为 rgba，用于主题的浅色背景。
  *
  * 调用链位置：
- * YonxaoMindmapRenderer.renderTopic()/renderEdge() -> topicColor()/transparentColor()
+ * YonxaoMindmapRenderer.renderTopic()/renderConnector() -> topicColor()/transparentColor()
  */
 
 import { themeColorForTopic } from '../theme/mindThemes.js';
@@ -38,7 +38,7 @@ export function topicColor(topic, config) {
  * 优先级：
  * 配置区 topic.defaultColor > 当前主题自动配色。
  */
-export function edgeColor(topic, config) {
+export function connectorColor(topic, config) {
   return (
     normalizeColor(config?.topic?.defaultColor) || normalizeColor(themeColorForTopic(topic, config))
   );

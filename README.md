@@ -16,7 +16,7 @@ toolbar:
   y: 8
 layout:
   defaultDirection: right
-edge:
+connector:
   type: curve
 font:
   size: 14
@@ -98,7 +98,7 @@ yonxao-mindmap uses these terms consistently across docs, config, UI text, and c
 | 兄弟主题 | sibling topic | -                      | A topic with the same parent.                                    |
 | 叶子主题 | leaf topic    | -                      | A topic without children.                                        |
 | 子树     | subtree       | -                      | A topic plus all of its descendants.                             |
-| 连线     | connector     | `edge.type`            | Shows the relationship between a parent topic and a child topic. |
+| 连线     | connector     | `connector.style`      | Shows the relationship between a parent topic and a child topic. |
 | 子线出口 | child outlet  | -                      | The point where a connector exits a topic toward its children.   |
 
 ### Layout Structures
@@ -149,7 +149,7 @@ yonxao-mindmap uses these terms consistently across docs, config, UI text, and c
 | 主题         | theme               | `theme`                | Controls the overall color scheme.                                                 |
 | 默认主题颜色 | default topic color | `topic.defaultColor`   | Overrides theme auto topic colors; topic attribute `color` still wins.             |
 | 字体         | font                | `font.*`               | Controls topic text styling.                                                       |
-| 连线类型     | connector type      | `edge.type`            | Controls whether connectors are curved, straight, or orthogonal.                   |
+| 连线线型     | connector style     | `connector.style`      | Controls whether connectors are curved, straight, or orthogonal.                   |
 
 ## Config Block
 
@@ -162,7 +162,7 @@ Supported config keys:
 - `interaction.wheelZoom`: whether the mouse wheel zooms the mind map. It is off by default; enabling it writes `true`, and disabling it can remove the key.
 - `theme`: built-in theme name: `default`, `ocean`, `forest`, `sunset`, `mono`, `rainbow`, `pastel-rainbow`, or `neon-rainbow`.
 - `layout.defaultDirection`: layout structure: `right`, `left`, `balanced`, `down`, `up`, `vertical`, `tree`, `tree-left`, `tree-balanced`, `org`, `org-right`, `timeline-up`, `timeline`, `timeline-balanced`, `radial`, `fishbone`, `tree-table`, or `tree-table-stepped`.
-- `edge.type`: connector type: `curve`, `straight`, or `elbow`. `curve` is a cubic Bezier curve, `straight` is a straight line, and `elbow` is an orthogonal connector.
+- `connector.style`: connector style: `curve`, `straight`, or `elbow`. `curve` is a cubic Bezier curve, `straight` is a straight line, and `elbow` is an orthogonal connector.
 - `font.family`, `font.size`, `font.weight`, `font.lineHeight`: global font defaults.
 - `font.levels.1`, `font.levels.2`: per-heading-level font overrides.
 - `topic.defaultColor`: unified topic color that overrides theme auto colors; topic attribute `color` still wins.
@@ -185,7 +185,7 @@ Theme color priority:
 `topic attribute color` > `topic.defaultColor` > `theme auto color`
 
 `rainbow`, `pastel-rainbow`, and `neon-rainbow` automatically assign colors by first-level branch.
-The center topic uses an independent center color from the theme. Topic attribute `color` changes only the topic itself, not the edge from its parent.
+The center topic uses an independent center color from the theme. Topic attribute `color` changes only the topic itself, not the connector from its parent.
 Hex colors in the config block should be quoted, for example `defaultColor: '#66ed0c'`; the visual config modal writes quoted colors automatically.
 
 Layout structures:
@@ -212,7 +212,7 @@ Layout structures:
 - Use the toolbar settings button to open the visual config modal; common fields have select presets, and the advanced tab supports direct YAML editing.
 - Drag the toolbar grip to move the floating toolbar away from content.
 - Drag the canvas to pan. By default, the mouse wheel keeps scrolling the Obsidian page; enable mouse-wheel zoom in the Basic tab of the config modal to zoom the current mind map with the wheel.
-- Drag the bottom edge of the canvas to manually adjust its height. Double-click the handle to return to automatic height.
+- Drag the bottom connector of the canvas to manually adjust its height. Double-click the handle to return to automatic height.
 
 Edits are written back to the same `yxmm` code block in the current Markdown file.
 

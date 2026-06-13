@@ -10,7 +10,7 @@
  * 调用链：
  * mindConfig.normalizeMindConfig() -> normalizeMindThemeName()
  * color.topicColor() -> themeColorForTopic()
- * YonxaoMindmapRenderer.renderTopic()/renderEdge() -> themeTopicFillAlpha()/themeEdgeOpacity()
+ * YonxaoMindmapRenderer.renderTopic()/renderConnector() -> themeTopicFillAlpha()/themeConnectorOpacity()
  */
 
 export const DEFAULT_THEME_NAME = 'default';
@@ -42,7 +42,7 @@ export const MIND_THEME_OPTIONS = Object.freeze([
  * - centerColor: 中心主题默认颜色，让中心主题和支线有清晰区分。
  * - palette: 当前主题的颜色池。
  * - fillAlpha: 主题背景色透明度。
- * - edgeOpacity: 连线透明度。
+ * - connectorOpacity: 连线透明度。
  */
 export const MIND_THEMES = Object.freeze({
   default: Object.freeze({
@@ -50,35 +50,35 @@ export const MIND_THEMES = Object.freeze({
     centerColor: '',
     palette: Object.freeze([]),
     fillAlpha: 0.11,
-    edgeOpacity: 0.62,
+    connectorOpacity: 0.62,
   }),
   ocean: Object.freeze({
     mode: 'branch',
     centerColor: '#1d4ed8',
     palette: Object.freeze(['#2563eb', '#0ea5e9', '#06b6d4', '#14b8a6', '#6366f1']),
     fillAlpha: 0.12,
-    edgeOpacity: 0.68,
+    connectorOpacity: 0.68,
   }),
   forest: Object.freeze({
     mode: 'branch',
     centerColor: '#15803d',
     palette: Object.freeze(['#16a34a', '#22c55e', '#059669', '#84cc16', '#0f766e']),
     fillAlpha: 0.12,
-    edgeOpacity: 0.66,
+    connectorOpacity: 0.66,
   }),
   sunset: Object.freeze({
     mode: 'branch',
     centerColor: '#dc2626',
     palette: Object.freeze(['#f97316', '#ef4444', '#f59e0b', '#ec4899', '#a855f7']),
     fillAlpha: 0.13,
-    edgeOpacity: 0.66,
+    connectorOpacity: 0.66,
   }),
   mono: Object.freeze({
     mode: 'level',
     centerColor: '#27272a',
     palette: Object.freeze(['#52525b', '#71717a', '#3f3f46', '#6b7280', '#475569']),
     fillAlpha: 0.09,
-    edgeOpacity: 0.5,
+    connectorOpacity: 0.5,
   }),
   rainbow: Object.freeze({
     mode: 'branch',
@@ -94,7 +94,7 @@ export const MIND_THEMES = Object.freeze({
       '#ec4899',
     ]),
     fillAlpha: 0.12,
-    edgeOpacity: 0.7,
+    connectorOpacity: 0.7,
   }),
   'pastel-rainbow': Object.freeze({
     mode: 'branch',
@@ -110,7 +110,7 @@ export const MIND_THEMES = Object.freeze({
       '#f9a8d4',
     ]),
     fillAlpha: 0.1,
-    edgeOpacity: 0.6,
+    connectorOpacity: 0.6,
   }),
   'neon-rainbow': Object.freeze({
     mode: 'branch',
@@ -126,7 +126,7 @@ export const MIND_THEMES = Object.freeze({
       '#ff375f',
     ]),
     fillAlpha: 0.14,
-    edgeOpacity: 0.76,
+    connectorOpacity: 0.76,
   }),
 });
 
@@ -184,8 +184,8 @@ export function themeTopicFillAlpha(config) {
  * 作用：
  * 读取连线透明度。
  */
-export function themeEdgeOpacity(config) {
-  return getMindTheme(config).edgeOpacity;
+export function themeConnectorOpacity(config) {
+  return getMindTheme(config).connectorOpacity;
 }
 
 /*

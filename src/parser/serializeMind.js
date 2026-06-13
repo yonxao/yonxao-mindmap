@@ -27,7 +27,7 @@ export function serializeMind(root) {
   // 为什么导图编辑后要做这一步？
   // 因为 Markdown 文件里真正保存的是文本代码块，不是 SVG，也不是 JS 对象。
   // 用户在导图里改了主题后，我们必须把内存中的树重新写成 主题级别标记文本，再保存回 Markdown。
-  const roots = root._virtual ? root.children : [root];
+  const roots = root._virtual ? root.subtopics : [root];
   return roots.map((topic) => serializeTopic(topic, 0)).join('\n');
 }
 
@@ -53,8 +53,8 @@ export function serializeTopic(topic, depth) {
   const topicLevelMarker = '#'.repeat(depth + 1);
   const attrs = serializeAttrs(topic.attrs);
   const currentLine = `${topicLevelMarker} ${topic.text}${attrs}`;
-  const childLines = topic.children.map((child) => serializeTopic(child, depth + 1));
-  return [currentLine, ...childLines].join('\n');
+  const subtopicLines = topic.subtopics.map((subtopic) => serializeTopic(subtopic, depth + 1));
+  return [currentLine, ...subtopicLines].join('\n');
 }
 
 /*

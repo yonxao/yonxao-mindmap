@@ -9,7 +9,7 @@
  * 4. collectVisible 收集未折叠主题和连线，computeBounds 计算整体边界。
  *
  * 调用链位置：
- * YonxaoMindmapRenderer.renderMap() -> layoutTree() -> renderTopic()/renderEdge()
+ * YonxaoMindmapRenderer.renderMap() -> layoutTree() -> renderTopic()/renderConnector()
  */
 
 import {
@@ -89,12 +89,12 @@ export function layoutTree(root, collapsedIds, config) {
   }
 
   const topics = [];
-  const edges = [];
-  collectVisible(root, collapsedIds, topics, edges);
+  const connectors = [];
+  collectVisible(root, collapsedIds, topics, connectors);
 
   return {
     topics,
-    edges,
+    connectors,
     bounds: computeBounds(topics),
     mode,
   };
@@ -106,8 +106,8 @@ export function layoutTree(root, collapsedIds, config) {
  */
 export function prepareTopic(topic, config) {
   topic._layout = measureTopic(topic, config);
-  for (const child of topic.children) {
-    prepareTopic(child, config);
+  for (const subtopic of topic.subtopics) {
+    prepareTopic(subtopic, config);
   }
 }
 
@@ -175,33 +175,33 @@ export function normalizeLayout(layout) {
  * 水平思维导图布局，覆盖 right/left/balanced。
  *
  * 说明：
- * 这是旧版布局的策略化版本，保留原有左右展开和左右平衡体验。
+ * 这是水平导图的策略化版本，用统一函数承载右向、左向和左右平衡体验。
  */
 export function layoutHorizontalMind(root, collapsedIds, mode) {
-  const visibleRootChildren = visibleChildren(root, collapsedIds);
-  const rightChildren = [];
-  const leftChildren = [];
+  const visibleRootSubtopics = visibleSubtopics(root, collapsedIds);
+  const rightSubtopics = [];
+  const leftSubtopics = [];
 
-  visibleRootChildren.forEach((child, index) => {
-    const side = rootChildHorizontalSide(root, child, index, mode);
+  visibleRootSubtopics.forEach((subtopic, index) => {
+    const side = rootSubtopicHorizontalSide(root, subtopic, index, mode);
     if (side === 'left') {
-      leftChildren.push(child);
+      leftSubtopics.push(subtopic);
     } else {
-      rightChildren.push(child);
+      rightSubtopics.push(subtopic);
     }
   });
 
-  placeHorizontalRootSide(root, rightChildren, 'right', collapsedIds);
-  placeHorizontalRootSide(root, leftChildren, 'left', collapsedIds);
+  placeHorizontalRootSide(root, rightSubtopics, 'right', collapsedIds);
+  placeHorizontalRootSide(root, leftSubtopics, 'left', collapsedIds);
 }
 
 /*
  * 作用：
  * 判断一级主题应该在左侧还是右侧。
  */
-export function rootChildHorizontalSide(root, child, index, mode) {
-  const childLayout = normalizeLayout(child.attrs.layout);
-  if (childLayout === 'left' || childLayout === 'right') return childLayout;
+export function rootSubtopicHorizontalSide(root, subtopic, index, mode) {
+  const subtopicLayout = normalizeLayout(subtopic.attrs.layout);
+  if (subtopicLayout === 'left' || subtopicLayout === 'right') return subtopicLayout;
 
   const rootLayout = normalizeLayout(root.attrs.layout);
   if (rootLayout === 'left' || rootLayout === 'right') return rootLayout;
@@ -214,28 +214,30 @@ export function rootChildHorizontalSide(root, child, index, mode) {
  * 作用：
  * 摆放根主题某一侧的一级子树。
  */
-export function placeHorizontalRootSide(root, children, side, collapsedIds) {
-  if (!children.length) return;
+export function placeHorizontalRootSide(root, subtopics, side, collapsedIds) {
+  if (!subtopics.length) return;
 
   const rootBox = root._layout;
-  const heights = children.map((child) => horizontalSubtreeHeight(child, side, collapsedIds));
+  const heights = subtopics.map((subtopic) =>
+    horizontalSubtreeHeight(subtopic, side, collapsedIds)
+  );
   const totalHeight =
     heights.reduce((sum, height) => sum + height, 0) +
-    Math.max(0, children.length - 1) * BRANCH_GAP;
+    Math.max(0, subtopics.length - 1) * BRANCH_GAP;
 
   let y = rootBox.y - totalHeight / 2;
 
-  for (let index = 0; index < children.length; index += 1) {
-    const child = children[index];
+  for (let index = 0; index < subtopics.length; index += 1) {
+    const subtopic = subtopics[index];
     const height = heights[index];
-    const childBox = child._layout;
+    const subtopicBox = subtopic._layout;
     const dir = side === 'left' ? -1 : 1;
 
-    childBox.side = side;
-    childBox.x = rootBox.x + dir * (rootBox.width / 2 + LEVEL_GAP + childBox.width / 2);
-    childBox.y = y + height / 2;
+    subtopicBox.side = side;
+    subtopicBox.x = rootBox.x + dir * (rootBox.width / 2 + LEVEL_GAP + subtopicBox.width / 2);
+    subtopicBox.y = y + height / 2;
 
-    placeHorizontalDescendants(child, side, collapsedIds);
+    placeHorizontalDescendants(subtopic, side, collapsedIds);
     y += height + BRANCH_GAP;
   }
 }
@@ -245,28 +247,30 @@ export function placeHorizontalRootSide(root, children, side, collapsedIds) {
  * 递归摆放水平布局中的非根后代。
  */
 export function placeHorizontalDescendants(parent, side, collapsedIds) {
-  const children = visibleChildren(parent, collapsedIds);
-  if (!children.length) return;
+  const subtopics = visibleSubtopics(parent, collapsedIds);
+  if (!subtopics.length) return;
 
   const parentBox = parent._layout;
-  const heights = children.map((child) => horizontalSubtreeHeight(child, side, collapsedIds));
+  const heights = subtopics.map((subtopic) =>
+    horizontalSubtreeHeight(subtopic, side, collapsedIds)
+  );
   const totalHeight =
     heights.reduce((sum, height) => sum + height, 0) +
-    Math.max(0, children.length - 1) * SIBLING_GAP;
+    Math.max(0, subtopics.length - 1) * SIBLING_GAP;
 
   let y = parentBox.y - totalHeight / 2;
 
-  for (let index = 0; index < children.length; index += 1) {
-    const child = children[index];
+  for (let index = 0; index < subtopics.length; index += 1) {
+    const subtopic = subtopics[index];
     const height = heights[index];
-    const childBox = child._layout;
+    const subtopicBox = subtopic._layout;
     const dir = side === 'left' ? -1 : 1;
 
-    childBox.side = side;
-    childBox.x = parentBox.x + dir * (parentBox.width / 2 + LEVEL_GAP + childBox.width / 2);
-    childBox.y = y + height / 2;
+    subtopicBox.side = side;
+    subtopicBox.x = parentBox.x + dir * (parentBox.width / 2 + LEVEL_GAP + subtopicBox.width / 2);
+    subtopicBox.y = y + height / 2;
 
-    placeHorizontalDescendants(child, side, collapsedIds);
+    placeHorizontalDescendants(subtopic, side, collapsedIds);
     y += height + SIBLING_GAP;
   }
 }
@@ -277,14 +281,17 @@ export function placeHorizontalDescendants(parent, side, collapsedIds) {
  */
 export function horizontalSubtreeHeight(topic, side, collapsedIds) {
   const box = topic._layout;
-  const children = visibleChildren(topic, collapsedIds);
-  if (!children.length) return box.height;
+  const subtopics = visibleSubtopics(topic, collapsedIds);
+  if (!subtopics.length) return box.height;
 
-  const childHeight =
-    children.reduce((sum, child) => sum + horizontalSubtreeHeight(child, side, collapsedIds), 0) +
-    Math.max(0, children.length - 1) * SIBLING_GAP;
+  const subtopicHeight =
+    subtopics.reduce(
+      (sum, subtopic) => sum + horizontalSubtreeHeight(subtopic, side, collapsedIds),
+      0
+    ) +
+    Math.max(0, subtopics.length - 1) * SIBLING_GAP;
 
-  return Math.max(box.height, childHeight);
+  return Math.max(box.height, subtopicHeight);
 }
 
 /*
@@ -292,31 +299,31 @@ export function horizontalSubtreeHeight(topic, side, collapsedIds) {
  * 竖向思维导图布局，覆盖 down/up/vertical。
  */
 export function layoutVerticalMind(root, collapsedIds, mode) {
-  const visibleRootChildren = visibleChildren(root, collapsedIds);
-  const bottomChildren = [];
-  const topChildren = [];
+  const visibleRootSubtopics = visibleSubtopics(root, collapsedIds);
+  const bottomSubtopics = [];
+  const topSubtopics = [];
 
-  visibleRootChildren.forEach((child, index) => {
-    const side = rootChildVerticalSide(child, index, mode);
+  visibleRootSubtopics.forEach((subtopic, index) => {
+    const side = rootSubtopicVerticalSide(subtopic, index, mode);
     if (side === 'top') {
-      topChildren.push(child);
+      topSubtopics.push(subtopic);
     } else {
-      bottomChildren.push(child);
+      bottomSubtopics.push(subtopic);
     }
   });
 
-  placeVerticalRootSide(root, bottomChildren, 'bottom', collapsedIds);
-  placeVerticalRootSide(root, topChildren, 'top', collapsedIds);
+  placeVerticalRootSide(root, bottomSubtopics, 'bottom', collapsedIds);
+  placeVerticalRootSide(root, topSubtopics, 'top', collapsedIds);
 }
 
 /*
  * 作用：
  * 判断一级主题应该在上方还是下方。
  */
-export function rootChildVerticalSide(child, index, mode) {
-  const childLayout = normalizeLayout(child.attrs.layout);
-  if (childLayout === 'up') return 'top';
-  if (childLayout === 'down') return 'bottom';
+export function rootSubtopicVerticalSide(subtopic, index, mode) {
+  const subtopicLayout = normalizeLayout(subtopic.attrs.layout);
+  if (subtopicLayout === 'up') return 'top';
+  if (subtopicLayout === 'down') return 'bottom';
 
   if (mode === 'up') return 'top';
   if (mode === 'down') return 'bottom';
@@ -327,26 +334,26 @@ export function rootChildVerticalSide(child, index, mode) {
  * 作用：
  * 摆放竖向布局中根主题某一侧的一级子树。
  */
-export function placeVerticalRootSide(root, children, side, collapsedIds) {
-  if (!children.length) return;
+export function placeVerticalRootSide(root, subtopics, side, collapsedIds) {
+  if (!subtopics.length) return;
 
   const rootBox = root._layout;
-  const widths = children.map((child) => verticalSubtreeWidth(child, side, collapsedIds));
+  const widths = subtopics.map((subtopic) => verticalSubtreeWidth(subtopic, side, collapsedIds));
   const totalWidth =
-    widths.reduce((sum, width) => sum + width, 0) + Math.max(0, children.length - 1) * BRANCH_GAP;
+    widths.reduce((sum, width) => sum + width, 0) + Math.max(0, subtopics.length - 1) * BRANCH_GAP;
   const dir = side === 'top' ? -1 : 1;
   let x = rootBox.x - totalWidth / 2;
 
-  for (let index = 0; index < children.length; index += 1) {
-    const child = children[index];
+  for (let index = 0; index < subtopics.length; index += 1) {
+    const subtopic = subtopics[index];
     const width = widths[index];
-    const childBox = child._layout;
+    const subtopicBox = subtopic._layout;
 
-    childBox.side = side;
-    childBox.x = x + width / 2;
-    childBox.y = rootBox.y + dir * (rootBox.height / 2 + LEVEL_GAP + childBox.height / 2);
+    subtopicBox.side = side;
+    subtopicBox.x = x + width / 2;
+    subtopicBox.y = rootBox.y + dir * (rootBox.height / 2 + LEVEL_GAP + subtopicBox.height / 2);
 
-    placeVerticalDescendants(child, side, collapsedIds);
+    placeVerticalDescendants(subtopic, side, collapsedIds);
     x += width + BRANCH_GAP;
   }
 }
@@ -356,26 +363,26 @@ export function placeVerticalRootSide(root, children, side, collapsedIds) {
  * 递归摆放竖向布局中的后代。
  */
 export function placeVerticalDescendants(parent, side, collapsedIds) {
-  const children = visibleChildren(parent, collapsedIds);
-  if (!children.length) return;
+  const subtopics = visibleSubtopics(parent, collapsedIds);
+  if (!subtopics.length) return;
 
   const parentBox = parent._layout;
-  const widths = children.map((child) => verticalSubtreeWidth(child, side, collapsedIds));
+  const widths = subtopics.map((subtopic) => verticalSubtreeWidth(subtopic, side, collapsedIds));
   const totalWidth =
-    widths.reduce((sum, width) => sum + width, 0) + Math.max(0, children.length - 1) * SIBLING_GAP;
+    widths.reduce((sum, width) => sum + width, 0) + Math.max(0, subtopics.length - 1) * SIBLING_GAP;
   const dir = side === 'top' ? -1 : 1;
   let x = parentBox.x - totalWidth / 2;
 
-  for (let index = 0; index < children.length; index += 1) {
-    const child = children[index];
+  for (let index = 0; index < subtopics.length; index += 1) {
+    const subtopic = subtopics[index];
     const width = widths[index];
-    const childBox = child._layout;
+    const subtopicBox = subtopic._layout;
 
-    childBox.side = side;
-    childBox.x = x + width / 2;
-    childBox.y = parentBox.y + dir * (parentBox.height / 2 + LEVEL_GAP + childBox.height / 2);
+    subtopicBox.side = side;
+    subtopicBox.x = x + width / 2;
+    subtopicBox.y = parentBox.y + dir * (parentBox.height / 2 + LEVEL_GAP + subtopicBox.height / 2);
 
-    placeVerticalDescendants(child, side, collapsedIds);
+    placeVerticalDescendants(subtopic, side, collapsedIds);
     x += width + SIBLING_GAP;
   }
 }
@@ -386,14 +393,17 @@ export function placeVerticalDescendants(parent, side, collapsedIds) {
  */
 export function verticalSubtreeWidth(topic, side, collapsedIds) {
   const box = topic._layout;
-  const children = visibleChildren(topic, collapsedIds);
-  if (!children.length) return box.width;
+  const subtopics = visibleSubtopics(topic, collapsedIds);
+  if (!subtopics.length) return box.width;
 
-  const childWidth =
-    children.reduce((sum, child) => sum + verticalSubtreeWidth(child, side, collapsedIds), 0) +
-    Math.max(0, children.length - 1) * SIBLING_GAP;
+  const subtopicWidth =
+    subtopics.reduce(
+      (sum, subtopic) => sum + verticalSubtreeWidth(subtopic, side, collapsedIds),
+      0
+    ) +
+    Math.max(0, subtopics.length - 1) * SIBLING_GAP;
 
-  return Math.max(box.width, childWidth);
+  return Math.max(box.width, subtopicWidth);
 }
 
 /*
@@ -401,13 +411,12 @@ export function verticalSubtreeWidth(topic, side, collapsedIds) {
  * 树形结构布局，覆盖向右树、向左树和平衡树。
  *
  * 实现逻辑：
- * 旧版 tree 是按深度优先逐行摆放，主题多时不会给子树预留空间，容易挤在一起。
- * 这里改成先计算每棵子树需要的高度，再把父主题放在子树高度的中线位置。
+ * 树状结构需要先计算每棵子树的高度，再把父主题放在子树高度的中线位置。
  * 这样每个分支都拥有自己的纵向空间，后代主题不会和相邻分支重叠。
  */
 export function layoutOutlineTree(root, collapsedIds, mode = 'tree') {
-  const rootChildren = visibleChildren(root, collapsedIds);
-  placeTreeTrunkChildren(root, rootChildren, mode, collapsedIds);
+  const rootSubtopics = visibleSubtopics(root, collapsedIds);
+  placeTreeTrunkSubtopics(root, rootSubtopics, mode, collapsedIds);
 }
 
 /*
@@ -418,28 +427,28 @@ export function layoutOutlineTree(root, collapsedIds, mode = 'tree') {
  * 树状结构和普通导图的最大区别在一级分支：普通导图从中心点左右展开，
  * 树状结构则先形成一条自上而下的主干，再把一级分支挂在主干左右。
  */
-export function placeTreeTrunkChildren(root, children, mode, collapsedIds) {
-  if (!children.length) return;
+export function placeTreeTrunkSubtopics(root, subtopics, mode, collapsedIds) {
+  if (!subtopics.length) return;
 
   const rootBox = root._layout;
-  const sides = children.map((child, index) => rootChildTreeSide(child, index, mode));
-  const heights = children.map((child, index) =>
-    treeSubtreeHeight(child, sides[index], collapsedIds)
+  const sides = subtopics.map((subtopic, index) => rootSubtopicTreeSide(subtopic, index, mode));
+  const heights = subtopics.map((subtopic, index) =>
+    treeSubtreeHeight(subtopic, sides[index], collapsedIds)
   );
   let y = rootBox.y + rootBox.height / 2 + LEVEL_GAP;
 
-  for (let index = 0; index < children.length; index += 1) {
-    const child = children[index];
-    const childBox = child._layout;
+  for (let index = 0; index < subtopics.length; index += 1) {
+    const subtopic = subtopics[index];
+    const subtopicBox = subtopic._layout;
     const height = heights[index];
     const side = sides[index];
     const dir = side === 'tree-left' ? -1 : 1;
 
-    childBox.side = side;
-    childBox.x = rootBox.x + dir * (LEVEL_GAP + childBox.width / 2);
-    childBox.y = y + height / 2;
+    subtopicBox.side = side;
+    subtopicBox.x = rootBox.x + dir * (LEVEL_GAP + subtopicBox.width / 2);
+    subtopicBox.y = y + height / 2;
 
-    placeTreeDescendants(child, side, collapsedIds);
+    placeTreeDescendants(subtopic, side, collapsedIds);
     y += height + BRANCH_GAP;
   }
 
@@ -451,10 +460,10 @@ export function placeTreeTrunkChildren(root, children, mode, collapsedIds) {
  * 作用：
  * 判断树状结构的一级分支挂在主干哪一侧。
  */
-export function rootChildTreeSide(child, index, mode) {
-  const childLayout = normalizeLayout(child.attrs.layout);
-  if (childLayout === 'left' || childLayout === 'tree-left') return 'tree-left';
-  if (childLayout === 'right' || childLayout === 'tree') return 'tree-right';
+export function rootSubtopicTreeSide(subtopic, index, mode) {
+  const subtopicLayout = normalizeLayout(subtopic.attrs.layout);
+  if (subtopicLayout === 'left' || subtopicLayout === 'tree-left') return 'tree-left';
+  if (subtopicLayout === 'right' || subtopicLayout === 'tree') return 'tree-right';
 
   if (mode === 'tree-left') return 'tree-left';
   if (mode === 'tree-balanced') return index % 2 === 0 ? 'tree-right' : 'tree-left';
@@ -470,27 +479,27 @@ export function rootChildTreeSide(child, index, mode) {
  * 父主题因此会自然位于子树的视觉中线，连线也更像常见树图结构。
  */
 export function placeTreeDescendants(parent, side, collapsedIds) {
-  const children = visibleChildren(parent, collapsedIds);
-  if (!children.length) return;
+  const subtopics = visibleSubtopics(parent, collapsedIds);
+  if (!subtopics.length) return;
 
   const parentBox = parent._layout;
-  const heights = children.map((child) => treeSubtreeHeight(child, side, collapsedIds));
+  const heights = subtopics.map((subtopic) => treeSubtreeHeight(subtopic, side, collapsedIds));
   const totalHeight =
     heights.reduce((sum, height) => sum + height, 0) +
-    Math.max(0, children.length - 1) * SIBLING_GAP;
+    Math.max(0, subtopics.length - 1) * SIBLING_GAP;
   const dir = side === 'tree-left' ? -1 : 1;
   let y = parentBox.y - totalHeight / 2;
 
-  for (let index = 0; index < children.length; index += 1) {
-    const child = children[index];
-    const childBox = child._layout;
+  for (let index = 0; index < subtopics.length; index += 1) {
+    const subtopic = subtopics[index];
+    const subtopicBox = subtopic._layout;
     const height = heights[index];
 
-    childBox.side = side;
-    childBox.x = parentBox.x + dir * (parentBox.width / 2 + LEVEL_GAP + childBox.width / 2);
-    childBox.y = y + height / 2;
+    subtopicBox.side = side;
+    subtopicBox.x = parentBox.x + dir * (parentBox.width / 2 + LEVEL_GAP + subtopicBox.width / 2);
+    subtopicBox.y = y + height / 2;
 
-    placeTreeDescendants(child, side, collapsedIds);
+    placeTreeDescendants(subtopic, side, collapsedIds);
     y += height + SIBLING_GAP;
   }
 }
@@ -505,14 +514,14 @@ export function placeTreeDescendants(parent, side, collapsedIds) {
  */
 export function treeSubtreeHeight(topic, side, collapsedIds) {
   const box = topic._layout;
-  const children = visibleChildren(topic, collapsedIds);
-  if (!children.length) return box.height;
+  const subtopics = visibleSubtopics(topic, collapsedIds);
+  if (!subtopics.length) return box.height;
 
-  const childHeight =
-    children.reduce((sum, child) => sum + treeSubtreeHeight(child, side, collapsedIds), 0) +
-    Math.max(0, children.length - 1) * SIBLING_GAP;
+  const subtopicHeight =
+    subtopics.reduce((sum, subtopic) => sum + treeSubtreeHeight(subtopic, side, collapsedIds), 0) +
+    Math.max(0, subtopics.length - 1) * SIBLING_GAP;
 
-  return Math.max(box.height, childHeight);
+  return Math.max(box.height, subtopicHeight);
 }
 
 /*
@@ -525,7 +534,7 @@ export function treeSubtreeHeight(topic, side, collapsedIds) {
  */
 export function layoutOrgChart(root, collapsedIds, mode = 'org') {
   if (mode === 'org-right') {
-    placeOrgRightRootChildren(root, visibleChildren(root, collapsedIds), collapsedIds);
+    placeOrgRightRootSubtopics(root, visibleSubtopics(root, collapsedIds), collapsedIds);
     return;
   }
 
@@ -544,21 +553,21 @@ export function layoutOrgChart(root, collapsedIds, mode = 'org') {
  */
 export function placeOrgSubtree(topic, centerX, depth, levelTops, collapsedIds) {
   const box = topic._layout;
-  const children = visibleChildren(topic, collapsedIds);
+  const subtopics = visibleSubtopics(topic, collapsedIds);
   const subtreeWidth = orgSubtreeWidth(topic, collapsedIds);
 
   box.side = box.side === 'root' ? 'root' : 'org-bottom';
   box.x = centerX;
   box.y = (levelTops[depth] || 0) + box.height / 2;
 
-  if (!children.length) return subtreeWidth;
+  if (!subtopics.length) return subtreeWidth;
 
-  const childGroupWidth = orgChildrenWidth(children, collapsedIds);
-  let x = centerX - childGroupWidth / 2;
+  const subtopicGroupWidth = orgSubtopicsWidth(subtopics, collapsedIds);
+  let x = centerX - subtopicGroupWidth / 2;
 
-  for (const child of children) {
-    const width = orgSubtreeWidth(child, collapsedIds);
-    placeOrgSubtree(child, x + width / 2, depth + 1, levelTops, collapsedIds);
+  for (const subtopic of subtopics) {
+    const width = orgSubtreeWidth(subtopic, collapsedIds);
+    placeOrgSubtree(subtopic, x + width / 2, depth + 1, levelTops, collapsedIds);
     x += width + SIBLING_GAP;
   }
 
@@ -580,8 +589,8 @@ export function orgLevelTops(root, collapsedIds) {
     const box = topic._layout;
     levelHeights[depth] = Math.max(levelHeights[depth] || 0, box.height);
 
-    for (const child of visibleChildren(topic, collapsedIds)) {
-      visit(child, depth + 1);
+    for (const subtopic of visibleSubtopics(topic, collapsedIds)) {
+      visit(subtopic, depth + 1);
     }
   };
 
@@ -601,22 +610,22 @@ export function orgLevelTops(root, collapsedIds) {
  */
 export function orgSubtreeWidth(topic, collapsedIds) {
   const box = topic._layout;
-  const children = visibleChildren(topic, collapsedIds);
-  if (!children.length) return box.width;
+  const subtopics = visibleSubtopics(topic, collapsedIds);
+  if (!subtopics.length) return box.width;
 
-  const childWidth = orgChildrenWidth(children, collapsedIds);
+  const subtopicWidth = orgSubtopicsWidth(subtopics, collapsedIds);
 
-  return Math.max(box.width, childWidth);
+  return Math.max(box.width, subtopicWidth);
 }
 
 /*
  * 作用：
  * 计算一组组织结构图子主题横向排布所需的总宽度。
  */
-export function orgChildrenWidth(children, collapsedIds) {
+export function orgSubtopicsWidth(subtopics, collapsedIds) {
   return (
-    children.reduce((sum, child) => sum + orgSubtreeWidth(child, collapsedIds), 0) +
-    Math.max(0, children.length - 1) * SIBLING_GAP
+    subtopics.reduce((sum, subtopic) => sum + orgSubtreeWidth(subtopic, collapsedIds), 0) +
+    Math.max(0, subtopics.length - 1) * SIBLING_GAP
   );
 }
 
@@ -628,32 +637,33 @@ export function orgChildrenWidth(children, collapsedIds) {
  * 一级分支主题和标准组织图一样横向排列；每个一级分支再把自己的后代向右下展开。
  * 因此横向槽位不能只看一级主题宽度，还要把该分支右侧子树的宽度算进去。
  */
-export function placeOrgRightRootChildren(root, children, collapsedIds) {
-  if (!children.length) return;
+export function placeOrgRightRootSubtopics(root, subtopics, collapsedIds) {
+  if (!subtopics.length) return;
 
   const rootBox = root._layout;
-  const widths = children.map((child) => orgRightSubtreeWidth(child, collapsedIds));
+  const widths = subtopics.map((subtopic) => orgRightSubtreeWidth(subtopic, collapsedIds));
   const totalWidth =
-    widths.reduce((sum, width) => sum + width, 0) + Math.max(0, children.length - 1) * BRANCH_GAP;
-  const maxRootChildHeight = children.reduce(
-    (max, child) => Math.max(max, child._layout.height),
+    widths.reduce((sum, width) => sum + width, 0) + Math.max(0, subtopics.length - 1) * BRANCH_GAP;
+  const maxRootSubtopicHeight = subtopics.reduce(
+    (max, subtopic) => Math.max(max, subtopic._layout.height),
     TOPIC_MIN_HEIGHT
   );
-  const childY = rootBox.y + rootBox.height / 2 + LEVEL_GAP + maxRootChildHeight / 2;
-  const descendantStartTop = childY - maxRootChildHeight / 2 + maxRootChildHeight + SIBLING_GAP;
-  const rowTops = orgRightDescendantGridTops(children, descendantStartTop, collapsedIds);
+  const subtopicY = rootBox.y + rootBox.height / 2 + LEVEL_GAP + maxRootSubtopicHeight / 2;
+  const descendantStartTop =
+    subtopicY - maxRootSubtopicHeight / 2 + maxRootSubtopicHeight + SIBLING_GAP;
+  const rowTops = orgRightDescendantGridTops(subtopics, descendantStartTop, collapsedIds);
   let x = rootBox.x - totalWidth / 2;
 
-  for (let index = 0; index < children.length; index += 1) {
-    const child = children[index];
-    const childBox = child._layout;
+  for (let index = 0; index < subtopics.length; index += 1) {
+    const subtopic = subtopics[index];
+    const subtopicBox = subtopic._layout;
     const width = widths[index];
 
-    childBox.side = 'org-right-branch';
-    childBox.x = x + childBox.width / 2;
-    childBox.y = childY - maxRootChildHeight / 2 + childBox.height / 2;
+    subtopicBox.side = 'org-right-branch';
+    subtopicBox.x = x + subtopicBox.width / 2;
+    subtopicBox.y = subtopicY - maxRootSubtopicHeight / 2 + subtopicBox.height / 2;
 
-    placeOrgRightDescendants(child, collapsedIds, rowTops);
+    placeOrgRightDescendants(subtopic, collapsedIds, rowTops);
     x += width + BRANCH_GAP;
   }
 }
@@ -669,22 +679,22 @@ export function placeOrgRightRootChildren(root, children, collapsedIds) {
  * 这样不同分支里的同级主题会自然横向对齐，长文案只会撑开当前行高。
  */
 export function placeOrgRightDescendants(parent, collapsedIds, rowTops, depth = 0) {
-  const children = visibleChildren(parent, collapsedIds);
-  if (!children.length) return;
+  const subtopics = visibleSubtopics(parent, collapsedIds);
+  if (!subtopics.length) return;
 
   const parentBox = parent._layout;
 
-  for (let index = 0; index < children.length; index += 1) {
-    const child = children[index];
-    const childBox = child._layout;
+  for (let index = 0; index < subtopics.length; index += 1) {
+    const subtopic = subtopics[index];
+    const subtopicBox = subtopic._layout;
     const top =
       rowTops[depth]?.[index] ?? parentBox.y + parentBox.height / 2 + SIBLING_GAP + index * 48;
 
-    childBox.side = 'org-right';
-    childBox.x = parentBox.x + LEVEL_GAP + childBox.width / 2;
-    childBox.y = top + childBox.height / 2;
+    subtopicBox.side = 'org-right';
+    subtopicBox.x = parentBox.x + LEVEL_GAP + subtopicBox.width / 2;
+    subtopicBox.y = top + subtopicBox.height / 2;
 
-    placeOrgRightDescendants(child, collapsedIds, rowTops, depth + 1);
+    placeOrgRightDescendants(subtopic, collapsedIds, rowTops, depth + 1);
   }
 }
 
@@ -696,11 +706,11 @@ export function placeOrgRightDescendants(parent, collapsedIds, rowTops, depth = 
  * 第一维是相对层级，第二维是兄弟序号。
  * 例如所有一级分支下的第一个子主题共享 depth=0/index=0 的行。
  */
-export function orgRightDescendantGridTops(rootChildren, startTop, collapsedIds) {
+export function orgRightDescendantGridTops(rootSubtopics, startTop, collapsedIds) {
   const gridHeights = [];
 
-  for (const child of rootChildren) {
-    collectOrgRightGridHeights(child, collapsedIds, gridHeights);
+  for (const subtopic of rootSubtopics) {
+    collectOrgRightGridHeights(subtopic, collapsedIds, gridHeights);
   }
 
   const rowTops = [];
@@ -723,16 +733,16 @@ export function orgRightDescendantGridTops(rootChildren, startTop, collapsedIds)
  * 按“层级 + 兄弟序号”统计 org-right 每个网格行所需高度。
  */
 export function collectOrgRightGridHeights(parent, collapsedIds, gridHeights, depth = 0) {
-  const children = visibleChildren(parent, collapsedIds);
-  if (!children.length) return;
+  const subtopics = visibleSubtopics(parent, collapsedIds);
+  if (!subtopics.length) return;
 
   if (!gridHeights[depth]) {
     gridHeights[depth] = [];
   }
 
-  children.forEach((child, index) => {
-    gridHeights[depth][index] = Math.max(gridHeights[depth][index] || 0, child._layout.height);
-    collectOrgRightGridHeights(child, collapsedIds, gridHeights, depth + 1);
+  subtopics.forEach((subtopic, index) => {
+    gridHeights[depth][index] = Math.max(gridHeights[depth][index] || 0, subtopic._layout.height);
+    collectOrgRightGridHeights(subtopic, collapsedIds, gridHeights, depth + 1);
   });
 }
 
@@ -742,15 +752,15 @@ export function collectOrgRightGridHeights(parent, collapsedIds, gridHeights, de
  */
 export function orgRightSubtreeWidth(topic, collapsedIds) {
   const box = topic._layout;
-  const children = visibleChildren(topic, collapsedIds);
-  if (!children.length) return box.width;
+  const subtopics = visibleSubtopics(topic, collapsedIds);
+  if (!subtopics.length) return box.width;
 
-  const childWidth = children.reduce(
-    (max, child) => Math.max(max, orgRightSubtreeWidth(child, collapsedIds)),
+  const subtopicWidth = subtopics.reduce(
+    (max, subtopic) => Math.max(max, orgRightSubtreeWidth(subtopic, collapsedIds)),
     0
   );
 
-  return Math.max(box.width, box.width / 2 + LEVEL_GAP + childWidth);
+  return Math.max(box.width, box.width / 2 + LEVEL_GAP + subtopicWidth);
 }
 
 /*
@@ -763,13 +773,15 @@ export function orgRightSubtreeWidth(topic, collapsedIds) {
  */
 export function layoutTimeline(root, collapsedIds, mode = 'timeline') {
   const rootBox = root._layout;
-  const children = visibleChildren(root, collapsedIds);
-  if (!children.length) return;
+  const subtopics = visibleSubtopics(root, collapsedIds);
+  if (!subtopics.length) return;
 
-  const branchSides = children.map((child, index) => rootChildTimelineSide(child, index, mode));
-  const widths = children.map((child) => timelinePointWidth(child, collapsedIds));
+  const branchSides = subtopics.map((subtopic, index) =>
+    rootSubtopicTimelineSide(subtopic, index, mode)
+  );
+  const widths = subtopics.map((subtopic) => timelinePointWidth(subtopic, collapsedIds));
   const totalWidth =
-    widths.reduce((sum, width) => sum + width, 0) + Math.max(0, children.length - 1) * BRANCH_GAP;
+    widths.reduce((sum, width) => sum + width, 0) + Math.max(0, subtopics.length - 1) * BRANCH_GAP;
 
   const axisY = rootBox.y;
   rootBox.timelineAxisY = axisY;
@@ -777,19 +789,19 @@ export function layoutTimeline(root, collapsedIds, mode = 'timeline') {
   rootBox.timelineAxisMaxX = rootBox.x + rootBox.width / 2 + LEVEL_GAP + totalWidth;
 
   let x = rootBox.x + rootBox.width / 2 + LEVEL_GAP;
-  for (let index = 0; index < children.length; index += 1) {
-    const child = children[index];
-    const childBox = child._layout;
+  for (let index = 0; index < subtopics.length; index += 1) {
+    const subtopic = subtopics[index];
+    const subtopicBox = subtopic._layout;
     const width = widths[index];
     const branchSide = branchSides[index];
 
-    childBox.side = 'timeline-point';
-    childBox.timelineBranchSide = branchSide;
-    childBox.x = x + childBox.width / 2;
-    childBox.y = axisY;
-    childBox.timelineAxisY = axisY;
+    subtopicBox.side = 'timeline-point';
+    subtopicBox.timelineBranchSide = branchSide;
+    subtopicBox.x = x + subtopicBox.width / 2;
+    subtopicBox.y = axisY;
+    subtopicBox.timelineAxisY = axisY;
 
-    placeTimelineDetails(child, branchSide, collapsedIds);
+    placeTimelineDetails(subtopic, branchSide, collapsedIds);
     x += width + BRANCH_GAP;
   }
 }
@@ -798,10 +810,10 @@ export function layoutTimeline(root, collapsedIds, mode = 'timeline') {
  * 作用：
  * 判断时间轴一级主题挂在轴线上方还是下方。
  */
-export function rootChildTimelineSide(child, index, mode) {
-  const childLayout = normalizeLayout(child.attrs.layout);
-  if (childLayout === 'timeline-up' || childLayout === 'up') return 'timeline-top';
-  if (childLayout === 'timeline' || childLayout === 'down') return 'timeline-bottom';
+export function rootSubtopicTimelineSide(subtopic, index, mode) {
+  const subtopicLayout = normalizeLayout(subtopic.attrs.layout);
+  if (subtopicLayout === 'timeline-up' || subtopicLayout === 'up') return 'timeline-top';
+  if (subtopicLayout === 'timeline' || subtopicLayout === 'down') return 'timeline-bottom';
 
   if (mode === 'timeline-up') return 'timeline-top';
   if (mode === 'timeline-balanced') return index % 2 === 0 ? 'timeline-top' : 'timeline-bottom';
@@ -817,16 +829,16 @@ export function rootChildTimelineSide(child, index, mode) {
  * 再在竖线右侧逐层递进，形成时间轴常见的事件详情区。
  */
 export function placeTimelineDetails(parent, branchSide, collapsedIds) {
-  const children = visibleChildren(parent, collapsedIds);
-  if (!children.length) return;
+  const subtopics = visibleSubtopics(parent, collapsedIds);
+  if (!subtopics.length) return;
 
   const parentBox = parent._layout;
-  const heights = children.map((child) =>
-    timelineDetailSubtreeHeight(child, branchSide, collapsedIds)
+  const heights = subtopics.map((subtopic) =>
+    timelineDetailSubtreeHeight(subtopic, branchSide, collapsedIds)
   );
   const totalHeight =
     heights.reduce((sum, height) => sum + height, 0) +
-    Math.max(0, children.length - 1) * SIBLING_GAP;
+    Math.max(0, subtopics.length - 1) * SIBLING_GAP;
   const isDetailParent =
     parentBox.side === 'timeline-detail-top' || parentBox.side === 'timeline-detail-bottom';
   let y = isDetailParent
@@ -835,22 +847,22 @@ export function placeTimelineDetails(parent, branchSide, collapsedIds) {
       ? parentBox.y - parentBox.height / 2 - SIBLING_GAP - totalHeight
       : parentBox.y + parentBox.height / 2 + SIBLING_GAP;
 
-  for (let index = 0; index < children.length; index += 1) {
-    const child = children[index];
-    const childBox = child._layout;
+  for (let index = 0; index < subtopics.length; index += 1) {
+    const subtopic = subtopics[index];
+    const subtopicBox = subtopic._layout;
     const height = heights[index];
     const isTopBranch = branchSide === 'timeline-top';
 
-    childBox.side = isTopBranch ? 'timeline-detail-top' : 'timeline-detail-bottom';
-    childBox.timelineBranchSide = branchSide;
-    childBox.x = parentBox.x + LEVEL_GAP + childBox.width / 2;
+    subtopicBox.side = isTopBranch ? 'timeline-detail-top' : 'timeline-detail-bottom';
+    subtopicBox.timelineBranchSide = branchSide;
+    subtopicBox.x = parentBox.x + LEVEL_GAP + subtopicBox.width / 2;
     /*
      * 每个主题都放在自己完整子树占位块的中线位置。
      * 这样当某个详情主题继续展开子主题时，父主题右侧出口能自然对齐子主题组的总高度中线。
      */
-    childBox.y = y + height / 2;
+    subtopicBox.y = y + height / 2;
 
-    placeTimelineDetails(child, branchSide, collapsedIds);
+    placeTimelineDetails(subtopic, branchSide, collapsedIds);
     y += height + SIBLING_GAP;
   }
 }
@@ -861,15 +873,15 @@ export function placeTimelineDetails(parent, branchSide, collapsedIds) {
  */
 export function timelinePointWidth(topic, collapsedIds) {
   const box = topic._layout;
-  const children = visibleChildren(topic, collapsedIds);
-  if (!children.length) return box.width;
+  const subtopics = visibleSubtopics(topic, collapsedIds);
+  if (!subtopics.length) return box.width;
 
-  const childWidth = children.reduce(
-    (max, child) => Math.max(max, timelinePointWidth(child, collapsedIds)),
+  const subtopicWidth = subtopics.reduce(
+    (max, subtopic) => Math.max(max, timelinePointWidth(subtopic, collapsedIds)),
     0
   );
 
-  return Math.max(box.width, box.width / 2 + LEVEL_GAP + childWidth);
+  return Math.max(box.width, box.width / 2 + LEVEL_GAP + subtopicWidth);
 }
 
 /*
@@ -878,22 +890,22 @@ export function timelinePointWidth(topic, collapsedIds) {
  */
 export function timelineDetailSubtreeHeight(topic, branchSide, collapsedIds) {
   const box = topic._layout;
-  const children = visibleChildren(topic, collapsedIds);
-  if (!children.length) return box.height;
+  const subtopics = visibleSubtopics(topic, collapsedIds);
+  if (!subtopics.length) return box.height;
 
-  const childHeight =
-    children.reduce(
-      (sum, child) => sum + timelineDetailSubtreeHeight(child, branchSide, collapsedIds),
+  const subtopicHeight =
+    subtopics.reduce(
+      (sum, subtopic) => sum + timelineDetailSubtreeHeight(subtopic, branchSide, collapsedIds),
       0
     ) +
-    Math.max(0, children.length - 1) * SIBLING_GAP;
+    Math.max(0, subtopics.length - 1) * SIBLING_GAP;
 
   /*
    * 详情树是向右展开的：父主题和子主题组在横向上分列，垂直占位取二者较大值。
    * 如果继续使用“父主题高度 + 子主题组高度”，会把子树块算得过高，
    * 也会让父主题出口无法对齐子主题组中线。
    */
-  return Math.max(box.height, childHeight);
+  return Math.max(box.height, subtopicHeight);
 }
 
 /*
@@ -906,20 +918,20 @@ export function timelineDetailSubtreeHeight(topic, branchSide, collapsedIds) {
  * 同级主题沿射线的垂直方向排开，形成真正的“中心发散”结构。
  */
 export function layoutRadial(root, collapsedIds) {
-  const children = visibleChildren(root, collapsedIds);
+  const subtopics = visibleSubtopics(root, collapsedIds);
   const radius = Math.max(220, root._layout.width / 2 + LEVEL_GAP + 110);
-  const stats = children.map((child) => radialBranchStats(child, collapsedIds));
+  const stats = subtopics.map((subtopic) => radialBranchStats(subtopic, collapsedIds));
   const weights = stats.map((stat) => radialBranchWeight(stat));
   const totalWeight = weights.reduce((sum, weight) => sum + weight, 0) || 1;
   const slices = weights.map((weight) => (weight / totalWeight) * Math.PI * 2);
   let cursor = -Math.PI / 2 - (slices[0] || 0) / 2;
 
-  children.forEach((child, index) => {
+  subtopics.forEach((subtopic, index) => {
     const slice = slices[index];
     const angle = cursor + slice / 2;
-    const branchRadius = radialBranchRadius(radius, child, angle, slice, collapsedIds);
+    const branchRadius = radialBranchRadius(radius, subtopic, angle, slice, collapsedIds);
 
-    placeRadialRootBranch(root, child, angle, branchRadius, collapsedIds);
+    placeRadialRootBranch(root, subtopic, angle, branchRadius, collapsedIds);
     cursor += slice;
   });
 }
@@ -949,32 +961,32 @@ export function placeRadialRootBranch(root, topic, angle, radius, collapsedIds) 
  * 多个子主题沿射线垂直方向分散，并让子主题组的中线对齐父主题出口。
  */
 export function placeRadialDescendants(parent, angle, collapsedIds) {
-  const children = visibleChildren(parent, collapsedIds);
-  if (!children.length) return;
+  const subtopics = visibleSubtopics(parent, collapsedIds);
+  if (!subtopics.length) return;
 
   const parentBox = parent._layout;
   const unit = radialUnit(angle);
   const normal = radialNormal(angle);
-  const breadths = children.map((child) => radialSubtreeBreadth(child, angle, collapsedIds));
+  const breadths = subtopics.map((subtopic) => radialSubtreeBreadth(subtopic, angle, collapsedIds));
   const totalBreadth =
     breadths.reduce((sum, breadth) => sum + breadth, 0) +
-    Math.max(0, children.length - 1) * SIBLING_GAP;
+    Math.max(0, subtopics.length - 1) * SIBLING_GAP;
   const parentForward = radialExtent(parentBox, angle);
   let offset = -totalBreadth / 2;
 
-  children.forEach((child, index) => {
-    const childBox = child._layout;
+  subtopics.forEach((subtopic, index) => {
+    const subtopicBox = subtopic._layout;
     const breadth = breadths[index];
-    const childForward = radialExtent(childBox, angle);
-    const along = parentForward + LEVEL_GAP + childForward;
+    const subtopicForward = radialExtent(subtopicBox, angle);
+    const along = parentForward + LEVEL_GAP + subtopicForward;
     const cross = offset + breadth / 2;
 
-    childBox.side = radialSide(angle);
-    childBox.radialAngle = angle;
-    childBox.x = parentBox.x + unit.x * along + normal.x * cross;
-    childBox.y = parentBox.y + unit.y * along + normal.y * cross;
+    subtopicBox.side = radialSide(angle);
+    subtopicBox.radialAngle = angle;
+    subtopicBox.x = parentBox.x + unit.x * along + normal.x * cross;
+    subtopicBox.y = parentBox.y + unit.y * along + normal.y * cross;
 
-    placeRadialDescendants(child, angle, collapsedIds);
+    placeRadialDescendants(subtopic, angle, collapsedIds);
     offset += breadth + SIBLING_GAP;
   });
 }
@@ -985,15 +997,18 @@ export function placeRadialDescendants(parent, angle, collapsedIds) {
  */
 export function radialSubtreeBreadth(topic, angle, collapsedIds) {
   const box = topic._layout;
-  const children = visibleChildren(topic, collapsedIds);
+  const subtopics = visibleSubtopics(topic, collapsedIds);
   const ownBreadth = radialPerpendicularExtent(box, angle) * 2;
-  if (!children.length) return ownBreadth;
+  if (!subtopics.length) return ownBreadth;
 
-  const childBreadth =
-    children.reduce((sum, child) => sum + radialSubtreeBreadth(child, angle, collapsedIds), 0) +
-    Math.max(0, children.length - 1) * SIBLING_GAP;
+  const subtopicBreadth =
+    subtopics.reduce(
+      (sum, subtopic) => sum + radialSubtreeBreadth(subtopic, angle, collapsedIds),
+      0
+    ) +
+    Math.max(0, subtopics.length - 1) * SIBLING_GAP;
 
-  return Math.max(ownBreadth, childBreadth);
+  return Math.max(ownBreadth, subtopicBreadth);
 }
 
 /*
@@ -1002,18 +1017,18 @@ export function radialSubtreeBreadth(topic, angle, collapsedIds) {
  */
 export function radialBranchStats(topic, collapsedIds) {
   const box = topic._layout;
-  const children = visibleChildren(topic, collapsedIds);
-  let descendantCount = children.length;
-  let maxDepth = children.length ? 1 : 0;
+  const subtopics = visibleSubtopics(topic, collapsedIds);
+  let descendantCount = subtopics.length;
+  let maxDepth = subtopics.length ? 1 : 0;
 
-  for (const child of children) {
-    const childStats = radialBranchStats(child, collapsedIds);
-    descendantCount += childStats.descendantCount;
-    maxDepth = Math.max(maxDepth, childStats.maxDepth + 1);
+  for (const subtopic of subtopics) {
+    const subtopicStats = radialBranchStats(subtopic, collapsedIds);
+    descendantCount += subtopicStats.descendantCount;
+    maxDepth = Math.max(maxDepth, subtopicStats.maxDepth + 1);
   }
 
   return {
-    directChildCount: children.length,
+    directSubtopicCount: subtopics.length,
     descendantCount,
     maxDepth,
     sizeScore: Math.max(0, (box.width - TOPIC_MIN_WIDTH) / TOPIC_MIN_WIDTH) + box.height / 120,
@@ -1031,7 +1046,7 @@ export function radialBranchStats(topic, collapsedIds) {
 export function radialBranchWeight(stat) {
   return (
     1 +
-    stat.directChildCount * 0.75 +
+    stat.directSubtopicCount * 0.75 +
     Math.sqrt(stat.descendantCount) * 0.55 +
     stat.maxDepth * 0.35 +
     stat.sizeScore * 0.35
@@ -1117,8 +1132,8 @@ function radialPerpendicularExtent(box, angle) {
  */
 export function layoutFishbone(root, collapsedIds) {
   const rootBox = root._layout;
-  const children = visibleChildren(root, collapsedIds);
-  if (!children.length) return;
+  const subtopics = visibleSubtopics(root, collapsedIds);
+  if (!subtopics.length) return;
 
   const diagonalX = Math.max(72, LEVEL_GAP);
   const firstAttachX = rootBox.x + rootBox.width / 2 + LEVEL_GAP;
@@ -1127,28 +1142,29 @@ export function layoutFishbone(root, collapsedIds) {
     bottom: firstAttachX + LEVEL_GAP * 0.45,
   };
 
-  children.forEach((child, index) => {
-    const childBox = child._layout;
+  subtopics.forEach((subtopic, index) => {
+    const subtopicBox = subtopic._layout;
     const sign = index % 2 === 0 ? -1 : 1;
     const sideKey = sign < 0 ? 'top' : 'bottom';
-    const subtreeHeight = fishboneSubtreeHeight(child, collapsedIds);
-    const subtreeWidth = fishboneSubtreeWidth(child, collapsedIds);
+    const subtreeHeight = fishboneSubtreeHeight(subtopic, collapsedIds);
+    const subtreeWidth = fishboneSubtreeWidth(subtopic, collapsedIds);
     const attachX = sideCursors[sideKey];
-    const childLeft = attachX + diagonalX + Math.max(0, subtreeHeight - TOPIC_MIN_HEIGHT) * 0.18;
+    const subtopicLeft = attachX + diagonalX + Math.max(0, subtreeHeight - TOPIC_MIN_HEIGHT) * 0.18;
 
-    childBox.side = sign < 0 ? 'fishbone-top' : 'fishbone-bottom';
-    childBox.fishboneSign = sign;
-    childBox.fishboneAttachX = attachX;
-    childBox.x = childLeft + childBox.width / 2;
-    childBox.y =
-      rootBox.y + sign * (TOPIC_MIN_HEIGHT + SIBLING_GAP * 2 + subtreeHeight + childBox.height / 2);
-    childBox.fishboneBoneStartX = attachX;
-    childBox.fishboneBoneStartY = rootBox.y;
-    childBox.fishboneBoneEndX = childBox.x;
-    childBox.fishboneBoneEndY =
-      sign < 0 ? childBox.y + childBox.height / 2 : childBox.y - childBox.height / 2;
+    subtopicBox.side = sign < 0 ? 'fishbone-top' : 'fishbone-bottom';
+    subtopicBox.fishboneSign = sign;
+    subtopicBox.fishboneAttachX = attachX;
+    subtopicBox.x = subtopicLeft + subtopicBox.width / 2;
+    subtopicBox.y =
+      rootBox.y +
+      sign * (TOPIC_MIN_HEIGHT + SIBLING_GAP * 2 + subtreeHeight + subtopicBox.height / 2);
+    subtopicBox.fishboneBoneStartX = attachX;
+    subtopicBox.fishboneBoneStartY = rootBox.y;
+    subtopicBox.fishboneBoneEndX = subtopicBox.x;
+    subtopicBox.fishboneBoneEndY =
+      sign < 0 ? subtopicBox.y + subtopicBox.height / 2 : subtopicBox.y - subtopicBox.height / 2;
 
-    placeFishboneRibs(child, sign, collapsedIds);
+    placeFishboneRibs(subtopic, sign, collapsedIds);
     sideCursors[sideKey] += diagonalX + subtreeWidth + BRANCH_GAP * 0.35;
   });
 }
@@ -1158,40 +1174,42 @@ export function layoutFishbone(root, collapsedIds) {
  * 摆放鱼骨图中挂在斜骨上的二级主题。
  */
 export function placeFishboneRibs(parent, sign, collapsedIds) {
-  const children = visibleChildren(parent, collapsedIds);
-  if (!children.length) return;
+  const subtopics = visibleSubtopics(parent, collapsedIds);
+  if (!subtopics.length) return;
 
   const parentBox = parent._layout;
   const boneStartX = parentBox.fishboneBoneStartX;
   const boneStartY = parentBox.fishboneBoneStartY;
   const boneEndX = parentBox.fishboneBoneEndX;
   const boneEndY = parentBox.fishboneBoneEndY;
-  const ribHeights = children.map((child) => fishboneDetailSubtreeHeight(child, collapsedIds));
+  const ribHeights = subtopics.map((subtopic) =>
+    fishboneDetailSubtreeHeight(subtopic, collapsedIds)
+  );
   const totalRibHeight =
     ribHeights.reduce((sum, height) => sum + height, 0) +
-    Math.max(0, children.length - 1) * SIBLING_GAP;
+    Math.max(0, subtopics.length - 1) * SIBLING_GAP;
   const boneHeight = Math.abs(boneEndY - boneStartY);
   const usableHeight = Math.max(1, boneHeight - parentBox.height - SIBLING_GAP * 2);
   const contentStart = SIBLING_GAP + Math.max(0, (usableHeight - totalRibHeight) / 2);
   let offset = 0;
 
-  children.forEach((child, index) => {
-    const childBox = child._layout;
+  subtopics.forEach((subtopic, index) => {
+    const subtopicBox = subtopic._layout;
     const height = ribHeights[index];
     const centerOnBone = contentStart + offset + height / 2;
-    const childY = boneEndY - sign * centerOnBone;
-    const ratio = clamp((childY - boneStartY) / (boneEndY - boneStartY || 1), 0, 1);
+    const subtopicY = boneEndY - sign * centerOnBone;
+    const ratio = clamp((subtopicY - boneStartY) / (boneEndY - boneStartY || 1), 0, 1);
     const attachX = boneStartX + (boneEndX - boneStartX) * ratio;
-    const attachY = childY;
+    const attachY = subtopicY;
 
-    childBox.side = 'fishbone-rib';
-    childBox.fishboneSign = sign;
-    childBox.fishboneAttachX = attachX;
-    childBox.fishboneAttachY = attachY;
-    childBox.x = attachX + LEVEL_GAP + childBox.width / 2;
-    childBox.y = childY;
+    subtopicBox.side = 'fishbone-rib';
+    subtopicBox.fishboneSign = sign;
+    subtopicBox.fishboneAttachX = attachX;
+    subtopicBox.fishboneAttachY = attachY;
+    subtopicBox.x = attachX + LEVEL_GAP + subtopicBox.width / 2;
+    subtopicBox.y = subtopicY;
 
-    placeFishboneDetails(child, sign, collapsedIds);
+    placeFishboneDetails(subtopic, sign, collapsedIds);
     offset += height + SIBLING_GAP;
   });
 }
@@ -1201,26 +1219,26 @@ export function placeFishboneRibs(parent, sign, collapsedIds) {
  * 摆放鱼骨图三级及更深主题。
  */
 export function placeFishboneDetails(parent, sign, collapsedIds) {
-  const children = visibleChildren(parent, collapsedIds);
-  if (!children.length) return;
+  const subtopics = visibleSubtopics(parent, collapsedIds);
+  if (!subtopics.length) return;
 
   const parentBox = parent._layout;
-  const heights = children.map((child) => fishboneDetailSubtreeHeight(child, collapsedIds));
+  const heights = subtopics.map((subtopic) => fishboneDetailSubtreeHeight(subtopic, collapsedIds));
   const totalHeight =
     heights.reduce((sum, height) => sum + height, 0) +
-    Math.max(0, children.length - 1) * SIBLING_GAP;
+    Math.max(0, subtopics.length - 1) * SIBLING_GAP;
   let y = parentBox.y - totalHeight / 2;
 
-  children.forEach((child, index) => {
-    const childBox = child._layout;
+  subtopics.forEach((subtopic, index) => {
+    const subtopicBox = subtopic._layout;
     const height = heights[index];
 
-    childBox.side = 'fishbone-detail';
-    childBox.fishboneSign = sign;
-    childBox.x = parentBox.x + parentBox.width / 2 + LEVEL_GAP + childBox.width / 2;
-    childBox.y = y + height / 2;
+    subtopicBox.side = 'fishbone-detail';
+    subtopicBox.fishboneSign = sign;
+    subtopicBox.x = parentBox.x + parentBox.width / 2 + LEVEL_GAP + subtopicBox.width / 2;
+    subtopicBox.y = y + height / 2;
 
-    placeFishboneDetails(child, sign, collapsedIds);
+    placeFishboneDetails(subtopic, sign, collapsedIds);
     y += height + SIBLING_GAP;
   });
 }
@@ -1231,12 +1249,15 @@ export function placeFishboneDetails(parent, sign, collapsedIds) {
  */
 export function fishboneSubtreeHeight(topic, collapsedIds) {
   const box = topic._layout;
-  const children = visibleChildren(topic, collapsedIds);
-  if (!children.length) return box.height;
+  const subtopics = visibleSubtopics(topic, collapsedIds);
+  if (!subtopics.length) return box.height;
 
   const ribHeight =
-    children.reduce((sum, child) => sum + fishboneDetailSubtreeHeight(child, collapsedIds), 0) +
-    Math.max(0, children.length - 1) * SIBLING_GAP;
+    subtopics.reduce(
+      (sum, subtopic) => sum + fishboneDetailSubtreeHeight(subtopic, collapsedIds),
+      0
+    ) +
+    Math.max(0, subtopics.length - 1) * SIBLING_GAP;
 
   return Math.max(box.height, ribHeight);
 }
@@ -1247,14 +1268,17 @@ export function fishboneSubtreeHeight(topic, collapsedIds) {
  */
 export function fishboneDetailSubtreeHeight(topic, collapsedIds) {
   const box = topic._layout;
-  const children = visibleChildren(topic, collapsedIds);
-  if (!children.length) return box.height;
+  const subtopics = visibleSubtopics(topic, collapsedIds);
+  if (!subtopics.length) return box.height;
 
-  const childHeight =
-    children.reduce((sum, child) => sum + fishboneDetailSubtreeHeight(child, collapsedIds), 0) +
-    Math.max(0, children.length - 1) * SIBLING_GAP;
+  const subtopicHeight =
+    subtopics.reduce(
+      (sum, subtopic) => sum + fishboneDetailSubtreeHeight(subtopic, collapsedIds),
+      0
+    ) +
+    Math.max(0, subtopics.length - 1) * SIBLING_GAP;
 
-  return Math.max(box.height, childHeight);
+  return Math.max(box.height, subtopicHeight);
 }
 
 /*
@@ -1263,15 +1287,15 @@ export function fishboneDetailSubtreeHeight(topic, collapsedIds) {
  */
 export function fishboneSubtreeWidth(topic, collapsedIds) {
   const box = topic._layout;
-  const children = visibleChildren(topic, collapsedIds);
-  if (!children.length) return box.width;
+  const subtopics = visibleSubtopics(topic, collapsedIds);
+  if (!subtopics.length) return box.width;
 
-  const childWidth = children.reduce(
-    (max, child) => Math.max(max, fishboneDetailSubtreeWidth(child, collapsedIds)),
+  const subtopicWidth = subtopics.reduce(
+    (max, subtopic) => Math.max(max, fishboneDetailSubtreeWidth(subtopic, collapsedIds)),
     0
   );
 
-  return Math.max(box.width, LEVEL_GAP + childWidth);
+  return Math.max(box.width, LEVEL_GAP + subtopicWidth);
 }
 
 /*
@@ -1280,15 +1304,15 @@ export function fishboneSubtreeWidth(topic, collapsedIds) {
  */
 export function fishboneDetailSubtreeWidth(topic, collapsedIds) {
   const box = topic._layout;
-  const children = visibleChildren(topic, collapsedIds);
-  if (!children.length) return box.width;
+  const subtopics = visibleSubtopics(topic, collapsedIds);
+  if (!subtopics.length) return box.width;
 
-  const childWidth = children.reduce(
-    (max, child) => Math.max(max, fishboneDetailSubtreeWidth(child, collapsedIds)),
+  const subtopicWidth = subtopics.reduce(
+    (max, subtopic) => Math.max(max, fishboneDetailSubtreeWidth(subtopic, collapsedIds)),
     0
   );
 
-  return box.width + LEVEL_GAP + childWidth;
+  return box.width + LEVEL_GAP + subtopicWidth;
 }
 
 /*
@@ -1319,19 +1343,21 @@ export function layoutTreeTable(root, collapsedIds, options = {}) {
   rootBox.y = headerHeight / 2;
   recenterTopicText(rootBox);
 
-  const children = visibleChildren(root, collapsedIds);
-  if (!children.length) return;
+  const subtopics = visibleSubtopics(root, collapsedIds);
+  if (!subtopics.length) return;
 
   const bodyTop = headerHeight;
   const tableLeft = -tableWidth / 2;
   const columnLefts = treeTableColumnLefts(columnWidths, tableLeft);
-  const childHeights = children.map((child) => treeTableSubtreeHeight(child, collapsedIds));
+  const subtopicHeights = subtopics.map((subtopic) =>
+    treeTableSubtreeHeight(subtopic, collapsedIds)
+  );
   let cursorTop = bodyTop;
 
-  children.forEach((child, index) => {
-    const allocatedHeight = childHeights[index];
+  subtopics.forEach((subtopic, index) => {
+    const allocatedHeight = subtopicHeights[index];
     placeTreeTableTopic(
-      child,
+      subtopic,
       0,
       cursorTop,
       allocatedHeight,
@@ -1360,13 +1386,13 @@ export function treeTableColumnWidths(root, collapsedIds) {
     const box = topic._layout;
     columnWidths[columnIndex] = Math.max(columnWidths[columnIndex] || minColumnWidth, box.width);
 
-    for (const child of visibleChildren(topic, collapsedIds)) {
-      visit(child, columnIndex + 1);
+    for (const subtopic of visibleSubtopics(topic, collapsedIds)) {
+      visit(subtopic, columnIndex + 1);
     }
   };
 
-  for (const child of visibleChildren(root, collapsedIds)) {
-    visit(child, 0);
+  for (const subtopic of visibleSubtopics(root, collapsedIds)) {
+    visit(subtopic, 0);
   }
 
   return columnWidths.length ? columnWidths : [minColumnWidth];
@@ -1400,15 +1426,15 @@ export function treeTableColumnLefts(columnWidths, tableLeft) {
 export function treeTableSubtreeHeight(topic, collapsedIds) {
   const box = topic._layout;
   const ownHeight = Math.max(TOPIC_MIN_HEIGHT, box.height);
-  const children = visibleChildren(topic, collapsedIds);
-  if (!children.length) return ownHeight;
+  const subtopics = visibleSubtopics(topic, collapsedIds);
+  if (!subtopics.length) return ownHeight;
 
-  const childrenHeight = children.reduce(
-    (sum, child) => sum + treeTableSubtreeHeight(child, collapsedIds),
+  const subtopicsHeight = subtopics.reduce(
+    (sum, subtopic) => sum + treeTableSubtreeHeight(subtopic, collapsedIds),
     0
   );
 
-  return Math.max(ownHeight, childrenHeight);
+  return Math.max(ownHeight, subtopicsHeight);
 }
 
 /*
@@ -1417,7 +1443,7 @@ export function treeTableSubtreeHeight(topic, collapsedIds) {
  *
  * 变量说明：
  * allocatedHeight 是当前主题拿到的完整单元格高度，类似表格 rowspan 后的高度。
- * childExtraHeight 是父单元格比子主题总高度多出来的部分；平均分给子主题，避免长文案父主题压住右侧子表格。
+ * subtopicExtraHeight 是父单元格比子主题总高度多出来的部分；平均分给子主题，避免长文案父主题压住右侧子表格。
  */
 export function placeTreeTableTopic(
   topic,
@@ -1431,8 +1457,8 @@ export function placeTreeTableTopic(
 ) {
   const box = topic._layout;
   const fillLeafRemainderColumns = options.fillLeafRemainderColumns !== false;
-  const children = visibleChildren(topic, collapsedIds);
-  const isLeafTopic = children.length === 0;
+  const subtopics = visibleSubtopics(topic, collapsedIds);
+  const isLeafTopic = subtopics.length === 0;
   const lastColumnIndex = Math.max(0, columnWidths.length - 1);
   const shouldFillRemainingColumns = fillLeafRemainderColumns && isLeafTopic;
   const columnWidth = shouldFillRemainingColumns
@@ -1449,27 +1475,29 @@ export function placeTreeTableTopic(
   box.y = topY + allocatedHeight / 2;
   recenterTopicText(box);
 
-  if (!children.length) return;
+  if (!subtopics.length) return;
 
-  const childBaseHeights = children.map((child) => treeTableSubtreeHeight(child, collapsedIds));
-  const childBaseTotal = childBaseHeights.reduce((sum, height) => sum + height, 0);
-  const childExtraHeight = Math.max(0, allocatedHeight - childBaseTotal);
-  const childExtraHeightPerTopic = childExtraHeight / children.length;
-  let childTop = topY;
+  const subtopicBaseHeights = subtopics.map((subtopic) =>
+    treeTableSubtreeHeight(subtopic, collapsedIds)
+  );
+  const subtopicBaseTotal = subtopicBaseHeights.reduce((sum, height) => sum + height, 0);
+  const subtopicExtraHeight = Math.max(0, allocatedHeight - subtopicBaseTotal);
+  const subtopicExtraHeightPerTopic = subtopicExtraHeight / subtopics.length;
+  let subtopicTop = topY;
 
-  children.forEach((child, index) => {
-    const childAllocatedHeight = childBaseHeights[index] + childExtraHeightPerTopic;
+  subtopics.forEach((subtopic, index) => {
+    const subtopicAllocatedHeight = subtopicBaseHeights[index] + subtopicExtraHeightPerTopic;
     placeTreeTableTopic(
-      child,
+      subtopic,
       columnIndex + 1,
-      childTop,
-      childAllocatedHeight,
+      subtopicTop,
+      subtopicAllocatedHeight,
       columnLefts,
       columnWidths,
       collapsedIds,
       { fillLeafRemainderColumns }
     );
-    childTop += childAllocatedHeight;
+    subtopicTop += subtopicAllocatedHeight;
   });
 }
 
@@ -1486,20 +1514,20 @@ export function recenterTopicText(box) {
  * 作用：
  * 根据折叠状态返回当前主题实际可见的子主题列表。
  */
-export function visibleChildren(topic, collapsedIds) {
+export function visibleSubtopics(topic, collapsedIds) {
   if (collapsedIds.has(topic.id)) return [];
-  return topic.children;
+  return topic.subtopics;
 }
 
 /*
  * 作用：
  * 收集当前可见主题和父子连线关系，供 SVG 渲染层使用。
  */
-export function collectVisible(topic, collapsedIds, topics, edges) {
+export function collectVisible(topic, collapsedIds, topics, connectors) {
   topics.push(topic);
-  for (const child of visibleChildren(topic, collapsedIds)) {
-    edges.push({ parent: topic, child });
-    collectVisible(child, collapsedIds, topics, edges);
+  for (const subtopic of visibleSubtopics(topic, collapsedIds)) {
+    connectors.push({ parentTopic: topic, subtopic });
+    collectVisible(subtopic, collapsedIds, topics, connectors);
   }
 }
 

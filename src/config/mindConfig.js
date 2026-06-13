@@ -71,8 +71,8 @@ export const DEFAULT_MIND_CONFIG = Object.freeze({
   layout: Object.freeze({
     defaultDirection: 'right',
   }),
-  edge: Object.freeze({
-    type: 'curve',
+  connector: Object.freeze({
+    style: 'curve',
   }),
   font: Object.freeze({
     family: DEFAULT_FONT_FAMILY,
@@ -141,11 +141,8 @@ export function normalizeMindConfig(rawConfig) {
   const raw = isPlainObject(rawConfig) ? rawConfig : {};
   const font = isPlainObject(raw.font) ? raw.font : {};
   const layout = isPlainObject(raw.layout) ? raw.layout : {};
-  const edge = isPlainObject(raw.edge) ? raw.edge : {};
-  // 新术语统一使用 topic；这里仅把旧文档里的 node 当作迁移输入读取。
-  // 规范化后的配置和后续保存都会写回 topic，避免新旧命名长期并存。
-  const legacyTopic = isPlainObject(raw.node) ? raw.node : {};
-  const topic = isPlainObject(raw.topic) ? raw.topic : legacyTopic;
+  const connector = isPlainObject(raw.connector) ? raw.connector : {};
+  const topic = isPlainObject(raw.topic) ? raw.topic : {};
   const canvas = isPlainObject(raw.canvas) ? raw.canvas : {};
   const toolbar = isPlainObject(raw.toolbar) ? raw.toolbar : {};
   const interaction = isPlainObject(raw.interaction) ? raw.interaction : {};
@@ -153,8 +150,6 @@ export function normalizeMindConfig(rawConfig) {
   const source = isPlainObject(raw.source) ? raw.source : {};
 
   return {
-    ...raw,
-    node: undefined,
     canvas: {
       ...canvas,
       height: normalizeOptionalNumber(canvas.height, CANVAS_MIN_HEIGHT, CANVAS_MAX_HEIGHT),
@@ -181,9 +176,9 @@ export function normalizeMindConfig(rawConfig) {
       defaultDirection:
         normalizeDirection(layout.defaultDirection) || DEFAULT_MIND_CONFIG.layout.defaultDirection,
     },
-    edge: {
-      ...edge,
-      type: normalizeEdgeType(edge.type) || DEFAULT_MIND_CONFIG.edge.type,
+    connector: {
+      ...connector,
+      style: normalizeConnectorStyle(connector.style) || DEFAULT_MIND_CONFIG.connector.style,
     },
     font: normalizeFontConfig(font),
     topic: {
@@ -427,15 +422,15 @@ export function stringifySimpleYaml(value, depth = 0, path = []) {
   const indent = '  '.repeat(depth);
   const lines = [];
 
-  for (const [key, child] of orderedConfigEntries(value, path)) {
-    if (child === undefined || child === null || child === '') continue;
+  for (const [key, entryValue] of orderedConfigEntries(value, path)) {
+    if (entryValue === undefined || entryValue === null || entryValue === '') continue;
 
-    if (isPlainObject(child)) {
-      if (!Object.keys(child).length) continue;
+    if (isPlainObject(entryValue)) {
+      if (!Object.keys(entryValue).length) continue;
       lines.push(`${indent}${key}:`);
-      lines.push(stringifySimpleYaml(child, depth + 1, [...path, key]));
+      lines.push(stringifySimpleYaml(entryValue, depth + 1, [...path, key]));
     } else {
-      lines.push(`${indent}${key}: ${stringifyYamlScalar(child)}`);
+      lines.push(`${indent}${key}: ${stringifyYamlScalar(entryValue)}`);
     }
   }
 
@@ -480,12 +475,12 @@ function configKeyOrder(path) {
       'interaction',
       'theme',
       'layout',
-      'edge',
+      'connector',
       'topic',
       'font',
     ];
   }
-  if (keyPath === 'edge') return ['type'];
+  if (keyPath === 'connector') return ['style'];
   if (keyPath === 'interaction') return ['wheelZoom'];
   if (keyPath === 'font') return ['family', 'size', 'weight', 'lineHeight', 'levels'];
   if (/^font\.levels\.[^.]+$/.test(keyPath)) {
@@ -613,9 +608,9 @@ function normalizeDirection(value) {
 
 /*
  * 作用：
- * 规范化连线类型。
+ * 规范化连线线型。
  */
-function normalizeEdgeType(value) {
+function normalizeConnectorStyle(value) {
   const text = normalizeText(value).toLowerCase();
   if (text === 'curve' || text === 'straight' || text === 'elbow') return text;
   return '';
@@ -627,8 +622,6 @@ function normalizeEdgeType(value) {
  */
 function normalizeViewMode(value) {
   const text = normalizeText(value).toLowerCase();
-  // graph 是旧版视图名，只在读取阶段映射为 map；新配置不再写 graph。
-  if (text === 'graph') return 'map';
   if (text === 'map' || text === 'source') return text;
   return '';
 }
