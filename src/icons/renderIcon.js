@@ -1,6 +1,6 @@
 /*
  * 文件作用：
- * 这里负责把节点属性里的 icon 名称绘制成 SVG 图标。
+ * 这里负责把主题属性里的 icon 名称绘制成 SVG 图标。
  *
  * 执行逻辑：
  * 1. normalizeIcon 把用户输入规范化成小写名称。
@@ -8,7 +8,7 @@
  * 3. 如果没有匹配的内置图标，就绘制一个两字母 fallback 圆形标记，避免界面空白。
  *
  * 调用链位置：
- * layoutTree.measureNode() 读取图标影响节点宽度；YonxaoMindmapRenderer.renderNode() 真正绘制图标。
+ * layoutTree.measureTopic() 读取图标影响主题宽度；YonxaoMindmapRenderer.renderTopic() 真正绘制图标。
  */
 
 import { ICON_SIZE } from '../constants.js';
@@ -21,7 +21,7 @@ import { ICON_PATHS } from './iconPaths.js';
  * 规范化用户在 [icon=...] 中输入的图标名。
  *
  * 调用链：
- * layoutTree.measureNode() -> normalizeIcon()，用于决定节点是否预留图标宽度。
+ * layoutTree.measureTopic() -> normalizeIcon()，用于决定主题是否预留图标宽度。
  */
 export function normalizeIcon(icon) {
   const value = String(icon || '')
@@ -32,23 +32,23 @@ export function normalizeIcon(icon) {
 
 /*
  * 作用：
- * 根据图标名创建 SVG 图标节点。
+ * 根据图标名创建 SVG 图标主题。
  *
  * 调用链：
- * YonxaoMindmapRenderer.renderNode() -> renderIcon() -> ICON_PATHS/svg()。
+ * YonxaoMindmapRenderer.renderTopic() -> renderIcon() -> ICON_PATHS/svg()。
  *
  * 实现逻辑：
  * 内置图标使用 path；未知图标用两字符徽标兜底，避免用户输入不被看见。
  */
 export function renderIcon(iconName, x, y, color) {
   const group = svg('g', {
-    class: 'yonxao-mindmap-node-icon',
+    class: 'yonxao-mindmap-topic-icon',
     transform: `translate(${x} ${y})`,
   });
 
   const paths = ICON_PATHS[iconName];
   if (paths) {
-    // 内置图标按 24x24 设计，再缩放到节点中的 ICON_SIZE。
+    // 内置图标按 24x24 设计，再缩放到主题中的 ICON_SIZE。
     const iconGroup = svg('g', {
       transform: `scale(${ICON_SIZE / 24})`,
       stroke: color || 'currentColor',

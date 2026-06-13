@@ -31,10 +31,10 @@
 
 /*
  * 作用：
- * 插件内部主画布容器，包住 SVG、源码视图、节点编辑面板和拖拽手柄。
+ * 插件内部主画布容器，包住 SVG、源码模式、主题编辑面板和拖拽手柄。
  *
  * 调用链：
- * Renderer.createSvg()/createSourceView()/createNodeEditor() 都会把元素挂到这里。
+ * Renderer.createSvg()/createSourceView()/createTopicEditor() 都会把元素挂到这里。
  */
 .yonxao-mindmap-container {
   position: relative;

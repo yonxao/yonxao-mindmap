@@ -13,20 +13,25 @@
  *     1:
  *       size: 16
  * ---
- * # 中心节点
+ * # 中心主题
  * ```
  *
  * 设计思路：
- * - “配置区”只保存全局默认值，例如画布高度、工具栏位置、字体和节点默认样式。
- * - “正文区”只保存 Markdown 标题节点，例如 #、##、###。
- * - 标题后的节点属性 [color=...]、[fontSize=...] 仍然保留，用来覆盖全局配置。
+ * - “配置区”只保存全局默认值，例如画布高度、工具栏位置、字体和主题默认样式。
+ * - “正文区”只保存 主题级别标记主题，例如 #、##、###。
+ * - 标题后的主题属性 [color=...]、[fontSize=...] 仍然保留，用来覆盖全局配置。
  *
  * 调用链位置：
  * Renderer/Parser -> splitMindSourceConfig() -> normalizeMindConfig()。
  * 保存时则走 mergeMindConfig()/serializeMindSource()，把配置区和正文重新拼回代码块。
  */
 
-import { CANVAS_MAX_HEIGHT, CANVAS_MIN_HEIGHT, LINE_HEIGHT, NODE_MAX_WIDTH } from '../constants.js';
+import {
+  CANVAS_MAX_HEIGHT,
+  CANVAS_MIN_HEIGHT,
+  LINE_HEIGHT,
+  TOPIC_MAX_WIDTH,
+} from '../constants.js';
 import { DEFAULT_THEME_NAME, normalizeMindThemeName } from '../theme/mindThemes.js';
 import { clamp } from '../utils/math.js';
 
@@ -60,7 +65,7 @@ export const DEFAULT_MIND_CONFIG = Object.freeze({
     wheelZoom: false,
   }),
   view: Object.freeze({
-    mode: 'graph',
+    mode: 'map',
   }),
   theme: DEFAULT_THEME_NAME,
   layout: Object.freeze({
@@ -76,9 +81,9 @@ export const DEFAULT_MIND_CONFIG = Object.freeze({
     lineHeight: LINE_HEIGHT,
     levels: Object.freeze({}),
   }),
-  node: Object.freeze({
+  topic: Object.freeze({
     defaultColor: '',
-    maxWidth: NODE_MAX_WIDTH,
+    maxWidth: TOPIC_MAX_WIDTH,
   }),
   source: Object.freeze({
     enableTabIndent: true,
@@ -88,11 +93,11 @@ export const DEFAULT_MIND_CONFIG = Object.freeze({
 
 /*
  * 作用：
- * 将 yxmm 源码拆成“原始配置对象”和“Markdown 标题正文”。
+ * 将 yxmm 源码拆成“原始配置对象”和“主题级别标记正文”。
  *
  * 实现逻辑：
  * 只有代码块第一段非空内容就是 --- 时，才认为存在配置区。
- * 这样普通节点标题里出现 --- 不会被误识别为配置。
+ * 这样普通主题标题里出现 --- 不会被误识别为配置。
  */
 export function splitMindSourceConfig(source) {
   const text = String(source || '');
@@ -137,7 +142,10 @@ export function normalizeMindConfig(rawConfig) {
   const font = isPlainObject(raw.font) ? raw.font : {};
   const layout = isPlainObject(raw.layout) ? raw.layout : {};
   const edge = isPlainObject(raw.edge) ? raw.edge : {};
-  const node = isPlainObject(raw.node) ? raw.node : {};
+  // 新术语统一使用 topic；这里仅把旧文档里的 node 当作迁移输入读取。
+  // 规范化后的配置和后续保存都会写回 topic，避免新旧命名长期并存。
+  const legacyTopic = isPlainObject(raw.node) ? raw.node : {};
+  const topic = isPlainObject(raw.topic) ? raw.topic : legacyTopic;
   const canvas = isPlainObject(raw.canvas) ? raw.canvas : {};
   const toolbar = isPlainObject(raw.toolbar) ? raw.toolbar : {};
   const interaction = isPlainObject(raw.interaction) ? raw.interaction : {};
@@ -146,6 +154,7 @@ export function normalizeMindConfig(rawConfig) {
 
   return {
     ...raw,
+    node: undefined,
     canvas: {
       ...canvas,
       height: normalizeOptionalNumber(canvas.height, CANVAS_MIN_HEIGHT, CANVAS_MAX_HEIGHT),
@@ -177,11 +186,11 @@ export function normalizeMindConfig(rawConfig) {
       type: normalizeEdgeType(edge.type) || DEFAULT_MIND_CONFIG.edge.type,
     },
     font: normalizeFontConfig(font),
-    node: {
-      ...node,
-      defaultColor: normalizeText(node.defaultColor),
+    topic: {
+      ...topic,
+      defaultColor: normalizeText(topic.defaultColor),
       maxWidth:
-        normalizeOptionalNumber(node.maxWidth, 120, 800) || DEFAULT_MIND_CONFIG.node.maxWidth,
+        normalizeOptionalNumber(topic.maxWidth, 120, 800) || DEFAULT_MIND_CONFIG.topic.maxWidth,
     },
     source: {
       ...source,
@@ -226,7 +235,7 @@ export function normalizeFontConfig(rawFont) {
 
 /*
  * 作用：
- * 规范化某一层级或某个节点覆盖用的字体片段。
+ * 规范化某一层级或某个主题覆盖用的字体片段。
  */
 export function normalizePartialFont(rawFont) {
   const font = isPlainObject(rawFont) ? rawFont : {};
@@ -245,16 +254,16 @@ export function normalizePartialFont(rawFont) {
 
 /*
  * 作用：
- * 计算某个节点最终使用的字体。
+ * 计算某个主题最终使用的字体。
  *
  * 优先级：
- * 节点属性 > font.levels[层级] > font 全局配置 > 默认值。
+ * 主题属性 > font.levels[层级] > font 全局配置 > 默认值。
  */
-export function resolveNodeFont(node, config) {
+export function resolveTopicFont(topic, config) {
   const safeConfig = normalizeMindConfig(config);
-  const levelKey = String(node.level || 1);
+  const levelKey = String(topic.level || 1);
   const levelFont = safeConfig.font.levels[levelKey] || {};
-  const attrs = node.attrs || {};
+  const attrs = topic.attrs || {};
 
   return {
     family:
@@ -472,7 +481,7 @@ function configKeyOrder(path) {
       'theme',
       'layout',
       'edge',
-      'node',
+      'topic',
       'font',
     ];
   }
@@ -614,10 +623,12 @@ function normalizeEdgeType(value) {
 
 /*
  * 作用：
- * 规范化视图模式，只允许 graph/source。
+ * 规范化视图模式，只允许 map/source。
  */
 function normalizeViewMode(value) {
   const text = normalizeText(value).toLowerCase();
-  if (text === 'graph' || text === 'source') return text;
+  // graph 是旧版视图名，只在读取阶段映射为 map；新配置不再写 graph。
+  if (text === 'graph') return 'map';
+  if (text === 'map' || text === 'source') return text;
   return '';
 }

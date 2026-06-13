@@ -12,7 +12,7 @@
  */
 /*
  * 作用：
- * 支持现代选择器的 Obsidian 环境中，解除包含脑图的 cm-embed-block 裁剪。
+ * 支持现代选择器的 Obsidian 环境中，解除包含导图的 cm-embed-block 裁剪。
  */
 .markdown-source-view.mod-cm6 .cm-embed-block:has(.yonxao-mindmap-host) {
   overflow: visible;
@@ -38,7 +38,7 @@
 .markdown-source-view.mod-cm6 .yonxao-mindmap-host .yonxao-mindmap-toolbar,
 .markdown-source-view.mod-cm6 .yonxao-mindmap-host .yonxao-mindmap-svg,
 .markdown-source-view.mod-cm6 .yonxao-mindmap-host .yonxao-mindmap-source-input,
-.markdown-source-view.mod-cm6 .yonxao-mindmap-host .yonxao-mindmap-node-editor,
+.markdown-source-view.mod-cm6 .yonxao-mindmap-host .yonxao-mindmap-topic-editor,
 .markdown-source-view.mod-cm6 .yonxao-mindmap-host button,
 .markdown-source-view.mod-cm6 .yonxao-mindmap-host input,
 .markdown-source-view.mod-cm6 .yonxao-mindmap-host select,

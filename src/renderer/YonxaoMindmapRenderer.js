@@ -3,13 +3,13 @@
  * 这是插件的核心渲染器，负责把 yxmm 源码变成可交互的思维导图界面。
  *
  * 主要功能：
- * - 创建工具栏、SVG 画布、源码编辑区、节点编辑面板和高度拖拽手柄。
- * - 调用 parser 把 Markdown 标题源码解析成树。
- * - 调用 layout 计算节点坐标，再把节点和连线绘制成 SVG。
- * - 处理源码保存、脑图节点编辑、折叠/展开、缩放、拖动画布和高度调整。
+ * - 创建工具栏、SVG 画布、源码编辑区、主题编辑面板和高度拖拽手柄。
+ * - 调用 parser 把 主题级别标记源码解析成树。
+ * - 调用 layout 计算主题坐标，再把主题和连线绘制成 SVG。
+ * - 处理源码保存、导图主题编辑、折叠/展开、缩放、拖动画布和高度调整。
  *
  * 调用链位置：
- * YonxaoMindmapPlugin -> new YonxaoMindmapRenderer(...) -> mount() -> renderGraph()
+ * YonxaoMindmapPlugin -> new YonxaoMindmapRenderer(...) -> mount() -> renderMap()
  */
 
 import { Component, Menu, Notice, setIcon } from 'obsidian';
@@ -20,8 +20,8 @@ import {
   VIEWBOX_MARGIN_Y,
   CANVAS_MIN_HEIGHT,
   CANVAS_MAX_HEIGHT,
-  NODE_MIN_HEIGHT,
-  NODE_PADDING_X,
+  TOPIC_MIN_HEIGHT,
+  TOPIC_PADDING_X,
   LEVEL_GAP,
   ICON_SIZE,
 } from '../constants.js';
@@ -36,20 +36,20 @@ import { renderIcon } from '../icons/renderIcon.js';
 import { layoutTree, normalizeLayout } from '../layout/layoutTree.js';
 import { replaceCodeBlockSource } from '../markdown/codeBlock.js';
 import {
-  containsNodeId,
-  countDescendants,
-  insertSiblingNode,
-  moveNodeInTree,
-  removeNodeById,
+  containsTopicId,
+  countTopicDescendants,
+  insertSiblingTopic,
+  moveTopicInTree,
+  removeTopicById,
   setOptionalAttr,
-} from '../model/treeActions.js';
+} from '../model/topicTreeActions.js';
 import { markYonxaoMindmapEmbedWrapper } from '../obsidian/embed.js';
-import { assignIds, createMindNode, parseMindDocument } from '../parser/parseMind.js';
+import { assignIds, createMindTopic, parseMindDocument } from '../parser/parseMind.js';
 import { serializeMindDocument } from '../parser/serializeMind.js';
-import { applyHeadingLevelKey } from '../source/headingKeys.js';
-import { themeEdgeOpacity, themeNodeFillAlpha } from '../theme/mindThemes.js';
+import { applyTopicLevelKey } from '../source/topicLevelKeys.js';
+import { themeEdgeOpacity, themeTopicFillAlpha } from '../theme/mindThemes.js';
 import { ConfigModal } from '../ui/ConfigModal.js';
-import { edgeColor, nodeColor, transparentColor } from '../utils/color.js';
+import { edgeColor, topicColor, transparentColor } from '../utils/color.js';
 import { createLabeledField } from '../utils/dom.js';
 import { clamp } from '../utils/math.js';
 import { svg } from '../utils/svg.js';
@@ -78,33 +78,33 @@ export class YonxaoMindmapRenderer extends Component {
     this.containerEl = null;
     this.toolbarEl = null;
     this.svgEl = null;
-    this.graphEl = null;
+    this.mapEl = null;
     this.sourceEl = null;
     this.resizeHandleEl = null;
     this.sourceInputEl = null;
     this.sourceStatusEl = null;
-    this.nodeEditorEl = null;
-    this.nodeEditorFields = null;
+    this.topicEditorEl = null;
+    this.topicEditorFields = null;
     this.inlineTextEditorEl = null;
-    this.inlineEditingNodeId = null;
+    this.inlineEditingTopicId = null;
     this.inlineTextEditorSaving = false;
-    this.nodeDropIndicatorEl = null;
-    this.nodeById = new Map();
+    this.topicDropIndicatorEl = null;
+    this.topicById = new Map();
     this.collapsedIds = new Set();
     this.viewBox = null;
     this.dragState = null;
-    this.nodeDragState = null;
+    this.topicDragState = null;
     this.resizeState = null;
     this.toolbarDragState = null;
     this.manualCanvasHeight = false;
     this.manualSourceHeight = false;
     this.isSourceMode = false;
-    this.didInitialGraphRender = false;
+    this.didInitialMapRender = false;
     this.sourceDirty = false;
-    this.editingNodeId = null;
+    this.editingTopicId = null;
     this.toggleViewButton = null;
-    this.graphActionButtons = [];
-    this.suppressNextNodeClick = false;
+    this.mapActionButtons = [];
+    this.suppressNextTopicClick = false;
     this.pendingFitFrame = null;
     this.pendingToolbarFrame = null;
     this.pendingSourceHeightFrame = null;
@@ -120,7 +120,7 @@ export class YonxaoMindmapRenderer extends Component {
    * Plugin code block processor -> renderer.mount()。
    *
    * 实现逻辑：
-   * 先解析 source；失败时创建一个兜底根节点并切到源码模式显示错误。
+   * 先解析 source；失败时创建一个兜底根主题并切到源码模式显示错误。
    */
   mount() {
     this.hostEl.textContent = '';
@@ -137,7 +137,7 @@ export class YonxaoMindmapRenderer extends Component {
 
     if (!this.root) {
       parseError = parseError || '源码为空，请在源码模式中编辑后保存。';
-      this.root = createMindNode('Mind', {}, []);
+      this.root = createMindTopic('Mind', {}, []);
       assignIds(this.root, '0');
     }
 
@@ -148,11 +148,11 @@ export class YonxaoMindmapRenderer extends Component {
     this.createToolbar();
     this.createSvg();
     this.createSourceView();
-    this.createNodeEditor();
+    this.createTopicEditor();
     this.createResizeHandle();
     this.applyRuntimeConfigToView();
     this.installEventBoundary();
-    this.renderGraph(true);
+    this.renderMap(true);
     if (parseError) {
       this.showSourceMode(parseError);
     }
@@ -182,7 +182,7 @@ export class YonxaoMindmapRenderer extends Component {
 
   /*
    * 作用：
-   * 判断当前渲染器是否允许修改节点正文和树结构。
+   * 判断当前渲染器是否允许修改主题正文和树结构。
    *
    * 实现逻辑：
    * editorContext 是最直接的编辑器上下文；但当前插件主要走 Obsidian 官方
@@ -239,11 +239,11 @@ export class YonxaoMindmapRenderer extends Component {
 
   /*
    * 作用：
-   * 根据短时会话状态恢复源码/脑图视图。
+   * 根据短时会话状态恢复源码/导图视图。
    *
    * 为什么需要它：
    * 工具栏位置保存会写回 Markdown，Obsidian 可能因此重建代码块 DOM。
-   * 如果重建后的实例不知道之前处于源码模式，就会回到默认脑图模式。
+   * 如果重建后的实例不知道之前处于源码模式，就会回到默认导图模式。
    */
   applyConfiguredViewMode() {
     const shouldUseSourceMode = this.readSessionViewMode() === 'source';
@@ -254,12 +254,12 @@ export class YonxaoMindmapRenderer extends Component {
     }
     this.hostEl.classList.toggle('is-source-mode', this.isSourceMode);
 
-    for (const button of this.graphActionButtons) {
+    for (const button of this.mapActionButtons) {
       button.disabled = this.isSourceMode;
     }
 
     if (this.isSourceMode) {
-      this.closeNodeEditor();
+      this.closeTopicEditor();
       this.syncSourceInput();
       this.scheduleSourceModeHeight();
     }
@@ -272,10 +272,10 @@ export class YonxaoMindmapRenderer extends Component {
    * 把当前视图模式写入 rawConfig，但不立刻保存文件。
    *
    * 调用场景：
-   * 用户切换源码/脑图后，后续如果拖动工具栏或调整高度触发配置保存，就能顺手保留当前模式。
+   * 用户切换源码/导图后，后续如果拖动工具栏或调整高度触发配置保存，就能顺手保留当前模式。
    */
   rememberViewModeConfig() {
-    this.writeSessionViewMode(this.isSourceMode ? 'source' : 'graph');
+    this.writeSessionViewMode(this.isSourceMode ? 'source' : 'map');
   }
 
   /*
@@ -291,7 +291,7 @@ export class YonxaoMindmapRenderer extends Component {
     const record = YonxaoMindmapRenderer.viewModeMemory.get(key);
     if (!record || record.expiresAt < Date.now()) {
       YonxaoMindmapRenderer.viewModeMemory.delete(key);
-      return 'graph';
+      return 'map';
     }
 
     return record.mode;
@@ -350,19 +350,19 @@ export class YonxaoMindmapRenderer extends Component {
       this.openConfigModal();
     });
 
-    this.graphActionButtons.push(
+    this.mapActionButtons.push(
       this.createToolbarButton(toolbar, '适配视图', 'maximize', () => this.fitView())
     );
-    this.graphActionButtons.push(
+    this.mapActionButtons.push(
       this.createToolbarButton(toolbar, '放大', 'zoom-in', () => this.zoomAtCenter(0.82))
     );
-    this.graphActionButtons.push(
+    this.mapActionButtons.push(
       this.createToolbarButton(toolbar, '缩小', 'zoom-out', () => this.zoomAtCenter(1.18))
     );
-    this.graphActionButtons.push(
+    this.mapActionButtons.push(
       this.createToolbarButton(toolbar, '重置', 'refresh-cw', () => {
         this.collapsedIds.clear();
-        this.renderGraph(true);
+        this.renderMap(true);
       })
     );
 
@@ -596,7 +596,7 @@ export class YonxaoMindmapRenderer extends Component {
    *
    * 实现逻辑：
    * - 源码模式：先解析 textarea，保留用户正在编辑的标题正文，只替换配置区。
-   * - 脑图模式：以内存树为准重新序列化正文，再写入新的配置区。
+   * - 导图模式：以内存树为准重新序列化正文，再写入新的配置区。
    * - 写回成功后刷新运行时配置和当前视图。
    */
   async applyConfigFromModal(nextConfig) {
@@ -642,7 +642,7 @@ export class YonxaoMindmapRenderer extends Component {
     if (this.isSourceMode) {
       this.scheduleSourceModeHeight();
     } else {
-      this.renderGraph(true);
+      this.renderMap(true);
     }
 
     new Notice('yonxao-mindmap: 配置已保存。');
@@ -662,9 +662,9 @@ export class YonxaoMindmapRenderer extends Component {
      * 如果插件内部的 click / keydown / input 等事件继续向外冒泡，外层编辑器可能会尝试接管焦点、
      * 弹出“编辑这个区块”的内置按钮，或者把 textarea 的按键当成 Markdown 编辑器按键处理。
      *
-     * 这里做一个“事件边界”：事件仍然可以在插件内部正常流动，所以工具栏、SVG 节点、源码编辑框都能工作；
+     * 这里做一个“事件边界”：事件仍然可以在插件内部正常流动，所以工具栏、SVG 主题、源码编辑框都能工作；
      * 但事件到达 yonxao-mindmap 根元素后就停止，不再交给 CodeMirror/Obsidian 的嵌入块控制层。
-     * 阅读视图里启用这个边界也没有副作用，因为它只作用于当前脑图容器内部。
+     * 阅读视图里启用这个边界也没有副作用，因为它只作用于当前导图容器内部。
      */
     for (const eventName of [
       'mousedown',
@@ -687,14 +687,14 @@ export class YonxaoMindmapRenderer extends Component {
 
   /*
    * 作用：
-   * 在源码视图和脑图视图之间切换。
+   * 在源码模式和导图视图之间切换。
    *
    * 实现逻辑：
-   * 如果源码视图有未保存内容，切回脑图前先尝试保存，保证两种视图状态一致。
+   * 如果源码模式有未保存内容，切回导图前先尝试保存，保证两种视图状态一致。
    */
   async toggleSourceMode() {
-    // 如果用户在源码视图已经改过内容，切回脑图前先尝试保存。
-    // 这样可以保证“脑图视图看到的内容”和“Markdown 文件里的源码”是一致的。
+    // 如果用户在源码模式已经改过内容，切回导图前先尝试保存。
+    // 这样可以保证“导图视图看到的内容”和“Markdown 文件里的源码”是一致的。
     if (this.isSourceMode && this.sourceDirty) {
       const saved = await this.saveFromSourceView();
       if (!saved) return;
@@ -705,18 +705,18 @@ export class YonxaoMindmapRenderer extends Component {
     this.hostEl.classList.toggle('is-source-mode', this.isSourceMode);
     this.rememberViewModeConfig();
 
-    // 源码视图只是用来核对 yxmm 文本，缩放/适配这些 SVG 操作在这里禁用掉。
-    for (const button of this.graphActionButtons) {
+    // 源码模式只是用来核对 yxmm 文本，缩放/适配这些 SVG 操作在这里禁用掉。
+    for (const button of this.mapActionButtons) {
       button.disabled = this.isSourceMode;
     }
 
     if (this.isSourceMode) {
-      this.closeNodeEditor();
+      this.closeTopicEditor();
       this.syncSourceInput();
       this.scheduleSourceModeHeight();
     } else {
       this.applyConfiguredCanvasHeight();
-      this.renderGraph(true, { growManualHeight: true });
+      this.renderMap(true, { growManualHeight: true });
     }
 
     this.updateToggleViewButton();
@@ -724,7 +724,7 @@ export class YonxaoMindmapRenderer extends Component {
 
   /*
    * 作用：
-   * 强制显示源码视图，并在状态栏展示解析错误或提示。
+   * 强制显示源码模式，并在状态栏展示解析错误或提示。
    *
    * 调用链：
    * mount() 解析失败或源码为空时调用。
@@ -734,11 +734,11 @@ export class YonxaoMindmapRenderer extends Component {
     this.containerEl.classList.add('is-source-mode');
     this.hostEl.classList.add('is-source-mode');
 
-    for (const button of this.graphActionButtons) {
+    for (const button of this.mapActionButtons) {
       button.disabled = true;
     }
 
-    this.closeNodeEditor();
+    this.closeTopicEditor();
     this.syncSourceInput();
     this.updateSourceStatus(statusMessage);
     this.rememberViewModeConfig();
@@ -748,12 +748,12 @@ export class YonxaoMindmapRenderer extends Component {
 
   /*
    * 作用：
-   * 根据当前模式更新“源码/脑图”切换按钮的图标和可访问属性。
+   * 根据当前模式更新“源码/导图”切换按钮的图标和可访问属性。
    */
   updateToggleViewButton() {
     if (!this.toggleViewButton) return;
 
-    const label = this.isSourceMode ? '显示思维导图' : '显示源码';
+    const label = this.isSourceMode ? '显示导图' : '显示源码';
     const icon = this.isSourceMode ? 'git-branch' : 'code-2';
     this.toggleViewButton.setAttribute('aria-label', label);
     this.toggleViewButton.setAttribute('aria-pressed', String(this.isSourceMode));
@@ -771,7 +771,7 @@ export class YonxaoMindmapRenderer extends Component {
    * 创建 SVG 画布并注册画布交互事件。
    *
    * 调用链：
-   * mount() -> createSvg()；后续 renderGraph() 会向 graphEl 写入节点和连线。
+   * mount() -> createSvg()；后续 renderMap() 会向 mapEl 写入主题和连线。
    */
   createSvg() {
     this.svgEl = svg('svg', {
@@ -779,13 +779,13 @@ export class YonxaoMindmapRenderer extends Component {
       role: 'img',
       'aria-label': 'Mind map',
     });
-    this.graphEl = svg('g', { class: 'yonxao-mindmap-graph' });
-    this.svgEl.appendChild(this.graphEl);
+    this.mapEl = svg('g', { class: 'yonxao-mindmap-map' });
+    this.svgEl.appendChild(this.mapEl);
     this.containerEl.appendChild(this.svgEl);
 
-    this.registerDomEvent(this.svgEl, 'click', (event) => this.handleNodeClick(event));
-    this.registerDomEvent(this.svgEl, 'dblclick', (event) => this.handleNodeDoubleClick(event));
-    this.registerDomEvent(this.svgEl, 'contextmenu', (event) => this.handleNodeContextMenu(event));
+    this.registerDomEvent(this.svgEl, 'click', (event) => this.handleTopicClick(event));
+    this.registerDomEvent(this.svgEl, 'dblclick', (event) => this.handleTopicDoubleClick(event));
+    this.registerDomEvent(this.svgEl, 'contextmenu', (event) => this.handleTopicContextMenu(event));
     this.registerDomEvent(this.svgEl, 'wheel', (event) => this.handleWheel(event));
     this.registerDomEvent(this.svgEl, 'pointerdown', (event) => this.handlePointerDown(event));
     this.registerDomEvent(this.svgEl, 'pointermove', (event) => this.handlePointerMove(event));
@@ -801,7 +801,7 @@ export class YonxaoMindmapRenderer extends Component {
    * textarea 负责真实编辑；保存状态栏提示源码是否已同步回 Markdown。
    */
   createSourceView() {
-    // 源码视图从只读 <pre><code> 改成可编辑的 textarea。
+    // 源码模式从只读 <pre><code> 改成可编辑的 textarea。
     // textarea 的优点是实现简单、浏览器兼容性好，并且不会把用户输入当作 HTML 解析。
     this.sourceEl = document.createElement('div');
     this.sourceEl.className = 'yonxao-mindmap-source';
@@ -819,7 +819,7 @@ export class YonxaoMindmapRenderer extends Component {
 
     this.sourceStatusEl = document.createElement('div');
     this.sourceStatusEl.className = 'yonxao-mindmap-source-status';
-    this.sourceStatusEl.textContent = '源码可编辑，切回思维导图或按 Ctrl/Cmd+S 写回 Markdown。';
+    this.sourceStatusEl.textContent = '源码可编辑，切回导图或按 Ctrl/Cmd+S 写回 Markdown。';
 
     editorEl.appendChild(this.sourceInputEl);
     this.sourceEl.appendChild(editorEl);
@@ -836,7 +836,7 @@ export class YonxaoMindmapRenderer extends Component {
       if (event.key === 'Tab') {
         if (!this.config.source.enableTabIndent) return;
         event.preventDefault();
-        applyHeadingLevelKey(this.sourceInputEl, event.shiftKey);
+        applyTopicLevelKey(this.sourceInputEl, event.shiftKey);
         this.sourceDirty = this.sourceInputEl.value !== this.source;
         this.updateSourceStatus();
         this.scheduleSourceModeHeightIfLineCountChanged();
@@ -1025,13 +1025,13 @@ export class YonxaoMindmapRenderer extends Component {
     }
 
     this.sourceStatusEl.textContent = this.sourceDirty
-      ? '源码已修改，切回思维导图或按 Ctrl/Cmd+S 写回 Markdown。'
+      ? '源码已修改，切回导图或按 Ctrl/Cmd+S 写回 Markdown。'
       : '源码已同步到当前 Markdown 代码块。';
   }
 
   /*
    * 作用：
-   * 延迟一帧计算源码视图高度。
+   * 延迟一帧计算源码模式高度。
    *
    * 为什么要延迟：
    * 切换源码模式时，浏览器需要先应用 is-source-mode 样式，源码区的 padding 和状态栏高度才是准确的。
@@ -1117,7 +1117,7 @@ export class YonxaoMindmapRenderer extends Component {
 
   /*
    * 作用：
-   * 从源码视图保存用户编辑，并重新解析、重绘脑图。
+   * 从源码模式保存用户编辑，并重新解析、重绘导图。
    *
    * 调用链：
    * Ctrl+S/toggleSourceMode() -> saveFromSourceView()。
@@ -1155,47 +1155,47 @@ export class YonxaoMindmapRenderer extends Component {
     this.collapsedIds.clear();
     this.sourceDirty = false;
     this.applyRuntimeConfigToView();
-    this.updateSourceStatus('源码已保存，并已重新渲染脑图。');
+    this.updateSourceStatus('源码已保存，并已重新渲染导图。');
     this.scheduleSourceModeHeight();
-    this.renderGraph(true);
+    this.renderMap(true);
     return true;
   }
 
   /*
    * 作用：
-   * 创建脑图节点编辑面板。
+   * 创建导图主题编辑面板。
    *
    * 实现逻辑：
-   * 面板编辑的是内存树节点；保存时统一序列化整棵树，避免局部拼字符串导致层级错误。
+   * 面板编辑的是内存树主题；保存时统一序列化整棵树，避免局部拼字符串导致层级错误。
    */
-  createNodeEditor() {
-    // 这个编辑面板属于“脑图视图编辑器”。
-    // 它不直接编辑 SVG 文本，而是编辑内存中的树节点；保存后再把整棵树序列化回 yxmm 源码。
-    this.nodeEditorEl = document.createElement('div');
-    this.nodeEditorEl.className = 'yonxao-mindmap-node-editor';
-    this.nodeEditorEl.hidden = true;
+  createTopicEditor() {
+    // 这个编辑面板属于“导图视图编辑器”。
+    // 它不直接编辑 SVG 文本，而是编辑内存中的树主题；保存后再把整棵树序列化回 yxmm 源码。
+    this.topicEditorEl = document.createElement('div');
+    this.topicEditorEl.className = 'yonxao-mindmap-topic-editor';
+    this.topicEditorEl.hidden = true;
 
     const titleEl = document.createElement('div');
-    titleEl.className = 'yonxao-mindmap-node-editor-title';
-    titleEl.textContent = '编辑节点';
+    titleEl.className = 'yonxao-mindmap-topic-editor-title';
+    titleEl.textContent = '编辑主题';
 
     const textInput = document.createElement('input');
     textInput.type = 'text';
-    textInput.className = 'yonxao-mindmap-node-editor-input';
-    textInput.placeholder = '节点文本';
+    textInput.className = 'yonxao-mindmap-topic-editor-input';
+    textInput.placeholder = '主题文本';
 
     const colorInput = document.createElement('input');
     colorInput.type = 'text';
-    colorInput.className = 'yonxao-mindmap-node-editor-input';
+    colorInput.className = 'yonxao-mindmap-topic-editor-input';
     colorInput.placeholder = '#3b82f6';
 
     const iconInput = document.createElement('input');
     iconInput.type = 'text';
-    iconInput.className = 'yonxao-mindmap-node-editor-input';
+    iconInput.className = 'yonxao-mindmap-topic-editor-input';
     iconInput.placeholder = 'book';
 
     const layoutSelect = document.createElement('select');
-    layoutSelect.className = 'yonxao-mindmap-node-editor-input';
+    layoutSelect.className = 'yonxao-mindmap-topic-editor-input';
     for (const [value, label] of [
       ['', '继承布局'],
       ['right', '右侧'],
@@ -1209,19 +1209,19 @@ export class YonxaoMindmapRenderer extends Component {
     }
 
     const actions = document.createElement('div');
-    actions.className = 'yonxao-mindmap-node-editor-actions';
+    actions.className = 'yonxao-mindmap-topic-editor-actions';
 
     const saveButton = this.createPanelButton('保存', async () => {
-      await this.saveNodeEditor();
+      await this.saveTopicEditor();
     });
-    const addChildButton = this.createPanelButton('新增子节点', async () => {
-      await this.addChildFromNodeEditor();
+    const addChildButton = this.createPanelButton('新增子主题', async () => {
+      await this.addChildFromTopicEditor();
     });
     const deleteButton = this.createPanelButton('删除', async () => {
-      await this.deleteNodeFromEditor();
+      await this.deleteTopicFromEditor();
     });
     const cancelButton = this.createPanelButton('取消', () => {
-      this.closeNodeEditor();
+      this.closeTopicEditor();
     });
 
     actions.appendChild(saveButton);
@@ -1229,15 +1229,15 @@ export class YonxaoMindmapRenderer extends Component {
     actions.appendChild(deleteButton);
     actions.appendChild(cancelButton);
 
-    this.nodeEditorEl.appendChild(titleEl);
-    this.nodeEditorEl.appendChild(createLabeledField('文本', textInput));
-    this.nodeEditorEl.appendChild(createLabeledField('颜色', colorInput));
-    this.nodeEditorEl.appendChild(createLabeledField('图标', iconInput));
-    this.nodeEditorEl.appendChild(createLabeledField('布局', layoutSelect));
-    this.nodeEditorEl.appendChild(actions);
-    this.containerEl.appendChild(this.nodeEditorEl);
+    this.topicEditorEl.appendChild(titleEl);
+    this.topicEditorEl.appendChild(createLabeledField('文本', textInput));
+    this.topicEditorEl.appendChild(createLabeledField('颜色', colorInput));
+    this.topicEditorEl.appendChild(createLabeledField('图标', iconInput));
+    this.topicEditorEl.appendChild(createLabeledField('布局', layoutSelect));
+    this.topicEditorEl.appendChild(actions);
+    this.containerEl.appendChild(this.topicEditorEl);
 
-    this.nodeEditorFields = {
+    this.topicEditorFields = {
       text: textInput,
       color: colorInput,
       icon: iconInput,
@@ -1248,7 +1248,7 @@ export class YonxaoMindmapRenderer extends Component {
     this.registerDomEvent(textInput, 'keydown', (event) => {
       if (event.key === 'Enter') {
         event.preventDefault();
-        Promise.resolve(this.saveNodeEditor()).catch((error) => {
+        Promise.resolve(this.saveTopicEditor()).catch((error) => {
           new Notice(`yonxao-mindmap: ${error.message || String(error)}`);
         });
       }
@@ -1257,12 +1257,12 @@ export class YonxaoMindmapRenderer extends Component {
 
   /*
    * 作用：
-   * 创建节点编辑面板中的普通按钮，并统一错误处理。
+   * 创建主题编辑面板中的普通按钮，并统一错误处理。
    */
   createPanelButton(label, onClick) {
     const button = document.createElement('button');
     button.type = 'button';
-    button.className = 'yonxao-mindmap-node-editor-button';
+    button.className = 'yonxao-mindmap-topic-editor-button';
     button.textContent = label;
     this.registerDomEvent(button, 'click', (event) => {
       event.preventDefault();
@@ -1276,73 +1276,73 @@ export class YonxaoMindmapRenderer extends Component {
 
   /*
    * 作用：
-   * 打开节点编辑面板，并把选中节点数据填入表单。
+   * 打开主题编辑面板，并把选中主题数据填入表单。
    */
-  openNodeEditor(node) {
+  openTopicEditor(topic) {
     if (!this.canEditMindMap()) return;
-    if (!node || node._virtual || !this.nodeEditorEl || !this.nodeEditorFields) {
+    if (!topic || topic._virtual || !this.topicEditorEl || !this.topicEditorFields) {
       return;
     }
 
     this.closeInlineTextEditor(false);
-    this.editingNodeId = node.id;
-    this.nodeEditorFields.text.value = node.text || '';
-    this.nodeEditorFields.color.value = node.attrs.color || '';
-    this.nodeEditorFields.icon.value = node.attrs.icon || '';
-    this.nodeEditorFields.layout.value = normalizeLayout(node.attrs.layout) || '';
-    this.nodeEditorFields.deleteButton.disabled = node === this.root;
-    this.nodeEditorEl.hidden = false;
-    this.nodeEditorFields.text.focus();
-    this.nodeEditorFields.text.select();
+    this.editingTopicId = topic.id;
+    this.topicEditorFields.text.value = topic.text || '';
+    this.topicEditorFields.color.value = topic.attrs.color || '';
+    this.topicEditorFields.icon.value = topic.attrs.icon || '';
+    this.topicEditorFields.layout.value = normalizeLayout(topic.attrs.layout) || '';
+    this.topicEditorFields.deleteButton.disabled = topic === this.root;
+    this.topicEditorEl.hidden = false;
+    this.topicEditorFields.text.focus();
+    this.topicEditorFields.text.select();
   }
 
   /*
    * 作用：
-   * 关闭节点编辑面板并清理当前编辑节点 id。
+   * 关闭主题编辑面板并清理当前编辑主题 id。
    */
-  closeNodeEditor() {
-    this.editingNodeId = null;
-    if (this.nodeEditorEl) {
-      this.nodeEditorEl.hidden = true;
+  closeTopicEditor() {
+    this.editingTopicId = null;
+    if (this.topicEditorEl) {
+      this.topicEditorEl.hidden = true;
     }
   }
 
   /*
    * 作用：
-   * 在 SVG 节点上方覆盖一个 HTML input，用于“双击直接改节点文字”。
+   * 在 SVG 主题上方覆盖一个 HTML input，用于“双击直接改主题文字”。
    *
    * 为什么这样实现：
-   * SVG 的 <text> 元素本身没有稳定好用的文本编辑能力；如果把节点改成
+   * SVG 的 <text> 元素本身没有稳定好用的文本编辑能力；如果把主题改成
    * contenteditable，还会遇到光标、中文输入法、选区和换行兼容性问题。
-   * 因此这里把真实输入交给浏览器原生 input，再用节点 rect 的屏幕坐标把它覆盖到节点上。
+   * 因此这里把真实输入交给浏览器原生 input，再用主题 rect 的屏幕坐标把它覆盖到主题上。
    *
    * 调用链：
-   * handleNodeDoubleClick() -> openInlineTextEditor() -> saveInlineTextEditor() ->
+   * handleTopicDoubleClick() -> openInlineTextEditor() -> saveInlineTextEditor() ->
    * saveTreeToSourceAndFile() -> serializeMindDocument()/saveSourceToMarkdownFile()。
    */
-  openInlineTextEditor(node) {
+  openInlineTextEditor(topic) {
     if (!this.canEditMindMap()) return;
-    if (!node || node._virtual || !this.containerEl) return;
+    if (!topic || topic._virtual || !this.containerEl) return;
 
-    this.closeNodeEditor();
+    this.closeTopicEditor();
     this.closeInlineTextEditor(false);
 
-    const nodeEl = Array.from(this.graphEl.querySelectorAll('.yonxao-mindmap-node')).find(
-      (element) => element.getAttribute('data-node-id') === node.id
+    const topicEl = Array.from(this.mapEl.querySelectorAll('.yonxao-mindmap-topic')).find(
+      (element) => element.getAttribute('data-topic-id') === topic.id
     );
-    const cardEl = nodeEl ? nodeEl.querySelector('.yonxao-mindmap-node-card') : null;
+    const cardEl = topicEl ? topicEl.querySelector('.yonxao-mindmap-topic-card') : null;
     if (!cardEl) return;
 
     const cardRect = cardEl.getBoundingClientRect();
     const containerRect = this.containerEl.getBoundingClientRect();
-    const box = node._layout;
+    const box = topic._layout;
 
     const inputEl = document.createElement('input');
     inputEl.type = 'text';
     inputEl.className = 'yonxao-mindmap-inline-text-editor';
-    inputEl.value = node.text || '';
+    inputEl.value = topic.text || '';
     inputEl.spellcheck = false;
-    inputEl.setAttribute('aria-label', '编辑节点文本');
+    inputEl.setAttribute('aria-label', '编辑主题文本');
 
     // input 是 HTML 元素，坐标系来自容器；cardRect 是浏览器屏幕坐标，所以要减去容器坐标。
     inputEl.style.left = `${cardRect.left - containerRect.left}px`;
@@ -1350,7 +1350,7 @@ export class YonxaoMindmapRenderer extends Component {
     inputEl.style.width = `${cardRect.width}px`;
     inputEl.style.height = `${cardRect.height}px`;
 
-    // 字体使用当前节点布局计算出的配置，确保覆盖输入框和 SVG 节点尽量同高同宽。
+    // 字体使用当前主题布局计算出的配置，确保覆盖输入框和 SVG 主题尽量同高同宽。
     if (box && box.font) {
       inputEl.style.fontFamily = box.font.family;
       inputEl.style.fontSize = `${box.font.size}px`;
@@ -1386,7 +1386,7 @@ export class YonxaoMindmapRenderer extends Component {
     });
 
     this.inlineTextEditorEl = inputEl;
-    this.inlineEditingNodeId = node.id;
+    this.inlineEditingTopicId = topic.id;
     this.containerEl.appendChild(inputEl);
     inputEl.focus();
     inputEl.select();
@@ -1394,37 +1394,37 @@ export class YonxaoMindmapRenderer extends Component {
 
   /*
    * 作用：
-   * 保存内联 input 中的节点文字，并同步回当前 yxmm 源码。
+   * 保存内联 input 中的主题文字，并同步回当前 yxmm 源码。
    *
    * 实现逻辑：
-   * 只更新 node.text，不碰颜色、图标、布局等节点属性；这样双击编辑就是“快速改名”，
-   * 完整属性仍然交给铅笔按钮打开的节点编辑面板。
+   * 只更新 topic.text，不碰颜色、图标、布局等主题属性；这样双击编辑就是“快速改名”，
+   * 完整属性仍然交给铅笔按钮打开的主题编辑面板。
    */
   async saveInlineTextEditor() {
     if (!this.canEditMindMap()) return false;
 
     const inputEl = this.inlineTextEditorEl;
-    const node = this.nodeById.get(this.inlineEditingNodeId);
-    if (!inputEl || !node) return false;
+    const topic = this.topicById.get(this.inlineEditingTopicId);
+    if (!inputEl || !topic) return false;
 
     const nextText = inputEl.value.trim();
     if (!nextText) {
-      new Notice('yonxao-mindmap: 节点文本不能为空。');
+      new Notice('yonxao-mindmap: 主题文本不能为空。');
       inputEl.focus();
       return false;
     }
 
-    if (nextText === (node.text || '')) {
+    if (nextText === (topic.text || '')) {
       this.closeInlineTextEditor(false);
       return true;
     }
 
     this.inlineTextEditorSaving = true;
-    node.text = nextText;
+    topic.text = nextText;
     this.closeInlineTextEditor(false);
 
     try {
-      return await this.saveTreeToSourceAndFile('节点文本已保存。');
+      return await this.saveTreeToSourceAndFile('主题文本已保存。');
     } finally {
       this.inlineTextEditorSaving = false;
     }
@@ -1450,76 +1450,76 @@ export class YonxaoMindmapRenderer extends Component {
       this.inlineTextEditorEl.remove();
     }
     this.inlineTextEditorEl = null;
-    this.inlineEditingNodeId = null;
+    this.inlineEditingTopicId = null;
   }
 
   /*
    * 作用：
-   * 保存节点编辑面板中的文本、颜色、图标和布局。
+   * 保存主题编辑面板中的文本、颜色、图标和布局。
    */
-  async saveNodeEditor() {
+  async saveTopicEditor() {
     if (!this.canEditMindMap()) return false;
 
-    const node = this.nodeById.get(this.editingNodeId);
-    if (!node || !this.nodeEditorFields) return false;
+    const topic = this.topicById.get(this.editingTopicId);
+    if (!topic || !this.topicEditorFields) return false;
 
-    const text = this.nodeEditorFields.text.value.trim();
+    const text = this.topicEditorFields.text.value.trim();
     if (!text) {
-      new Notice('yonxao-mindmap: 节点文本不能为空。');
+      new Notice('yonxao-mindmap: 主题文本不能为空。');
       return false;
     }
 
-    node.text = text;
-    setOptionalAttr(node.attrs, 'color', this.nodeEditorFields.color.value);
-    setOptionalAttr(node.attrs, 'icon', this.nodeEditorFields.icon.value);
-    setOptionalAttr(node.attrs, 'layout', this.nodeEditorFields.layout.value);
+    topic.text = text;
+    setOptionalAttr(topic.attrs, 'color', this.topicEditorFields.color.value);
+    setOptionalAttr(topic.attrs, 'icon', this.topicEditorFields.icon.value);
+    setOptionalAttr(topic.attrs, 'layout', this.topicEditorFields.layout.value);
 
-    const saved = await this.saveTreeToSourceAndFile('节点已保存。');
-    if (saved) this.closeNodeEditor();
+    const saved = await this.saveTreeToSourceAndFile('主题已保存。');
+    if (saved) this.closeTopicEditor();
     return saved;
   }
 
   /*
    * 作用：
-   * 在当前编辑节点下新增一个子节点并保存。
+   * 在当前编辑主题下新增一个子主题并保存。
    */
-  async addChildFromNodeEditor() {
+  async addChildFromTopicEditor() {
     if (!this.canEditMindMap()) return false;
 
-    const node = this.nodeById.get(this.editingNodeId);
-    if (!node) return false;
+    const topic = this.topicById.get(this.editingTopicId);
+    if (!topic) return false;
 
-    // 新增子节点时只改树结构，不直接拼字符串。统一走 serializeMind，可以避免标题层级出错。
-    const child = createMindNode('新节点', {}, [], 0, (node.level || 1) + 1);
-    node.children.push(child);
-    this.collapsedIds.delete(node.id);
+    // 新增子主题时只改树结构，不直接拼字符串。统一走 serializeMind，可以避免标题层级出错。
+    const child = createMindTopic('新主题', {}, [], 0, (topic.level || 1) + 1);
+    topic.children.push(child);
+    this.collapsedIds.delete(topic.id);
     assignIds(this.root, '0');
 
-    const saved = await this.saveTreeToSourceAndFile('已新增子节点。');
+    const saved = await this.saveTreeToSourceAndFile('已新增子主题。');
     if (saved) {
-      this.openNodeEditor(child);
+      this.openTopicEditor(child);
     }
     return saved;
   }
 
   /*
    * 作用：
-   * 从右键菜单新增子节点。
+   * 从右键菜单新增子主题。
    *
-   * 和编辑面板新增子节点的区别：
-   * 右键菜单不依赖当前打开的编辑面板，而是直接使用菜单命中的节点。
-   * 保存成功后立即进入内联改名，让用户可以顺手把“新节点”改成真实内容。
+   * 和编辑面板新增子主题的区别：
+   * 右键菜单不依赖当前打开的编辑面板，而是直接使用菜单命中的主题。
+   * 保存成功后立即进入内联改名，让用户可以顺手把“新主题”改成真实内容。
    */
-  async addChildFromContextMenu(node) {
+  async addChildFromContextMenu(topic) {
     if (!this.canEditMindMap()) return false;
-    if (!node || node._virtual) return false;
+    if (!topic || topic._virtual) return false;
 
-    const child = createMindNode('新节点', {}, [], 0, (node.level || 1) + 1);
-    node.children.push(child);
-    this.collapsedIds.delete(node.id);
+    const child = createMindTopic('新主题', {}, [], 0, (topic.level || 1) + 1);
+    topic.children.push(child);
+    this.collapsedIds.delete(topic.id);
     assignIds(this.root, '0');
 
-    const saved = await this.saveTreeToSourceAndFile('已新增子节点。');
+    const saved = await this.saveTreeToSourceAndFile('已新增子主题。');
     if (saved) {
       this.openInlineTextEditor(child);
     }
@@ -1528,25 +1528,25 @@ export class YonxaoMindmapRenderer extends Component {
 
   /*
    * 作用：
-   * 从右键菜单在当前节点上方或下方新增兄弟节点。
+   * 从右键菜单在当前主题上方或下方新增兄弟主题。
    *
    * 实现逻辑：
-   * 兄弟节点需要插入到父节点 children 数组的相邻位置，所以具体插入由
-   * treeActions.insertSiblingNode 负责；渲染器只负责创建节点、保存和进入改名。
+   * 兄弟主题需要插入到父主题 children 数组的相邻位置，所以具体插入由
+   * topicTreeActions.insertSiblingTopic 负责；渲染器只负责创建主题、保存和进入改名。
    */
-  async addSiblingFromContextMenu(node, position) {
+  async addSiblingFromContextMenu(topic, position) {
     if (!this.canEditMindMap()) return false;
-    if (!node || node === this.root || node._virtual) return false;
+    if (!topic || topic === this.root || topic._virtual) return false;
 
-    const sibling = createMindNode('新节点', {}, [], 0, node.level || 1);
-    const inserted = insertSiblingNode(this.root, node.id, sibling, position);
+    const sibling = createMindTopic('新主题', {}, [], 0, topic.level || 1);
+    const inserted = insertSiblingTopic(this.root, topic.id, sibling, position);
     if (!inserted) {
-      new Notice('yonxao-mindmap: 根节点不能新增兄弟节点。');
+      new Notice('yonxao-mindmap: 根主题不能新增兄弟主题。');
       return false;
     }
 
     assignIds(this.root, '0');
-    const saved = await this.saveTreeToSourceAndFile('已新增兄弟节点。');
+    const saved = await this.saveTreeToSourceAndFile('已新增兄弟主题。');
     if (saved) {
       this.openInlineTextEditor(sibling);
     }
@@ -1555,74 +1555,74 @@ export class YonxaoMindmapRenderer extends Component {
 
   /*
    * 作用：
-   * 删除当前编辑节点并保存。
+   * 删除当前编辑主题并保存。
    *
    * 实现逻辑：
-   * 根节点和虚拟根不能删除，避免生成空树或破坏多根结构。
+   * 根主题和虚拟根不能删除，避免生成空树或破坏多根结构。
    */
-  async deleteNodeFromEditor() {
+  async deleteTopicFromEditor() {
     if (!this.canEditMindMap()) return false;
 
-    const node = this.nodeById.get(this.editingNodeId);
-    if (!node || node === this.root || node._virtual) {
-      new Notice('yonxao-mindmap: 根节点不能在脑图视图中删除。');
+    const topic = this.topicById.get(this.editingTopicId);
+    if (!topic || topic === this.root || topic._virtual) {
+      new Notice('yonxao-mindmap: 根主题不能在导图视图中删除。');
       return false;
     }
 
-    if (!this.confirmDeleteNode(node)) return false;
+    if (!this.confirmDeleteTopic(topic)) return false;
 
-    const removed = removeNodeById(this.root, node.id);
+    const removed = removeTopicById(this.root, topic.id);
     if (!removed) return false;
 
     assignIds(this.root, '0');
-    const saved = await this.saveTreeToSourceAndFile('节点已删除。');
-    if (saved) this.closeNodeEditor();
+    const saved = await this.saveTreeToSourceAndFile('主题已删除。');
+    if (saved) this.closeTopicEditor();
     return saved;
   }
 
   /*
    * 作用：
-   * 从右键菜单删除节点。
+   * 从右键菜单删除主题。
    *
    * 关键点：
-   * 删除节点不可撤销，所以无论是否存在子节点都先弹出浏览器确认框。
+   * 删除主题不可撤销，所以无论是否存在子主题都先弹出浏览器确认框。
    * 这里使用 window.confirm 是为了保持实现轻量，后续如果需要更精致的 UI 可以替换为 Obsidian Modal。
    */
-  async deleteNodeFromContextMenu(node) {
+  async deleteTopicFromContextMenu(topic) {
     if (!this.canEditMindMap()) return false;
 
-    if (!node || node === this.root || node._virtual) {
-      new Notice('yonxao-mindmap: 根节点不能删除。');
+    if (!topic || topic === this.root || topic._virtual) {
+      new Notice('yonxao-mindmap: 根主题不能删除。');
       return false;
     }
 
-    if (!this.confirmDeleteNode(node)) return false;
+    if (!this.confirmDeleteTopic(topic)) return false;
 
-    this.closeNodeEditor();
+    this.closeTopicEditor();
     this.closeInlineTextEditor(false);
-    const removed = removeNodeById(this.root, node.id);
+    const removed = removeTopicById(this.root, topic.id);
     if (!removed) return false;
 
     assignIds(this.root, '0');
-    return this.saveTreeToSourceAndFile('节点已删除。');
+    return this.saveTreeToSourceAndFile('主题已删除。');
   }
 
   /*
    * 作用：
-   * 删除节点前统一二次确认。
+   * 删除主题前统一二次确认。
    *
    * 调用链：
-   * deleteNodeFromEditor()/deleteNodeFromContextMenu() -> confirmDeleteNode()。
+   * deleteTopicFromEditor()/deleteTopicFromContextMenu() -> confirmDeleteTopic()。
    *
    * 实现逻辑：
-   * 普通节点也确认；有后代节点时额外提示会同时删除多少个子节点。
+   * 普通主题也确认；有后代主题时额外提示会同时删除多少个子主题。
    */
-  confirmDeleteNode(node) {
-    const descendantCount = countDescendants(node);
+  confirmDeleteTopic(topic) {
+    const descendantCount = countTopicDescendants(topic);
     const message =
       descendantCount > 0
-        ? `确定删除“${node.text}”及其 ${descendantCount} 个子节点吗？`
-        : `确定删除“${node.text}”吗？`;
+        ? `确定删除“${topic.text}”及其 ${descendantCount} 个子主题吗？`
+        : `确定删除“${topic.text}”吗？`;
 
     return window.confirm(message);
   }
@@ -1632,14 +1632,14 @@ export class YonxaoMindmapRenderer extends Component {
    * 把内存树序列化为源码，并写回 Markdown 文件或编辑器上下文。
    *
    * 调用链：
-   * saveNodeEditor/addChild/delete -> saveTreeToSourceAndFile()。
+   * saveTopicEditor/addChild/delete -> saveTreeToSourceAndFile()。
    */
   async saveTreeToSourceAndFile(successMessage) {
-    // 脑图编辑的保存流程：
+    // 导图编辑的保存流程：
     // 1. 当前内存里的 root 已经被修改。
     // 2. serializeMindDocument(root, rawConfig) 把配置区和树重新变成 yxmm 文本。
     // 3. saveSourceToMarkdownFile(nextSource) 只替换当前 Markdown 文件里的这个代码块内容。
-    // 4. 更新 textarea，保证源码视图立刻看到脑图编辑后的结果。
+    // 4. 更新 textarea，保证源码模式立刻看到导图编辑后的结果。
     assignIds(this.root, '0');
     const nextSource = serializeMindDocument(
       this.root,
@@ -1653,14 +1653,14 @@ export class YonxaoMindmapRenderer extends Component {
     this.rawConfig = this.documentConfigForSave(this.rawConfig);
     this.refreshNormalizedConfig();
     this.syncSourceInput();
-    this.renderGraph(true);
+    this.renderMap(true);
     new Notice(`yonxao-mindmap: ${successMessage || '已保存。'}`);
     return true;
   }
 
   /*
    * 作用：
-   * 只保存运行时配置，不改变节点树正文。
+   * 只保存运行时配置，不改变主题树正文。
    *
    * 调用场景：
    * 画布高度拖拽、工具栏位置拖拽这类交互只更新配置区。
@@ -1720,13 +1720,13 @@ export class YonxaoMindmapRenderer extends Component {
 
   /*
    * 作用：
-   * 把运行时配置覆盖到源码视图刚解析出的配置上。
+   * 把运行时配置覆盖到源码模式刚解析出的配置上。
    *
    * 实现逻辑：
    * 源码 textarea 里的用户配置是基础；拖动工具栏和高度调整是本次交互产生的新值。
    */
   mergeRuntimeConfig(baseConfig, runtimeConfig) {
-    const next = JSON.parse(JSON.stringify(baseConfig || {}));
+    const next = this.migrateLegacyConfigKeys(baseConfig || {});
 
     for (const key of ['canvas', 'toolbar', 'source']) {
       if (!runtimeConfig || !runtimeConfig[key]) continue;
@@ -1745,7 +1745,34 @@ export class YonxaoMindmapRenderer extends Component {
    * 生成写回 Markdown 的配置对象，移除只属于当前会话的视图模式。
    */
   documentConfigForSave(config) {
-    return deleteMindConfigPath(config || {}, ['view', 'mode']);
+    const withoutViewMode = deleteMindConfigPath(config || {}, ['view', 'mode']);
+    return this.migrateLegacyConfigKeys(withoutViewMode);
+  }
+
+  /*
+   * 作用：
+   * 保存前迁移旧配置键，确保 Markdown 中逐步统一为当前术语。
+   *
+   * 当前迁移：
+   * - node -> topic：旧版“节点配置”改为新版“主题配置”。
+   * - view.mode: graph -> map：旧版“图形模式”改为新版“导图模式”。
+   *
+   * 关键点：
+   * 这里只处理写回前的浅层配置迁移，不改变正文主题树。
+   */
+  migrateLegacyConfigKeys(config) {
+    const next = JSON.parse(JSON.stringify(config || {}));
+
+    if (next.node && !next.topic) {
+      next.topic = next.node;
+    }
+    delete next.node;
+
+    if (next.view?.mode === 'graph') {
+      next.view.mode = 'map';
+    }
+
+    return next;
   }
 
   /*
@@ -1861,19 +1888,19 @@ export class YonxaoMindmapRenderer extends Component {
    * 重新布局并绘制整张思维导图。
    *
    * 调用链：
-   * mount()/保存/折叠/重置 -> renderGraph()。
+   * mount()/保存/折叠/重置 -> renderMap()。
    */
-  renderGraph(fitAfterRender, options = {}) {
-    this.clearNodeDropHighlight();
+  renderMap(fitAfterRender, options = {}) {
+    this.clearTopicDropHighlight();
     this.closeInlineTextEditor(false);
-    this.nodeById.clear();
-    this.graphEl.textContent = '';
+    this.topicById.clear();
+    this.mapEl.textContent = '';
 
-    // 渲染分两步：先把树计算成带坐标的节点/连线，再把这些数据画成 SVG。
+    // 渲染分两步：先把树计算成带坐标的主题/连线，再把这些数据画成 SVG。
     // 这样解析、布局、绘制互相独立，后续要替换布局算法也更容易。
     const layout = layoutTree(this.root, this.collapsedIds, this.config);
     const edgeLayer = svg('g', { class: 'yonxao-mindmap-edges' });
-    const nodeLayer = svg('g', { class: 'yonxao-mindmap-nodes' });
+    const topicLayer = svg('g', { class: 'yonxao-mindmap-topics' });
 
     const treeTrunk = this.renderTreeTrunk(layout);
     if (treeTrunk) {
@@ -1909,19 +1936,19 @@ export class YonxaoMindmapRenderer extends Component {
       }
     }
 
-    for (const node of layout.nodes) {
-      this.nodeById.set(node.id, node);
-      nodeLayer.appendChild(this.renderNode(node));
+    for (const topic of layout.topics) {
+      this.topicById.set(topic.id, topic);
+      topicLayer.appendChild(this.renderTopic(topic));
     }
 
-    this.graphEl.appendChild(edgeLayer);
-    this.graphEl.appendChild(nodeLayer);
+    this.mapEl.appendChild(edgeLayer);
+    this.mapEl.appendChild(topicLayer);
 
     if (fitAfterRender || !this.viewBox) {
       this.fitView(layout.bounds, options);
     }
 
-    this.didInitialGraphRender = true;
+    this.didInitialMapRender = true;
   }
 
   /*
@@ -1929,7 +1956,7 @@ export class YonxaoMindmapRenderer extends Component {
    * 在树状结构中绘制 root 下方的纵向主干。
    *
    * 实现逻辑：
-   * root -> 一级节点的每条边只负责横向分支；主干单独画一次。
+   * root -> 一级主题的每条边只负责横向分支；主干单独画一次。
    * 这样可以避免多条 root 边重复覆盖同一段竖线，导致主干颜色越来越深。
    */
   renderTreeTrunk(layout) {
@@ -1969,7 +1996,7 @@ export class YonxaoMindmapRenderer extends Component {
    * 判断当前布局是否属于树形表格系列。
    *
    * 说明：
-   * tree-table 是规整表格，叶子节点会填满剩余列；
+   * tree-table 是规整表格，叶子主题会填满剩余列；
    * tree-table-stepped 是阶梯表格，保留层级展开形成的阶梯轮廓。
    */
   isTreeTableLayoutMode(mode) {
@@ -2011,8 +2038,8 @@ export class YonxaoMindmapRenderer extends Component {
    * 在 org-right 的二级及更深层级里绘制共享的目录树式分支线。
    *
    * 实现逻辑：
-   * 普通 elbow 连线会让每个子节点都从父节点右侧单独折出去，线条显得杂乱。
-   * 这里按父节点分组：父节点底部先向下形成一条竖向主线，再由主线横向接到每个子节点。
+   * 普通 elbow 连线会让每个子主题都从父主题右侧单独折出去，线条显得杂乱。
+   * 这里按父主题分组：父主题底部先向下形成一条竖向主线，再由主线横向接到每个子主题。
    */
   renderOrgRightBranchTrunks(layout) {
     if (layout.mode !== 'org-right') return null;
@@ -2063,12 +2090,12 @@ export class YonxaoMindmapRenderer extends Component {
 
   /*
    * 作用：
-   * 计算时间轴详情节点继续展开子节点时的右侧分支线位置。
+   * 计算时间轴详情主题继续展开子主题时的右侧分支线位置。
    *
    * 实现逻辑：
-   * - 时间点节点本身仍使用中心竖线，保持时间轴主分支的视觉稳定。
-   * - 详情节点再展开后代时，分支线放在节点右侧，形成“父节点右侧出口 -> 竖线 -> 子节点”的结构。
-   * - 如果父节点很宽导致父子间距不足，则把分支线夹在父节点右边缘和子节点左边缘之间，避免横线反向。
+   * - 时间点主题本身仍使用中心竖线，保持时间轴主分支的视觉稳定。
+   * - 详情主题再展开后代时，分支线放在主题右侧，形成“父主题右侧出口 -> 竖线 -> 子主题”的结构。
+   * - 如果父主题很宽导致父子间距不足，则把分支线夹在父主题右边缘和子主题左边缘之间，避免横线反向。
    */
   timelineDetailBranchX(parentBox, childBoxes = []) {
     if (parentBox.side !== 'timeline-detail-top' && parentBox.side !== 'timeline-detail-bottom') {
@@ -2076,25 +2103,25 @@ export class YonxaoMindmapRenderer extends Component {
     }
 
     const parentRight = parentBox.x + parentBox.width / 2;
-    const preferredX = parentRight + NODE_PADDING_X;
+    const preferredX = parentRight + TOPIC_PADDING_X;
     if (!childBoxes.length) return preferredX;
 
     const firstChildLeft = Math.min(...childBoxes.map((box) => box.x - box.width / 2));
     const available = firstChildLeft - parentRight;
-    if (available <= NODE_PADDING_X) {
+    if (available <= TOPIC_PADDING_X) {
       return parentRight + Math.max(6, available / 2);
     }
 
-    return Math.min(preferredX, firstChildLeft - NODE_PADDING_X / 2);
+    return Math.min(preferredX, firstChildLeft - TOPIC_PADDING_X / 2);
   }
 
   /*
    * 作用：
-   * 根据放射图射线角度计算节点矩形边框上的交点。
+   * 根据放射图射线角度计算主题矩形边框上的交点。
    *
    * 实现逻辑：
    * 放射图的分支可能是斜向的，不能只用 left/right/top/bottom 四类锚点。
-   * 这里把节点矩形看作中心点加宽高边界，沿 angle 方向找到射线离开矩形的位置。
+   * 这里把主题矩形看作中心点加宽高边界，沿 angle 方向找到射线离开矩形的位置。
    */
   radialEdgePoint(box, angle) {
     const dx = Math.cos(angle);
@@ -2120,20 +2147,20 @@ export class YonxaoMindmapRenderer extends Component {
     const axisY = rootBox?.timelineAxisY;
     if (!rootBox || !Number.isFinite(axisY)) return null;
 
-    const eventNodes = layout.nodes.filter((node) => {
-      const side = node._layout?.side;
+    const eventTopics = layout.topics.filter((topic) => {
+      const side = topic._layout?.side;
       return side === 'timeline-point';
     });
-    if (!eventNodes.length) return null;
+    if (!eventTopics.length) return null;
 
     const groupEl = svg('g', { class: 'yonxao-mindmap-timeline-axis' });
-    const sortedNodes = [...eventNodes].sort((left, right) => left._layout.x - right._layout.x);
+    const sortedTopics = [...eventTopics].sort((left, right) => left._layout.x - right._layout.x);
     let segmentStart = rootBox.timelineAxisMinX ?? rootBox.x + rootBox.width / 2;
 
-    for (const node of sortedNodes) {
-      const box = node._layout;
+    for (const topic of sortedTopics) {
+      const box = topic._layout;
       const segmentEnd = box.x - box.width / 2;
-      const segmentEl = this.renderTimelineAxisSegment(segmentStart, segmentEnd, axisY, node);
+      const segmentEl = this.renderTimelineAxisSegment(segmentStart, segmentEnd, axisY, topic);
 
       if (segmentEl) {
         groupEl.appendChild(segmentEl);
@@ -2149,10 +2176,10 @@ export class YonxaoMindmapRenderer extends Component {
    * 作用：
    * 绘制一段按时间点着色的时间轴线。
    */
-  renderTimelineAxisSegment(startX, endX, axisY, node) {
+  renderTimelineAxisSegment(startX, endX, axisY, topic) {
     if (!Number.isFinite(startX) || !Number.isFinite(endX) || endX <= startX) return null;
 
-    const color = edgeColor(node, this.config);
+    const color = edgeColor(topic, this.config);
     return svg('path', {
       class: 'yonxao-mindmap-edge yonxao-mindmap-timeline-line',
       d: ['M', startX, axisY, 'H', endX].join(' '),
@@ -2176,21 +2203,21 @@ export class YonxaoMindmapRenderer extends Component {
     const rootBox = this.root?._layout;
     if (!rootBox) return null;
 
-    const branchNodes = layout.nodes
-      .filter((node) => {
-        const side = node._layout?.side;
+    const branchTopics = layout.topics
+      .filter((topic) => {
+        const side = topic._layout?.side;
         return side === 'fishbone-top' || side === 'fishbone-bottom';
       })
       .sort((left, right) => left._layout.fishboneAttachX - right._layout.fishboneAttachX);
 
-    if (!branchNodes.length) return null;
+    if (!branchTopics.length) return null;
 
     const groupEl = svg('g', { class: 'yonxao-mindmap-fishbone-spine' });
     let segmentStart = rootBox.x + rootBox.width / 2;
 
-    for (const node of branchNodes) {
-      const segmentEnd = node._layout.fishboneAttachX;
-      const segmentEl = this.renderFishboneSpineSegment(segmentStart, segmentEnd, rootBox.y, node);
+    for (const topic of branchTopics) {
+      const segmentEnd = topic._layout.fishboneAttachX;
+      const segmentEl = this.renderFishboneSpineSegment(segmentStart, segmentEnd, rootBox.y, topic);
 
       if (segmentEl) {
         groupEl.appendChild(segmentEl);
@@ -2199,11 +2226,11 @@ export class YonxaoMindmapRenderer extends Component {
       segmentStart = segmentEnd;
     }
 
-    const lastNode = branchNodes[branchNodes.length - 1];
+    const lastTopic = branchTopics[branchTopics.length - 1];
     const tailEnd = Math.max(
       segmentStart + LEVEL_GAP * 1.7,
-      // this.visibleSubtreeRightBoundary(lastNode) + LEVEL_GAP * 0.45
-      this.visibleSubtreeRightBoundary(lastNode)
+      // this.visibleSubtreeRightBoundary(lastTopic) + LEVEL_GAP * 0.45
+      this.visibleSubtreeRightBoundary(lastTopic)
     );
     const tailEl = this.renderFishboneSpineSegment(segmentStart, tailEnd, rootBox.y, this.root);
     if (tailEl) {
@@ -2218,10 +2245,10 @@ export class YonxaoMindmapRenderer extends Component {
    * 作用：
    * 绘制一段鱼骨图主骨。
    */
-  renderFishboneSpineSegment(startX, endX, y, node) {
+  renderFishboneSpineSegment(startX, endX, y, topic) {
     if (!Number.isFinite(startX) || !Number.isFinite(endX) || endX <= startX) return null;
 
-    const color = edgeColor(node, this.config);
+    const color = edgeColor(topic, this.config);
     return svg('path', {
       class: 'yonxao-mindmap-edge yonxao-mindmap-fishbone-spine-segment',
       d: ['M', startX, y, 'H', endX].join(' '),
@@ -2253,16 +2280,16 @@ export class YonxaoMindmapRenderer extends Component {
    *
    * 调用场景：
    * 鱼骨图尾巴需要根据最后一个分支的可见内容自动延长。
-   * 折叠节点的后代不会显示，所以这里遇到 collapsedIds 时停止递归。
+   * 折叠主题的后代不会显示，所以这里遇到 collapsedIds 时停止递归。
    */
-  visibleSubtreeRightBoundary(node) {
-    const box = node?._layout;
+  visibleSubtreeRightBoundary(topic) {
+    const box = topic?._layout;
     if (!box) return -Infinity;
 
     let maxRight = box.x + box.width / 2;
-    if (this.collapsedIds.has(node.id)) return maxRight;
+    if (this.collapsedIds.has(topic.id)) return maxRight;
 
-    for (const child of node.children || []) {
+    for (const child of topic.children || []) {
       maxRight = Math.max(maxRight, this.visibleSubtreeRightBoundary(child));
     }
 
@@ -2346,7 +2373,7 @@ export class YonxaoMindmapRenderer extends Component {
 
   /*
    * 作用：
-   * 根据父子节点布局信息绘制一条贝塞尔曲线连线。
+   * 根据父子主题布局信息绘制一条贝塞尔曲线连线。
    */
   renderEdge(edge) {
     const parentBox = edge.parent._layout;
@@ -2378,7 +2405,7 @@ export class YonxaoMindmapRenderer extends Component {
 
   /*
    * 作用：
-   * 根据子节点所在方向计算父子连线的起点和终点锚点。
+   * 根据子主题所在方向计算父子连线的起点和终点锚点。
    */
   edgeAnchors(parentBox, childBox) {
     const side = childBox.side;
@@ -2639,39 +2666,39 @@ export class YonxaoMindmapRenderer extends Component {
 
   /*
    * 作用：
-   * 绘制单个思维导图节点，包括卡片、图标、文字、编辑按钮和折叠按钮。
+   * 绘制单个思维导图主题，包括卡片、图标、文字、编辑按钮和折叠按钮。
    */
-  renderNode(node) {
-    const box = node._layout;
+  renderTopic(topic) {
+    const box = topic._layout;
     const canEdit = this.canEditMindMap();
-    const classNames = ['yonxao-mindmap-node'];
-    if (node.children.length) classNames.push('yonxao-mindmap-node-clickable');
-    if (canEdit && !node._virtual && node !== this.root) {
-      classNames.push('yonxao-mindmap-node-draggable');
+    const classNames = ['yonxao-mindmap-topic'];
+    if (topic.children.length) classNames.push('yonxao-mindmap-topic-clickable');
+    if (canEdit && !topic._virtual && topic !== this.root) {
+      classNames.push('yonxao-mindmap-topic-draggable');
     }
     if (this.isTreeTableBox(box)) {
-      classNames.push('yonxao-mindmap-node-tree-table');
+      classNames.push('yonxao-mindmap-topic-tree-table');
     }
     if (this.isTreeTableRootBox(box)) {
-      classNames.push('yonxao-mindmap-node-tree-table-root');
+      classNames.push('yonxao-mindmap-topic-tree-table-root');
     }
 
-    // 每个节点都是一个 <g> 分组，组上保存 data-node-id，点击时用它反查原始树节点。
+    // 每个主题都是一个 <g> 分组，组上保存 data-topic-id，点击时用它反查原始树主题。
     const group = svg('g', {
       class: classNames.join(' '),
       transform: `translate(${box.x - box.width / 2} ${box.y - box.height / 2})`,
-      'data-node-id': node.id,
+      'data-topic-id': topic.id,
     });
 
-    const color = nodeColor(node, this.config);
+    const color = topicColor(topic, this.config);
     const fill = color
-      ? transparentColor(color, themeNodeFillAlpha(this.config))
+      ? transparentColor(color, themeTopicFillAlpha(this.config))
       : 'var(--background-primary)';
     const stroke = color || 'var(--background-modifier-border)';
 
     group.appendChild(
       svg('rect', {
-        class: 'yonxao-mindmap-node-card',
+        class: 'yonxao-mindmap-topic-card',
         width: box.width,
         height: box.height,
         rx: this.isTreeTableBox(box) ? 0 : 8,
@@ -2681,11 +2708,11 @@ export class YonxaoMindmapRenderer extends Component {
     );
 
     if (box.icon) {
-      group.appendChild(renderIcon(box.icon, NODE_PADDING_X, (box.height - ICON_SIZE) / 2, color));
+      group.appendChild(renderIcon(box.icon, TOPIC_PADDING_X, (box.height - ICON_SIZE) / 2, color));
     }
 
     const textEl = svg('text', {
-      class: 'yonxao-mindmap-node-label',
+      class: 'yonxao-mindmap-topic-label',
       x: box.textX,
       y: box.textY,
       'text-anchor': 'start',
@@ -2705,20 +2732,25 @@ export class YonxaoMindmapRenderer extends Component {
 
     group.appendChild(textEl);
 
-    if (canEdit && !node._virtual && !this.shouldHideEditControl(node)) {
-      group.appendChild(this.renderEditButton(node, box));
+    if (canEdit && !topic._virtual && !this.shouldHideEditControl(topic)) {
+      group.appendChild(this.renderEditButton(topic, box));
     }
 
-    if (canEdit && !node._virtual && node !== this.root && !this.shouldHideAddControls(node)) {
+    if (canEdit && !topic._virtual && topic !== this.root && !this.shouldHideAddControls(topic)) {
       group.appendChild(this.renderSiblingButtons(box));
     }
 
-    if (canEdit && !node._virtual && !node.children.length && !this.shouldHideAddControls(node)) {
+    if (
+      canEdit &&
+      !topic._virtual &&
+      !topic.children.length &&
+      !this.shouldHideAddControls(topic)
+    ) {
       group.appendChild(this.renderChildButton(box));
     }
 
-    if (node.children.length) {
-      group.appendChild(this.renderToggle(node));
+    if (topic.children.length) {
+      group.appendChild(this.renderTopicToggle(topic));
     }
 
     return group;
@@ -2726,12 +2758,12 @@ export class YonxaoMindmapRenderer extends Component {
 
   /*
    * 作用：
-   * 绘制节点右侧或左侧的折叠/展开按钮。
+   * 绘制主题右侧或左侧的折叠/展开按钮。
    */
-  renderToggle(node) {
-    const box = node._layout;
-    const collapsed = this.collapsedIds.has(node.id);
-    const outlet = this.nodeTogglePoint(box);
+  renderTopicToggle(topic) {
+    const box = topic._layout;
+    const collapsed = this.collapsedIds.has(topic.id);
+    const outlet = this.topicTogglePoint(box);
     const dir = box.side === 'left' ? -1 : 1;
     const toggle = svg('g', {
       class: 'yonxao-mindmap-toggle',
@@ -2764,23 +2796,23 @@ export class YonxaoMindmapRenderer extends Component {
 
   /*
    * 作用：
-   * 判断某个节点是否应该隐藏“新增兄弟/新增子节点”控件。
+   * 判断某个主题是否应该隐藏“新增兄弟/新增子主题”控件。
    *
-   * 鱼骨图的二级节点（Markdown 里的 ##，布局 side 为 fishbone-top/bottom）
-   * 是主骨上的大分支。它们的子节点不是从节点右侧自然长出，而是挂在斜骨上；
+   * 鱼骨图的二级主题（Markdown 里的 ##，布局 side 为 fishbone-top/bottom）
+   * 是主骨上的大分支。它们的子主题不是从主题右侧自然长出，而是挂在斜骨上；
    * 如果继续显示新增按钮，按钮会和鱼骨结构的交点互相干扰，所以这里统一隐藏。
    */
-  shouldHideAddControls(node) {
-    const box = node?._layout;
+  shouldHideAddControls(topic) {
+    const box = topic?._layout;
     return this.isFishbonePrimaryBranchBox(box) || this.isTreeTableBox(box);
   }
 
   /*
    * 作用：
-   * 判断节点是否属于树形表格布局。
+   * 判断主题是否属于树形表格布局。
    *
    * 树形表格的单元格空间更紧凑，悬浮新增按钮容易遮挡文本和边框；
-   * 因此节点新增动作优先通过右键菜单完成。
+   * 因此主题新增动作优先通过右键菜单完成。
    */
   isTreeTableBox(box) {
     const side = String(box?.side || '');
@@ -2789,7 +2821,7 @@ export class YonxaoMindmapRenderer extends Component {
 
   /*
    * 作用：
-   * 判断节点是否是树形表格的表头节点。
+   * 判断主题是否是树形表格的表头主题。
    */
   isTreeTableRootBox(box) {
     return String(box?.side || '') === 'tree-table-root';
@@ -2797,21 +2829,21 @@ export class YonxaoMindmapRenderer extends Component {
 
   /*
    * 作用：
-   * 判断某个节点是否应该隐藏“编辑节点”控件。
+   * 判断某个主题是否应该隐藏“编辑主题”控件。
    *
    * 树形表格当前采用单元格密集排布，右上角编辑按钮会破坏表格视觉，
    * 所以这个布局先隐藏编辑按钮；折叠按钮仍然保留，用于控制子树显示。
    */
-  shouldHideEditControl(node) {
-    return this.isTreeTableBox(node?._layout);
+  shouldHideEditControl(topic) {
+    return this.isTreeTableBox(topic?._layout);
   }
 
   /*
    * 作用：
-   * 判断节点是否是鱼骨图的一级大分支。
+   * 判断主题是否是鱼骨图的一级大分支。
    *
    * 命名说明：
-   * Markdown 源码里这些节点是二级标题（##），但在鱼骨图视觉结构里，
+   * Markdown 源码里这些主题是二级标题（##），但在鱼骨图视觉结构里，
    * 它们是从主骨斜着伸出去的“大分支”，所以这里命名为 primaryBranch。
    */
   isFishbonePrimaryBranchBox(box) {
@@ -2821,13 +2853,13 @@ export class YonxaoMindmapRenderer extends Component {
 
   /*
    * 作用：
-   * 判断节点是否属于鱼骨图布局。
+   * 判断主题是否属于鱼骨图布局。
    *
    * 使用场景：
-   * 按钮位置、子线出口等交互逻辑需要先判断“这是不是鱼骨图节点”，
+   * 按钮位置、子线出口等交互逻辑需要先判断“这是不是鱼骨图主题”，
    * 再根据鱼头方向统一计算，而不是把每一种 fishbone side 都写死在调用处。
    */
-  isFishboneNodeBox(box) {
+  isFishboneTopicBox(box) {
     const side = String(box?.side || '');
     return (
       side === 'fishbone-top' ||
@@ -2852,7 +2884,7 @@ export class YonxaoMindmapRenderer extends Component {
 
   /*
    * 作用：
-   * 返回鱼骨图子节点展开方向，也就是从鱼头指向鱼尾的方向。
+   * 返回鱼骨图子主题展开方向，也就是从鱼头指向鱼尾的方向。
    *
    * 返回值：
    * 1 表示从左向右展开；-1 表示从右向左展开。
@@ -2863,7 +2895,7 @@ export class YonxaoMindmapRenderer extends Component {
 
   /*
    * 作用：
-   * 计算鱼骨图节点的子线出口侧。
+   * 计算鱼骨图主题的子线出口侧。
    *
    * 设计逻辑：
    * 子线出口永远朝向鱼尾，也就是远离鱼头的一侧。
@@ -2875,11 +2907,11 @@ export class YonxaoMindmapRenderer extends Component {
 
   /*
    * 作用：
-   * 计算鱼骨图节点编辑按钮的位置。
+   * 计算鱼骨图主题编辑按钮的位置。
    *
    * 设计逻辑：
    * 编辑按钮永远放在靠近鱼头的一侧；折叠按钮和新增/子线出口留给鱼尾方向。
-   * 这样节点右侧或左侧的功能含义稳定：靠鱼头的一侧用于编辑，靠鱼尾的一侧用于展开结构。
+   * 这样主题右侧或左侧的功能含义稳定：靠鱼头的一侧用于编辑，靠鱼尾的一侧用于展开结构。
    */
   fishboneEditButtonPosition(box, buttonSize) {
     const buttonY = box.height / 2 - buttonSize / 2;
@@ -2898,23 +2930,23 @@ export class YonxaoMindmapRenderer extends Component {
 
   /*
    * 作用：
-   * 绘制“新增兄弟节点”的两个小按钮。
+   * 绘制“新增兄弟主题”的两个小按钮。
    *
    * 实现逻辑：
-   * 当前思维导图是左右展开布局，同级节点在垂直方向排列，所以按钮放在节点上/下边框。
-   * 如果后续加入 top/bottom/vertical 竖向结构，同级节点会更偏横向排列，此函数会把按钮切到左/右边框。
+   * 当前思维导图是左右展开布局，同级主题在垂直方向排列，所以按钮放在主题上/下边框。
+   * 如果后续加入 top/bottom/vertical 竖向结构，同级主题会更偏横向排列，此函数会把按钮切到左/右边框。
    */
   renderSiblingButtons(box) {
-    const group = svg('g', { class: 'yonxao-mindmap-node-sibling-actions' });
+    const group = svg('g', { class: 'yonxao-mindmap-topic-sibling-actions' });
     const horizontal = this.shouldPlaceSiblingButtonsHorizontally(box);
     const positions = horizontal
       ? [
-          { placement: 'before', label: '在左侧添加兄弟节点', x: 0, y: box.height / 2 },
-          { placement: 'after', label: '在右侧添加兄弟节点', x: box.width, y: box.height / 2 },
+          { placement: 'before', label: '在左侧添加兄弟主题', x: 0, y: box.height / 2 },
+          { placement: 'after', label: '在右侧添加兄弟主题', x: box.width, y: box.height / 2 },
         ]
       : [
-          { placement: 'before', label: '在上方添加兄弟节点', x: box.width / 2, y: 0 },
-          { placement: 'after', label: '在下方添加兄弟节点', x: box.width / 2, y: box.height },
+          { placement: 'before', label: '在上方添加兄弟主题', x: box.width / 2, y: 0 },
+          { placement: 'after', label: '在下方添加兄弟主题', x: box.width / 2, y: box.height },
         ];
 
     for (const position of positions) {
@@ -2926,7 +2958,7 @@ export class YonxaoMindmapRenderer extends Component {
 
   /*
    * 作用：
-   * 判断兄弟节点按钮应该放在左右还是上下。
+   * 判断兄弟主题按钮应该放在左右还是上下。
    *
    * 当前 layoutTree 只会输出 root/left/right，所以默认是上下按钮。
    * 这里保留 top/bottom/vertical 判断，是为了后续真正支持竖向结构时不用再重写按钮渲染。
@@ -2947,11 +2979,11 @@ export class YonxaoMindmapRenderer extends Component {
 
   /*
    * 作用：
-   * 绘制单个兄弟节点新增按钮。
+   * 绘制单个兄弟主题新增按钮。
    */
   renderSiblingButton(position) {
     const button = svg('g', {
-      class: 'yonxao-mindmap-node-sibling-add',
+      class: 'yonxao-mindmap-topic-sibling-add',
       transform: `translate(${position.x} ${position.y})`,
       'data-sibling-position': position.placement,
     });
@@ -2967,23 +2999,23 @@ export class YonxaoMindmapRenderer extends Component {
 
   /*
    * 作用：
-   * 绘制“新增子节点”的小按钮。
+   * 绘制“新增子主题”的小按钮。
    *
    * 位置策略：
-   * 没有子节点时才显示这个按钮；如果已有子节点，同一位置会显示折叠/展开圆点。
-   * 右侧分支放在右边框中点，左侧分支放在左边框中点，中心节点默认放在右边框中点。
-   * 鱼骨图不会在这里单独写死方向，而是交给 nodeOutletPoint() 按鱼头侧动态推导。
+   * 没有子主题时才显示这个按钮；如果已有子主题，同一位置会显示折叠/展开圆点。
+   * 右侧分支放在右边框中点，左侧分支放在左边框中点，中心主题默认放在右边框中点。
+   * 鱼骨图不会在这里单独写死方向，而是交给 topicOutletPoint() 按鱼头侧动态推导。
    */
   renderChildButton(box) {
-    const outlet = this.nodeOutletPoint(box);
+    const outlet = this.topicOutletPoint(box);
     const button = svg('g', {
-      class: 'yonxao-mindmap-node-child-add',
+      class: 'yonxao-mindmap-topic-child-add',
       transform: `translate(${outlet.x} ${outlet.y})`,
       'data-child-side': outlet.side,
     });
 
     const title = svg('title');
-    title.textContent = '添加子节点';
+    title.textContent = '添加子主题';
     button.appendChild(title);
     button.appendChild(svg('circle', { cx: 0, cy: 0, r: 8 }));
     button.appendChild(svg('path', { d: 'M -3.5 0 H 3.5 M 0 -3.5 V 3.5' }));
@@ -2993,10 +3025,10 @@ export class YonxaoMindmapRenderer extends Component {
 
   /*
    * 作用：
-   * 计算一个节点的“子线出口”位置。
+   * 计算一个主题的“子线出口”位置。
    */
-  nodeOutletPoint(box) {
-    const side = this.nodeOutletSide(box);
+  topicOutletPoint(box) {
+    const side = this.topicOutletSide(box);
     if (side === 'left') return { side, x: 0, y: box.height / 2 };
     if (side === 'top') return { side, x: box.width / 2, y: 0 };
     if (side === 'bottom') return { side, x: box.width / 2, y: box.height };
@@ -3007,11 +3039,11 @@ export class YonxaoMindmapRenderer extends Component {
    * 作用：
    * 计算折叠/展开按钮的位置。
    *
-   * 普通布局直接复用子线出口位置；鱼骨图二级节点比较特殊：
-   * 它的子线不是从右侧出去，而是从节点内侧连到斜骨。
-   * 因此折叠按钮应吸附在斜骨和节点边框的交点，用户能更直观看到它控制的是整条鱼骨分支。
+   * 普通布局直接复用子线出口位置；鱼骨图二级主题比较特殊：
+   * 它的子线不是从右侧出去，而是从主题内侧连到斜骨。
+   * 因此折叠按钮应吸附在斜骨和主题边框的交点，用户能更直观看到它控制的是整条鱼骨分支。
    */
-  nodeTogglePoint(box) {
+  topicTogglePoint(box) {
     const side = String(box?.side || '');
     if (
       (side === 'fishbone-top' || side === 'fishbone-bottom') &&
@@ -3025,17 +3057,17 @@ export class YonxaoMindmapRenderer extends Component {
       };
     }
 
-    return this.nodeOutletPoint(box);
+    return this.topicOutletPoint(box);
   }
 
   /*
    * 作用：
-   * 根据当前布局和节点所在方向判断子节点应该从哪一侧长出去。
+   * 根据当前布局和主题所在方向判断子主题应该从哪一侧长出去。
    */
-  nodeOutletSide(box) {
+  topicOutletSide(box) {
     const side = String(box.side || '');
     if (side === 'left' || side === 'right' || side === 'top' || side === 'bottom') return side;
-    if (this.isFishboneNodeBox(box) || side === 'root') {
+    if (this.isFishboneTopicBox(box) || side === 'root') {
       const mode = this.config.layout.defaultDirection;
       if (mode === 'fishbone') return this.fishboneChildOutletSide();
     }
@@ -3061,21 +3093,21 @@ export class YonxaoMindmapRenderer extends Component {
 
   /*
    * 作用：
-   * 绘制节点编辑按钮。
+   * 绘制主题编辑按钮。
    */
-  renderEditButton(node, box) {
+  renderEditButton(topic, box) {
     // SVG 里不能直接放 HTML button，所以这里用一个小 <g> 分组模拟“编辑按钮”。
-    // 点击事件仍然通过 handleNodeClick 统一处理，避免给每个节点单独注册事件造成额外开销。
-    // 普通节点放在“父线进入节点”的一侧；中心节点没有父线，单独避开子线出口。
+    // 点击事件仍然通过 handleTopicClick 统一处理，避免给每个主题单独注册事件造成额外开销。
+    // 普通主题放在“父线进入主题”的一侧；中心主题没有父线，单独避开子线出口。
     const buttonSize = 20;
-    const position = this.editButtonPosition(node, box, buttonSize);
+    const position = this.editButtonPosition(topic, box, buttonSize);
     const edit = svg('g', {
-      class: 'yonxao-mindmap-node-edit',
+      class: 'yonxao-mindmap-topic-edit',
       transform: `translate(${position.x} ${position.y})`,
     });
 
     const title = svg('title');
-    title.textContent = '编辑节点';
+    title.textContent = '编辑主题';
     edit.appendChild(title);
     edit.appendChild(
       svg('rect', {
@@ -3095,19 +3127,19 @@ export class YonxaoMindmapRenderer extends Component {
 
   /*
    * 作用：
-   * 计算节点编辑按钮位置。
+   * 计算主题编辑按钮位置。
    *
    * 实现逻辑：
-   * - 普通节点：放在父线进入节点的一侧。
+   * - 普通主题：放在父线进入主题的一侧。
    * - 鱼骨图：编辑按钮统一放鱼头侧，鱼尾侧留给子线出口、折叠按钮和结构延展。
-   * - 中心节点：如果子线只从一侧出去，按钮放到对侧；如果左右都有子线，放在上边框中点，避开子线交点。
+   * - 中心主题：如果子线只从一侧出去，按钮放到对侧；如果左右都有子线，放在上边框中点，避开子线交点。
    */
-  editButtonPosition(node, box, buttonSize) {
+  editButtonPosition(topic, box, buttonSize) {
     if (box.side === 'root') {
-      return this.rootEditButtonPosition(node, box, buttonSize);
+      return this.rootEditButtonPosition(topic, box, buttonSize);
     }
 
-    if (this.isFishboneNodeBox(box)) {
+    if (this.isFishboneTopicBox(box)) {
       return this.fishboneEditButtonPosition(box, buttonSize);
     }
 
@@ -3167,9 +3199,9 @@ export class YonxaoMindmapRenderer extends Component {
 
   /*
    * 作用：
-   * 计算中心节点编辑按钮位置。
+   * 计算中心主题编辑按钮位置。
    */
-  rootEditButtonPosition(node, box, buttonSize) {
+  rootEditButtonPosition(topic, box, buttonSize) {
     const mode = this.config.layout.defaultDirection;
     if (mode === 'fishbone') {
       return this.fishboneEditButtonPosition(box, buttonSize);
@@ -3196,7 +3228,7 @@ export class YonxaoMindmapRenderer extends Component {
       };
     }
 
-    const sides = new Set((node.children || []).map((child) => child._layout?.side));
+    const sides = new Set((topic.children || []).map((child) => child._layout?.side));
     const hasLeftChildren = sides.has('left') || sides.has('tree-left');
     const hasRightChildren = sides.has('right') || sides.has('tree') || sides.has('tree-right');
 
@@ -3222,84 +3254,84 @@ export class YonxaoMindmapRenderer extends Component {
 
   /*
    * 作用：
-   * 处理 SVG 节点单击事件。
+   * 处理 SVG 主题单击事件。
    *
    * 当前交互规则：
-   * - 单击铅笔按钮：打开完整节点编辑面板。
-   * - 单击折叠圆点：折叠/展开子节点。
-   * - 单击节点本体：暂时无动作，避免误触和双击编辑冲突。
+   * - 单击铅笔按钮：打开完整主题编辑面板。
+   * - 单击折叠圆点：折叠/展开子主题。
+   * - 单击主题本体：暂时无动作，避免误触和双击编辑冲突。
    */
-  handleNodeClick(event) {
-    if (this.suppressNextNodeClick) {
-      this.suppressNextNodeClick = false;
+  handleTopicClick(event) {
+    if (this.suppressNextTopicClick) {
+      this.suppressNextTopicClick = false;
       event.preventDefault();
       event.stopPropagation();
       return;
     }
 
     const target = event.target;
-    const nodeEl = target && target.closest ? target.closest('.yonxao-mindmap-node') : null;
-    if (!nodeEl) return;
+    const topicEl = target && target.closest ? target.closest('.yonxao-mindmap-topic') : null;
+    if (!topicEl) return;
 
-    const id = nodeEl.getAttribute('data-node-id');
-    const node = this.nodeById.get(id);
-    if (!node) return;
+    const id = topicEl.getAttribute('data-topic-id');
+    const topic = this.topicById.get(id);
+    if (!topic) return;
 
     const canEdit = this.canEditMindMap();
 
-    if (canEdit && target && target.closest && target.closest('.yonxao-mindmap-node-child-add')) {
+    if (canEdit && target && target.closest && target.closest('.yonxao-mindmap-topic-child-add')) {
       event.preventDefault();
       event.stopPropagation();
-      Promise.resolve(this.addChildFromContextMenu(node)).catch((error) => {
+      Promise.resolve(this.addChildFromContextMenu(topic)).catch((error) => {
         new Notice(`yonxao-mindmap: ${error.message || String(error)}`);
       });
       return;
     }
 
     const siblingButton =
-      target && target.closest ? target.closest('.yonxao-mindmap-node-sibling-add') : null;
+      target && target.closest ? target.closest('.yonxao-mindmap-topic-sibling-add') : null;
     if (canEdit && siblingButton) {
       event.preventDefault();
       event.stopPropagation();
       const position = siblingButton.getAttribute('data-sibling-position') || 'after';
-      Promise.resolve(this.addSiblingFromContextMenu(node, position)).catch((error) => {
+      Promise.resolve(this.addSiblingFromContextMenu(topic, position)).catch((error) => {
         new Notice(`yonxao-mindmap: ${error.message || String(error)}`);
       });
       return;
     }
 
-    if (canEdit && target && target.closest && target.closest('.yonxao-mindmap-node-edit')) {
+    if (canEdit && target && target.closest && target.closest('.yonxao-mindmap-topic-edit')) {
       event.preventDefault();
       event.stopPropagation();
-      this.openNodeEditor(node);
+      this.openTopicEditor(topic);
       return;
     }
 
     if (target && target.closest && target.closest('.yonxao-mindmap-toggle')) {
       event.preventDefault();
       event.stopPropagation();
-      this.toggleNodeCollapse(node);
+      this.toggleTopicCollapse(topic);
     }
   }
 
   /*
    * 作用：
-   * 处理节点双击事件，直接进入节点文字的内联编辑状态。
+   * 处理主题双击事件，直接进入主题文字的内联编辑状态。
    */
-  handleNodeDoubleClick(event) {
+  handleTopicDoubleClick(event) {
     if (!this.canEditMindMap()) return;
 
     const target = event.target;
-    const nodeEl = target && target.closest ? target.closest('.yonxao-mindmap-node') : null;
-    if (!nodeEl) return;
+    const topicEl = target && target.closest ? target.closest('.yonxao-mindmap-topic') : null;
+    if (!topicEl) return;
 
     // 铅笔按钮和折叠圆点已经有自己的单击语义，双击它们时不进入快速改名。
     if (
       target &&
       target.closest &&
-      (target.closest('.yonxao-mindmap-node-child-add') ||
-        target.closest('.yonxao-mindmap-node-sibling-add') ||
-        target.closest('.yonxao-mindmap-node-edit') ||
+      (target.closest('.yonxao-mindmap-topic-child-add') ||
+        target.closest('.yonxao-mindmap-topic-sibling-add') ||
+        target.closest('.yonxao-mindmap-topic-edit') ||
         target.closest('.yonxao-mindmap-toggle'))
     ) {
       return;
@@ -3308,94 +3340,94 @@ export class YonxaoMindmapRenderer extends Component {
     event.preventDefault();
     event.stopPropagation();
 
-    const id = nodeEl.getAttribute('data-node-id');
-    const node = this.nodeById.get(id);
-    if (node) {
-      this.openInlineTextEditor(node);
+    const id = topicEl.getAttribute('data-topic-id');
+    const topic = this.topicById.get(id);
+    if (topic) {
+      this.openInlineTextEditor(topic);
     }
   }
 
   /*
    * 作用：
-   * 处理节点右键菜单。
+   * 处理主题右键菜单。
    *
    * 实现逻辑：
-   * 只在右键点到真实节点时弹出菜单；右键空白画布仍交给 Obsidian 或浏览器默认行为。
+   * 只在右键点到真实主题时弹出菜单；右键空白画布仍交给 Obsidian 或浏览器默认行为。
    * 菜单使用 Obsidian 原生 Menu，能自动适配不同主题和平台。
    */
-  handleNodeContextMenu(event) {
+  handleTopicContextMenu(event) {
     if (!this.canEditMindMap()) return;
 
     const target = event.target;
-    const nodeEl = target && target.closest ? target.closest('.yonxao-mindmap-node') : null;
-    if (!nodeEl) return;
+    const topicEl = target && target.closest ? target.closest('.yonxao-mindmap-topic') : null;
+    if (!topicEl) return;
 
-    const id = nodeEl.getAttribute('data-node-id');
-    const node = this.nodeById.get(id);
-    if (!node || node._virtual) return;
+    const id = topicEl.getAttribute('data-topic-id');
+    const topic = this.topicById.get(id);
+    if (!topic || topic._virtual) return;
 
     event.preventDefault();
     event.stopPropagation();
-    this.openNodeContextMenu(event, node);
+    this.openTopicContextMenu(event, topic);
   }
 
   /*
    * 作用：
-   * 根据节点状态创建右键上下文菜单。
+   * 根据主题状态创建右键上下文菜单。
    *
    * 菜单分组：
    * - 编辑：快速改名、完整属性、复制文本。
-   * - 新增：子节点、上方兄弟、下方兄弟。
+   * - 新增：子主题、上方兄弟、下方兄弟。
    * - 展开折叠：单层切换、递归展开、递归折叠。
-   * - 删除：删除当前节点和其子树。
+   * - 删除：删除当前主题和其子树。
    */
-  openNodeContextMenu(event, node) {
+  openTopicContextMenu(event, topic) {
     const menu = new Menu();
-    const canHaveSibling = node !== this.root;
-    const hasChildren = node.children.length > 0;
-    const isCollapsed = this.collapsedIds.has(node.id);
+    const canHaveSibling = topic !== this.root;
+    const hasChildren = topic.children.length > 0;
+    const isCollapsed = this.collapsedIds.has(topic.id);
 
-    this.addNodeContextMenuItem(menu, '重命名节点', 'pencil', () =>
-      this.openInlineTextEditor(node)
+    this.addTopicContextMenuItem(menu, '重命名主题', 'pencil', () =>
+      this.openInlineTextEditor(topic)
     );
-    this.addNodeContextMenuItem(menu, '编辑节点属性', 'sliders-horizontal', () =>
-      this.openNodeEditor(node)
+    this.addTopicContextMenuItem(menu, '编辑主题属性', 'sliders-horizontal', () =>
+      this.openTopicEditor(topic)
     );
-    this.addNodeContextMenuItem(menu, '复制节点文本', 'copy', () => this.copyNodeText(node));
+    this.addTopicContextMenuItem(menu, '复制主题文本', 'copy', () => this.copyTopicText(topic));
     menu.addSeparator();
 
-    this.addNodeContextMenuItem(menu, '添加子节点', 'plus', () =>
-      this.addChildFromContextMenu(node)
+    this.addTopicContextMenuItem(menu, '添加子主题', 'plus', () =>
+      this.addChildFromContextMenu(topic)
     );
     if (canHaveSibling) {
-      this.addNodeContextMenuItem(menu, '在上方添加兄弟节点', 'arrow-up', () =>
-        this.addSiblingFromContextMenu(node, 'before')
+      this.addTopicContextMenuItem(menu, '在上方添加兄弟主题', 'arrow-up', () =>
+        this.addSiblingFromContextMenu(topic, 'before')
       );
-      this.addNodeContextMenuItem(menu, '在下方添加兄弟节点', 'arrow-down', () =>
-        this.addSiblingFromContextMenu(node, 'after')
+      this.addTopicContextMenuItem(menu, '在下方添加兄弟主题', 'arrow-down', () =>
+        this.addSiblingFromContextMenu(topic, 'after')
       );
     }
 
     if (hasChildren) {
       menu.addSeparator();
-      this.addNodeContextMenuItem(
+      this.addTopicContextMenuItem(
         menu,
-        isCollapsed ? '展开子节点' : '折叠子节点',
+        isCollapsed ? '展开子主题' : '折叠子主题',
         'list-tree',
-        () => this.toggleNodeCollapse(node)
+        () => this.toggleTopicCollapse(topic)
       );
-      this.addNodeContextMenuItem(menu, '展开全部子节点', 'chevrons-down', () =>
-        this.expandNodeDescendants(node)
+      this.addTopicContextMenuItem(menu, '展开全部子主题', 'chevrons-down', () =>
+        this.expandTopicDescendants(topic)
       );
-      this.addNodeContextMenuItem(menu, '折叠全部子节点', 'chevrons-up', () =>
-        this.collapseNodeDescendants(node)
+      this.addTopicContextMenuItem(menu, '折叠全部子主题', 'chevrons-up', () =>
+        this.collapseTopicDescendants(topic)
       );
     }
 
     if (canHaveSibling) {
       menu.addSeparator();
-      this.addNodeContextMenuItem(menu, '删除节点', 'trash-2', () =>
-        this.deleteNodeFromContextMenu(node)
+      this.addTopicContextMenuItem(menu, '删除主题', 'trash-2', () =>
+        this.deleteTopicFromContextMenu(topic)
       );
     }
 
@@ -3406,7 +3438,7 @@ export class YonxaoMindmapRenderer extends Component {
    * 作用：
    * 给 Obsidian Menu 添加菜单项，并统一异步错误提示。
    */
-  addNodeContextMenuItem(menu, title, icon, onClick) {
+  addTopicContextMenuItem(menu, title, icon, onClick) {
     menu.addItem((item) => {
       item.setTitle(title);
       if (icon) item.setIcon(icon);
@@ -3420,68 +3452,68 @@ export class YonxaoMindmapRenderer extends Component {
 
   /*
    * 作用：
-   * 复制节点文本到系统剪贴板。
+   * 复制主题文本到系统剪贴板。
    */
-  async copyNodeText(node) {
-    if (!node) return false;
+  async copyTopicText(topic) {
+    if (!topic) return false;
 
-    await navigator.clipboard.writeText(node.text || '');
-    new Notice('yonxao-mindmap: 节点文本已复制。');
+    await navigator.clipboard.writeText(topic.text || '');
+    new Notice('yonxao-mindmap: 主题文本已复制。');
     return true;
   }
 
   /*
    * 作用：
-   * 折叠或展开一个节点的子树。
+   * 折叠或展开一个主题的子树。
    */
-  toggleNodeCollapse(node) {
-    if (!node || !node.children.length) return;
+  toggleTopicCollapse(topic) {
+    if (!topic || !topic.children.length) return;
 
-    const id = node.id;
-    // 折叠状态只保存节点 id，不改原始树。这样重置和重新布局都很直接。
+    const id = topic.id;
+    // 折叠状态只保存主题 id，不改原始树。这样重置和重新布局都很直接。
     if (this.collapsedIds.has(id)) {
       this.collapsedIds.delete(id);
     } else {
       this.collapsedIds.add(id);
     }
-    this.renderGraph(true);
+    this.renderMap(true);
   }
 
   /*
    * 作用：
-   * 递归折叠当前节点及其所有有子节点的后代节点。
+   * 递归折叠当前主题及其所有有子主题的后代主题。
    */
-  collapseNodeDescendants(node) {
-    this.forEachNodeWithChildren(node, (current) => {
+  collapseTopicDescendants(topic) {
+    this.forEachTopicWithChildren(topic, (current) => {
       this.collapsedIds.add(current.id);
     });
-    this.renderGraph(true);
+    this.renderMap(true);
   }
 
   /*
    * 作用：
-   * 递归展开当前节点及其所有后代节点。
+   * 递归展开当前主题及其所有后代主题。
    */
-  expandNodeDescendants(node) {
-    this.forEachNodeWithChildren(node, (current) => {
+  expandTopicDescendants(topic) {
+    this.forEachTopicWithChildren(topic, (current) => {
       this.collapsedIds.delete(current.id);
     });
-    this.renderGraph(true);
+    this.renderMap(true);
   }
 
   /*
    * 作用：
-   * 遍历当前节点和后代中所有“有子节点”的节点。
+   * 遍历当前主题和后代中所有“有子主题”的主题。
    *
    * 调用场景：
-   * 右键菜单的“展开全部子节点”和“折叠全部子节点”只需要处理能折叠的节点。
+   * 右键菜单的“展开全部子主题”和“折叠全部子主题”只需要处理能折叠的主题。
    */
-  forEachNodeWithChildren(node, callback) {
-    if (!node || !node.children.length) return;
+  forEachTopicWithChildren(topic, callback) {
+    if (!topic || !topic.children.length) return;
 
-    callback(node);
-    for (const child of node.children) {
-      this.forEachNodeWithChildren(child, callback);
+    callback(topic);
+    for (const child of topic.children) {
+      this.forEachTopicWithChildren(child, callback);
     }
   }
 
@@ -3491,7 +3523,7 @@ export class YonxaoMindmapRenderer extends Component {
    *
    * 关键点：
    * 默认不拦截滚轮，让 Obsidian 页面保持正常滚动。
-   * 只有配置 interaction.wheelZoom: true 时，滚轮才会缩放脑图并阻止页面滚动。
+   * 只有配置 interaction.wheelZoom: true 时，滚轮才会缩放导图并阻止页面滚动。
    */
   handleWheel(event) {
     if (!this.viewBox) return;
@@ -3510,21 +3542,21 @@ export class YonxaoMindmapRenderer extends Component {
    * 开始画布平移拖拽。
    *
    * 实现逻辑：
-   * 只在非节点区域响应左键拖拽，避免和节点点击/编辑冲突。
+   * 只在非主题区域响应左键拖拽，避免和主题点击/编辑冲突。
    */
   handlePointerDown(event) {
     if (event.button !== 0 || !this.viewBox) return;
 
     const target = event.target;
-    const nodeEl = target && target.closest ? target.closest('.yonxao-mindmap-node') : null;
-    if (nodeEl) {
-      const isNodeControl =
-        target.closest('.yonxao-mindmap-node-child-add') ||
-        target.closest('.yonxao-mindmap-node-sibling-add') ||
-        target.closest('.yonxao-mindmap-node-edit') ||
+    const topicEl = target && target.closest ? target.closest('.yonxao-mindmap-topic') : null;
+    if (topicEl) {
+      const isTopicControl =
+        target.closest('.yonxao-mindmap-topic-child-add') ||
+        target.closest('.yonxao-mindmap-topic-sibling-add') ||
+        target.closest('.yonxao-mindmap-topic-edit') ||
         target.closest('.yonxao-mindmap-toggle');
-      if (this.canEditMindMap() && !isNodeControl) {
-        this.startPendingNodeDrag(event, nodeEl);
+      if (this.canEditMindMap() && !isTopicControl) {
+        this.startPendingTopicDrag(event, topicEl);
       }
       return;
     }
@@ -3549,8 +3581,8 @@ export class YonxaoMindmapRenderer extends Component {
    * 根据拖拽距离更新 SVG viewBox，实现画布平移。
    */
   handlePointerMove(event) {
-    if (this.nodeDragState) {
-      this.handleNodeDragMove(event);
+    if (this.topicDragState) {
+      this.handleTopicDragMove(event);
       return;
     }
 
@@ -3575,8 +3607,8 @@ export class YonxaoMindmapRenderer extends Component {
    * 结束画布平移拖拽。
    */
   handlePointerUp(event) {
-    if (this.nodeDragState) {
-      Promise.resolve(this.finishNodeDrag(event)).catch((error) => {
+    if (this.topicDragState) {
+      Promise.resolve(this.finishTopicDrag(event)).catch((error) => {
         new Notice(`yonxao-mindmap: ${error.message || String(error)}`);
       });
       return;
@@ -3596,22 +3628,22 @@ export class YonxaoMindmapRenderer extends Component {
 
   /*
    * 作用：
-   * 记录一次可能的节点拖拽。
+   * 记录一次可能的主题拖拽。
    *
    * 实现逻辑：
    * pointerdown 时先不立刻拖动，等 pointermove 超过阈值再进入真正拖拽。
    * 这样单击、双击和右键菜单不会被轻微手抖误判成拖拽。
    */
-  startPendingNodeDrag(event, nodeEl) {
-    const id = nodeEl.getAttribute('data-node-id');
-    const node = this.nodeById.get(id);
-    if (!node || node === this.root || node._virtual) return;
+  startPendingTopicDrag(event, topicEl) {
+    const id = topicEl.getAttribute('data-topic-id');
+    const topic = this.topicById.get(id);
+    if (!topic || topic === this.root || topic._virtual) return;
 
-    const box = node._layout;
-    this.nodeDragState = {
+    const box = topic._layout;
+    this.topicDragState = {
       pointerId: event.pointerId,
-      nodeId: id,
-      nodeEl,
+      topicId: id,
+      topicEl,
       startClientX: event.clientX,
       startClientY: event.clientY,
       startSvgPoint: this.clientPointToSvg(event.clientX, event.clientY),
@@ -3625,10 +3657,10 @@ export class YonxaoMindmapRenderer extends Component {
 
   /*
    * 作用：
-   * 处理节点拖拽中的移动和投放目标计算。
+   * 处理主题拖拽中的移动和投放目标计算。
    */
-  handleNodeDragMove(event) {
-    const state = this.nodeDragState;
+  handleTopicDragMove(event) {
+    const state = this.topicDragState;
     if (!state || event.pointerId !== state.pointerId) return;
 
     const clientDx = event.clientX - state.startClientX;
@@ -3639,35 +3671,35 @@ export class YonxaoMindmapRenderer extends Component {
     event.stopPropagation();
 
     if (!state.started) {
-      this.beginNodeDrag();
+      this.beginTopicDrag();
     }
 
     const point = this.clientPointToSvg(event.clientX, event.clientY);
     const dx = point.x - state.startSvgPoint.x;
     const dy = point.y - state.startSvgPoint.y;
-    state.nodeEl.setAttribute(
+    state.topicEl.setAttribute(
       'transform',
       `translate(${state.originX + dx} ${state.originY + dy})`
     );
 
-    const drop = this.findNodeDropTarget(event);
+    const drop = this.findTopicDropTarget(event);
     state.drop = drop;
-    this.applyNodeDropHighlight(drop);
+    this.applyTopicDropHighlight(drop);
   }
 
   /*
    * 作用：
-   * 让节点进入真实拖拽状态，并关闭可能正在显示的编辑 UI。
+   * 让主题进入真实拖拽状态，并关闭可能正在显示的编辑 UI。
    */
-  beginNodeDrag() {
-    const state = this.nodeDragState;
+  beginTopicDrag() {
+    const state = this.topicDragState;
     if (!state) return;
 
     state.started = true;
-    this.closeNodeEditor();
+    this.closeTopicEditor();
     this.closeInlineTextEditor(false);
-    this.svgEl.classList.add('is-node-dragging');
-    state.nodeEl.classList.add('is-dragging');
+    this.svgEl.classList.add('is-topic-dragging');
+    state.topicEl.classList.add('is-dragging');
 
     try {
       this.svgEl.setPointerCapture(state.pointerId);
@@ -3678,35 +3710,35 @@ export class YonxaoMindmapRenderer extends Component {
 
   /*
    * 作用：
-   * 根据鼠标位置寻找当前可投放的目标节点。
+   * 根据鼠标位置寻找当前可投放的目标主题。
    *
    * 区域规则：
    * - 目标上方 25%：插入到目标上方。
    * - 目标下方 25%：插入到目标下方。
-   * - 目标中间 50%：作为目标子节点。
+   * - 目标中间 50%：作为目标子主题。
    */
-  findNodeDropTarget(event) {
-    const state = this.nodeDragState;
-    const movingNode = state ? this.nodeById.get(state.nodeId) : null;
-    if (!state || !movingNode) return null;
+  findTopicDropTarget(event) {
+    const state = this.topicDragState;
+    const movingTopic = state ? this.topicById.get(state.topicId) : null;
+    if (!state || !movingTopic) return null;
 
-    // 拖动节点本身会跟随鼠标，为了找到它下面的目标节点，临时让它不参与命中测试。
-    const previousPointerEvents = state.nodeEl.style.pointerEvents;
-    state.nodeEl.style.pointerEvents = 'none';
+    // 拖动主题本身会跟随鼠标，为了找到它下面的目标主题，临时让它不参与命中测试。
+    const previousPointerEvents = state.topicEl.style.pointerEvents;
+    state.topicEl.style.pointerEvents = 'none';
     const hitEl = document.elementFromPoint(event.clientX, event.clientY);
-    state.nodeEl.style.pointerEvents = previousPointerEvents;
+    state.topicEl.style.pointerEvents = previousPointerEvents;
 
-    const targetEl = hitEl && hitEl.closest ? hitEl.closest('.yonxao-mindmap-node') : null;
+    const targetEl = hitEl && hitEl.closest ? hitEl.closest('.yonxao-mindmap-topic') : null;
     if (!targetEl) return null;
 
-    const targetId = targetEl.getAttribute('data-node-id');
-    const targetNode = this.nodeById.get(targetId);
-    if (!targetNode || targetNode._virtual) return null;
-    if (targetId === state.nodeId || containsNodeId(movingNode, targetId)) return null;
+    const targetId = targetEl.getAttribute('data-topic-id');
+    const targetTopic = this.topicById.get(targetId);
+    if (!targetTopic || targetTopic._virtual) return null;
+    if (targetId === state.topicId || containsTopicId(movingTopic, targetId)) return null;
 
-    const cardEl = targetEl.querySelector('.yonxao-mindmap-node-card');
+    const cardEl = targetEl.querySelector('.yonxao-mindmap-topic-card');
     const rect = cardEl ? cardEl.getBoundingClientRect() : targetEl.getBoundingClientRect();
-    const axis = this.dropAxisForNode(targetNode);
+    const axis = this.dropAxisForTopic(targetTopic);
     const ratio =
       axis === 'x'
         ? rect.width
@@ -3717,7 +3749,7 @@ export class YonxaoMindmapRenderer extends Component {
           : 0.5;
     let placement = 'child';
 
-    if (targetNode !== this.root) {
+    if (targetTopic !== this.root) {
       if (ratio < 0.25) placement = 'before';
       if (ratio > 0.75) placement = 'after';
     }
@@ -3732,10 +3764,10 @@ export class YonxaoMindmapRenderer extends Component {
 
   /*
    * 作用：
-   * 判断某个节点的兄弟排序投放区域应该按横向还是纵向切分。
+   * 判断某个主题的兄弟排序投放区域应该按横向还是纵向切分。
    */
-  dropAxisForNode(node) {
-    const side = node?._layout?.side;
+  dropAxisForTopic(topic) {
+    const side = topic?._layout?.side;
     if (
       side === 'top' ||
       side === 'bottom' ||
@@ -3755,9 +3787,9 @@ export class YonxaoMindmapRenderer extends Component {
    * 作用：
    * 根据当前投放目标显示拖拽反馈。
    */
-  applyNodeDropHighlight(drop) {
-    this.clearNodeDropHighlight();
-    const state = this.nodeDragState;
+  applyTopicDropHighlight(drop) {
+    this.clearTopicDropHighlight();
+    const state = this.topicDragState;
     if (!drop || !state) return;
 
     state.highlightEl = drop.targetEl;
@@ -3765,13 +3797,13 @@ export class YonxaoMindmapRenderer extends Component {
 
     if (drop.placement === 'child') return;
 
-    const targetNode = this.nodeById.get(drop.targetId);
-    const box = targetNode && targetNode._layout;
+    const targetTopic = this.topicById.get(drop.targetId);
+    const box = targetTopic && targetTopic._layout;
     if (!box) return;
 
     if (drop.axis === 'x') {
       const x = drop.placement === 'before' ? box.x - box.width / 2 - 8 : box.x + box.width / 2 + 8;
-      this.nodeDropIndicatorEl = svg('line', {
+      this.topicDropIndicatorEl = svg('line', {
         class: 'yonxao-mindmap-drop-indicator',
         x1: x,
         y1: box.y - box.height / 2,
@@ -3781,7 +3813,7 @@ export class YonxaoMindmapRenderer extends Component {
     } else {
       const y =
         drop.placement === 'before' ? box.y - box.height / 2 - 8 : box.y + box.height / 2 + 8;
-      this.nodeDropIndicatorEl = svg('line', {
+      this.topicDropIndicatorEl = svg('line', {
         class: 'yonxao-mindmap-drop-indicator',
         x1: box.x - box.width / 2,
         y1: y,
@@ -3789,35 +3821,35 @@ export class YonxaoMindmapRenderer extends Component {
         y2: y,
       });
     }
-    this.graphEl.appendChild(this.nodeDropIndicatorEl);
+    this.mapEl.appendChild(this.topicDropIndicatorEl);
   }
 
   /*
    * 作用：
    * 清理拖拽目标高亮和插入线。
    */
-  clearNodeDropHighlight() {
-    if (this.nodeDragState && this.nodeDragState.highlightEl) {
-      this.nodeDragState.highlightEl.classList.remove(
+  clearTopicDropHighlight() {
+    if (this.topicDragState && this.topicDragState.highlightEl) {
+      this.topicDragState.highlightEl.classList.remove(
         'is-drop-before',
         'is-drop-after',
         'is-drop-child'
       );
-      this.nodeDragState.highlightEl = null;
+      this.topicDragState.highlightEl = null;
     }
 
-    if (this.nodeDropIndicatorEl) {
-      this.nodeDropIndicatorEl.remove();
-      this.nodeDropIndicatorEl = null;
+    if (this.topicDropIndicatorEl) {
+      this.topicDropIndicatorEl.remove();
+      this.topicDropIndicatorEl = null;
     }
   }
 
   /*
    * 作用：
-   * 结束节点拖拽；如果存在合法投放目标，就移动树节点并保存。
+   * 结束主题拖拽；如果存在合法投放目标，就移动树主题并保存。
    */
-  async finishNodeDrag(event) {
-    const state = this.nodeDragState;
+  async finishTopicDrag(event) {
+    const state = this.topicDragState;
     if (!state) return;
 
     try {
@@ -3828,42 +3860,42 @@ export class YonxaoMindmapRenderer extends Component {
 
     const shouldMove = event.type !== 'pointercancel' && state.started && state.drop;
     const drop = state.drop;
-    const movingId = state.nodeId;
+    const movingTopicId = state.topicId;
 
-    this.cleanupNodeDragState(state.started);
+    this.cleanupTopicDragState(state.started);
 
     if (!shouldMove) return;
 
-    const moved = moveNodeInTree(this.root, movingId, drop.targetId, drop.placement);
+    const moved = moveTopicInTree(this.root, movingTopicId, drop.targetId, drop.placement);
     if (!moved) {
       new Notice('yonxao-mindmap: 不能移动到这个位置。');
-      this.renderGraph(true);
+      this.renderMap(true);
       return;
     }
 
     if (drop.placement === 'child') {
       this.collapsedIds.delete(drop.targetId);
     }
-    this.collapsedIds.delete(movingId);
-    await this.saveTreeToSourceAndFile('节点已移动。');
+    this.collapsedIds.delete(movingTopicId);
+    await this.saveTreeToSourceAndFile('主题已移动。');
   }
 
   /*
    * 作用：
-   * 清理节点拖拽状态和临时 SVG 样式。
+   * 清理主题拖拽状态和临时 SVG 样式。
    */
-  cleanupNodeDragState(wasDragging) {
-    const state = this.nodeDragState;
+  cleanupTopicDragState(wasDragging) {
+    const state = this.topicDragState;
     if (!state) return;
 
-    this.clearNodeDropHighlight();
-    state.nodeEl.classList.remove('is-dragging');
-    this.svgEl.classList.remove('is-node-dragging');
-    state.nodeEl.setAttribute('transform', `translate(${state.originX} ${state.originY})`);
-    this.nodeDragState = null;
+    this.clearTopicDropHighlight();
+    state.topicEl.classList.remove('is-dragging');
+    this.svgEl.classList.remove('is-topic-dragging');
+    state.topicEl.setAttribute('transform', `translate(${state.originX} ${state.originY})`);
+    this.topicDragState = null;
 
     if (wasDragging) {
-      this.suppressNextNodeClick = true;
+      this.suppressNextTopicClick = true;
     }
   }
 
@@ -3880,7 +3912,7 @@ export class YonxaoMindmapRenderer extends Component {
     const currentBounds = bounds || layoutTree(this.root, this.collapsedIds, this.config).bounds;
     const width = Math.max(240, currentBounds.maxX - currentBounds.minX + VIEWBOX_MARGIN_X * 2);
     const height = Math.max(
-      NODE_MIN_HEIGHT + VIEWBOX_MARGIN_Y * 2,
+      TOPIC_MIN_HEIGHT + VIEWBOX_MARGIN_Y * 2,
       currentBounds.maxY - currentBounds.minY + VIEWBOX_MARGIN_Y * 2
     );
 
@@ -3900,7 +3932,7 @@ export class YonxaoMindmapRenderer extends Component {
    *
    * 实现逻辑：
    * 如果用户手动拖过高度，普通重绘会完全尊重手动高度，哪怕它小于自动计算高度。
-   * 只有从源码切回脑图这类明确传入 growManualHeight 的场景，才会在高度不够时自动增高。
+   * 只有从源码切回导图这类明确传入 growManualHeight 的场景，才会在高度不够时自动增高。
    */
   updateContainerHeight(viewBoxWidth, viewBoxHeight, options = {}) {
     if (!this.containerEl || !viewBoxWidth || !viewBoxHeight) return;
@@ -3916,7 +3948,7 @@ export class YonxaoMindmapRenderer extends Component {
     this.fitRetryCount = 0;
 
     const desiredHeight = Math.ceil((rect.width * viewBoxHeight) / viewBoxWidth);
-    const minHeight = NODE_MIN_HEIGHT + VIEWBOX_MARGIN_Y * 2;
+    const minHeight = TOPIC_MIN_HEIGHT + VIEWBOX_MARGIN_Y * 2;
     const viewportHeight = typeof window === 'undefined' ? 800 : window.innerHeight;
     const maxHeight = Math.min(560, Math.max(220, viewportHeight * 0.7));
     const nextHeight = clamp(desiredHeight, minHeight, maxHeight);

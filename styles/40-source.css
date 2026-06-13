@@ -4,7 +4,7 @@
  *
  * 设计边界：
  * 工具栏样式归 20-toolbar.css，SVG 和高度手柄归 30-canvas.css。
- * 本文件只关心源码视图本身，这样后续调整源码编辑体验时不会影响脑图画布。
+ * 本文件只关心源码模式本身，这样后续调整源码编辑体验时不会影响导图画布。
  *
  * 调用链位置：
  * YonxaoMindmapRenderer.createSourceView() -> 本文件控制源码模式 UI。
@@ -12,7 +12,7 @@
 
 /*
  * 作用：
- * 源码视图根容器，默认隐藏。
+ * 源码模式根容器，默认隐藏。
  */
 .yonxao-mindmap-source {
   display: none;
@@ -28,7 +28,7 @@
 
 /*
  * 作用：
- * 源码模式下显示源码视图。
+ * 源码模式下显示源码模式。
  */
 .yonxao-mindmap-container.is-source-mode .yonxao-mindmap-source {
   display: flex;
@@ -39,7 +39,7 @@
  * 源码 textarea，承担 yxmm 文本编辑。
  *
  * 关键点：
- * white-space: pre 与 wrap=off 配合，保持 Markdown 标题源码的原始排版。
+ * white-space: pre 与 wrap=off 配合，保持 主题级别标记源码的原始排版。
  */
 .yonxao-mindmap-source-input {
   position: relative;

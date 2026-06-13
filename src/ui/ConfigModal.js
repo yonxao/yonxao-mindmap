@@ -4,10 +4,10 @@
  *
  * 主要功能：
  * - 基础：画布高度、源码高度、工具栏位置。
- * - 主题：主题名、默认节点颜色。
- * - 结构：布局结构、节点最大宽度。
+ * - 主题：主题名、默认主题颜色。
+ * - 结构：布局结构、主题最大宽度。
  * - 字体：全局字体与 1/2/3 级标题字体。
- * - 源码：Tab 调整标题级别开关。
+ * - 源码：Tab 调整主题级别开关。
  * - 高级：直接编辑配置 YAML。
  *
  * 调用链：
@@ -158,7 +158,7 @@ export class ConfigModal extends Modal {
    */
   renderBasicTab(normalized) {
     this.createSection('基础配置');
-    this.createNumberField('脑图高度', ['canvas', 'height'], normalized.canvas.height, {
+    this.createNumberField('导图高度', ['canvas', 'height'], normalized.canvas.height, {
       min: 96,
       max: 1800,
       step: 10,
@@ -170,7 +170,7 @@ export class ConfigModal extends Modal {
       max: 1800,
       step: 10,
       placeholder: '自动',
-      help: '源码模式独立高度，不影响脑图高度。',
+      help: '源码模式独立高度，不影响导图高度。',
     });
     this.createNumberField('工具栏 X', ['toolbar', 'x'], normalized.toolbar.x, {
       min: 0,
@@ -190,7 +190,7 @@ export class ConfigModal extends Modal {
       normalized.interaction.wheelZoom,
       {
         omitWhenFalse: true,
-        help: '关闭时滚轮会继续滚动 Obsidian 页面；开启后滚轮会缩放当前脑图并写入 interaction.wheelZoom: true。',
+        help: '关闭时滚轮会继续滚动 Obsidian 页面；开启后滚轮会缩放当前导图并写入 interaction.wheelZoom: true。',
       }
     );
     this.createInlineResetButton('重置工具栏位置', [
@@ -212,10 +212,10 @@ export class ConfigModal extends Modal {
       MIND_THEME_OPTIONS
     );
     const colorField = this.createColorTextField(
-      '统一节点颜色',
-      ['node', 'defaultColor'],
-      normalized.node.defaultColor,
-      '留空则使用当前主题的自动配色。填写后会覆盖主题自动配色，但节点属性 color 仍然优先。'
+      '统一主题颜色',
+      ['topic', 'defaultColor'],
+      normalized.topic.defaultColor,
+      '留空则使用当前主题的自动配色。填写后会覆盖主题自动配色，但主题属性 color 仍然优先。'
     );
     const warningEl = this.createWarning('');
     const updateWarning = () => {
@@ -236,7 +236,7 @@ export class ConfigModal extends Modal {
 
   /*
    * 作用：
-   * 结构配置：布局方向和节点宽度。
+   * 结构配置：布局方向和主题宽度。
    */
   renderLayoutTab(normalized) {
     this.createSection('结构');
@@ -290,7 +290,7 @@ export class ConfigModal extends Modal {
         },
       ]
     );
-    this.createNumberField('节点最大宽度', ['node', 'maxWidth'], normalized.node.maxWidth, {
+    this.createNumberField('主题最大宽度', ['topic', 'maxWidth'], normalized.topic.maxWidth, {
       min: 120,
       max: 800,
       step: 10,
@@ -315,7 +315,7 @@ export class ConfigModal extends Modal {
       min: FONT_SIZE_MIN,
       max: FONT_SIZE_MAX,
       step: 1,
-      help: '字号单位是像素，控制节点文字大小。',
+      help: '字号单位是像素，控制主题文字大小。',
     });
     this.createNumberField('字重', ['font', 'weight'], normalized.font.weight, {
       min: FONT_WEIGHT_MIN,
@@ -343,7 +343,7 @@ export class ConfigModal extends Modal {
   renderSourceTab(normalized) {
     this.createSection('源码模式');
     this.createToggleField(
-      'Tab 调整标题级别',
+      'Tab 调整主题级别',
       ['source', 'enableTabIndent'],
       normalized.source.enableTabIndent
     );
@@ -723,11 +723,11 @@ export class ConfigModal extends Modal {
 
   /*
    * 作用：
-   * 判断是否需要提示“统一节点颜色会覆盖彩虹主题自动配色”。
+   * 判断是否需要提示“统一主题颜色会覆盖彩虹主题自动配色”。
    */
   shouldWarnUnifiedColorOverridesTheme() {
     const theme = String(getConfigValue(this.draftConfig, ['theme'], '') || '').trim();
-    const defaultColor = getConfigValue(this.draftConfig, ['node', 'defaultColor'], '');
+    const defaultColor = getConfigValue(this.draftConfig, ['topic', 'defaultColor'], '');
     const hasDefaultColor =
       typeof defaultColor === 'string'
         ? defaultColor.trim() !== ''
@@ -743,7 +743,7 @@ export class ConfigModal extends Modal {
   updateThemeOverrideWarning(warningEl) {
     const shouldWarn = this.shouldWarnUnifiedColorOverridesTheme();
     warningEl.setText(
-      shouldWarn ? '当前主题会按分支自动配色；填写统一节点颜色后，主题的彩虹分支色将不会显示。' : ''
+      shouldWarn ? '当前主题会按分支自动配色；填写统一主题颜色后，主题的彩虹分支色将不会显示。' : ''
     );
     warningEl.hidden = !shouldWarn;
   }

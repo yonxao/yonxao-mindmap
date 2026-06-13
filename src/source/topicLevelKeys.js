@@ -1,26 +1,26 @@
 /*
  * 文件作用：
- * 这里负责源码模式里和 Markdown 标题层级有关的键盘操作。
+ * 这里负责源码模式里和 主题级别标记层级有关的键盘操作。
  *
  * 执行逻辑：
  * - Tab：给选中标题增加一个 #，等价于下沉一级。
  * - Shift+Tab：删除一个 #，等价于上升一级。
  *
  * 调用链位置：
- * YonxaoMindmapRenderer.createSourceView() -> keydown -> headingKeys
+ * YonxaoMindmapRenderer.createSourceView() -> keydown -> topicLevelKeys
  */
 
-import { matchHeadingLine } from '../parser/parseMind.js';
+import { matchTopicLevelLine } from '../parser/parseMind.js';
 
 /*
  * 作用：
  * 源码模式 Tab/Shift+Tab 的统一入口。
  *
  * 调用链：
- * Renderer.createSourceView() keydown -> applyHeadingLevelKey()。
+ * Renderer.createSourceView() keydown -> applyTopicLevelKey()。
  */
-export function applyHeadingLevelKey(textarea, isOutdent) {
-  adjustHeadingLevelSelection(textarea, isOutdent);
+export function applyTopicLevelKey(textarea, isOutdent) {
+  adjustTopicLevelSelection(textarea, isOutdent);
 }
 
 /*
@@ -28,9 +28,9 @@ export function applyHeadingLevelKey(textarea, isOutdent) {
  * 调整 textarea 当前选区内所有标题行的层级。
  *
  * 实现逻辑：
- * 先把选区扩展到完整行，再逐行调用 adjustHeadingLevel。
+ * 先把选区扩展到完整行，再逐行调用 adjustTopicLevel。
  */
-export function adjustHeadingLevelSelection(textarea, isOutdent) {
+export function adjustTopicLevelSelection(textarea, isOutdent) {
   const value = textarea.value;
   const start = textarea.selectionStart;
   const end = textarea.selectionEnd;
@@ -39,12 +39,12 @@ export function adjustHeadingLevelSelection(textarea, isOutdent) {
   const lineEnd = nextLineBreak === -1 ? value.length : nextLineBreak;
   const selected = value.slice(lineStart, lineEnd);
   const lines = selected.split('\n');
-  const hasHeading = lines.some((line) => matchHeadingLine(line.trim()));
+  const hasTopicLevelLine = lines.some((line) => matchTopicLevelLine(line.trim()));
 
   // 如果选区里没有标题行，就不改变用户输入，避免 Tab 被误用为层级操作。
-  if (!hasHeading) return false;
+  if (!hasTopicLevelLine) return false;
 
-  const changed = lines.map((line) => adjustHeadingLevel(line, isOutdent)).join('\n');
+  const changed = lines.map((line) => adjustTopicLevel(line, isOutdent)).join('\n');
   textarea.setRangeText(changed, lineStart, lineEnd, 'select');
   textarea.selectionStart = lineStart;
   textarea.selectionEnd = lineStart + changed.length;
@@ -53,12 +53,12 @@ export function adjustHeadingLevelSelection(textarea, isOutdent) {
 
 /*
  * 作用：
- * 调整单行 Markdown 标题层级。
+ * 调整单行 主题级别标记层级。
  *
  * 实现逻辑：
  * 缩进时增加一个 #；反缩进时在至少二级标题的情况下删除一个 #。
  */
-export function adjustHeadingLevel(line, isOutdent) {
+export function adjustTopicLevel(line, isOutdent) {
   const match = String(line).match(/^(\s*)(#+)(\s+.*)$/);
   if (!match) return line;
 

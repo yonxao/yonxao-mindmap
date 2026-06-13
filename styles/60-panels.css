@@ -1,13 +1,13 @@
 /*
  * 文件作用：
- * 这里定义插件里的消息块、错误提示和节点编辑面板。
+ * 这里定义插件里的消息块、错误提示和主题编辑面板。
  *
  * 执行逻辑：
- * 当解析失败或运行失败时显示 message/error；当用户点击节点编辑按钮时显示 node-editor。
+ * 当解析失败或运行失败时显示 message/error；当用户点击主题编辑按钮时显示 topic-editor。
  * 面板固定在画布左下角，避免遮挡 Obsidian 右上角的原生“编辑这个块”按钮。
  *
  * 调用链位置：
- * YonxaoMindmapRenderer.renderMessage()/createNodeEditor() -> 本文件控制提示和面板。
+ * YonxaoMindmapRenderer.renderMessage()/createTopicEditor() -> 本文件控制提示和面板。
  */
 
 /*
@@ -49,9 +49,9 @@
 
 /*
  * 作用：
- * 节点编辑面板主体，固定在画布左下角。
+ * 主题编辑面板主体，固定在画布左下角。
  */
-.yonxao-mindmap-node-editor {
+.yonxao-mindmap-topic-editor {
   position: absolute;
   z-index: 3;
   left: 10px;
@@ -67,9 +67,9 @@
 
 /*
  * 作用：
- * 节点编辑面板标题。
+ * 主题编辑面板标题。
  */
-.yonxao-mindmap-node-editor-title {
+.yonxao-mindmap-topic-editor-title {
   margin-bottom: 8px;
   color: var(--text-normal);
   font-size: var(--font-ui-small);
@@ -78,9 +78,9 @@
 
 /*
  * 作用：
- * 节点编辑表单的一行字段布局。
+ * 主题编辑表单的一行字段布局。
  */
-.yonxao-mindmap-node-editor-field {
+.yonxao-mindmap-topic-editor-field {
   display: grid;
   grid-template-columns: 48px minmax(0, 1fr);
   align-items: center;
@@ -92,9 +92,9 @@
 
 /*
  * 作用：
- * 节点编辑面板中的 input/select 控件。
+ * 主题编辑面板中的 input/select 控件。
  */
-.yonxao-mindmap-node-editor-input {
+.yonxao-mindmap-topic-editor-input {
   width: 100%;
   min-width: 0;
   box-sizing: border-box;
@@ -109,17 +109,17 @@
 
 /*
  * 作用：
- * 节点编辑输入控件聚焦状态。
+ * 主题编辑输入控件聚焦状态。
  */
-.yonxao-mindmap-node-editor-input:focus {
+.yonxao-mindmap-topic-editor-input:focus {
   border-color: var(--interactive-accent);
 }
 
 /*
  * 作用：
- * 节点编辑面板底部按钮区。
+ * 主题编辑面板底部按钮区。
  */
-.yonxao-mindmap-node-editor-actions {
+.yonxao-mindmap-topic-editor-actions {
   display: flex;
   flex-wrap: wrap;
   gap: 6px;
@@ -128,9 +128,9 @@
 
 /*
  * 作用：
- * 节点编辑面板中的操作按钮。
+ * 主题编辑面板中的操作按钮。
  */
-.yonxao-mindmap-node-editor-button {
+.yonxao-mindmap-topic-editor-button {
   padding: 5px 9px;
   color: var(--text-normal);
   border: 1px solid var(--background-modifier-border);
@@ -141,18 +141,18 @@
 
 /*
  * 作用：
- * 节点编辑按钮 hover/focus 状态。
+ * 主题编辑按钮 hover/focus 状态。
  */
-.yonxao-mindmap-node-editor-button:hover,
-.yonxao-mindmap-node-editor-button:focus-visible {
+.yonxao-mindmap-topic-editor-button:hover,
+.yonxao-mindmap-topic-editor-button:focus-visible {
   background: var(--background-modifier-hover);
 }
 
 /*
  * 作用：
- * 节点编辑按钮禁用状态。
+ * 主题编辑按钮禁用状态。
  */
-.yonxao-mindmap-node-editor-button:disabled {
+.yonxao-mindmap-topic-editor-button:disabled {
   color: var(--text-faint);
   cursor: default;
   opacity: 0.55;
@@ -160,10 +160,10 @@
 
 /*
  * 作用：
- * 双击节点时覆盖在 SVG 节点上方的快速改名输入框。
+ * 双击主题时覆盖在 SVG 主题上方的快速改名输入框。
  *
  * 实现逻辑：
- * Renderer 会读取 SVG 节点卡片的屏幕坐标，把这个 HTML input 绝对定位到同一位置。
+ * Renderer 会读取 SVG 主题卡片的屏幕坐标，把这个 HTML input 绝对定位到同一位置。
  * 文字输入仍由浏览器原生 input 处理，能获得更稳定的光标、选区和中文输入法体验。
  */
 .yonxao-mindmap-inline-text-editor {

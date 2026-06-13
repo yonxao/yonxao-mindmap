@@ -26,7 +26,7 @@ font:
     1:
       size: 16
       weight: 700
-node:
+topic:
   maxWidth: 240
 source:
   enableTabIndent: true
@@ -51,7 +51,7 @@ source:
 
 ## Syntax
 
-- Markdown headings define hierarchy: `#` is the center node, `##` is level 2, `###` is level 3, and so on.
+- Markdown headings define hierarchy: `#` is the center topic, `##` is level 2, `###` is level 3, and so on.
 - Non-empty lines inside `yxmm` blocks must use Markdown headings.
 - Attributes are written at the end of a line with `[key=value]`.
 - Supported attributes:
@@ -59,6 +59,97 @@ source:
   - `layout=right`, `layout=left`, `layout=balanced`
   - `icon=book`
   - `fontSize=16`, `fontWeight=700`, `fontFamily="..."`, `lineHeight=20`
+
+## Glossary
+
+yonxao-mindmap uses these terms consistently across docs, config, UI text, and code comments.
+
+### Basic Structure
+
+| 中文术语    | English Term    | yxmm Term / Config Key | Purpose                                                                                  |
+| ----------- | --------------- | ---------------------- | ---------------------------------------------------------------------------------------- |
+| yxmm 代码块 | yxmm code block | <code>```yxmm</code>   | The smallest unit the plugin reads and saves.                                            |
+| 配置区      | config block    | `--- ... ---`          | Stores global settings such as theme, layout, font, toolbar position, and canvas height. |
+| 正文区      | body            | Markdown headings      | Describes the topic tree with Markdown headings.                                         |
+| 源码模式    | source mode     | `source`               | Edits raw `yxmm` text.                                                                   |
+| 导图模式    | map mode        | -                      | Shows the visual SVG rendering of the `yxmm` block.                                      |
+| 主题级别    | heading level   | `#` / `##` / `###`     | Represents hierarchy; `#` is level 1.                                                    |
+
+### Content Components
+
+| 中文术语 | English Term    | yxmm Term / Config Key    | Purpose                                                   |
+| -------- | --------------- | ------------------------- | --------------------------------------------------------- |
+| 主题     | topic           | heading line              | A visual unit generated from one Markdown heading line.   |
+| 中心主题 | center topic    | `#`                       | The root topic and core topic.                            |
+| 分支主题 | branch topic    | `##`                      | A first-level branch under the center topic.              |
+| 子主题   | subtopic        | `###` and deeper headings | A descendant topic under a branch topic.                  |
+| 主题标签 | topic label     | heading text              | The text displayed inside a topic.                        |
+| 主题属性 | topic attribute | `[key=value]`             | A per-topic setting written at the end of a heading line. |
+| 主题颜色 | topic color     | `[color=#...]`            | Sets a single topic's color.                              |
+| 主题图标 | topic icon      | `[icon=book]`             | Sets a single topic's icon.                               |
+| 主题字体 | topic font      | `[fontSize=...]`          | Overrides a single topic's font.                          |
+
+### Relationship Structure
+
+| 中文术语 | English Term  | yxmm Term / Config Key | Purpose                                                          |
+| -------- | ------------- | ---------------------- | ---------------------------------------------------------------- |
+| 父主题   | parent topic  | -                      | The direct ancestor of the current topic.                        |
+| 子主题   | child topic   | -                      | The direct descendant of the current topic.                      |
+| 兄弟主题 | sibling topic | -                      | A topic with the same parent.                                    |
+| 叶子主题 | leaf topic    | -                      | A topic without children.                                        |
+| 子树     | subtree       | -                      | A topic plus all of its descendants.                             |
+| 连线     | connector     | `edge.type`            | Shows the relationship between a parent topic and a child topic. |
+| 子线出口 | child outlet  | -                      | The point where a connector exits a topic toward its children.   |
+
+### Layout Structures
+
+| 中文术语     | English Term       | yxmm Term / Config Key                                     | Purpose                                                                                                     |
+| ------------ | ------------------ | ---------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------- |
+| 布局结构     | layout structure   | `layout.defaultDirection`                                  | Controls the overall arrangement.                                                                           |
+| 思维导图     | mind map           | `right` / `left` / `balanced` / `down` / `up` / `vertical` | Branches from the center topic in one or more directions.                                                   |
+| 树状结构     | tree structure     | `tree` / `tree-left` / `tree-balanced`                     | Emphasizes trunk and hierarchy expansion.                                                                   |
+| 组织结构图   | organization chart | `org` / `org-right`                                        | Emphasizes parent-child hierarchy and level alignment.                                                      |
+| 时间轴       | timeline           | `timeline-up` / `timeline` / `timeline-balanced`           | Places branch topics on a horizontal axis with descendants above, below, or both.                           |
+| 放射图       | radial map         | `radial`                                                   | Distributes branches radially around the center topic.                                                      |
+| 鱼骨图       | fishbone diagram   | `fishbone`                                                 | Uses the center topic as the fish head, a main spine toward the tail, and branch topics as bones.           |
+| 树形表格     | tree table         | `tree-table`                                               | Renders the topic tree as a table where leaf nodes fill remaining columns.                                  |
+| 树形阶梯表格 | stepped tree table | `tree-table-stepped`                                       | Renders the topic tree as a table where leaf nodes stay in their own columns, preserving a stepped outline. |
+
+### Fishbone-Specific Structure
+
+| 中文术语 | English Term  | yxmm Term / Config Key | Purpose                                                                                                                      |
+| -------- | ------------- | ---------------------- | ---------------------------------------------------------------------------------------------------------------------------- |
+| 鱼头     | fish head     | `#`                    | The side where the center topic sits. The current implementation places the fish head on the left and the tail on the right. |
+| 主骨     | main spine    | -                      | The horizontal main line from fish head to fish tail.                                                                        |
+| 鱼尾     | fish tail     | -                      | The tail marker at the end of the main spine.                                                                                |
+| 大分支   | primary bone  | `##`                   | A first-level branch topic connected to the main spine by a diagonal bone.                                                   |
+| 斜骨     | diagonal bone | -                      | The diagonal connector between a primary bone and the main spine.                                                            |
+| 鱼刺主题 | rib topic     | `###`                  | A topic attached to a diagonal bone.                                                                                         |
+
+### Functional Components
+
+| 中文术语      | English Term           | yxmm Term / Config Key            | Purpose                                                            |
+| ------------- | ---------------------- | --------------------------------- | ------------------------------------------------------------------ |
+| 悬浮工具栏    | floating toolbar       | `toolbar.x` / `toolbar.y`         | Holds common action buttons and can be dragged.                    |
+| 配置弹框      | config modal           | -                                 | Visually edits theme, layout, font, source, and advanced settings. |
+| 编辑按钮      | edit button            | -                                 | Opens the topic editor; some compact layouts hide it.              |
+| 折叠/展开按钮 | collapse/expand button | -                                 | Hides or shows the current topic's subtree.                        |
+| 新增按钮      | add button             | -                                 | Adds a child topic or sibling topic.                               |
+| 右键菜单      | context menu           | -                                 | Provides topic actions such as add, delete, collapse, and expand.  |
+| 工具栏抓手    | toolbar grip           | -                                 | Drags the floating toolbar.                                        |
+| 高度拖拽条    | height resize handle   | `canvas.height` / `source.height` | Adjusts map canvas height or source-mode height.                   |
+
+### Visual And Interaction Areas
+
+| 中文术语     | English Term        | yxmm Term / Config Key | Purpose                                                                            |
+| ------------ | ------------------- | ---------------------- | ---------------------------------------------------------------------------------- |
+| 幕布         | canvas              | `canvas.height`        | The visible area that hosts the SVG map.                                           |
+| 视口         | viewport            | -                      | The current SVG coordinate range being viewed; panning and zooming change it.      |
+| 主题卡片     | topic card          | -                      | The rectangular visual shape of a topic, including background, border, and radius. |
+| 主题         | theme               | `theme`                | Controls the overall color scheme.                                                 |
+| 默认主题颜色 | default topic color | `topic.defaultColor`   | Overrides theme auto topic colors; topic attribute `color` still wins.             |
+| 字体         | font                | `font.*`               | Controls topic text styling.                                                       |
+| 连线类型     | connector type      | `edge.type`            | Controls whether connectors are curved, straight, or orthogonal.                   |
 
 ## Config Block
 
@@ -74,14 +165,14 @@ Supported config keys:
 - `edge.type`: connector type: `curve`, `straight`, or `elbow`. `curve` is a cubic Bezier curve, `straight` is a straight line, and `elbow` is an orthogonal connector.
 - `font.family`, `font.size`, `font.weight`, `font.lineHeight`: global font defaults.
 - `font.levels.1`, `font.levels.2`: per-heading-level font overrides.
-- `node.defaultColor`: unified node color that overrides theme auto colors; node attribute `color` still wins.
-- `node.maxWidth`: maximum node width before label wrapping.
+- `topic.defaultColor`: unified topic color that overrides theme auto colors; topic attribute `color` still wins.
+- `topic.maxWidth`: maximum topic width before label wrapping.
 - `source.enableTabIndent`: whether Tab/Shift+Tab changes heading levels in source mode.
-- `source.height`: source-mode height, stored separately from graph-mode `canvas.height`.
+- `source.height`: source-mode height, stored separately from map-mode `canvas.height`.
 
 Font priority:
 
-`node attributes` > `font.levels[current level]` > `global font config` > `plugin defaults`
+`topic attributes` > `font.levels[current level]` > `global font config` > `plugin defaults`
 
 Font ranges:
 
@@ -91,10 +182,10 @@ Font ranges:
 
 Theme color priority:
 
-`node attribute color` > `node.defaultColor` > `theme auto color`
+`topic attribute color` > `topic.defaultColor` > `theme auto color`
 
 `rainbow`, `pastel-rainbow`, and `neon-rainbow` automatically assign colors by first-level branch.
-The center node uses an independent center color from the theme. Node attribute `color` changes only the node itself, not the edge from its parent.
+The center topic uses an independent center color from the theme. Topic attribute `color` changes only the topic itself, not the edge from its parent.
 Hex colors in the config block should be quoted, for example `defaultColor: '#66ed0c'`; the visual config modal writes quoted colors automatically.
 
 Layout structures:
@@ -110,13 +201,13 @@ Layout structures:
 ## Controls
 
 - The rendered mind map is available in both Reading view and editor/Live Preview.
-- Reading view is browse-focused; node rename, add, delete, drag-sort, and node context menus are enabled only in editor/Live Preview.
-- Click the collapse/expand dot next to a node to collapse or expand its children.
+- Reading view is browse-focused; topic rename, add, delete, drag-sort, and topic context menus are enabled only in editor/Live Preview.
+- Click the collapse/expand dot next to a topic to collapse or expand its children.
 - Use the source/map button to switch between raw `yxmm` source and the rendered mind map.
 - In source view, edit the textarea; switching back to the mind map auto-saves, and Ctrl/Cmd+S also saves.
 - In source view, Tab/Shift+Tab promotes or demotes selected heading lines.
-- In editor/Live Preview mind map view, hover a node and click the small edit button to edit text, color, icon, or layout.
-- The node editor can also add a child node or delete the selected node.
+- In editor/Live Preview mind map view, hover a topic and click the small edit button to edit text, color, icon, or layout.
+- The topic editor can also add a child topic or delete the selected topic.
 - Use the toolbar to fit, zoom in, zoom out, or reset collapsed nodes.
 - Use the toolbar settings button to open the visual config modal; common fields have select presets, and the advanced tab supports direct YAML editing.
 - Drag the toolbar grip to move the floating toolbar away from content.

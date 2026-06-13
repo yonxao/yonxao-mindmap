@@ -1,19 +1,19 @@
 /*
  * 文件作用：
- * 这里负责节点文本的视觉宽度估算和换行。
+ * 这里负责主题文本的视觉宽度估算和换行。
  *
  * 执行逻辑：
  * SVG text 默认不会自动换行，所以渲染前必须先把长标题切成多行。
  * visualUnits 会把中文/全角字符按 2 个单位估算，英文按 1 个单位估算，
- * wrapLabel 再根据最大单位数拆行，让中英文混排的节点宽度更稳定。
+ * wrapLabel 再根据最大单位数拆行，让中英文混排的主题宽度更稳定。
  *
  * 调用链位置：
- * layoutTree.measureNode() -> wrapLabel()/visualUnits() -> renderer.renderNode()
+ * layoutTree.measureTopic() -> wrapLabel()/visualUnits() -> renderer.renderTopic()
  */
 
 /*
  * 作用：
- * 把节点标题拆成适合 SVG 渲染的多行文本。
+ * 把主题标题拆成适合 SVG 渲染的多行文本。
  *
  * 实现逻辑：
  * 英文优先按单词拆，中文或无空格文本按字符拆，并限制最多 4 行。

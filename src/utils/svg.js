@@ -17,7 +17,7 @@ import { SVG_NS } from '../constants.js';
  * 创建 SVG 元素并批量写入属性。
  *
  * 调用链：
- * Renderer.renderNode()/renderEdge()/renderIcon() -> svg()。
+ * Renderer.renderTopic()/renderEdge()/renderIcon() -> svg()。
  */
 export function svg(tagName, attrs) {
   // 小工具函数：统一创建 SVG 元素并批量设置属性，减少绘制代码的噪音。

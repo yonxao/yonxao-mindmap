@@ -3,14 +3,14 @@
  * 这里集中定义 yonxao-mindmap 的内置主题。
  *
  * 设计思路：
- * - 主题只提供“默认视觉倾向”，不覆盖用户在节点属性里写的 [color=...]。
+ * - 主题只提供“默认视觉倾向”，不覆盖用户在主题属性里写的 [color=...]。
  * - 普通主题使用稳定的分支配色；彩虹主题会让一级分支自然分到不同颜色。
- * - 渲染器只关心“当前节点应该是什么颜色、透明度是多少”，不直接知道主题表细节。
+ * - 渲染器只关心“当前主题应该是什么颜色、透明度是多少”，不直接知道主题表细节。
  *
  * 调用链：
  * mindConfig.normalizeMindConfig() -> normalizeMindThemeName()
- * color.nodeColor() -> themeColorForNode()
- * YonxaoMindmapRenderer.renderNode()/renderEdge() -> themeNodeFillAlpha()/themeEdgeOpacity()
+ * color.topicColor() -> themeColorForTopic()
+ * YonxaoMindmapRenderer.renderTopic()/renderEdge() -> themeTopicFillAlpha()/themeEdgeOpacity()
  */
 
 export const DEFAULT_THEME_NAME = 'default';
@@ -39,9 +39,9 @@ export const MIND_THEME_OPTIONS = Object.freeze([
  *
  * 字段说明：
  * - mode: 配色策略。none 不自动配色，single 使用单色，branch 按一级分支取色，level 按标题层级取色。
- * - centerColor: 中心节点默认颜色，让中心主题和支线有清晰区分。
+ * - centerColor: 中心主题默认颜色，让中心主题和支线有清晰区分。
  * - palette: 当前主题的颜色池。
- * - fillAlpha: 节点背景色透明度。
+ * - fillAlpha: 主题背景色透明度。
  * - edgeOpacity: 连线透明度。
  */
 export const MIND_THEMES = Object.freeze({
@@ -151,32 +151,32 @@ export function getMindTheme(config) {
 
 /*
  * 作用：
- * 根据当前主题和节点位置，计算主题自动颜色。
+ * 根据当前主题和主题位置，计算主题自动颜色。
  *
  * 实现逻辑：
- * - branch 模式看节点 id 的一级分支序号，例如 0.2.1 属于第 2 个一级分支。
- * - level 模式看 Markdown 标题层级，例如 #、##、###。
+ * - branch 模式看主题 id 的一级分支序号，例如 0.2.1 属于第 2 个一级分支。
+ * - level 模式看 主题级别标记层级，例如 #、##、###。
  * - single 模式始终使用 palette 的第一个颜色。
  */
-export function themeColorForNode(node, config) {
+export function themeColorForTopic(topic, config) {
   const theme = getMindTheme(config);
-  if (isRootNode(node)) return theme.centerColor || '';
+  if (isRootTopic(topic)) return theme.centerColor || '';
   if (!theme.palette.length || theme.mode === 'none') return '';
 
   if (theme.mode === 'single') return theme.palette[0];
 
   if (theme.mode === 'level') {
-    return colorFromPalette(theme.palette, Math.max(0, Number(node?.level || 1) - 1));
+    return colorFromPalette(theme.palette, Math.max(0, Number(topic?.level || 1) - 1));
   }
 
-  return colorFromPalette(theme.palette, rootBranchIndex(node));
+  return colorFromPalette(theme.palette, rootBranchIndex(topic));
 }
 
 /*
  * 作用：
- * 读取节点背景透明度。
+ * 读取主题背景透明度。
  */
-export function themeNodeFillAlpha(config) {
+export function themeTopicFillAlpha(config) {
   return getMindTheme(config).fillAlpha;
 }
 
@@ -199,13 +199,13 @@ function colorFromPalette(palette, index) {
 
 /*
  * 作用：
- * 计算节点所属的一级分支序号。
+ * 计算主题所属的一级分支序号。
  *
- * 为什么根节点特殊处理：
- * 根节点 id 通常是 0，没有一级分支序号，默认使用调色板第一个颜色即可。
+ * 为什么根主题特殊处理：
+ * 根主题 id 通常是 0，没有一级分支序号，默认使用调色板第一个颜色即可。
  */
-function rootBranchIndex(node) {
-  const parts = String(node?.id || '').split('.');
+function rootBranchIndex(topic) {
+  const parts = String(topic?.id || '').split('.');
   if (parts.length < 2) return 0;
 
   const index = Number(parts[1]);
@@ -214,8 +214,8 @@ function rootBranchIndex(node) {
 
 /*
  * 作用：
- * 判断当前节点是否是中心节点。
+ * 判断当前主题是否是中心主题。
  */
-function isRootNode(node) {
-  return String(node?.id || '') === '0' || Number(node?.level || 1) <= 1;
+function isRootTopic(topic) {
+  return String(topic?.id || '') === '0' || Number(topic?.level || 1) <= 1;
 }

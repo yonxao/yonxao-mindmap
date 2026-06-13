@@ -1,30 +1,30 @@
 /*
  * 文件作用：
- * 这里负责把树形数据计算成可绘制的节点坐标和连线关系。
+ * 这里负责把树形数据计算成可绘制的主题坐标和连线关系。
  *
  * 执行逻辑：
- * 1. prepareNode 先测量每个节点的宽高和换行文本。
+ * 1. prepareTopic 先测量每个主题的宽高和换行文本。
  * 2. layoutTree 根据 layout.defaultDirection 选择布局策略。
- * 3. 各布局策略只负责写入 node._layout.x/y/side。
- * 4. collectVisible 收集未折叠节点和连线，computeBounds 计算整体边界。
+ * 3. 各布局策略只负责写入 topic._layout.x/y/side。
+ * 4. collectVisible 收集未折叠主题和连线，computeBounds 计算整体边界。
  *
  * 调用链位置：
- * YonxaoMindmapRenderer.renderGraph() -> layoutTree() -> renderNode()/renderEdge()
+ * YonxaoMindmapRenderer.renderMap() -> layoutTree() -> renderTopic()/renderEdge()
  */
 
 import {
   LEVEL_GAP,
   SIBLING_GAP,
   BRANCH_GAP,
-  NODE_PADDING_X,
-  NODE_PADDING_Y,
-  NODE_MIN_WIDTH,
-  NODE_MAX_WIDTH,
-  NODE_MIN_HEIGHT,
+  TOPIC_PADDING_X,
+  TOPIC_PADDING_Y,
+  TOPIC_MIN_WIDTH,
+  TOPIC_MAX_WIDTH,
+  TOPIC_MIN_HEIGHT,
   ICON_SIZE,
   ICON_GAP,
 } from '../constants.js';
-import { normalizeMindConfig, resolveNodeFont } from '../config/mindConfig.js';
+import { normalizeMindConfig, resolveTopicFont } from '../config/mindConfig.js';
 import { normalizeIcon } from '../icons/renderIcon.js';
 import { clamp } from '../utils/math.js';
 import { visualUnits, wrapLabel } from '../utils/text.js';
@@ -52,15 +52,15 @@ export const LAYOUT_MODES = Object.freeze([
 
 /*
  * 作用：
- * 计算整棵思维导图的可见节点、连线和整体边界。
+ * 计算整棵思维导图的可见主题、连线和整体边界。
  *
  * 设计思路：
- * 不同布局共享“测量节点”和“收集节点”的流程，只把坐标分配拆成多个策略。
+ * 不同布局共享“测量主题”和“收集主题”的流程，只把坐标分配拆成多个策略。
  * 这样新增布局不会破坏已经稳定的水平 mind map 布局。
  */
 export function layoutTree(root, collapsedIds, config) {
   const normalizedConfig = normalizeMindConfig(config);
-  prepareNode(root, normalizedConfig);
+  prepareTopic(root, normalizedConfig);
 
   const rootBox = root._layout;
   rootBox.x = 0;
@@ -88,47 +88,47 @@ export function layoutTree(root, collapsedIds, config) {
     layoutHorizontalMind(root, collapsedIds, mode);
   }
 
-  const nodes = [];
+  const topics = [];
   const edges = [];
-  collectVisible(root, collapsedIds, nodes, edges);
+  collectVisible(root, collapsedIds, topics, edges);
 
   return {
-    nodes,
+    topics,
     edges,
-    bounds: computeBounds(nodes),
+    bounds: computeBounds(topics),
     mode,
   };
 }
 
 /*
  * 作用：
- * 为每个节点预先写入 _layout 测量结果。
+ * 为每个主题预先写入 _layout 测量结果。
  */
-export function prepareNode(node, config) {
-  node._layout = measureNode(node, config);
-  for (const child of node.children) {
-    prepareNode(child, config);
+export function prepareTopic(topic, config) {
+  topic._layout = measureTopic(topic, config);
+  for (const child of topic.children) {
+    prepareTopic(child, config);
   }
 }
 
 /*
  * 作用：
- * 根据节点文本、图标和常量配置估算节点宽高。
+ * 根据主题文本、图标和常量配置估算主题宽高。
  */
-export function measureNode(node, config) {
+export function measureTopic(topic, config) {
   const normalizedConfig = normalizeMindConfig(config);
-  const font = resolveNodeFont(node, normalizedConfig);
-  const icon = normalizeIcon(node.attrs.icon);
-  const maxWidth = normalizedConfig.node.maxWidth || NODE_MAX_WIDTH;
+  const font = resolveTopicFont(topic, normalizedConfig);
+  const icon = normalizeIcon(topic.attrs.icon);
+  const maxWidth = normalizedConfig.topic.maxWidth || TOPIC_MAX_WIDTH;
   const iconWidth = icon ? ICON_SIZE + ICON_GAP : 0;
-  const usableTextWidth = Math.max(48, maxWidth - NODE_PADDING_X * 2 - iconWidth);
+  const usableTextWidth = Math.max(48, maxWidth - TOPIC_PADDING_X * 2 - iconWidth);
   const averageUnitWidth = Math.max(5, font.size * 0.54);
   const maxUnits = clamp(Math.floor(usableTextWidth / averageUnitWidth), icon ? 10 : 12, 48);
-  const lines = wrapLabel(node.text || 'Untitled', maxUnits);
+  const lines = wrapLabel(topic.text || 'Untitled', maxUnits);
   const longest = lines.reduce((max, line) => Math.max(max, visualUnits(line)), 0);
   const textWidth = Math.ceil(longest * averageUnitWidth);
-  const width = clamp(textWidth + NODE_PADDING_X * 2 + iconWidth, NODE_MIN_WIDTH, maxWidth);
-  const height = Math.max(NODE_MIN_HEIGHT, lines.length * font.lineHeight + NODE_PADDING_Y * 2);
+  const width = clamp(textWidth + TOPIC_PADDING_X * 2 + iconWidth, TOPIC_MIN_WIDTH, maxWidth);
+  const height = Math.max(TOPIC_MIN_HEIGHT, lines.length * font.lineHeight + TOPIC_PADDING_Y * 2);
 
   return {
     width,
@@ -136,7 +136,7 @@ export function measureNode(node, config) {
     lines,
     icon,
     font,
-    textX: NODE_PADDING_X + iconWidth,
+    textX: TOPIC_PADDING_X + iconWidth,
     textY: (height - (lines.length - 1) * font.lineHeight) / 2 + font.size * 0.36,
     side: 'right',
     x: 0,
@@ -149,7 +149,7 @@ export function measureNode(node, config) {
  * 决定当前整张图使用哪一种布局。
  *
  * 优先级：
- * 根节点属性 layout > 配置区 layout.defaultDirection > balanced。
+ * 根主题属性 layout > 配置区 layout.defaultDirection > balanced。
  */
 export function resolveLayoutMode(root, config) {
   return (
@@ -197,7 +197,7 @@ export function layoutHorizontalMind(root, collapsedIds, mode) {
 
 /*
  * 作用：
- * 判断一级节点应该在左侧还是右侧。
+ * 判断一级主题应该在左侧还是右侧。
  */
 export function rootChildHorizontalSide(root, child, index, mode) {
   const childLayout = normalizeLayout(child.attrs.layout);
@@ -212,7 +212,7 @@ export function rootChildHorizontalSide(root, child, index, mode) {
 
 /*
  * 作用：
- * 摆放根节点某一侧的一级子树。
+ * 摆放根主题某一侧的一级子树。
  */
 export function placeHorizontalRootSide(root, children, side, collapsedIds) {
   if (!children.length) return;
@@ -275,9 +275,9 @@ export function placeHorizontalDescendants(parent, side, collapsedIds) {
  * 作用：
  * 计算水平布局中一个子树需要的垂直高度。
  */
-export function horizontalSubtreeHeight(node, side, collapsedIds) {
-  const box = node._layout;
-  const children = visibleChildren(node, collapsedIds);
+export function horizontalSubtreeHeight(topic, side, collapsedIds) {
+  const box = topic._layout;
+  const children = visibleChildren(topic, collapsedIds);
   if (!children.length) return box.height;
 
   const childHeight =
@@ -311,7 +311,7 @@ export function layoutVerticalMind(root, collapsedIds, mode) {
 
 /*
  * 作用：
- * 判断一级节点应该在上方还是下方。
+ * 判断一级主题应该在上方还是下方。
  */
 export function rootChildVerticalSide(child, index, mode) {
   const childLayout = normalizeLayout(child.attrs.layout);
@@ -325,7 +325,7 @@ export function rootChildVerticalSide(child, index, mode) {
 
 /*
  * 作用：
- * 摆放竖向布局中根节点某一侧的一级子树。
+ * 摆放竖向布局中根主题某一侧的一级子树。
  */
 export function placeVerticalRootSide(root, children, side, collapsedIds) {
   if (!children.length) return;
@@ -384,9 +384,9 @@ export function placeVerticalDescendants(parent, side, collapsedIds) {
  * 作用：
  * 计算竖向布局中一个子树需要的水平宽度。
  */
-export function verticalSubtreeWidth(node, side, collapsedIds) {
-  const box = node._layout;
-  const children = visibleChildren(node, collapsedIds);
+export function verticalSubtreeWidth(topic, side, collapsedIds) {
+  const box = topic._layout;
+  const children = visibleChildren(topic, collapsedIds);
   if (!children.length) return box.width;
 
   const childWidth =
@@ -401,9 +401,9 @@ export function verticalSubtreeWidth(node, side, collapsedIds) {
  * 树形结构布局，覆盖向右树、向左树和平衡树。
  *
  * 实现逻辑：
- * 旧版 tree 是按深度优先逐行摆放，节点多时不会给子树预留空间，容易挤在一起。
- * 这里改成先计算每棵子树需要的高度，再把父节点放在子树高度的中线位置。
- * 这样每个分支都拥有自己的纵向空间，后代节点不会和相邻分支重叠。
+ * 旧版 tree 是按深度优先逐行摆放，主题多时不会给子树预留空间，容易挤在一起。
+ * 这里改成先计算每棵子树需要的高度，再把父主题放在子树高度的中线位置。
+ * 这样每个分支都拥有自己的纵向空间，后代主题不会和相邻分支重叠。
  */
 export function layoutOutlineTree(root, collapsedIds, mode = 'tree') {
   const rootChildren = visibleChildren(root, collapsedIds);
@@ -412,10 +412,10 @@ export function layoutOutlineTree(root, collapsedIds, mode = 'tree') {
 
 /*
  * 作用：
- * 沿中心节点下方的纵向主干摆放一级分支。
+ * 沿中心主题下方的纵向主干摆放一级分支。
  *
  * 关键点：
- * 树状结构和普通脑图的最大区别在一级分支：普通脑图从中心点左右展开，
+ * 树状结构和普通导图的最大区别在一级分支：普通导图从中心点左右展开，
  * 树状结构则先形成一条自上而下的主干，再把一级分支挂在主干左右。
  */
 export function placeTreeTrunkChildren(root, children, mode, collapsedIds) {
@@ -443,8 +443,8 @@ export function placeTreeTrunkChildren(root, children, mode, collapsedIds) {
     y += height + BRANCH_GAP;
   }
 
-  // 中心节点保持在树的顶部中间；整体 bounds 会自然包含下方所有一级分支。
-  // 这里不调用 centerVisibleNodes，避免把顶部根节点又拉回普通脑图的视觉中心。
+  // 中心主题保持在树的顶部中间；整体 bounds 会自然包含下方所有一级分支。
+  // 这里不调用 centerVisibleTopics，避免把顶部根主题又拉回普通导图的视觉中心。
 }
 
 /*
@@ -463,11 +463,11 @@ export function rootChildTreeSide(child, index, mode) {
 
 /*
  * 作用：
- * 递归摆放树状结构中的后代节点。
+ * 递归摆放树状结构中的后代主题。
  *
  * 实现逻辑：
- * 同一个父节点下的所有子节点先计算总高度，再围绕父节点的 y 坐标上下展开。
- * 父节点因此会自然位于子树的视觉中线，连线也更像常见树图结构。
+ * 同一个父主题下的所有子主题先计算总高度，再围绕父主题的 y 坐标上下展开。
+ * 父主题因此会自然位于子树的视觉中线，连线也更像常见树图结构。
  */
 export function placeTreeDescendants(parent, side, collapsedIds) {
   const children = visibleChildren(parent, collapsedIds);
@@ -499,13 +499,13 @@ export function placeTreeDescendants(parent, side, collapsedIds) {
  * 作用：
  * 计算树状结构中一个子树实际需要占用的高度。
  *
- * 为什么不直接复用节点高度：
- * 一个节点本身可能只有一行高，但它下面可能挂着很多后代。
- * 如果只看节点高度，兄弟分支就会彼此重叠；所以这里递归累加可见子树高度。
+ * 为什么不直接复用主题高度：
+ * 一个主题本身可能只有一行高，但它下面可能挂着很多后代。
+ * 如果只看主题高度，兄弟分支就会彼此重叠；所以这里递归累加可见子树高度。
  */
-export function treeSubtreeHeight(node, side, collapsedIds) {
-  const box = node._layout;
-  const children = visibleChildren(node, collapsedIds);
+export function treeSubtreeHeight(topic, side, collapsedIds) {
+  const box = topic._layout;
+  const children = visibleChildren(topic, collapsedIds);
   if (!children.length) return box.height;
 
   const childHeight =
@@ -520,8 +520,8 @@ export function treeSubtreeHeight(node, side, collapsedIds) {
  * 组织架构图布局。
  *
  * 结构区别：
- * - org：标准组织结构图，父节点在上，子节点横向排布在下一层。
- * - org-right：下右展开结构，一级节点横向排列，后代从各自分支向右下展开。
+ * - org：标准组织结构图，父主题在上，子主题横向排布在下一层。
+ * - org-right：下右展开结构，一级主题横向排列，后代从各自分支向右下展开。
  */
 export function layoutOrgChart(root, collapsedIds, mode = 'org') {
   if (mode === 'org-right') {
@@ -538,14 +538,14 @@ export function layoutOrgChart(root, collapsedIds, mode = 'org') {
  * 递归摆放组织架构图子树，并返回子树宽度。
  *
  * 实现逻辑：
- * 标准组织结构图需要按“层级”对齐，而不是按每个父节点的高度单独下移。
- * 因此 y 坐标先从 levelTops 读取同层统一顶部，再加上节点自身高度的一半。
- * 这样长文案节点只会向下撑开，不会向上顶到父级连线区域。
+ * 标准组织结构图需要按“层级”对齐，而不是按每个父主题的高度单独下移。
+ * 因此 y 坐标先从 levelTops 读取同层统一顶部，再加上主题自身高度的一半。
+ * 这样长文案主题只会向下撑开，不会向上顶到父级连线区域。
  */
-export function placeOrgSubtree(node, centerX, depth, levelTops, collapsedIds) {
-  const box = node._layout;
-  const children = visibleChildren(node, collapsedIds);
-  const subtreeWidth = orgSubtreeWidth(node, collapsedIds);
+export function placeOrgSubtree(topic, centerX, depth, levelTops, collapsedIds) {
+  const box = topic._layout;
+  const children = visibleChildren(topic, collapsedIds);
+  const subtreeWidth = orgSubtreeWidth(topic, collapsedIds);
 
   box.side = box.side === 'root' ? 'root' : 'org-bottom';
   box.x = centerX;
@@ -570,17 +570,17 @@ export function placeOrgSubtree(node, centerX, depth, levelTops, collapsedIds) {
  * 计算标准组织结构图每一层的统一顶部 y 坐标。
  *
  * 关键点：
- * 组织结构图更适合顶部对齐：长文案节点会向下变高，而不是围绕中心线上下扩张。
- * 下一层根据上一层最大高度统一下移，所以不同父节点下的同层子节点仍然保持齐平。
+ * 组织结构图更适合顶部对齐：长文案主题会向下变高，而不是围绕中心线上下扩张。
+ * 下一层根据上一层最大高度统一下移，所以不同父主题下的同层子主题仍然保持齐平。
  */
 export function orgLevelTops(root, collapsedIds) {
   const levelHeights = [];
 
-  const visit = (node, depth) => {
-    const box = node._layout;
+  const visit = (topic, depth) => {
+    const box = topic._layout;
     levelHeights[depth] = Math.max(levelHeights[depth] || 0, box.height);
 
-    for (const child of visibleChildren(node, collapsedIds)) {
+    for (const child of visibleChildren(topic, collapsedIds)) {
       visit(child, depth + 1);
     }
   };
@@ -599,9 +599,9 @@ export function orgLevelTops(root, collapsedIds) {
  * 作用：
  * 计算组织架构图子树宽度。
  */
-export function orgSubtreeWidth(node, collapsedIds) {
-  const box = node._layout;
-  const children = visibleChildren(node, collapsedIds);
+export function orgSubtreeWidth(topic, collapsedIds) {
+  const box = topic._layout;
+  const children = visibleChildren(topic, collapsedIds);
   if (!children.length) return box.width;
 
   const childWidth = orgChildrenWidth(children, collapsedIds);
@@ -611,7 +611,7 @@ export function orgSubtreeWidth(node, collapsedIds) {
 
 /*
  * 作用：
- * 计算一组组织结构图子节点横向排布所需的总宽度。
+ * 计算一组组织结构图子主题横向排布所需的总宽度。
  */
 export function orgChildrenWidth(children, collapsedIds) {
   return (
@@ -622,11 +622,11 @@ export function orgChildrenWidth(children, collapsedIds) {
 
 /*
  * 作用：
- * 摆放“下右展开”组织结构图的一级节点。
+ * 摆放“下右展开”组织结构图的一级主题。
  *
  * 实现逻辑：
  * 一级分支主题和标准组织图一样横向排列；每个一级分支再把自己的后代向右下展开。
- * 因此横向槽位不能只看一级节点宽度，还要把该分支右侧子树的宽度算进去。
+ * 因此横向槽位不能只看一级主题宽度，还要把该分支右侧子树的宽度算进去。
  */
 export function placeOrgRightRootChildren(root, children, collapsedIds) {
   if (!children.length) return;
@@ -637,7 +637,7 @@ export function placeOrgRightRootChildren(root, children, collapsedIds) {
     widths.reduce((sum, width) => sum + width, 0) + Math.max(0, children.length - 1) * BRANCH_GAP;
   const maxRootChildHeight = children.reduce(
     (max, child) => Math.max(max, child._layout.height),
-    NODE_MIN_HEIGHT
+    TOPIC_MIN_HEIGHT
   );
   const childY = rootBox.y + rootBox.height / 2 + LEVEL_GAP + maxRootChildHeight / 2;
   const descendantStartTop = childY - maxRootChildHeight / 2 + maxRootChildHeight + SIBLING_GAP;
@@ -660,13 +660,13 @@ export function placeOrgRightRootChildren(root, children, collapsedIds) {
 
 /*
  * 作用：
- * 递归摆放“下右展开”组织结构图的后代节点。
+ * 递归摆放“下右展开”组织结构图的后代主题。
  *
  * 实现逻辑：
- * 子节点不是从父节点右侧展开，而是从父节点下方的竖向主线挂出。
- * 因此子节点的左边界按“父节点中心 + 缩进”计算，形成竖线向下、横线向右的目录树观感。
+ * 子主题不是从父主题右侧展开，而是从父主题下方的竖向主线挂出。
+ * 因此子主题的左边界按“父主题中心 + 缩进”计算，形成竖线向下、横线向右的目录树观感。
  * rowTops 是全局行表：按“层级 + 兄弟序号”共享同一个顶部 y。
- * 这样不同分支里的同级节点会自然横向对齐，长文案只会撑开当前行高。
+ * 这样不同分支里的同级主题会自然横向对齐，长文案只会撑开当前行高。
  */
 export function placeOrgRightDescendants(parent, collapsedIds, rowTops, depth = 0) {
   const children = visibleChildren(parent, collapsedIds);
@@ -694,7 +694,7 @@ export function placeOrgRightDescendants(parent, collapsedIds, rowTops, depth = 
  *
  * 设计思路：
  * 第一维是相对层级，第二维是兄弟序号。
- * 例如所有一级分支下的第一个子节点共享 depth=0/index=0 的行。
+ * 例如所有一级分支下的第一个子主题共享 depth=0/index=0 的行。
  */
 export function orgRightDescendantGridTops(rootChildren, startTop, collapsedIds) {
   const gridHeights = [];
@@ -709,7 +709,7 @@ export function orgRightDescendantGridTops(rootChildren, startTop, collapsedIds)
     rowTops[depth] = [];
     const heights = gridHeights[depth] || [];
     for (let index = 0; index < heights.length; index += 1) {
-      const height = heights[index] || NODE_MIN_HEIGHT;
+      const height = heights[index] || TOPIC_MIN_HEIGHT;
       rowTops[depth][index] = y;
       y += height + SIBLING_GAP;
     }
@@ -740,9 +740,9 @@ export function collectOrgRightGridHeights(parent, collapsedIds, gridHeights, de
  * 作用：
  * 计算“下右展开”组织结构图中一个分支向右展开后需要占用的水平宽度。
  */
-export function orgRightSubtreeWidth(node, collapsedIds) {
-  const box = node._layout;
-  const children = visibleChildren(node, collapsedIds);
+export function orgRightSubtreeWidth(topic, collapsedIds) {
+  const box = topic._layout;
+  const children = visibleChildren(topic, collapsedIds);
   if (!children.length) return box.width;
 
   const childWidth = children.reduce(
@@ -758,8 +758,8 @@ export function orgRightSubtreeWidth(node, collapsedIds) {
  * 时间轴布局，覆盖轴上展开、轴下展开和上下平衡轴。
  *
  * 实现逻辑：
- * 二级节点是时间轴上的时间点，始终落在同一条水平轴线上。
- * 三级及更深节点才根据模式展开到轴上方或轴下方，并向右递进。
+ * 二级主题是时间轴上的时间点，始终落在同一条水平轴线上。
+ * 三级及更深主题才根据模式展开到轴上方或轴下方，并向右递进。
  */
 export function layoutTimeline(root, collapsedIds, mode = 'timeline') {
   const rootBox = root._layout;
@@ -796,7 +796,7 @@ export function layoutTimeline(root, collapsedIds, mode = 'timeline') {
 
 /*
  * 作用：
- * 判断时间轴一级节点挂在轴线上方还是下方。
+ * 判断时间轴一级主题挂在轴线上方还是下方。
  */
 export function rootChildTimelineSide(child, index, mode) {
   const childLayout = normalizeLayout(child.attrs.layout);
@@ -813,7 +813,7 @@ export function rootChildTimelineSide(child, index, mode) {
  * 摆放某个时间点的详情子树。
  *
  * 实现逻辑：
- * 时间点本身在轴线上；详情节点从时间点上方或下方拉出一条竖线，
+ * 时间点本身在轴线上；详情主题从时间点上方或下方拉出一条竖线，
  * 再在竖线右侧逐层递进，形成时间轴常见的事件详情区。
  */
 export function placeTimelineDetails(parent, branchSide, collapsedIds) {
@@ -845,8 +845,8 @@ export function placeTimelineDetails(parent, branchSide, collapsedIds) {
     childBox.timelineBranchSide = branchSide;
     childBox.x = parentBox.x + LEVEL_GAP + childBox.width / 2;
     /*
-     * 每个节点都放在自己完整子树占位块的中线位置。
-     * 这样当某个详情节点继续展开子节点时，父节点右侧出口能自然对齐子节点组的总高度中线。
+     * 每个主题都放在自己完整子树占位块的中线位置。
+     * 这样当某个详情主题继续展开子主题时，父主题右侧出口能自然对齐子主题组的总高度中线。
      */
     childBox.y = y + height / 2;
 
@@ -859,9 +859,9 @@ export function placeTimelineDetails(parent, branchSide, collapsedIds) {
  * 作用：
  * 计算某个时间点连同详情区需要占用的横向宽度。
  */
-export function timelinePointWidth(node, collapsedIds) {
-  const box = node._layout;
-  const children = visibleChildren(node, collapsedIds);
+export function timelinePointWidth(topic, collapsedIds) {
+  const box = topic._layout;
+  const children = visibleChildren(topic, collapsedIds);
   if (!children.length) return box.width;
 
   const childWidth = children.reduce(
@@ -876,9 +876,9 @@ export function timelinePointWidth(node, collapsedIds) {
  * 作用：
  * 计算时间轴详情子树需要占用的垂直高度。
  */
-export function timelineDetailSubtreeHeight(node, branchSide, collapsedIds) {
-  const box = node._layout;
-  const children = visibleChildren(node, collapsedIds);
+export function timelineDetailSubtreeHeight(topic, branchSide, collapsedIds) {
+  const box = topic._layout;
+  const children = visibleChildren(topic, collapsedIds);
   if (!children.length) return box.height;
 
   const childHeight =
@@ -889,21 +889,21 @@ export function timelineDetailSubtreeHeight(node, branchSide, collapsedIds) {
     Math.max(0, children.length - 1) * SIBLING_GAP;
 
   /*
-   * 详情树是向右展开的：父节点和子节点组在横向上分列，垂直占位取二者较大值。
-   * 如果继续使用“父节点高度 + 子节点组高度”，会把子树块算得过高，
-   * 也会让父节点出口无法对齐子节点组中线。
+   * 详情树是向右展开的：父主题和子主题组在横向上分列，垂直占位取二者较大值。
+   * 如果继续使用“父主题高度 + 子主题组高度”，会把子树块算得过高，
+   * 也会让父主题出口无法对齐子主题组中线。
    */
   return Math.max(box.height, childHeight);
 }
 
 /*
  * 作用：
- * 放射布局，一级分支环绕中心节点分布，后代沿各自射线向外延伸。
+ * 放射布局，一级分支环绕中心主题分布，后代沿各自射线向外延伸。
  *
  * 实现逻辑：
- * 一级节点决定一条从中心向外发散的主射线。
+ * 一级主题决定一条从中心向外发散的主射线。
  * 后代不再继续绕圆旋转，而是沿这条主射线向外推进；
- * 同级节点沿射线的垂直方向排开，形成真正的“中心发散”结构。
+ * 同级主题沿射线的垂直方向排开，形成真正的“中心发散”结构。
  */
 export function layoutRadial(root, collapsedIds) {
   const children = visibleChildren(root, collapsedIds);
@@ -928,8 +928,8 @@ export function layoutRadial(root, collapsedIds) {
  * 作用：
  * 摆放放射图的一级分支。
  */
-export function placeRadialRootBranch(root, node, angle, radius, collapsedIds) {
-  const box = node._layout;
+export function placeRadialRootBranch(root, topic, angle, radius, collapsedIds) {
+  const box = topic._layout;
   const unit = radialUnit(angle);
 
   box.side = radialSide(angle);
@@ -937,16 +937,16 @@ export function placeRadialRootBranch(root, node, angle, radius, collapsedIds) {
   box.x = root._layout.x + unit.x * radius;
   box.y = root._layout.y + unit.y * radius;
 
-  placeRadialDescendants(node, angle, collapsedIds);
+  placeRadialDescendants(topic, angle, collapsedIds);
 }
 
 /*
  * 作用：
- * 递归摆放放射图某条射线上的后代节点。
+ * 递归摆放放射图某条射线上的后代主题。
  *
  * 实现逻辑：
- * 当前节点作为父节点，子节点整体沿同一射线继续向外；
- * 多个子节点沿射线垂直方向分散，并让子节点组的中线对齐父节点出口。
+ * 当前主题作为父主题，子主题整体沿同一射线继续向外；
+ * 多个子主题沿射线垂直方向分散，并让子主题组的中线对齐父主题出口。
  */
 export function placeRadialDescendants(parent, angle, collapsedIds) {
   const children = visibleChildren(parent, collapsedIds);
@@ -983,9 +983,9 @@ export function placeRadialDescendants(parent, angle, collapsedIds) {
  * 作用：
  * 计算放射图中某棵子树沿射线垂直方向需要占用的宽度。
  */
-export function radialSubtreeBreadth(node, angle, collapsedIds) {
-  const box = node._layout;
-  const children = visibleChildren(node, collapsedIds);
+export function radialSubtreeBreadth(topic, angle, collapsedIds) {
+  const box = topic._layout;
+  const children = visibleChildren(topic, collapsedIds);
   const ownBreadth = radialPerpendicularExtent(box, angle) * 2;
   if (!children.length) return ownBreadth;
 
@@ -1000,9 +1000,9 @@ export function radialSubtreeBreadth(node, angle, collapsedIds) {
  * 作用：
  * 统计一级放射分支的复杂度，供角度动态分配使用。
  */
-export function radialBranchStats(node, collapsedIds) {
-  const box = node._layout;
-  const children = visibleChildren(node, collapsedIds);
+export function radialBranchStats(topic, collapsedIds) {
+  const box = topic._layout;
+  const children = visibleChildren(topic, collapsedIds);
   let descendantCount = children.length;
   let maxDepth = children.length ? 1 : 0;
 
@@ -1016,7 +1016,7 @@ export function radialBranchStats(node, collapsedIds) {
     directChildCount: children.length,
     descendantCount,
     maxDepth,
-    sizeScore: Math.max(0, (box.width - NODE_MIN_WIDTH) / NODE_MIN_WIDTH) + box.height / 120,
+    sizeScore: Math.max(0, (box.width - TOPIC_MIN_WIDTH) / TOPIC_MIN_WIDTH) + box.height / 120,
   };
 }
 
@@ -1025,8 +1025,8 @@ export function radialBranchStats(node, collapsedIds) {
  * 根据分支复杂度计算角度权重。
  *
  * 设计思路：
- * 直接子节点数量对扇区大小影响最大；后代数量用平方根压缩，避免超大分支吃掉整圈；
- * 深度和节点尺寸作为补偿，照顾长文本节点和深层分支。
+ * 直接子主题数量对扇区大小影响最大；后代数量用平方根压缩，避免超大分支吃掉整圈；
+ * 深度和主题尺寸作为补偿，照顾长文本主题和深层分支。
  */
 export function radialBranchWeight(stat) {
   return (
@@ -1046,8 +1046,8 @@ export function radialBranchWeight(stat) {
  * 有些分支虽然已经拿到更大角度，但如果子树非常宽，仍然可能靠近相邻扇区。
  * 适当把它推远，可以让同样的垂直展开宽度占据更小的视觉角度。
  */
-export function radialBranchRadius(baseRadius, node, angle, slice, collapsedIds) {
-  const breadth = radialSubtreeBreadth(node, angle, collapsedIds);
+export function radialBranchRadius(baseRadius, topic, angle, slice, collapsedIds) {
+  const breadth = radialSubtreeBreadth(topic, angle, collapsedIds);
   const safeHalfAngle = Math.max(0.18, Math.min(slice * 0.36, Math.PI / 3));
   const requiredRadius = breadth / 2 / Math.tan(safeHalfAngle);
 
@@ -1056,7 +1056,7 @@ export function radialBranchRadius(baseRadius, node, angle, slice, collapsedIds)
 
 /*
  * 作用：
- * 根据角度给放射节点归类，供连线锚点和按钮方向使用。
+ * 根据角度给放射主题归类，供连线锚点和按钮方向使用。
  */
 function radialSide(angle) {
   const sin = Math.sin(angle);
@@ -1078,7 +1078,7 @@ function radialUnit(angle) {
 
 /*
  * 作用：
- * 计算与射线垂直的单位向量，用来分散同级节点。
+ * 计算与射线垂直的单位向量，用来分散同级主题。
  */
 function radialNormal(angle) {
   return {
@@ -1089,7 +1089,7 @@ function radialNormal(angle) {
 
 /*
  * 作用：
- * 计算节点矩形在射线方向上的半径投影。
+ * 计算主题矩形在射线方向上的半径投影。
  */
 function radialExtent(box, angle) {
   const unit = radialUnit(angle);
@@ -1098,7 +1098,7 @@ function radialExtent(box, angle) {
 
 /*
  * 作用：
- * 计算节点矩形在射线垂直方向上的半径投影。
+ * 计算主题矩形在射线垂直方向上的半径投影。
  */
 function radialPerpendicularExtent(box, angle) {
   const normal = radialNormal(angle);
@@ -1110,10 +1110,10 @@ function radialPerpendicularExtent(box, angle) {
  * 鱼骨图布局，中心主题在左侧，一级分支交替挂在主骨上下。
  *
  * 实现逻辑：
- * - 根节点右侧延伸出一条水平主骨。
- * - 一级节点按照上下交替的方式挂到主骨上，形成鱼骨的大斜骨。
- * - 二级节点挂在斜骨中段。
- * - 三级及更深节点从二级节点右侧继续树状展开。
+ * - 根主题右侧延伸出一条水平主骨。
+ * - 一级主题按照上下交替的方式挂到主骨上，形成鱼骨的大斜骨。
+ * - 二级主题挂在斜骨中段。
+ * - 三级及更深主题从二级主题右侧继续树状展开。
  */
 export function layoutFishbone(root, collapsedIds) {
   const rootBox = root._layout;
@@ -1134,14 +1134,14 @@ export function layoutFishbone(root, collapsedIds) {
     const subtreeHeight = fishboneSubtreeHeight(child, collapsedIds);
     const subtreeWidth = fishboneSubtreeWidth(child, collapsedIds);
     const attachX = sideCursors[sideKey];
-    const childLeft = attachX + diagonalX + Math.max(0, subtreeHeight - NODE_MIN_HEIGHT) * 0.18;
+    const childLeft = attachX + diagonalX + Math.max(0, subtreeHeight - TOPIC_MIN_HEIGHT) * 0.18;
 
     childBox.side = sign < 0 ? 'fishbone-top' : 'fishbone-bottom';
     childBox.fishboneSign = sign;
     childBox.fishboneAttachX = attachX;
     childBox.x = childLeft + childBox.width / 2;
     childBox.y =
-      rootBox.y + sign * (NODE_MIN_HEIGHT + SIBLING_GAP * 2 + subtreeHeight + childBox.height / 2);
+      rootBox.y + sign * (TOPIC_MIN_HEIGHT + SIBLING_GAP * 2 + subtreeHeight + childBox.height / 2);
     childBox.fishboneBoneStartX = attachX;
     childBox.fishboneBoneStartY = rootBox.y;
     childBox.fishboneBoneEndX = childBox.x;
@@ -1155,7 +1155,7 @@ export function layoutFishbone(root, collapsedIds) {
 
 /*
  * 作用：
- * 摆放鱼骨图中挂在斜骨上的二级节点。
+ * 摆放鱼骨图中挂在斜骨上的二级主题。
  */
 export function placeFishboneRibs(parent, sign, collapsedIds) {
   const children = visibleChildren(parent, collapsedIds);
@@ -1198,7 +1198,7 @@ export function placeFishboneRibs(parent, sign, collapsedIds) {
 
 /*
  * 作用：
- * 摆放鱼骨图三级及更深节点。
+ * 摆放鱼骨图三级及更深主题。
  */
 export function placeFishboneDetails(parent, sign, collapsedIds) {
   const children = visibleChildren(parent, collapsedIds);
@@ -1229,9 +1229,9 @@ export function placeFishboneDetails(parent, sign, collapsedIds) {
  * 作用：
  * 计算鱼骨图子树需要占用的垂直高度。
  */
-export function fishboneSubtreeHeight(node, collapsedIds) {
-  const box = node._layout;
-  const children = visibleChildren(node, collapsedIds);
+export function fishboneSubtreeHeight(topic, collapsedIds) {
+  const box = topic._layout;
+  const children = visibleChildren(topic, collapsedIds);
   if (!children.length) return box.height;
 
   const ribHeight =
@@ -1243,11 +1243,11 @@ export function fishboneSubtreeHeight(node, collapsedIds) {
 
 /*
  * 作用：
- * 计算鱼骨图三级及更深节点需要占用的垂直高度。
+ * 计算鱼骨图三级及更深主题需要占用的垂直高度。
  */
-export function fishboneDetailSubtreeHeight(node, collapsedIds) {
-  const box = node._layout;
-  const children = visibleChildren(node, collapsedIds);
+export function fishboneDetailSubtreeHeight(topic, collapsedIds) {
+  const box = topic._layout;
+  const children = visibleChildren(topic, collapsedIds);
   if (!children.length) return box.height;
 
   const childHeight =
@@ -1259,11 +1259,11 @@ export function fishboneDetailSubtreeHeight(node, collapsedIds) {
 
 /*
  * 作用：
- * 计算鱼骨图子树从一级分支节点开始向右延伸的宽度。
+ * 计算鱼骨图子树从一级分支主题开始向右延伸的宽度。
  */
-export function fishboneSubtreeWidth(node, collapsedIds) {
-  const box = node._layout;
-  const children = visibleChildren(node, collapsedIds);
+export function fishboneSubtreeWidth(topic, collapsedIds) {
+  const box = topic._layout;
+  const children = visibleChildren(topic, collapsedIds);
   if (!children.length) return box.width;
 
   const childWidth = children.reduce(
@@ -1276,11 +1276,11 @@ export function fishboneSubtreeWidth(node, collapsedIds) {
 
 /*
  * 作用：
- * 计算鱼骨图三级及更深节点向右延伸的宽度。
+ * 计算鱼骨图三级及更深主题向右延伸的宽度。
  */
-export function fishboneDetailSubtreeWidth(node, collapsedIds) {
-  const box = node._layout;
-  const children = visibleChildren(node, collapsedIds);
+export function fishboneDetailSubtreeWidth(topic, collapsedIds) {
+  const box = topic._layout;
+  const children = visibleChildren(topic, collapsedIds);
   if (!children.length) return box.width;
 
   const childWidth = children.reduce(
@@ -1293,31 +1293,31 @@ export function fishboneDetailSubtreeWidth(node, collapsedIds) {
 
 /*
  * 作用：
- * 树形表格布局，根节点作为表头，后代节点按层级展开为表格列。
+ * 树形表格布局，根主题作为表头，后代主题按层级展开为表格列。
  *
  * 实现逻辑：
  * 1. 先统计每一列需要的宽度，避免同列单元格忽宽忽窄。
- * 2. 再递归计算每个节点的子树高度；有子节点的父单元格会纵向合并。
- * 3. 最后按照 top/height 把每个节点放进自己的单元格。
+ * 2. 再递归计算每个主题的子树高度；有子主题的父单元格会纵向合并。
+ * 3. 最后按照 top/height 把每个主题放进自己的单元格。
  *
  * 参数说明：
- * fillLeafRemainderColumns 控制叶子节点是否横向填满剩余列。
- * - true：标准树形表格，叶子节点合并右侧空列，表格外轮廓更规整。
- * - false：树形阶梯表格，叶子节点只占当前列，保留阶梯状轮廓。
+ * fillLeafRemainderColumns 控制叶子主题是否横向填满剩余列。
+ * - true：标准树形表格，叶子主题合并右侧空列，表格外轮廓更规整。
+ * - false：树形阶梯表格，叶子主题只占当前列，保留阶梯状轮廓。
  */
 export function layoutTreeTable(root, collapsedIds, options = {}) {
   const fillLeafRemainderColumns = options.fillLeafRemainderColumns !== false;
   const rootBox = root._layout;
   const columnWidths = treeTableColumnWidths(root, collapsedIds);
   const tableWidth = columnWidths.reduce((sum, width) => sum + width, 0);
-  const headerHeight = Math.max(rootBox.height + NODE_PADDING_Y * 2, NODE_MIN_HEIGHT * 1.6);
+  const headerHeight = Math.max(rootBox.height + TOPIC_PADDING_Y * 2, TOPIC_MIN_HEIGHT * 1.6);
 
   rootBox.side = 'tree-table-root';
   rootBox.width = Math.max(rootBox.width, tableWidth);
   rootBox.height = headerHeight;
   rootBox.x = 0;
   rootBox.y = headerHeight / 2;
-  recenterNodeText(rootBox);
+  recenterTopicText(rootBox);
 
   const children = visibleChildren(root, collapsedIds);
   if (!children.length) return;
@@ -1330,7 +1330,7 @@ export function layoutTreeTable(root, collapsedIds, options = {}) {
 
   children.forEach((child, index) => {
     const allocatedHeight = childHeights[index];
-    placeTreeTableNode(
+    placeTreeTableTopic(
       child,
       0,
       cursorTop,
@@ -1349,18 +1349,18 @@ export function layoutTreeTable(root, collapsedIds, options = {}) {
  * 统计树形表格每一列的宽度。
  *
  * 变量说明：
- * columnIndex 从 0 开始；根节点是表头，不占正文列，所以根节点的直接子节点在第 0 列。
- * 每列取该列所有节点宽度的最大值，并设置一个最小宽度，保证表格不会因为短文本变得太窄。
+ * columnIndex 从 0 开始；根主题是表头，不占正文列，所以根主题的直接子主题在第 0 列。
+ * 每列取该列所有主题宽度的最大值，并设置一个最小宽度，保证表格不会因为短文本变得太窄。
  */
 export function treeTableColumnWidths(root, collapsedIds) {
   const columnWidths = [];
-  const minColumnWidth = Math.max(NODE_MIN_WIDTH, 120);
+  const minColumnWidth = Math.max(TOPIC_MIN_WIDTH, 120);
 
-  const visit = (node, columnIndex) => {
-    const box = node._layout;
+  const visit = (topic, columnIndex) => {
+    const box = topic._layout;
     columnWidths[columnIndex] = Math.max(columnWidths[columnIndex] || minColumnWidth, box.width);
 
-    for (const child of visibleChildren(node, collapsedIds)) {
+    for (const child of visibleChildren(topic, collapsedIds)) {
       visit(child, columnIndex + 1);
     }
   };
@@ -1390,17 +1390,17 @@ export function treeTableColumnLefts(columnWidths, tableLeft) {
 
 /*
  * 作用：
- * 计算树形表格中一个节点需要占用的总高度。
+ * 计算树形表格中一个主题需要占用的总高度。
  *
  * 实现逻辑：
- * - 叶子节点至少占自己文本需要的高度。
- * - 父节点高度等于所有子节点高度之和。
- * - 如果父节点文本更高，则用父节点高度兜底，后续布局时会把多出的高度分摊给子节点。
+ * - 叶子主题至少占自己文本需要的高度。
+ * - 父主题高度等于所有子主题高度之和。
+ * - 如果父主题文本更高，则用父主题高度兜底，后续布局时会把多出的高度分摊给子主题。
  */
-export function treeTableSubtreeHeight(node, collapsedIds) {
-  const box = node._layout;
-  const ownHeight = Math.max(NODE_MIN_HEIGHT, box.height);
-  const children = visibleChildren(node, collapsedIds);
+export function treeTableSubtreeHeight(topic, collapsedIds) {
+  const box = topic._layout;
+  const ownHeight = Math.max(TOPIC_MIN_HEIGHT, box.height);
+  const children = visibleChildren(topic, collapsedIds);
   if (!children.length) return ownHeight;
 
   const childrenHeight = children.reduce(
@@ -1413,14 +1413,14 @@ export function treeTableSubtreeHeight(node, collapsedIds) {
 
 /*
  * 作用：
- * 把节点和它的子树放入树形表格。
+ * 把主题和它的子树放入树形表格。
  *
  * 变量说明：
- * allocatedHeight 是当前节点拿到的完整单元格高度，类似表格 rowspan 后的高度。
- * childExtraHeight 是父单元格比子节点总高度多出来的部分；平均分给子节点，避免长文案父节点压住右侧子表格。
+ * allocatedHeight 是当前主题拿到的完整单元格高度，类似表格 rowspan 后的高度。
+ * childExtraHeight 是父单元格比子主题总高度多出来的部分；平均分给子主题，避免长文案父主题压住右侧子表格。
  */
-export function placeTreeTableNode(
-  node,
+export function placeTreeTableTopic(
+  topic,
   columnIndex,
   topY,
   allocatedHeight,
@@ -1429,12 +1429,12 @@ export function placeTreeTableNode(
   collapsedIds,
   options = {}
 ) {
-  const box = node._layout;
+  const box = topic._layout;
   const fillLeafRemainderColumns = options.fillLeafRemainderColumns !== false;
-  const children = visibleChildren(node, collapsedIds);
-  const isLeafNode = children.length === 0;
+  const children = visibleChildren(topic, collapsedIds);
+  const isLeafTopic = children.length === 0;
   const lastColumnIndex = Math.max(0, columnWidths.length - 1);
-  const shouldFillRemainingColumns = fillLeafRemainderColumns && isLeafNode;
+  const shouldFillRemainingColumns = fillLeafRemainderColumns && isLeafTopic;
   const columnWidth = shouldFillRemainingColumns
     ? columnWidths.slice(columnIndex).reduce((sum, width) => sum + width, 0)
     : columnWidths[columnIndex] || columnWidths[lastColumnIndex];
@@ -1447,19 +1447,19 @@ export function placeTreeTableNode(
   box.height = allocatedHeight;
   box.x = columnLeft + columnWidth / 2;
   box.y = topY + allocatedHeight / 2;
-  recenterNodeText(box);
+  recenterTopicText(box);
 
   if (!children.length) return;
 
   const childBaseHeights = children.map((child) => treeTableSubtreeHeight(child, collapsedIds));
   const childBaseTotal = childBaseHeights.reduce((sum, height) => sum + height, 0);
   const childExtraHeight = Math.max(0, allocatedHeight - childBaseTotal);
-  const childExtraHeightPerNode = childExtraHeight / children.length;
+  const childExtraHeightPerTopic = childExtraHeight / children.length;
   let childTop = topY;
 
   children.forEach((child, index) => {
-    const childAllocatedHeight = childBaseHeights[index] + childExtraHeightPerNode;
-    placeTreeTableNode(
+    const childAllocatedHeight = childBaseHeights[index] + childExtraHeightPerTopic;
+    placeTreeTableTopic(
       child,
       columnIndex + 1,
       childTop,
@@ -1475,46 +1475,46 @@ export function placeTreeTableNode(
 
 /*
  * 作用：
- * 节点宽高被布局策略改写后，重新把多行文本垂直居中。
+ * 主题宽高被布局策略改写后，重新把多行文本垂直居中。
  */
-export function recenterNodeText(box) {
+export function recenterTopicText(box) {
   box.textY =
     (box.height - (box.lines.length - 1) * box.font.lineHeight) / 2 + box.font.size * 0.36;
 }
 
 /*
  * 作用：
- * 根据折叠状态返回当前节点实际可见的子节点列表。
+ * 根据折叠状态返回当前主题实际可见的子主题列表。
  */
-export function visibleChildren(node, collapsedIds) {
-  if (collapsedIds.has(node.id)) return [];
-  return node.children;
+export function visibleChildren(topic, collapsedIds) {
+  if (collapsedIds.has(topic.id)) return [];
+  return topic.children;
 }
 
 /*
  * 作用：
- * 收集当前可见节点和父子连线关系，供 SVG 渲染层使用。
+ * 收集当前可见主题和父子连线关系，供 SVG 渲染层使用。
  */
-export function collectVisible(node, collapsedIds, nodes, edges) {
-  nodes.push(node);
-  for (const child of visibleChildren(node, collapsedIds)) {
-    edges.push({ parent: node, child });
-    collectVisible(child, collapsedIds, nodes, edges);
+export function collectVisible(topic, collapsedIds, topics, edges) {
+  topics.push(topic);
+  for (const child of visibleChildren(topic, collapsedIds)) {
+    edges.push({ parent: topic, child });
+    collectVisible(child, collapsedIds, topics, edges);
   }
 }
 
 /*
  * 作用：
- * 根据所有可见节点的盒子范围计算整张图的边界。
+ * 根据所有可见主题的盒子范围计算整张图的边界。
  */
-export function computeBounds(nodes) {
-  if (!nodes.length) {
+export function computeBounds(topics) {
+  if (!topics.length) {
     return { minX: -120, minY: -80, maxX: 120, maxY: 80 };
   }
 
-  return nodes.reduce(
-    (bounds, node) => {
-      const box = node._layout;
+  return topics.reduce(
+    (bounds, topic) => {
+      const box = topic._layout;
       bounds.minX = Math.min(bounds.minX, box.x - box.width / 2);
       bounds.maxX = Math.max(bounds.maxX, box.x + box.width / 2);
       bounds.minY = Math.min(bounds.minY, box.y - box.height / 2);
