@@ -2689,11 +2689,11 @@ export class YonxaoMindmapRenderer extends Component {
       group.appendChild(this.renderEditButton(node, box));
     }
 
-    if (canEdit && !node._virtual && node !== this.root) {
+    if (canEdit && !node._virtual && node !== this.root && !this.shouldHideAddControls(node)) {
       group.appendChild(this.renderSiblingButtons(box));
     }
 
-    if (canEdit && !node._virtual && !node.children.length) {
+    if (canEdit && !node._virtual && !node.children.length && !this.shouldHideAddControls(node)) {
       group.appendChild(this.renderChildButton(box));
     }
 
@@ -2711,7 +2711,7 @@ export class YonxaoMindmapRenderer extends Component {
   renderToggle(node) {
     const box = node._layout;
     const collapsed = this.collapsedIds.has(node.id);
-    const outlet = this.nodeOutletPoint(box);
+    const outlet = this.nodeTogglePoint(box);
     const dir = box.side === 'left' ? -1 : 1;
     const toggle = svg('g', {
       class: 'yonxao-mindmap-toggle',
@@ -2740,6 +2740,108 @@ export class YonxaoMindmapRenderer extends Component {
     }
 
     return toggle;
+  }
+
+  /*
+   * 作用：
+   * 判断某个节点是否应该隐藏“新增兄弟/新增子节点”控件。
+   *
+   * 鱼骨图的二级节点（Markdown 里的 ##，布局 side 为 fishbone-top/bottom）
+   * 是主骨上的大分支。它们的子节点不是从节点右侧自然长出，而是挂在斜骨上；
+   * 如果继续显示新增按钮，按钮会和鱼骨结构的交点互相干扰，所以这里统一隐藏。
+   */
+  shouldHideAddControls(node) {
+    return this.isFishbonePrimaryBranchBox(node?._layout);
+  }
+
+  /*
+   * 作用：
+   * 判断节点是否是鱼骨图的一级大分支。
+   *
+   * 命名说明：
+   * Markdown 源码里这些节点是二级标题（##），但在鱼骨图视觉结构里，
+   * 它们是从主骨斜着伸出去的“大分支”，所以这里命名为 primaryBranch。
+   */
+  isFishbonePrimaryBranchBox(box) {
+    const side = String(box?.side || '');
+    return side === 'fishbone-top' || side === 'fishbone-bottom';
+  }
+
+  /*
+   * 作用：
+   * 判断节点是否属于鱼骨图布局。
+   *
+   * 使用场景：
+   * 按钮位置、子线出口等交互逻辑需要先判断“这是不是鱼骨图节点”，
+   * 再根据鱼头方向统一计算，而不是把每一种 fishbone side 都写死在调用处。
+   */
+  isFishboneNodeBox(box) {
+    const side = String(box?.side || '');
+    return (
+      side === 'fishbone-top' ||
+      side === 'fishbone-bottom' ||
+      side === 'fishbone-rib' ||
+      side === 'fishbone-detail'
+    );
+  }
+
+  /*
+   * 作用：
+   * 返回当前鱼骨图的鱼头所在侧。
+   *
+   * 当前状态：
+   * 布局层目前只实现了“鱼头在左，鱼尾向右”的鱼骨图。
+   * 先把这个方向封装到方法里，后续增加“鱼头在右”时，只需要从配置读取并修改这里，
+   * 按钮、出口和折叠点等交互逻辑就能跟着自动反向。
+   */
+  fishboneHeadSide() {
+    return 'left';
+  }
+
+  /*
+   * 作用：
+   * 返回鱼骨图子节点展开方向，也就是从鱼头指向鱼尾的方向。
+   *
+   * 返回值：
+   * 1 表示从左向右展开；-1 表示从右向左展开。
+   */
+  fishboneGrowthDirection() {
+    return this.fishboneHeadSide() === 'left' ? 1 : -1;
+  }
+
+  /*
+   * 作用：
+   * 计算鱼骨图节点的子线出口侧。
+   *
+   * 设计逻辑：
+   * 子线出口永远朝向鱼尾，也就是远离鱼头的一侧。
+   * 当前鱼头在左，所以出口在右；未来鱼头在右时，出口会自然变成左。
+   */
+  fishboneChildOutletSide() {
+    return this.fishboneGrowthDirection() > 0 ? 'right' : 'left';
+  }
+
+  /*
+   * 作用：
+   * 计算鱼骨图节点编辑按钮的位置。
+   *
+   * 设计逻辑：
+   * 编辑按钮永远放在靠近鱼头的一侧；折叠按钮和新增/子线出口留给鱼尾方向。
+   * 这样节点右侧或左侧的功能含义稳定：靠鱼头的一侧用于编辑，靠鱼尾的一侧用于展开结构。
+   */
+  fishboneEditButtonPosition(box, buttonSize) {
+    const buttonY = box.height / 2 - buttonSize / 2;
+    if (this.fishboneHeadSide() === 'left') {
+      return {
+        x: -buttonSize / 2,
+        y: buttonY,
+      };
+    }
+
+    return {
+      x: box.width - buttonSize / 2,
+      y: buttonY,
+    };
   }
 
   /*
@@ -2818,6 +2920,7 @@ export class YonxaoMindmapRenderer extends Component {
    * 位置策略：
    * 没有子节点时才显示这个按钮；如果已有子节点，同一位置会显示折叠/展开圆点。
    * 右侧分支放在右边框中点，左侧分支放在左边框中点，中心节点默认放在右边框中点。
+   * 鱼骨图不会在这里单独写死方向，而是交给 nodeOutletPoint() 按鱼头侧动态推导。
    */
   renderChildButton(box) {
     const outlet = this.nodeOutletPoint(box);
@@ -2850,11 +2953,40 @@ export class YonxaoMindmapRenderer extends Component {
 
   /*
    * 作用：
+   * 计算折叠/展开按钮的位置。
+   *
+   * 普通布局直接复用子线出口位置；鱼骨图二级节点比较特殊：
+   * 它的子线不是从右侧出去，而是从节点内侧连到斜骨。
+   * 因此折叠按钮应吸附在斜骨和节点边框的交点，用户能更直观看到它控制的是整条鱼骨分支。
+   */
+  nodeTogglePoint(box) {
+    const side = String(box?.side || '');
+    if (
+      (side === 'fishbone-top' || side === 'fishbone-bottom') &&
+      Number.isFinite(box.fishboneBoneEndX) &&
+      Number.isFinite(box.fishboneBoneEndY)
+    ) {
+      return {
+        side: side === 'fishbone-top' ? 'bottom' : 'top',
+        x: box.fishboneBoneEndX - (box.x - box.width / 2),
+        y: box.fishboneBoneEndY - (box.y - box.height / 2),
+      };
+    }
+
+    return this.nodeOutletPoint(box);
+  }
+
+  /*
+   * 作用：
    * 根据当前布局和节点所在方向判断子节点应该从哪一侧长出去。
    */
   nodeOutletSide(box) {
     const side = String(box.side || '');
     if (side === 'left' || side === 'right' || side === 'top' || side === 'bottom') return side;
+    if (this.isFishboneNodeBox(box) || side === 'root') {
+      const mode = this.config.layout.defaultDirection;
+      if (mode === 'fishbone') return this.fishboneChildOutletSide();
+    }
     if (side === 'tree-left') return 'left';
     if (side === 'org-bottom') return 'bottom';
     if (side === 'org-down-right' || side === 'org-right' || side === 'org-right-branch') {
@@ -2914,11 +3046,16 @@ export class YonxaoMindmapRenderer extends Component {
    *
    * 实现逻辑：
    * - 普通节点：放在父线进入节点的一侧。
+   * - 鱼骨图：编辑按钮统一放鱼头侧，鱼尾侧留给子线出口、折叠按钮和结构延展。
    * - 中心节点：如果子线只从一侧出去，按钮放到对侧；如果左右都有子线，放在上边框中点，避开子线交点。
    */
   editButtonPosition(node, box, buttonSize) {
     if (box.side === 'root') {
       return this.rootEditButtonPosition(node, box, buttonSize);
+    }
+
+    if (this.isFishboneNodeBox(box)) {
+      return this.fishboneEditButtonPosition(box, buttonSize);
     }
 
     if (box.side === 'top' || box.side === 'timeline-top') {
@@ -2974,6 +3111,10 @@ export class YonxaoMindmapRenderer extends Component {
    */
   rootEditButtonPosition(node, box, buttonSize) {
     const mode = this.config.layout.defaultDirection;
+    if (mode === 'fishbone') {
+      return this.fishboneEditButtonPosition(box, buttonSize);
+    }
+
     if (
       mode === 'down' ||
       mode === 'org' ||
