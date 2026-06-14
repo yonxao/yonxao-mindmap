@@ -2000,7 +2000,7 @@ export class YonxaoMindmapRenderer extends Component {
         if (this.isMindMapRootElbowConnector(connector, layout.mode)) continue;
         if (this.isOrgSharedTrunkConnector(connector, layout.mode)) continue;
 
-        const connectorEl = this.renderConnector(connector);
+        const connectorEl = this.renderConnector(connector, layout.mode);
         if (connectorEl) {
           connectorLayer.appendChild(connectorEl);
         }
@@ -2560,19 +2560,19 @@ export class YonxaoMindmapRenderer extends Component {
 
   /*
    * 作用：
-   * 根据父子主题布局信息绘制一条贝塞尔曲线连线。
+   * 根据父子主题布局信息绘制一条连线。
    */
-  renderConnector(connector) {
+  renderConnector(connector, layoutMode) {
     const parentBox = connector.parentTopic._layout;
     const subtopicBox = connector.subtopic._layout;
     const anchors = this.connectorAnchors(parentBox, subtopicBox);
     if (anchors.kind === 'skip') return null;
     const color = this.renderConnectorColor(connector, anchors);
 
-    // 默认使用三次贝塞尔曲线；也可通过 connector.style 切换为直线或正交折线。
+    // 只有思维导图组允许用户选择线型；树形图等结构图固定按折线绘制，避免默认 curve 泄漏到不可配置布局。
     return svg('path', {
       class: 'yonxao-mindmap-connector',
-      d: this.connectorPath(anchors),
+      d: this.connectorPath(anchors, layoutMode),
       stroke: color || 'currentColor',
       style: `opacity: ${themeConnectorOpacity(this.config)}`,
     });
@@ -2606,7 +2606,7 @@ export class YonxaoMindmapRenderer extends Component {
    * 这样视觉上仍然是一条清爽的折线主干，同时每个一级分支颜色保持独立。
    */
   renderMindMapRootElbowConnectors(layout) {
-    if (this.config.connector.style !== 'elbow') return null;
+    if (this.effectiveConnectorStyle(layout.mode) !== 'elbow') return null;
     if (!this.isMindMapLayoutMode(layout.mode)) return null;
 
     const rootConnectors = layout.connectors.filter((connector) =>
@@ -2630,7 +2630,7 @@ export class YonxaoMindmapRenderer extends Component {
    * 判断一条连线是否应该交给“中心主题共享折线”绘制逻辑处理。
    */
   isMindMapRootElbowConnector(connector, layoutMode) {
-    if (this.config.connector.style !== 'elbow') return false;
+    if (this.effectiveConnectorStyle(layoutMode) !== 'elbow') return false;
     if (!this.isMindMapLayoutMode(layoutMode)) return false;
     if (connector.parentTopic !== this.root) return false;
 
@@ -2913,6 +2913,19 @@ export class YonxaoMindmapRenderer extends Component {
 
   /*
    * 作用：
+   * 根据布局语义决定实际用于绘制的线型。
+   *
+   * 关键点：
+   * connector.style 的运行时默认值是 curve，但它只对思维导图组生效。
+   * 树形图、组织结构图、时间轴、鱼骨图等布局在配置 UI 中不可设置线型，
+   * 因此渲染层也必须固定为 elbow，保证“不可配置”和“实际效果”一致。
+   */
+  effectiveConnectorStyle(layoutMode) {
+    return this.isMindMapLayoutMode(layoutMode) ? this.config.connector.style : 'elbow';
+  }
+
+  /*
+   * 作用：
    * 根据子主题所在方向计算父子连线的起点和终点锚点。
    */
   connectorAnchors(parentBox, subtopicBox) {
@@ -3091,8 +3104,9 @@ export class YonxaoMindmapRenderer extends Component {
    * - straight: 直线。
    * - elbow: 正交折线，也常叫 elbow connector。
    */
-  connectorPath(anchors) {
+  connectorPath(anchors, layoutMode) {
     const { kind, startX, startY, endX, endY, axis, sign } = anchors;
+    const connectorStyle = this.effectiveConnectorStyle(layoutMode);
 
     if (kind === 'tree-branch' || kind === 'trunk-branch') {
       return ['M', startX, startY, 'H', endX].join(' ');
@@ -3132,11 +3146,11 @@ export class YonxaoMindmapRenderer extends Component {
       return '';
     }
 
-    if (this.config.connector.style === 'straight') {
+    if (connectorStyle === 'straight') {
       return ['M', startX, startY, 'L', endX, endY].join(' ');
     }
 
-    if (this.config.connector.style === 'elbow') {
+    if (connectorStyle === 'elbow') {
       if (axis === 'y') {
         const midY = startY + (endY - startY) / 2;
         return ['M', startX, startY, 'V', midY, 'H', endX, 'V', endY].join(' ');
