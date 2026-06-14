@@ -1985,9 +1985,15 @@ export class YonxaoMindmapRenderer extends Component {
     if (timelineDetailTrunks) {
       connectorLayer.appendChild(timelineDetailTrunks);
     }
+    const mindMapRootElbowConnectors = this.renderMindMapRootElbowConnectors(layout);
+    if (mindMapRootElbowConnectors) {
+      connectorLayer.appendChild(mindMapRootElbowConnectors);
+    }
 
     if (!this.isTreeTableLayoutMode(layout.mode)) {
       for (const connector of layout.connectors) {
+        if (this.isMindMapRootElbowConnector(connector, layout.mode)) continue;
+
         const connectorEl = this.renderConnector(connector);
         if (connectorEl) {
           connectorLayer.appendChild(connectorEl);
@@ -2473,6 +2479,299 @@ export class YonxaoMindmapRenderer extends Component {
     }
 
     return connectorColor(connector.subtopic, this.config);
+  }
+
+  /*
+   * 作用：
+   * 单独绘制思维导图组中 root -> 一级主题的折线。
+   *
+   * 为什么需要单独绘制：
+   * 普通 elbow 折线会让每条一级分支都重复绘制 root 到中间折点的共享主干。
+   * 多条 SVG path 叠在一起时，后绘制的分支颜色会覆盖先绘制的颜色。
+   *
+   * 当前策略：
+   * - root 到共享主干的短线：使用离 root 最近的一级主题颜色。
+   * - 共享主干本身：从 root 附近向两侧分段绘制，每段使用对应一级主题颜色。
+   * - 共享主干到每个一级主题的分支短线：使用对应一级主题颜色。
+   *
+   * 这样视觉上仍然是一条清爽的折线主干，同时每个一级分支颜色保持独立。
+   */
+  renderMindMapRootElbowConnectors(layout) {
+    if (this.config.connector.style !== 'elbow') return null;
+    if (!this.isMindMapLayoutMode(layout.mode)) return null;
+
+    const rootConnectors = layout.connectors.filter((connector) =>
+      this.isMindMapRootElbowConnector(connector, layout.mode)
+    );
+    if (!rootConnectors.length) return null;
+
+    const groupEl = svg('g', { class: 'yonxao-mindmap-root-elbow-connectors' });
+    const connectorsBySide = this.groupMindMapRootConnectorsBySide(rootConnectors);
+
+    for (const [side, connectors] of connectorsBySide.entries()) {
+      const sideGroupEl = this.renderMindMapRootElbowSide(side, connectors);
+      if (sideGroupEl) groupEl.appendChild(sideGroupEl);
+    }
+
+    return groupEl;
+  }
+
+  /*
+   * 作用：
+   * 判断一条连线是否应该交给 root 折线专用绘制逻辑处理。
+   */
+  isMindMapRootElbowConnector(connector, layoutMode) {
+    if (this.config.connector.style !== 'elbow') return false;
+    if (!this.isMindMapLayoutMode(layoutMode)) return false;
+    if (connector.parentTopic !== this.root) return false;
+
+    const side = connector.subtopic?._layout?.side;
+    return side === 'right' || side === 'left' || side === 'top' || side === 'bottom';
+  }
+
+  /*
+   * 作用：
+   * 按一级主题所在方向分组，分别处理右、左、上、下四种共享主干。
+   */
+  groupMindMapRootConnectorsBySide(rootConnectors) {
+    const connectorsBySide = new Map();
+
+    for (const connector of rootConnectors) {
+      const side = connector.subtopic._layout.side;
+      if (!connectorsBySide.has(side)) {
+        connectorsBySide.set(side, []);
+      }
+      connectorsBySide.get(side).push(connector);
+    }
+
+    return connectorsBySide;
+  }
+
+  /*
+   * 作用：
+   * 绘制某一个方向上的 root 折线主干和分支短线。
+   */
+  renderMindMapRootElbowSide(side, connectors) {
+    if (!connectors.length) return null;
+
+    const firstAnchors = this.connectorAnchors(
+      connectors[0].parentTopic._layout,
+      connectors[0].subtopic._layout
+    );
+    const groupEl = svg('g', { class: 'yonxao-mindmap-root-elbow-side' });
+    const opacityStyle = `opacity: ${themeConnectorOpacity(this.config)}`;
+
+    if (side === 'right' || side === 'left') {
+      const bendX = firstAnchors.startX + (firstAnchors.endX - firstAnchors.startX) / 2;
+      const nearestConnector = this.closestConnectorToMindMapRootAxis(
+        connectors,
+        'y',
+        firstAnchors.startY
+      );
+      const nearestColor = connectorColor(nearestConnector.subtopic, this.config) || 'currentColor';
+
+      /*
+       * root 到共享主干只画一次，颜色取离 root 最近的一级主题。
+       * 共享竖线再按一级主题位置切成短段，避免最后一个主题覆盖整根主干。
+       */
+      groupEl.appendChild(
+        this.renderConnectorPath(
+          ['M', firstAnchors.startX, firstAnchors.startY, 'H', bendX],
+          nearestColor,
+          opacityStyle
+        )
+      );
+      this.renderMindMapRootElbowTrunkSegments(
+        groupEl,
+        connectors,
+        {
+          axis: 'y',
+          fixedCoord: bendX,
+          originCoord: firstAnchors.startY,
+        },
+        opacityStyle
+      );
+
+      for (const connector of connectors) {
+        const anchors = this.connectorAnchors(
+          connector.parentTopic._layout,
+          connector.subtopic._layout
+        );
+        const branchColor = connectorColor(connector.subtopic, this.config) || 'currentColor';
+        groupEl.appendChild(
+          this.renderConnectorPath(
+            ['M', bendX, anchors.endY, 'H', anchors.endX],
+            branchColor,
+            opacityStyle
+          )
+        );
+      }
+
+      return groupEl;
+    }
+
+    const bendY = firstAnchors.startY + (firstAnchors.endY - firstAnchors.startY) / 2;
+    const nearestConnector = this.closestConnectorToMindMapRootAxis(
+      connectors,
+      'x',
+      firstAnchors.startX
+    );
+    const nearestColor = connectorColor(nearestConnector.subtopic, this.config) || 'currentColor';
+
+    groupEl.appendChild(
+      this.renderConnectorPath(
+        ['M', firstAnchors.startX, firstAnchors.startY, 'V', bendY],
+        nearestColor,
+        opacityStyle
+      )
+    );
+    this.renderMindMapRootElbowTrunkSegments(
+      groupEl,
+      connectors,
+      {
+        axis: 'x',
+        fixedCoord: bendY,
+        originCoord: firstAnchors.startX,
+      },
+      opacityStyle
+    );
+
+    for (const connector of connectors) {
+      const anchors = this.connectorAnchors(
+        connector.parentTopic._layout,
+        connector.subtopic._layout
+      );
+      const branchColor = connectorColor(connector.subtopic, this.config) || 'currentColor';
+      groupEl.appendChild(
+        this.renderConnectorPath(
+          ['M', anchors.endX, bendY, 'V', anchors.endY],
+          branchColor,
+          opacityStyle
+        )
+      );
+    }
+
+    return groupEl;
+  }
+
+  /*
+   * 作用：
+   * 在 root 折线主干中找到离 root 出口最近的一级主题。
+   *
+   * 使用场景：
+   * root 到共享主干的短线没有明确属于哪一个分支，因此取离 root 最近的分支色，
+   * 让这段短线仍然保持“跟随分支色”的语义，而不是退回中心主题色。
+   */
+  closestConnectorToMindMapRootAxis(connectors, axis, originCoord) {
+    return connectors.reduce((closest, connector) => {
+      const currentDistance = Math.abs(connector.subtopic._layout[axis] - originCoord);
+      const closestDistance = Math.abs(closest.subtopic._layout[axis] - originCoord);
+      return currentDistance < closestDistance ? connector : closest;
+    }, connectors[0]);
+  }
+
+  /*
+   * 作用：
+   * 按一级主题位置，把 root 折线共享主干拆成多个着色短段。
+   *
+   * 实现逻辑：
+   * 以 root 出口为原点，分别向上/下或左/右扩展：
+   * - 离 root 最近的一段使用最近一级主题颜色；
+   * - 下一段使用下一个一级主题颜色；
+   * - 依次类推。
+   *
+   * 这样得到的效果和鱼骨图、时间轴类似：主干不是被最后一个主题覆盖，而是按分支自然分段。
+   */
+  renderMindMapRootElbowTrunkSegments(groupEl, connectors, trunk, opacityStyle) {
+    const negativeSideConnectors = connectors
+      .filter((connector) => connector.subtopic._layout[trunk.axis] < trunk.originCoord)
+      .sort(
+        (left, right) => right.subtopic._layout[trunk.axis] - left.subtopic._layout[trunk.axis]
+      );
+    const positiveSideConnectors = connectors
+      .filter((connector) => connector.subtopic._layout[trunk.axis] > trunk.originCoord)
+      .sort(
+        (left, right) => left.subtopic._layout[trunk.axis] - right.subtopic._layout[trunk.axis]
+      );
+
+    this.renderMindMapRootElbowTrunkSegmentRun(
+      groupEl,
+      negativeSideConnectors,
+      trunk,
+      opacityStyle
+    );
+    this.renderMindMapRootElbowTrunkSegmentRun(
+      groupEl,
+      positiveSideConnectors,
+      trunk,
+      opacityStyle
+    );
+  }
+
+  /*
+   * 作用：
+   * 从 root 出口开始，沿一个方向逐段绘制 root 折线共享主干。
+   */
+  renderMindMapRootElbowTrunkSegmentRun(groupEl, sortedConnectors, trunk, opacityStyle) {
+    let segmentStartCoord = trunk.originCoord;
+
+    for (const connector of sortedConnectors) {
+      const segmentEndCoord = connector.subtopic._layout[trunk.axis];
+      const segmentColor = connectorColor(connector.subtopic, this.config) || 'currentColor';
+
+      groupEl.appendChild(
+        this.renderMindMapRootElbowTrunkSegment(
+          trunk.axis,
+          trunk.fixedCoord,
+          segmentStartCoord,
+          segmentEndCoord,
+          segmentColor,
+          opacityStyle
+        )
+      );
+      segmentStartCoord = segmentEndCoord;
+    }
+  }
+
+  /*
+   * 作用：
+   * 绘制 root 折线共享主干中的一个短段。
+   */
+  renderMindMapRootElbowTrunkSegment(axis, fixedCoord, startCoord, endCoord, stroke, opacityStyle) {
+    const pathParts =
+      axis === 'y'
+        ? ['M', fixedCoord, startCoord, 'V', endCoord]
+        : ['M', startCoord, fixedCoord, 'H', endCoord];
+
+    return this.renderConnectorPath(pathParts, stroke, opacityStyle);
+  }
+
+  /*
+   * 作用：
+   * 创建统一样式的连线路径，减少 root 折线拆段绘制时的重复代码。
+   */
+  renderConnectorPath(pathParts, stroke, opacityStyle) {
+    return svg('path', {
+      class: 'yonxao-mindmap-connector',
+      d: pathParts.join(' '),
+      stroke,
+      style: opacityStyle,
+    });
+  }
+
+  /*
+   * 作用：
+   * 判断布局是否属于“思维导图”分组。
+   */
+  isMindMapLayoutMode(mode) {
+    return (
+      mode === 'mindmap-right' ||
+      mode === 'mindmap-left' ||
+      mode === 'mindmap-bidirectional' ||
+      mode === 'mindmap-up' ||
+      mode === 'mindmap-down' ||
+      mode === 'mindmap-vertical'
+    );
   }
 
   /*
