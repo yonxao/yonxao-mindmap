@@ -19,7 +19,7 @@ import {
   normalizeMindConfig,
 } from '../config/mindConfig.js';
 import { LANGUAGE_OPTIONS } from '../i18n/messages.js';
-import { ConfigModal } from './ConfigModal.js';
+import { ConfigModal, isConnectorStyleConfigurableLayout } from './ConfigModal.js';
 
 /*
  * 作用：
@@ -150,10 +150,14 @@ export class YonxaoMindmapSettingTab extends PluginSettingTab {
      */
     summaryEl.createEl('p', { text: this.t('settings.defaultConfig.summaryTitle') });
     const listEl = summaryEl.createEl('ul');
+    const connectorSummary = isConnectorStyleConfigurableLayout(normalized.layout)
+      ? normalized.connector.style
+      : this.t('settings.summary.connector.fixedElbow');
+
     for (const item of [
       `${this.t('settings.summary.theme')}: ${normalized.theme}`,
       `${this.t('settings.summary.layout')}: ${normalized.layout}`,
-      `${this.t('settings.summary.connector')}: ${normalized.connector.style}`,
+      `${this.t('settings.summary.connector')}: ${connectorSummary}`,
       `${this.t('settings.summary.wheelZoom')}: ${
         normalized.interaction.wheelZoom
           ? this.t('settings.summary.enabled')

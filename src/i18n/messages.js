@@ -92,6 +92,7 @@ const BASE_LOCALE_MESSAGES = Object.freeze({
     'settings.summary.theme': 'Theme',
     'settings.summary.layout': 'Layout',
     'settings.summary.connector': 'Connector style',
+    'settings.summary.connector.fixedElbow': 'Fixed elbow line',
     'settings.summary.wheelZoom': 'Mouse wheel zoom',
     'settings.summary.enabled': 'Enabled',
     'settings.summary.disabled': 'Disabled',
@@ -199,6 +200,8 @@ const BASE_LOCALE_MESSAGES = Object.freeze({
     'configModal.layout.type': 'Layout type',
     'configModal.layout.topicMaxWidth': 'Topic max width',
     'configModal.layout.connectorStyle': 'Connector style',
+    'configModal.layout.connectorStyle.fixedHelp':
+      'Only mind map layouts can choose connector style. Other layouts use a fixed elbow line to preserve their structure.',
 
     'configModal.font.globalSection': 'Global topic font',
     'configModal.font.family': 'Topic font',
@@ -305,6 +308,7 @@ const BASE_LOCALE_MESSAGES = Object.freeze({
     'settings.summary.theme': '主题色系',
     'settings.summary.layout': '布局类型',
     'settings.summary.connector': '连线线型',
+    'settings.summary.connector.fixedElbow': '固定折线',
     'settings.summary.wheelZoom': '鼠标滚轮缩放',
     'settings.summary.enabled': '开启',
     'settings.summary.disabled': '关闭',
@@ -408,6 +412,8 @@ const BASE_LOCALE_MESSAGES = Object.freeze({
     'configModal.layout.type': '布局类型',
     'configModal.layout.topicMaxWidth': '主题最大宽度',
     'configModal.layout.connectorStyle': '连线线型',
+    'configModal.layout.connectorStyle.fixedHelp':
+      '只有思维导图布局可以选择连线线型；其他布局为了保持结构语义，统一使用固定折线。',
 
     'configModal.font.globalSection': '全局主题字体',
     'configModal.font.family': '主题字体',
@@ -514,6 +520,7 @@ const BASE_LOCALE_MESSAGES = Object.freeze({
     'settings.summary.theme': '主題色系',
     'settings.summary.layout': '佈局類型',
     'settings.summary.connector': '連線線型',
+    'settings.summary.connector.fixedElbow': '固定折線',
     'settings.summary.wheelZoom': '滑鼠滾輪縮放',
     'settings.summary.enabled': '開啟',
     'settings.summary.disabled': '關閉',
@@ -617,6 +624,8 @@ const BASE_LOCALE_MESSAGES = Object.freeze({
     'configModal.layout.type': '佈局類型',
     'configModal.layout.topicMaxWidth': '主題最大寬度',
     'configModal.layout.connectorStyle': '連線線型',
+    'configModal.layout.connectorStyle.fixedHelp':
+      '只有心智圖佈局可以選擇連線線型；其他佈局為了保持結構語義，統一使用固定折線。',
 
     'configModal.font.globalSection': '全域主題字型',
     'configModal.font.family': '主題字型',

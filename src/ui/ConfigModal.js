@@ -43,6 +43,24 @@ import {
 
 const RAINBOW_THEME_NAMES = new Set(['rainbow', 'pastel-rainbow', 'neon-rainbow']);
 
+// 只有传统思维导图布局支持用户选择曲线、直线、折线；其他布局都有更强的结构语义，连接线固定走各自的折线绘制逻辑。
+const CONNECTOR_STYLE_CONFIGURABLE_LAYOUTS = new Set([
+  'mindmap-right',
+  'mindmap-left',
+  'mindmap-bidirectional',
+  'mindmap-up',
+  'mindmap-down',
+  'mindmap-vertical',
+]);
+
+/*
+ * 作用：
+ * 对外提供“当前布局是否允许设置连线线型”的统一判断。
+ */
+export function isConnectorStyleConfigurableLayout(layout) {
+  return CONNECTOR_STYLE_CONFIGURABLE_LAYOUTS.has(String(layout || ''));
+}
+
 /*
  * 作用：
  * Obsidian 原生 Modal，用于编辑当前 yxmm 代码块配置区。
@@ -259,12 +277,17 @@ export class ConfigModal extends Modal {
    */
   renderLayoutTab(normalized) {
     this.createSection(this.t('configModal.layout.section'));
-    this.createSelectField(
+    const layoutSelect = this.createSelectField(
       this.t('configModal.layout.type'),
       ['layout'],
       normalized.layout,
       this.layoutOptionGroups()
     );
+    layoutSelect.addEventListener('change', () => {
+      // 布局类型会影响后续字段是否可编辑，因此切换布局后立刻重绘结构页，避免保留已经不适用的线型控件。
+      this.render();
+    });
+
     this.createNumberField(
       this.t('configModal.layout.topicMaxWidth'),
       ['topic', 'maxWidth'],
@@ -275,12 +298,18 @@ export class ConfigModal extends Modal {
         step: 10,
       }
     );
-    this.createSelectField(
-      this.t('configModal.layout.connectorStyle'),
-      ['connector', 'style'],
-      normalized.connector.style,
-      this.connectorOptions()
-    );
+
+    if (this.isConnectorStyleConfigurable(normalized.layout)) {
+      this.createSelectField(
+        this.t('configModal.layout.connectorStyle'),
+        ['connector', 'style'],
+        normalized.connector.style,
+        this.connectorOptions()
+      );
+      return;
+    }
+
+    this.createDisabledConnectorStyleField();
   }
 
   /*
@@ -501,6 +530,28 @@ export class ConfigModal extends Modal {
     select.addEventListener('change', () => {
       setConfigValue(this.draftConfig, path, select.value);
     });
+    return select;
+  }
+
+  /*
+   * 作用：
+   * 非思维导图布局不开放连线线型配置，展示一个禁用下拉框作为明确反馈。
+   *
+   * 实现逻辑：
+   * - UI 上固定显示“折线”，和实际渲染逻辑一致。
+   * - 不主动写入 connector.style，避免用户只是切换布局查看时产生额外配置噪音。
+   */
+  createDisabledConnectorStyleField() {
+    const fieldEl = this.createField(
+      this.t('configModal.layout.connectorStyle'),
+      undefined,
+      this.t('configModal.layout.connectorStyle.fixedHelp')
+    );
+    const select = fieldEl.createEl('select');
+    const option = select.createEl('option', { text: this.t('configModal.connector.elbow') });
+    option.value = 'elbow';
+    select.value = 'elbow';
+    select.disabled = true;
   }
 
   /*
@@ -848,6 +899,14 @@ export class ConfigModal extends Modal {
       ['straight', this.t('configModal.connector.straight')],
       ['elbow', this.t('configModal.connector.elbow')],
     ];
+  }
+
+  /*
+   * 作用：
+   * 判断当前布局是否允许用户手动选择连接线线型。
+   */
+  isConnectorStyleConfigurable(layout) {
+    return isConnectorStyleConfigurableLayout(layout);
   }
 
   /*

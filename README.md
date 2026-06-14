@@ -153,21 +153,21 @@ yonxao-mindmap uses these terms consistently across docs, config, UI text, and c
 
 ### Visual And Interaction Areas
 
-| 中文术语     | English Term         | yxmm Term / Config Key | Purpose                                                                            |
-| ------------ | -------------------- | ---------------------- | ---------------------------------------------------------------------------------- |
-| 幕布         | canvas               | `canvas.height`        | The visible area that hosts the SVG map.                                           |
-| 视口         | viewport             | -                      | The current SVG coordinate range being viewed; panning and zooming change it.      |
-| 主题卡片     | topic card           | -                      | The rectangular visual shape of a topic, including background, border, and radius. |
-| 主题色系     | theme                | -                      | Controls the overall color scheme, distinct from topic.                            |
-| 默认主题颜色 | default topic color  | `topic.defaultColor`   | Overrides theme auto topic colors; topic attribute `color` still wins.             |
-| 字体         | font                 | `font.*`               | Controls topic text styling.                                                       |
-| 连线线型     | connector style      | `connector.style`      | Controls whether connectors are curved, straight, or orthogonal.                   |
-| 平移         | pan                  | -                      | Drags the canvas to change the viewport position.                                  |
-| 缩放         | zoom                 | -                      | Zooms the current viewport in or out.                                              |
-| 适配视图     | fit view             | -                      | Automatically adjusts the viewport so the map is shown as completely as possible.  |
-| 重置折叠状态 | reset collapse state | -                      | Clears current collapse records and expands all topics.                            |
-| 自动高度     | auto height          | -                      | Automatically calculates canvas height from map content.                           |
-| 手动高度     | manual height        | `canvas.height`        | The persisted canvas height after user resizing.                                   |
+| 中文术语     | English Term         | yxmm Term / Config Key | Purpose                                                                                                            |
+| ------------ | -------------------- | ---------------------- | ------------------------------------------------------------------------------------------------------------------ |
+| 幕布         | canvas               | `canvas.height`        | The visible area that hosts the SVG map.                                                                           |
+| 视口         | viewport             | -                      | The current SVG coordinate range being viewed; panning and zooming change it.                                      |
+| 主题卡片     | topic card           | -                      | The rectangular visual shape of a topic, including background, border, and radius.                                 |
+| 主题色系     | theme                | -                      | Controls the overall color scheme, distinct from topic.                                                            |
+| 默认主题颜色 | default topic color  | `topic.defaultColor`   | Overrides theme auto topic colors; topic attribute `color` still wins.                                             |
+| 字体         | font                 | `font.*`               | Controls topic text styling.                                                                                       |
+| 连线线型     | connector style      | `connector.style`      | Controls whether connectors are curved, straight, or orthogonal; currently configurable only for mind map layouts. |
+| 平移         | pan                  | -                      | Drags the canvas to change the viewport position.                                                                  |
+| 缩放         | zoom                 | -                      | Zooms the current viewport in or out.                                                                              |
+| 适配视图     | fit view             | -                      | Automatically adjusts the viewport so the map is shown as completely as possible.                                  |
+| 重置折叠状态 | reset collapse state | -                      | Clears current collapse records and expands all topics.                                                            |
+| 自动高度     | auto height          | -                      | Automatically calculates canvas height from map content.                                                           |
+| 手动高度     | manual height        | `canvas.height`        | The persisted canvas height after user resizing.                                                                   |
 
 ## Config Block
 
@@ -209,7 +209,7 @@ Supported config keys:
 - `interaction.wheelZoom`: whether the mouse wheel zooms the mind map. It is off by default; enabling it writes `true`, and disabling it can remove the key.
 - `theme`: built-in theme name: `default`, `ocean`, `forest`, `sunset`, `mono`, `rainbow`, `pastel-rainbow`, or `neon-rainbow`.
 - `layout`: layout type: `mindmap-right`, `mindmap-left`, `mindmap-bidirectional`, `mindmap-up`, `mindmap-down`, `mindmap-vertical`, `tree`, `tree-right`, `tree-left`, `org`, `org-right`, `timeline`, `timeline-up`, `timeline-down`, `radial`, `fishbone-left`, `fishbone-right`, `tree-table`, or `tree-table-stepped`.
-- `connector.style`: connector style: `curve`, `straight`, or `elbow`. `curve` is a cubic Bezier curve, `straight` is a straight line, and `elbow` is an orthogonal connector.
+- `connector.style`: connector style, configurable only for mind map layouts. It can be `curve`, `straight`, or `elbow`. `curve` is a cubic Bezier curve, `straight` is a straight line, and `elbow` is an orthogonal connector. Tree diagrams, organization charts, timelines, radial maps, fishbone diagrams, and tree tables use a fixed elbow connector.
 - `font.family`, `font.size`, `font.weight`, `font.lineHeight`: global font defaults.
 - `font.levels.1`, `font.levels.2`: per-heading-level font overrides.
 - `topic.defaultColor`: unified topic color that overrides theme auto colors; topic attribute `color` still wins.
