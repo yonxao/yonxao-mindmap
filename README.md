@@ -176,6 +176,12 @@ A `yxmm` block can start with a `---` config block. The config block stores glob
 
 Obsidian `Settings` -> `Community plugins` -> `yonxao-mindmap` provides a plugin-level global default config.
 
+The settings page also includes a language option. Supported languages:
+
+- English: default.
+- Chinese Simplified.
+- Chinese Traditional.
+
 Global defaults are used as the base config for every `yxmm` block. A block-level config overrides global defaults, and topic attributes still override both:
 
 `topic attributes` > `block config` > `plugin global defaults` > `built-in defaults`

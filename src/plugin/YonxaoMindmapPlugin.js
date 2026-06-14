@@ -16,6 +16,7 @@ import { Plugin } from 'obsidian';
 
 import { CODE_BLOCK_NAME } from '../constants.js';
 import { normalizePluginSettings } from '../config/pluginSettings.js';
+import { createTranslator } from '../i18n/messages.js';
 import { renderPluginError } from '../obsidian/embed.js';
 import { YonxaoMindmapRenderer } from '../renderer/YonxaoMindmapRenderer.js';
 import { YonxaoMindmapSettingTab } from '../ui/YonxaoMindmapSettingTab.js';
@@ -33,6 +34,7 @@ export class YonxaoMindmapPlugin extends Plugin {
      */
     this.activeRenderers = new Set();
     this.settings = normalizePluginSettings({});
+    this.translate = createTranslator(this.settings.language);
   }
 
   /*
@@ -81,6 +83,7 @@ export class YonxaoMindmapPlugin extends Plugin {
    */
   async loadSettings() {
     this.settings = normalizePluginSettings(await this.loadData());
+    this.refreshTranslator();
   }
 
   /*
@@ -89,6 +92,47 @@ export class YonxaoMindmapPlugin extends Plugin {
    */
   async saveSettings() {
     await this.saveData(this.settings);
+  }
+
+  /*
+   * 作用：
+   * 读取当前界面语言。
+   */
+  getLanguage() {
+    return normalizePluginSettings(this.settings).language;
+  }
+
+  /*
+   * 作用：
+   * 更新界面语言并刷新当前已打开导图。
+   */
+  async updateLanguage(language) {
+    this.settings = normalizePluginSettings({
+      ...this.settings,
+      language,
+    });
+    this.refreshTranslator();
+    await this.saveSettings();
+    this.refreshActiveRenderers();
+  }
+
+  /*
+   * 作用：
+   * 重新创建翻译函数。
+   *
+   * 关键点：
+   * translate 是一个闭包，内部固定当前语言；语言切换后需要重新创建。
+   */
+  refreshTranslator() {
+    this.translate = createTranslator(this.getLanguage());
+  }
+
+  /*
+   * 作用：
+   * 插件内统一翻译入口。
+   */
+  t(key, replacements) {
+    return this.translate(key, replacements);
   }
 
   /*

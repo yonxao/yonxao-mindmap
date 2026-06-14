@@ -343,25 +343,34 @@ export class YonxaoMindmapRenderer extends Component {
     this.createToolbarDragHandle(toolbar);
 
     // 源码/导图切换按钮和配置按钮始终可用；其它按钮只对导图视图有意义。
-    this.toggleViewButton = this.createToolbarButton(toolbar, '显示源码', 'code-2', async () => {
-      await this.toggleSourceMode();
-    });
+    this.toggleViewButton = this.createToolbarButton(
+      toolbar,
+      this.t('toolbar.showSource'),
+      'code-2',
+      async () => {
+        await this.toggleSourceMode();
+      }
+    );
 
-    this.createToolbarButton(toolbar, '配置', 'settings', () => {
+    this.createToolbarButton(toolbar, this.t('toolbar.config'), 'settings', () => {
       this.openConfigModal();
     });
 
     this.mapActionButtons.push(
-      this.createToolbarButton(toolbar, '适配视图', 'maximize', () => this.fitView())
+      this.createToolbarButton(toolbar, this.t('toolbar.fitView'), 'maximize', () => this.fitView())
     );
     this.mapActionButtons.push(
-      this.createToolbarButton(toolbar, '放大', 'zoom-in', () => this.zoomAtCenter(0.82))
+      this.createToolbarButton(toolbar, this.t('toolbar.zoomIn'), 'zoom-in', () =>
+        this.zoomAtCenter(0.82)
+      )
     );
     this.mapActionButtons.push(
-      this.createToolbarButton(toolbar, '缩小', 'zoom-out', () => this.zoomAtCenter(1.18))
+      this.createToolbarButton(toolbar, this.t('toolbar.zoomOut'), 'zoom-out', () =>
+        this.zoomAtCenter(1.18)
+      )
     );
     this.mapActionButtons.push(
-      this.createToolbarButton(toolbar, '重置折叠状态', 'refresh-cw', () => {
+      this.createToolbarButton(toolbar, this.t('toolbar.resetCollapse'), 'refresh-cw', () => {
         this.collapsedIds.clear();
         this.renderMap(true);
       })
@@ -381,7 +390,7 @@ export class YonxaoMindmapRenderer extends Component {
     const handle = document.createElement('button');
     handle.type = 'button';
     handle.className = 'yonxao-mindmap-toolbar-button yonxao-mindmap-toolbar-drag-handle';
-    handle.setAttribute('aria-label', '拖动工具栏');
+    handle.setAttribute('aria-label', this.t('toolbar.dragHandle'));
 
     try {
       setIcon(handle, 'move');
@@ -585,6 +594,7 @@ export class YonxaoMindmapRenderer extends Component {
    */
   openConfigModal() {
     const modal = new ConfigModal(this.plugin.app, {
+      t: this.t.bind(this),
       rawConfig: this.documentConfigForSave(this.rawConfig),
       onApply: async (nextConfig) => this.applyConfigFromModal(nextConfig),
     });
@@ -646,7 +656,7 @@ export class YonxaoMindmapRenderer extends Component {
       this.renderMap(true);
     }
 
-    new Notice('yonxao-mindmap: 配置已保存。');
+    new Notice(this.t('notice.configSaved'));
     return true;
   }
 
@@ -754,7 +764,7 @@ export class YonxaoMindmapRenderer extends Component {
   updateToggleViewButton() {
     if (!this.toggleViewButton) return;
 
-    const label = this.isSourceMode ? '显示导图' : '显示源码';
+    const label = this.isSourceMode ? this.t('toolbar.showMap') : this.t('toolbar.showSource');
     const icon = this.isSourceMode ? 'git-branch' : 'code-2';
     this.toggleViewButton.setAttribute('aria-label', label);
     this.toggleViewButton.setAttribute('aria-pressed', String(this.isSourceMode));
@@ -763,7 +773,9 @@ export class YonxaoMindmapRenderer extends Component {
     try {
       setIcon(this.toggleViewButton, icon);
     } catch (_error) {
-      this.toggleViewButton.textContent = this.isSourceMode ? '图' : '码';
+      this.toggleViewButton.textContent = this.isSourceMode
+        ? this.t('toolbar.mapFallback')
+        : this.t('toolbar.sourceFallback');
     }
   }
 
@@ -820,7 +832,7 @@ export class YonxaoMindmapRenderer extends Component {
 
     this.sourceStatusEl = document.createElement('div');
     this.sourceStatusEl.className = 'yonxao-mindmap-source-status';
-    this.sourceStatusEl.textContent = '源码可编辑，切回导图或按 Ctrl/Cmd+S 写回 Markdown。';
+    this.sourceStatusEl.textContent = this.t('source.status.editable');
 
     editorEl.appendChild(this.sourceInputEl);
     this.sourceEl.appendChild(editorEl);
@@ -866,8 +878,8 @@ export class YonxaoMindmapRenderer extends Component {
     this.heightResizeHandleEl.className = 'yonxao-mindmap-height-resize-handle';
     this.heightResizeHandleEl.setAttribute('role', 'separator');
     this.heightResizeHandleEl.setAttribute('aria-orientation', 'horizontal');
-    this.heightResizeHandleEl.setAttribute('aria-label', '调整幕布高度');
-    this.heightResizeHandleEl.setAttribute('title', '拖拽调整幕布高度');
+    this.heightResizeHandleEl.setAttribute('aria-label', this.t('canvas.resizeHandle'));
+    this.heightResizeHandleEl.setAttribute('title', this.t('canvas.resizeHandle'));
     this.containerEl.appendChild(this.heightResizeHandleEl);
 
     this.registerDomEvent(this.heightResizeHandleEl, 'pointerdown', (event) => {
@@ -1026,8 +1038,8 @@ export class YonxaoMindmapRenderer extends Component {
     }
 
     this.sourceStatusEl.textContent = this.sourceDirty
-      ? '源码已修改，切回导图或按 Ctrl/Cmd+S 写回 Markdown。'
-      : '源码已同步到当前 Markdown 代码块。';
+      ? this.t('source.status.dirty')
+      : this.t('source.status.synced');
   }
 
   /*
@@ -1178,12 +1190,12 @@ export class YonxaoMindmapRenderer extends Component {
 
     const titleEl = document.createElement('div');
     titleEl.className = 'yonxao-mindmap-topic-editor-title';
-    titleEl.textContent = '编辑主题';
+    titleEl.textContent = this.t('topicEditor.title');
 
     const textInput = document.createElement('input');
     textInput.type = 'text';
     textInput.className = 'yonxao-mindmap-topic-editor-input';
-    textInput.placeholder = '主题文本';
+    textInput.placeholder = this.t('topicEditor.text');
 
     const colorInput = document.createElement('input');
     colorInput.type = 'text';
@@ -1198,25 +1210,25 @@ export class YonxaoMindmapRenderer extends Component {
     const layoutSelect = document.createElement('select');
     layoutSelect.className = 'yonxao-mindmap-topic-editor-input';
     for (const [value, label] of [
-      ['', '继承布局'],
-      ['mindmap-right', '思维导图：右向思维导图'],
-      ['mindmap-left', '思维导图：左向思维导图'],
-      ['mindmap-bidirectional', '思维导图：双向思维导图'],
-      ['mindmap-up', '思维导图：上向思维导图'],
-      ['mindmap-down', '思维导图：下向思维导图'],
-      ['mindmap-vertical', '思维导图：垂直双向思维导图'],
-      ['tree', '树形图：树形图'],
-      ['tree-right', '树形图：右向树形图'],
-      ['tree-left', '树形图：左向树形图'],
-      ['org', '组织结构图：组织结构图'],
-      ['org-right', '组织结构图：右向组织结构图'],
-      ['timeline', '时间轴：时间轴'],
-      ['timeline-up', '时间轴：上侧时间轴'],
-      ['timeline-down', '时间轴：下侧时间轴'],
-      ['radial', '放射图：放射图'],
-      ['fishbone-left', '鱼骨图：左向鱼骨图'],
-      ['tree-table', '树形表格：树形表格'],
-      ['tree-table-stepped', '树形表格：阶梯树形表格'],
+      ['', this.t('topicEditor.inheritLayout')],
+      ['mindmap-right', this.topicEditorLayoutLabel('mindmap', 'mindmapRight')],
+      ['mindmap-left', this.topicEditorLayoutLabel('mindmap', 'mindmapLeft')],
+      ['mindmap-bidirectional', this.topicEditorLayoutLabel('mindmap', 'mindmapBidirectional')],
+      ['mindmap-up', this.topicEditorLayoutLabel('mindmap', 'mindmapUp')],
+      ['mindmap-down', this.topicEditorLayoutLabel('mindmap', 'mindmapDown')],
+      ['mindmap-vertical', this.topicEditorLayoutLabel('mindmap', 'mindmapVertical')],
+      ['tree', this.topicEditorLayoutLabel('tree', 'tree')],
+      ['tree-right', this.topicEditorLayoutLabel('tree', 'treeRight')],
+      ['tree-left', this.topicEditorLayoutLabel('tree', 'treeLeft')],
+      ['org', this.topicEditorLayoutLabel('org', 'org')],
+      ['org-right', this.topicEditorLayoutLabel('org', 'orgRight')],
+      ['timeline', this.topicEditorLayoutLabel('timeline', 'timeline')],
+      ['timeline-up', this.topicEditorLayoutLabel('timeline', 'timelineUp')],
+      ['timeline-down', this.topicEditorLayoutLabel('timeline', 'timelineDown')],
+      ['radial', this.topicEditorLayoutLabel('radial', 'radial')],
+      ['fishbone-left', this.topicEditorLayoutLabel('fishbone', 'fishboneLeft')],
+      ['tree-table', this.topicEditorLayoutLabel('treeTable', 'treeTable')],
+      ['tree-table-stepped', this.topicEditorLayoutLabel('treeTable', 'treeTableStepped')],
     ]) {
       const option = document.createElement('option');
       option.value = value;
@@ -1227,16 +1239,19 @@ export class YonxaoMindmapRenderer extends Component {
     const actions = document.createElement('div');
     actions.className = 'yonxao-mindmap-topic-editor-actions';
 
-    const saveButton = this.createPanelButton('保存', async () => {
+    const saveButton = this.createPanelButton(this.t('topicEditor.save'), async () => {
       await this.saveTopicEditor();
     });
-    const addSubtopicButton = this.createPanelButton('新增子主题', async () => {
-      await this.addSubtopicFromTopicEditor();
-    });
-    const deleteButton = this.createPanelButton('删除', async () => {
+    const addSubtopicButton = this.createPanelButton(
+      this.t('topicEditor.addSubtopic'),
+      async () => {
+        await this.addSubtopicFromTopicEditor();
+      }
+    );
+    const deleteButton = this.createPanelButton(this.t('topicEditor.delete'), async () => {
       await this.deleteTopicFromEditor();
     });
-    const cancelButton = this.createPanelButton('取消', () => {
+    const cancelButton = this.createPanelButton(this.t('topicEditor.cancel'), () => {
       this.closeTopicEditor();
     });
 
@@ -1246,10 +1261,10 @@ export class YonxaoMindmapRenderer extends Component {
     actions.appendChild(cancelButton);
 
     this.topicEditorEl.appendChild(titleEl);
-    this.topicEditorEl.appendChild(createLabeledField('主题文本', textInput));
-    this.topicEditorEl.appendChild(createLabeledField('主题颜色', colorInput));
-    this.topicEditorEl.appendChild(createLabeledField('主题图标', iconInput));
-    this.topicEditorEl.appendChild(createLabeledField('布局', layoutSelect));
+    this.topicEditorEl.appendChild(createLabeledField(this.t('topicEditor.text'), textInput));
+    this.topicEditorEl.appendChild(createLabeledField(this.t('topicEditor.color'), colorInput));
+    this.topicEditorEl.appendChild(createLabeledField(this.t('topicEditor.icon'), iconInput));
+    this.topicEditorEl.appendChild(createLabeledField(this.t('topicEditor.layout'), layoutSelect));
     this.topicEditorEl.appendChild(actions);
     this.containerEl.appendChild(this.topicEditorEl);
 
@@ -1358,7 +1373,7 @@ export class YonxaoMindmapRenderer extends Component {
     inputEl.className = 'yonxao-mindmap-inline-text-editor';
     inputEl.value = topic.text || '';
     inputEl.spellcheck = false;
-    inputEl.setAttribute('aria-label', '编辑主题文本');
+    inputEl.setAttribute('aria-label', this.t('topicEditor.editTextAria'));
 
     // input 是 HTML 元素，坐标系来自容器；cardRect 是浏览器屏幕坐标，所以要减去容器坐标。
     inputEl.style.left = `${cardRect.left - containerRect.left}px`;
@@ -1425,7 +1440,7 @@ export class YonxaoMindmapRenderer extends Component {
 
     const nextText = inputEl.value.trim();
     if (!nextText) {
-      new Notice('yonxao-mindmap: 主题文本不能为空。');
+      new Notice(this.t('notice.topicTextRequired'));
       inputEl.focus();
       return false;
     }
@@ -1440,7 +1455,7 @@ export class YonxaoMindmapRenderer extends Component {
     this.closeInlineTextEditor(false);
 
     try {
-      return await this.saveTreeToSourceAndFile('主题文本已保存。');
+      return await this.saveTreeToSourceAndFile(this.t('notice.topicTextSaved'));
     } finally {
       this.inlineTextEditorSaving = false;
     }
@@ -1481,7 +1496,7 @@ export class YonxaoMindmapRenderer extends Component {
 
     const text = this.topicEditorFields.text.value.trim();
     if (!text) {
-      new Notice('yonxao-mindmap: 主题文本不能为空。');
+      new Notice(this.t('notice.topicTextRequired'));
       return false;
     }
 
@@ -1511,7 +1526,7 @@ export class YonxaoMindmapRenderer extends Component {
     this.collapsedIds.delete(topic.id);
     assignIds(this.root, '0');
 
-    const saved = await this.saveTreeToSourceAndFile('已新增子主题。');
+    const saved = await this.saveTreeToSourceAndFile(this.t('notice.subtopicAdded'));
     if (saved) {
       this.openTopicEditor(subtopic);
     }
@@ -1535,7 +1550,7 @@ export class YonxaoMindmapRenderer extends Component {
     this.collapsedIds.delete(topic.id);
     assignIds(this.root, '0');
 
-    const saved = await this.saveTreeToSourceAndFile('已新增子主题。');
+    const saved = await this.saveTreeToSourceAndFile(this.t('notice.subtopicAdded'));
     if (saved) {
       this.openInlineTextEditor(subtopic);
     }
@@ -1557,12 +1572,12 @@ export class YonxaoMindmapRenderer extends Component {
     const sibling = createMindTopic('新主题', {}, [], 0, topic.level || 1);
     const inserted = insertSiblingTopic(this.root, topic.id, sibling, position);
     if (!inserted) {
-      new Notice('yonxao-mindmap: 根主题不能新增兄弟主题。');
+      new Notice(this.t('notice.rootCannotAddSibling'));
       return false;
     }
 
     assignIds(this.root, '0');
-    const saved = await this.saveTreeToSourceAndFile('已新增兄弟主题。');
+    const saved = await this.saveTreeToSourceAndFile(this.t('notice.siblingTopicAdded'));
     if (saved) {
       this.openInlineTextEditor(sibling);
     }
@@ -1581,7 +1596,7 @@ export class YonxaoMindmapRenderer extends Component {
 
     const topic = this.topicById.get(this.editingTopicId);
     if (!topic || topic === this.root || topic._virtual) {
-      new Notice('yonxao-mindmap: 根主题不能在导图视图中删除。');
+      new Notice(this.t('notice.rootCannotDeleteInMap'));
       return false;
     }
 
@@ -1591,7 +1606,7 @@ export class YonxaoMindmapRenderer extends Component {
     if (!removed) return false;
 
     assignIds(this.root, '0');
-    const saved = await this.saveTreeToSourceAndFile('主题已删除。');
+    const saved = await this.saveTreeToSourceAndFile(this.t('notice.topicDeleted'));
     if (saved) this.closeTopicEditor();
     return saved;
   }
@@ -1608,7 +1623,7 @@ export class YonxaoMindmapRenderer extends Component {
     if (!this.canEditMindMap()) return false;
 
     if (!topic || topic === this.root || topic._virtual) {
-      new Notice('yonxao-mindmap: 根主题不能删除。');
+      new Notice(this.t('notice.rootCannotDelete'));
       return false;
     }
 
@@ -1620,7 +1635,7 @@ export class YonxaoMindmapRenderer extends Component {
     if (!removed) return false;
 
     assignIds(this.root, '0');
-    return this.saveTreeToSourceAndFile('主题已删除。');
+    return this.saveTreeToSourceAndFile(this.t('notice.topicDeleted'));
   }
 
   /*
@@ -1637,8 +1652,11 @@ export class YonxaoMindmapRenderer extends Component {
     const descendantCount = countTopicDescendants(topic);
     const message =
       descendantCount > 0
-        ? `确定删除“${topic.text}”及其 ${descendantCount} 个子主题吗？`
-        : `确定删除“${topic.text}”吗？`;
+        ? this.t('confirm.deleteTopicWithDescendants', {
+            topic: topic.text,
+            count: descendantCount,
+          })
+        : this.t('confirm.deleteTopic', { topic: topic.text });
 
     return window.confirm(message);
   }
@@ -1804,6 +1822,24 @@ export class YonxaoMindmapRenderer extends Component {
     }
 
     this.renderMap(true);
+  }
+
+  /*
+   * 作用：
+   * 渲染器内部统一翻译入口。
+   */
+  t(key, replacements) {
+    return this.plugin?.t?.(key, replacements) || key;
+  }
+
+  /*
+   * 作用：
+   * 组合主题编辑面板里的“布局分组：布局类型”显示文本。
+   */
+  topicEditorLayoutLabel(groupKey, layoutKey) {
+    return `${this.t(`configModal.layout.group.${groupKey}`)}：${this.t(
+      `configModal.layout.${layoutKey}`
+    )}`;
   }
 
   /*
@@ -2979,12 +3015,32 @@ export class YonxaoMindmapRenderer extends Component {
     const horizontal = this.shouldPlaceSiblingButtonsHorizontally(box);
     const positions = horizontal
       ? [
-          { placement: 'before', label: '在左侧添加兄弟主题', x: 0, y: box.height / 2 },
-          { placement: 'after', label: '在右侧添加兄弟主题', x: box.width, y: box.height / 2 },
+          {
+            placement: 'before',
+            label: this.t('topicButton.addSiblingLeft'),
+            x: 0,
+            y: box.height / 2,
+          },
+          {
+            placement: 'after',
+            label: this.t('topicButton.addSiblingRight'),
+            x: box.width,
+            y: box.height / 2,
+          },
         ]
       : [
-          { placement: 'before', label: '在上方添加兄弟主题', x: box.width / 2, y: 0 },
-          { placement: 'after', label: '在下方添加兄弟主题', x: box.width / 2, y: box.height },
+          {
+            placement: 'before',
+            label: this.t('topicButton.addSiblingAbove'),
+            x: box.width / 2,
+            y: 0,
+          },
+          {
+            placement: 'after',
+            label: this.t('topicButton.addSiblingBelow'),
+            x: box.width / 2,
+            y: box.height,
+          },
         ];
 
     for (const position of positions) {
@@ -3052,7 +3108,7 @@ export class YonxaoMindmapRenderer extends Component {
     });
 
     const title = svg('title');
-    title.textContent = '添加子主题';
+    title.textContent = this.t('topicButton.addSubtopic');
     button.appendChild(title);
     button.appendChild(svg('circle', { cx: 0, cy: 0, r: 8 }));
     button.appendChild(svg('path', { d: 'M -3.5 0 H 3.5 M 0 -3.5 V 3.5' }));
@@ -3144,7 +3200,7 @@ export class YonxaoMindmapRenderer extends Component {
     });
 
     const title = svg('title');
-    title.textContent = '编辑主题';
+    title.textContent = this.t('topicButton.editTopic');
     edit.appendChild(title);
     edit.appendChild(
       svg('rect', {
@@ -3427,23 +3483,28 @@ export class YonxaoMindmapRenderer extends Component {
     const hasSubtopics = topic.subtopics.length > 0;
     const isCollapsed = this.collapsedIds.has(topic.id);
 
-    this.addTopicContextMenuItem(menu, '重命名主题', 'pencil', () =>
+    this.addTopicContextMenuItem(menu, this.t('contextMenu.renameTopic'), 'pencil', () =>
       this.openInlineTextEditor(topic)
     );
-    this.addTopicContextMenuItem(menu, '编辑主题属性', 'sliders-horizontal', () =>
-      this.openTopicEditor(topic)
+    this.addTopicContextMenuItem(
+      menu,
+      this.t('contextMenu.editTopicAttributes'),
+      'sliders-horizontal',
+      () => this.openTopicEditor(topic)
     );
-    this.addTopicContextMenuItem(menu, '复制主题文本', 'copy', () => this.copyTopicText(topic));
+    this.addTopicContextMenuItem(menu, this.t('contextMenu.copyTopicText'), 'copy', () =>
+      this.copyTopicText(topic)
+    );
     menu.addSeparator();
 
-    this.addTopicContextMenuItem(menu, '添加子主题', 'plus', () =>
+    this.addTopicContextMenuItem(menu, this.t('contextMenu.addSubtopic'), 'plus', () =>
       this.addSubtopicFromContextMenu(topic)
     );
     if (canHaveSiblingTopic) {
-      this.addTopicContextMenuItem(menu, '在上方添加兄弟主题', 'arrow-up', () =>
+      this.addTopicContextMenuItem(menu, this.t('contextMenu.addSiblingAbove'), 'arrow-up', () =>
         this.addSiblingFromContextMenu(topic, 'before')
       );
-      this.addTopicContextMenuItem(menu, '在下方添加兄弟主题', 'arrow-down', () =>
+      this.addTopicContextMenuItem(menu, this.t('contextMenu.addSiblingBelow'), 'arrow-down', () =>
         this.addSiblingFromContextMenu(topic, 'after')
       );
     }
@@ -3452,21 +3513,29 @@ export class YonxaoMindmapRenderer extends Component {
       menu.addSeparator();
       this.addTopicContextMenuItem(
         menu,
-        isCollapsed ? '展开子主题' : '折叠子主题',
+        isCollapsed
+          ? this.t('contextMenu.expandSubtopics')
+          : this.t('contextMenu.collapseSubtopics'),
         'list-tree',
         () => this.toggleTopicCollapse(topic)
       );
-      this.addTopicContextMenuItem(menu, '展开全部子主题', 'chevrons-down', () =>
-        this.expandTopicDescendants(topic)
+      this.addTopicContextMenuItem(
+        menu,
+        this.t('contextMenu.expandAllSubtopics'),
+        'chevrons-down',
+        () => this.expandTopicDescendants(topic)
       );
-      this.addTopicContextMenuItem(menu, '折叠全部子主题', 'chevrons-up', () =>
-        this.collapseTopicDescendants(topic)
+      this.addTopicContextMenuItem(
+        menu,
+        this.t('contextMenu.collapseAllSubtopics'),
+        'chevrons-up',
+        () => this.collapseTopicDescendants(topic)
       );
     }
 
     if (canHaveSiblingTopic) {
       menu.addSeparator();
-      this.addTopicContextMenuItem(menu, '删除主题', 'trash-2', () =>
+      this.addTopicContextMenuItem(menu, this.t('contextMenu.deleteTopic'), 'trash-2', () =>
         this.deleteTopicFromContextMenu(topic)
       );
     }
@@ -3498,7 +3567,7 @@ export class YonxaoMindmapRenderer extends Component {
     if (!topic) return false;
 
     await navigator.clipboard.writeText(topic.text || '');
-    new Notice('yonxao-mindmap: 主题文本已复制。');
+    new Notice(this.t('notice.topicCopied'));
     return true;
   }
 

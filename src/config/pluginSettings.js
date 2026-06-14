@@ -3,6 +3,7 @@
  * 这里定义 Obsidian 插件级别的持久化设置，也就是会写入插件 data.json 的数据结构。
  *
  * 当前功能：
+ * - language：插件界面语言。
  * - defaultConfig：全局默认配置，作为所有 yxmm 代码块的基础配置。
  *
  * 执行逻辑：
@@ -15,7 +16,10 @@
  * 这里保存的是“插件偏好设置”，不是某个 Markdown 文档的配置区。
  */
 
+import { DEFAULT_LANGUAGE, normalizeLanguage } from '../i18n/messages.js';
+
 export const DEFAULT_PLUGIN_SETTINGS = Object.freeze({
+  language: DEFAULT_LANGUAGE,
   defaultConfig: Object.freeze({}),
 });
 
@@ -30,6 +34,7 @@ export const DEFAULT_PLUGIN_SETTINGS = Object.freeze({
 export function normalizePluginSettings(rawSettings) {
   const settings = isPlainObject(rawSettings) ? rawSettings : {};
   return {
+    language: normalizeLanguage(settings.language),
     defaultConfig: isPlainObject(settings.defaultConfig)
       ? clonePlainObject(settings.defaultConfig)
       : {},

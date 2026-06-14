@@ -34,8 +34,12 @@ import {
   FONT_WEIGHT_MIN,
   normalizeMindConfig,
 } from '../config/mindConfig.js';
-import { CUSTOM_FONT_VALUE, FONT_FAMILY_GROUPS, isPresetFontValue } from './fontOptions.js';
-import { MIND_THEME_OPTIONS } from '../theme/mindThemes.js';
+import { createTranslator } from '../i18n/messages.js';
+import {
+  CUSTOM_FONT_VALUE,
+  getLocalizedFontFamilyGroups,
+  isPresetFontValue,
+} from './fontOptions.js';
 
 const RAINBOW_THEME_NAMES = new Set(['rainbow', 'pastel-rainbow', 'neon-rainbow']);
 
@@ -46,7 +50,8 @@ const RAINBOW_THEME_NAMES = new Set(['rainbow', 'pastel-rainbow', 'neon-rainbow'
 export class ConfigModal extends Modal {
   constructor(app, options) {
     super(app);
-    this.title = options.title || '思维导图配置';
+    this.t = options.t || createTranslator('en');
+    this.title = options.title || this.t('configModal.title');
     this.initialConfig = cloneConfig(options.rawConfig);
     this.draftConfig = cloneConfig(options.rawConfig);
     this.onApply = options.onApply;
@@ -70,14 +75,7 @@ export class ConfigModal extends Modal {
     headerEl.createEl('h2', { text: this.title });
 
     const tabsEl = contentEl.createDiv({ cls: 'yonxao-mindmap-config-tabs' });
-    for (const [id, label] of [
-      ['basic', '基础'],
-      ['theme', '主题'],
-      ['layout', '结构'],
-      ['font', '字体'],
-      ['source', '源码'],
-      ['advanced', '高级'],
-    ]) {
+    for (const [id, label] of this.tabOptions()) {
       const button = tabsEl.createEl('button', {
         cls: 'yonxao-mindmap-config-tab',
         text: label,
@@ -94,13 +92,13 @@ export class ConfigModal extends Modal {
     this.statusEl = contentEl.createDiv({ cls: 'yonxao-mindmap-config-status' });
 
     const actionsEl = contentEl.createDiv({ cls: 'yonxao-mindmap-config-actions' });
-    this.createActionButton(actionsEl, '应用', async () => {
+    this.createActionButton(actionsEl, this.t('configModal.actions.apply'), async () => {
       await this.applyDraft(false);
     });
-    this.createActionButton(actionsEl, '保存并关闭', async () => {
+    this.createActionButton(actionsEl, this.t('configModal.actions.saveAndClose'), async () => {
       await this.applyDraft(true);
     });
-    this.createActionButton(actionsEl, '取消', () => {
+    this.createActionButton(actionsEl, this.t('configModal.actions.cancel'), () => {
       this.close();
     });
 
@@ -158,43 +156,63 @@ export class ConfigModal extends Modal {
    * 基础配置：高度和工具栏位置。
    */
   renderBasicTab(normalized) {
-    this.createSection('基础配置');
-    this.createNumberField('导图高度', ['canvas', 'height'], normalized.canvas.height, {
-      min: 96,
-      max: 1800,
-      step: 10,
-      placeholder: '自动',
-      help: '留空表示自动高度。拖动幕布底部也会写入这个值。',
-    });
-    this.createNumberField('源码高度', ['source', 'height'], normalized.source.height, {
-      min: 96,
-      max: 1800,
-      step: 10,
-      placeholder: '自动',
-      help: '源码模式独立高度，不影响导图高度。',
-    });
-    this.createNumberField('工具栏 X', ['toolbar', 'x'], normalized.toolbar.x, {
-      min: 0,
-      max: 10000,
-      step: 1,
-      placeholder: '默认',
-    });
-    this.createNumberField('工具栏 Y', ['toolbar', 'y'], normalized.toolbar.y, {
-      min: 0,
-      max: 10000,
-      step: 1,
-      placeholder: '默认',
-    });
+    this.createSection(this.t('configModal.basic.section'));
+    this.createNumberField(
+      this.t('configModal.basic.canvasHeight'),
+      ['canvas', 'height'],
+      normalized.canvas.height,
+      {
+        min: 96,
+        max: 1800,
+        step: 10,
+        placeholder: this.t('configModal.basic.placeholder.auto'),
+        help: this.t('configModal.basic.canvasHeight.help'),
+      }
+    );
+    this.createNumberField(
+      this.t('configModal.basic.sourceHeight'),
+      ['source', 'height'],
+      normalized.source.height,
+      {
+        min: 96,
+        max: 1800,
+        step: 10,
+        placeholder: this.t('configModal.basic.placeholder.auto'),
+        help: this.t('configModal.basic.sourceHeight.help'),
+      }
+    );
+    this.createNumberField(
+      this.t('configModal.basic.toolbarX'),
+      ['toolbar', 'x'],
+      normalized.toolbar.x,
+      {
+        min: 0,
+        max: 10000,
+        step: 1,
+        placeholder: this.t('configModal.basic.placeholder.default'),
+      }
+    );
+    this.createNumberField(
+      this.t('configModal.basic.toolbarY'),
+      ['toolbar', 'y'],
+      normalized.toolbar.y,
+      {
+        min: 0,
+        max: 10000,
+        step: 1,
+        placeholder: this.t('configModal.basic.placeholder.default'),
+      }
+    );
     this.createToggleField(
-      '启用鼠标滚轮缩放',
+      this.t('configModal.basic.wheelZoom'),
       ['interaction', 'wheelZoom'],
       normalized.interaction.wheelZoom,
       {
         omitWhenFalse: true,
-        help: '关闭时滚轮会继续滚动 Obsidian 页面；开启后滚轮会缩放当前导图并写入 interaction.wheelZoom: true。',
+        help: this.t('configModal.basic.wheelZoom.help'),
       }
     );
-    this.createInlineResetButton('重置工具栏位置', [
+    this.createInlineResetButton(this.t('configModal.basic.resetToolbar'), [
       ['toolbar', 'x'],
       ['toolbar', 'y'],
     ]);
@@ -205,18 +223,18 @@ export class ConfigModal extends Modal {
    * 主题配置：主题名和默认颜色。
    */
   renderThemeTab(normalized) {
-    this.createSection('主题');
+    this.createSection(this.t('configModal.theme.section'));
     const themeField = this.createSelectTextField(
-      '主题方案',
+      this.t('configModal.theme.scheme'),
       ['theme'],
       normalized.theme,
-      MIND_THEME_OPTIONS
+      this.themeOptions()
     );
     const colorField = this.createColorTextField(
-      '默认主题颜色',
+      this.t('configModal.theme.defaultTopicColor'),
       ['topic', 'defaultColor'],
       normalized.topic.defaultColor,
-      '留空则使用当前主题的自动配色。填写后会覆盖主题自动配色，但主题属性 color 仍然优先。'
+      this.t('configModal.theme.defaultTopicColor.help')
     );
     const warningEl = this.createWarning('');
     const updateWarning = () => {
@@ -240,68 +258,29 @@ export class ConfigModal extends Modal {
    * 结构配置：布局类型和主题宽度。
    */
   renderLayoutTab(normalized) {
-    this.createSection('结构');
-    this.createSelectField('布局类型', ['layout'], normalized.layout, [
+    this.createSection(this.t('configModal.layout.section'));
+    this.createSelectField(
+      this.t('configModal.layout.type'),
+      ['layout'],
+      normalized.layout,
+      this.layoutOptionGroups()
+    );
+    this.createNumberField(
+      this.t('configModal.layout.topicMaxWidth'),
+      ['topic', 'maxWidth'],
+      normalized.topic.maxWidth,
       {
-        group: '思维导图',
-        options: [
-          ['mindmap-right', '右向思维导图'],
-          ['mindmap-left', '左向思维导图'],
-          ['mindmap-bidirectional', '双向思维导图'],
-          ['mindmap-up', '上向思维导图'],
-          ['mindmap-down', '下向思维导图'],
-          ['mindmap-vertical', '垂直双向思维导图'],
-        ],
-      },
-      {
-        group: '树形图',
-        options: [
-          ['tree', '树形图'],
-          ['tree-right', '右向树形图'],
-          ['tree-left', '左向树形图'],
-        ],
-      },
-      {
-        group: '组织结构图',
-        options: [
-          ['org', '组织结构图'],
-          ['org-right', '右向组织结构图'],
-        ],
-      },
-      {
-        group: '时间轴',
-        options: [
-          ['timeline', '时间轴'],
-          ['timeline-up', '上侧时间轴'],
-          ['timeline-down', '下侧时间轴'],
-        ],
-      },
-      {
-        group: '放射图',
-        options: [['radial', '放射图']],
-      },
-      {
-        group: '鱼骨图',
-        options: [['fishbone-left', '左向鱼骨图']],
-      },
-      {
-        group: '树形表格',
-        options: [
-          ['tree-table', '树形表格'],
-          ['tree-table-stepped', '阶梯树形表格'],
-        ],
-      },
-    ]);
-    this.createNumberField('主题最大宽度', ['topic', 'maxWidth'], normalized.topic.maxWidth, {
-      min: 120,
-      max: 800,
-      step: 10,
-    });
-    this.createSelectField('连线线型', ['connector', 'style'], normalized.connector.style, [
-      ['curve', '曲线（贝塞尔）'],
-      ['straight', '直线'],
-      ['elbow', '折线'],
-    ]);
+        min: 120,
+        max: 800,
+        step: 10,
+      }
+    );
+    this.createSelectField(
+      this.t('configModal.layout.connectorStyle'),
+      ['connector', 'style'],
+      normalized.connector.style,
+      this.connectorOptions()
+    );
   }
 
   /*
@@ -309,30 +288,50 @@ export class ConfigModal extends Modal {
    * 字体配置：全局字体和按层级覆盖。
    */
   renderFontTab(normalized) {
-    this.createSection('全局主题字体');
-    this.createFontFamilyField('主题字体', ['font', 'family'], normalized.font.family, {
-      help: '可以选择内置字体预设，也可以选择“自定义”后输入 CSS 字体族，例如 "LXGW WenKai", "Source Han Sans SC", sans-serif。',
-    });
-    this.createNumberField('主题字号', ['font', 'size'], normalized.font.size, {
-      min: FONT_SIZE_MIN,
-      max: FONT_SIZE_MAX,
-      step: 1,
-      help: '字号单位是像素，控制主题文字大小。',
-    });
-    this.createNumberField('主题字重', ['font', 'weight'], normalized.font.weight, {
-      min: FONT_WEIGHT_MIN,
-      max: FONT_WEIGHT_MAX,
-      step: 10,
-      help: '字重遵循 CSS 标准范围 100-900。',
-    });
-    this.createNumberField('主题行高', ['font', 'lineHeight'], normalized.font.lineHeight, {
-      min: FONT_LINE_HEIGHT_MIN,
-      max: FONT_LINE_HEIGHT_MAX,
-      step: 1,
-      help: '行高是 SVG 文本每行之间的像素距离，建议约为字号的 1.3-1.5 倍。',
-    });
+    this.createSection(this.t('configModal.font.globalSection'));
+    this.createFontFamilyField(
+      this.t('configModal.font.family'),
+      ['font', 'family'],
+      normalized.font.family,
+      {
+        help: this.t('configModal.font.family.help'),
+      }
+    );
+    this.createNumberField(
+      this.t('configModal.font.size'),
+      ['font', 'size'],
+      normalized.font.size,
+      {
+        min: FONT_SIZE_MIN,
+        max: FONT_SIZE_MAX,
+        step: 1,
+        help: this.t('configModal.font.size.help'),
+      }
+    );
+    this.createNumberField(
+      this.t('configModal.font.weight'),
+      ['font', 'weight'],
+      normalized.font.weight,
+      {
+        min: FONT_WEIGHT_MIN,
+        max: FONT_WEIGHT_MAX,
+        step: 10,
+        help: this.t('configModal.font.weight.help'),
+      }
+    );
+    this.createNumberField(
+      this.t('configModal.font.lineHeight'),
+      ['font', 'lineHeight'],
+      normalized.font.lineHeight,
+      {
+        min: FONT_LINE_HEIGHT_MIN,
+        max: FONT_LINE_HEIGHT_MAX,
+        step: 1,
+        help: this.t('configModal.font.lineHeight.help'),
+      }
+    );
 
-    this.createSection('按层级覆盖');
+    this.createSection(this.t('configModal.font.levelSection'));
     for (const level of ['1', '2', '3']) {
       this.createLevelFontGroup(level);
     }
@@ -343,18 +342,23 @@ export class ConfigModal extends Modal {
    * 源码编辑配置。
    */
   renderSourceTab(normalized) {
-    this.createSection('源码模式');
+    this.createSection(this.t('configModal.source.section'));
     this.createToggleField(
-      'Tab 调整主题级别',
+      this.t('configModal.source.tabIndent'),
       ['source', 'enableTabIndent'],
       normalized.source.enableTabIndent
     );
-    this.createNumberField('源码高度', ['source', 'height'], normalized.source.height, {
-      min: 96,
-      max: 1800,
-      step: 10,
-      placeholder: '自动',
-    });
+    this.createNumberField(
+      this.t('configModal.source.height'),
+      ['source', 'height'],
+      normalized.source.height,
+      {
+        min: 96,
+        max: 1800,
+        step: 10,
+        placeholder: this.t('configModal.basic.placeholder.auto'),
+      }
+    );
   }
 
   /*
@@ -362,7 +366,7 @@ export class ConfigModal extends Modal {
    * 高级 YAML 编辑。
    */
   renderAdvancedTab() {
-    this.createSection('高级配置');
+    this.createSection(this.t('configModal.advanced.section'));
     this.advancedInputEl = this.formEl.createEl('textarea', {
       cls: 'yonxao-mindmap-config-yaml',
     });
@@ -371,9 +375,12 @@ export class ConfigModal extends Modal {
     this.advancedInputEl.addEventListener('input', () => {
       try {
         this.draftConfig = parseDraftConfigText(this.advancedInputEl.value);
-        this.updateStatus('配置语法有效。');
+        this.updateStatus(this.t('configModal.status.valid'));
       } catch (error) {
-        this.updateStatus(`配置语法错误：${error.message || String(error)}`, true);
+        this.updateStatus(
+          this.t('configModal.status.invalid', { message: error.message || String(error) }),
+          true
+        );
       }
     });
   }
@@ -385,9 +392,9 @@ export class ConfigModal extends Modal {
   createLevelFontGroup(level) {
     const groupEl = this.formEl.createDiv({ cls: 'yonxao-mindmap-config-level' });
     const titleEl = groupEl.createDiv({ cls: 'yonxao-mindmap-config-level-title' });
-    titleEl.setText(`${'#'.repeat(Number(level))} 层级`);
+    titleEl.setText(this.t('configModal.font.levelTitle', { marks: '#'.repeat(Number(level)) }));
     const clearButton = titleEl.createEl('button', {
-      text: '清除本层',
+      text: this.t('configModal.font.clearLevel'),
       cls: 'yonxao-mindmap-config-small-button',
     });
     clearButton.type = 'button';
@@ -396,27 +403,42 @@ export class ConfigModal extends Modal {
       this.render();
     });
 
-    this.createNumberField('主题字号', ['font', 'levels', level, 'size'], '', {
+    this.createNumberField(this.t('configModal.font.size'), ['font', 'levels', level, 'size'], '', {
       min: FONT_SIZE_MIN,
       max: FONT_SIZE_MAX,
       step: 1,
       parentEl: groupEl,
     });
-    this.createNumberField('主题字重', ['font', 'levels', level, 'weight'], '', {
-      min: FONT_WEIGHT_MIN,
-      max: FONT_WEIGHT_MAX,
-      step: 10,
-      parentEl: groupEl,
-    });
-    this.createNumberField('主题行高', ['font', 'levels', level, 'lineHeight'], '', {
-      min: FONT_LINE_HEIGHT_MIN,
-      max: FONT_LINE_HEIGHT_MAX,
-      step: 1,
-      parentEl: groupEl,
-    });
-    this.createFontFamilyField('主题字体', ['font', 'levels', level, 'family'], '', {
-      parentEl: groupEl,
-    });
+    this.createNumberField(
+      this.t('configModal.font.weight'),
+      ['font', 'levels', level, 'weight'],
+      '',
+      {
+        min: FONT_WEIGHT_MIN,
+        max: FONT_WEIGHT_MAX,
+        step: 10,
+        parentEl: groupEl,
+      }
+    );
+    this.createNumberField(
+      this.t('configModal.font.lineHeight'),
+      ['font', 'levels', level, 'lineHeight'],
+      '',
+      {
+        min: FONT_LINE_HEIGHT_MIN,
+        max: FONT_LINE_HEIGHT_MAX,
+        step: 1,
+        parentEl: groupEl,
+      }
+    );
+    this.createFontFamilyField(
+      this.t('configModal.font.family'),
+      ['font', 'levels', level, 'family'],
+      '',
+      {
+        parentEl: groupEl,
+      }
+    );
   }
 
   /*
@@ -576,7 +598,7 @@ export class ConfigModal extends Modal {
    * 把字体预设按类型渲染成 optgroup。
    */
   appendFontOptions(select) {
-    for (const group of FONT_FAMILY_GROUPS) {
+    for (const group of getLocalizedFontFamilyGroups(this.t)) {
       const groupEl = select.createEl('optgroup');
       groupEl.label = group.group;
 
@@ -694,7 +716,7 @@ export class ConfigModal extends Modal {
     if (!saved) return;
 
     this.initialConfig = cloneConfig(this.draftConfig);
-    this.updateStatus('配置已保存。');
+    this.updateStatus(this.t('configModal.status.saved'));
     if (closeAfterApply) this.close();
   }
 
@@ -714,13 +736,115 @@ export class ConfigModal extends Modal {
    */
   tabLabel(tab) {
     return {
-      basic: '基础',
-      theme: '主题',
-      layout: '结构',
-      font: '字体',
-      source: '源码',
-      advanced: '高级',
+      basic: this.t('configModal.tabs.basic'),
+      theme: this.t('configModal.tabs.theme'),
+      layout: this.t('configModal.tabs.layout'),
+      font: this.t('configModal.tabs.font'),
+      source: this.t('configModal.tabs.source'),
+      advanced: this.t('configModal.tabs.advanced'),
     }[tab];
+  }
+
+  /*
+   * 作用：
+   * 返回配置弹框 tab 选项。
+   */
+  tabOptions() {
+    return [
+      ['basic', this.t('configModal.tabs.basic')],
+      ['theme', this.t('configModal.tabs.theme')],
+      ['layout', this.t('configModal.tabs.layout')],
+      ['font', this.t('configModal.tabs.font')],
+      ['source', this.t('configModal.tabs.source')],
+      ['advanced', this.t('configModal.tabs.advanced')],
+    ];
+  }
+
+  /*
+   * 作用：
+   * 返回主题色系下拉框选项。
+   */
+  themeOptions() {
+    return [
+      ['default', this.t('configModal.theme.default')],
+      ['ocean', this.t('configModal.theme.ocean')],
+      ['forest', this.t('configModal.theme.forest')],
+      ['sunset', this.t('configModal.theme.sunset')],
+      ['mono', this.t('configModal.theme.mono')],
+      ['rainbow', this.t('configModal.theme.rainbow')],
+      ['pastel-rainbow', this.t('configModal.theme.pastelRainbow')],
+      ['neon-rainbow', this.t('configModal.theme.neonRainbow')],
+    ];
+  }
+
+  /*
+   * 作用：
+   * 返回布局类型分组下拉框选项。
+   */
+  layoutOptionGroups() {
+    return [
+      {
+        group: this.t('configModal.layout.group.mindmap'),
+        options: [
+          ['mindmap-right', this.t('configModal.layout.mindmapRight')],
+          ['mindmap-left', this.t('configModal.layout.mindmapLeft')],
+          ['mindmap-bidirectional', this.t('configModal.layout.mindmapBidirectional')],
+          ['mindmap-up', this.t('configModal.layout.mindmapUp')],
+          ['mindmap-down', this.t('configModal.layout.mindmapDown')],
+          ['mindmap-vertical', this.t('configModal.layout.mindmapVertical')],
+        ],
+      },
+      {
+        group: this.t('configModal.layout.group.tree'),
+        options: [
+          ['tree', this.t('configModal.layout.tree')],
+          ['tree-right', this.t('configModal.layout.treeRight')],
+          ['tree-left', this.t('configModal.layout.treeLeft')],
+        ],
+      },
+      {
+        group: this.t('configModal.layout.group.org'),
+        options: [
+          ['org', this.t('configModal.layout.org')],
+          ['org-right', this.t('configModal.layout.orgRight')],
+        ],
+      },
+      {
+        group: this.t('configModal.layout.group.timeline'),
+        options: [
+          ['timeline', this.t('configModal.layout.timeline')],
+          ['timeline-up', this.t('configModal.layout.timelineUp')],
+          ['timeline-down', this.t('configModal.layout.timelineDown')],
+        ],
+      },
+      {
+        group: this.t('configModal.layout.group.radial'),
+        options: [['radial', this.t('configModal.layout.radial')]],
+      },
+      {
+        group: this.t('configModal.layout.group.fishbone'),
+        options: [['fishbone-left', this.t('configModal.layout.fishboneLeft')]],
+      },
+      {
+        group: this.t('configModal.layout.group.treeTable'),
+        options: [
+          ['tree-table', this.t('configModal.layout.treeTable')],
+          ['tree-table-stepped', this.t('configModal.layout.treeTableStepped')],
+        ],
+      },
+    ];
+  }
+
+  /*
+   * 作用：
+   * 返回连线线型下拉框选项。
+   */
+  connectorOptions() {
+    return [
+      ['curve', this.t('configModal.connector.curve')],
+      ['straight', this.t('configModal.connector.straight')],
+      ['elbow', this.t('configModal.connector.elbow')],
+    ];
   }
 
   /*
@@ -744,9 +868,7 @@ export class ConfigModal extends Modal {
    */
   updateThemeOverrideWarning(warningEl) {
     const shouldWarn = this.shouldWarnDefaultColorOverridesTheme();
-    warningEl.setText(
-      shouldWarn ? '当前主题会按分支自动配色；填写默认主题颜色后，主题的彩虹分支色将不会显示。' : ''
-    );
+    warningEl.setText(shouldWarn ? this.t('configModal.theme.overrideWarning') : '');
     warningEl.hidden = !shouldWarn;
   }
 }

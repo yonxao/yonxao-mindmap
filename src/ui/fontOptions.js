@@ -86,6 +86,74 @@ export const FONT_FAMILY_OPTIONS = Object.freeze(
 
 /*
  * 作用：
+ * 根据当前语言生成字体下拉框选项。
+ *
+ * 为什么不直接修改 FONT_FAMILY_GROUPS：
+ * FONT_FAMILY_GROUPS 保留为稳定的默认中文结构，方便旧调用方和测试读取；
+ * 配置弹框实际显示时走这个函数，按当前插件语言替换 group 和 label。
+ */
+export function getLocalizedFontFamilyGroups(t) {
+  return [
+    {
+      group: t('font.group.inherit'),
+      options: [
+        ['', t('font.inherit')],
+        [CUSTOM_FONT_VALUE, t('font.custom')],
+      ],
+    },
+    {
+      group: t('font.group.obsidian'),
+      options: [
+        ['var(--font-interface)', t('font.obsidian.interface')],
+        ['var(--font-text)', t('font.obsidian.text')],
+        ['var(--font-monospace)', t('font.obsidian.monospace')],
+      ],
+    },
+    {
+      group: t('font.group.chinese'),
+      options: [
+        [
+          '"Microsoft YaHei", "PingFang SC", "Source Han Sans SC", "Noto Sans CJK SC", sans-serif',
+          t('font.chinese.sans'),
+        ],
+        [
+          '"SimSun", "Songti SC", "STSong", "Source Han Serif SC", "Noto Serif CJK SC", serif',
+          t('font.chinese.serif'),
+        ],
+        ['"KaiTi", "Kaiti SC", "STKaiti", "LXGW WenKai", cursive', t('font.chinese.kaiti')],
+        ['"FangSong", "STFangsong", serif', t('font.chinese.fangsong')],
+        ['"Microsoft YaHei", "微软雅黑", sans-serif', t('font.chinese.microsoftYaHei')],
+        ['"PingFang SC", "苹方", sans-serif', t('font.chinese.pingFang')],
+        ['"Source Han Sans SC", "Noto Sans CJK SC", sans-serif', t('font.chinese.sourceHanSans')],
+        ['"Source Han Serif SC", "Noto Serif CJK SC", serif', t('font.chinese.sourceHanSerif')],
+        ['"LXGW WenKai", "霞鹜文楷", cursive', t('font.chinese.lxgwWenkai')],
+      ],
+    },
+    {
+      group: t('font.group.system'),
+      options: [
+        ['system-ui, sans-serif', t('font.system.sans')],
+        ['Georgia, "Times New Roman", serif', t('font.system.serif')],
+        ['ui-monospace, SFMono-Regular, Menlo, Consolas, monospace', t('font.system.monospace')],
+      ],
+    },
+    {
+      group: t('font.group.monospace'),
+      options: [
+        [
+          "'Sarasa Mono SC', 'Noto Sans Mono CJK SC', 'Source Han Mono SC', 'Cascadia Mono', 'JetBrains Mono', 'Liberation Mono', monospace",
+          t('font.monospace.cjkStack'),
+        ],
+        ['"Sarasa Mono SC", "更纱黑体 Mono", monospace', t('font.monospace.sarasa')],
+        ['"JetBrains Mono", monospace', t('font.monospace.jetbrains')],
+        ['"Cascadia Mono", monospace', t('font.monospace.cascadia')],
+      ],
+    },
+  ];
+}
+
+/*
+ * 作用：
  * 判断某个字体值是否来自预设。
  */
 export function isPresetFontValue(value) {

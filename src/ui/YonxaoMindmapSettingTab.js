@@ -18,6 +18,7 @@ import {
   hasMeaningfulConfig,
   normalizeMindConfig,
 } from '../config/mindConfig.js';
+import { LANGUAGE_OPTIONS } from '../i18n/messages.js';
 import { ConfigModal } from './ConfigModal.js';
 
 /*
@@ -43,11 +44,36 @@ export class YonxaoMindmapSettingTab extends PluginSettingTab {
 
     containerEl.createEl('h2', { text: 'yonxao-mindmap' });
     containerEl.createEl('p', {
-      text: '这里配置的是插件级别的全局默认配置。单个 yxmm 代码块顶部的配置区仍然优先，适合给某一张导图做局部覆盖。',
+      text: this.t('settings.description'),
     });
 
+    this.renderLanguageSetting(containerEl);
     this.renderGlobalDefaultConfigSetting(containerEl);
     this.renderGlobalDefaultConfigSummary(containerEl);
+  }
+
+  /*
+   * 作用：
+   * 创建语言选择项。
+   *
+   * 执行逻辑：
+   * 用户选择语言后立即保存到插件 data.json，并重新绘制当前设置页。
+   */
+  renderLanguageSetting(containerEl) {
+    new Setting(containerEl)
+      .setName(this.t('settings.language.name'))
+      .setDesc(this.t('settings.language.desc'))
+      .addDropdown((dropdown) => {
+        for (const [value, label] of LANGUAGE_OPTIONS) {
+          dropdown.addOption(value, label);
+        }
+
+        dropdown.setValue(this.yonxaoPlugin.getLanguage());
+        dropdown.onChange(async (value) => {
+          await this.yonxaoPlugin.updateLanguage(value);
+          this.display();
+        });
+      });
   }
 
   /*
@@ -56,17 +82,17 @@ export class YonxaoMindmapSettingTab extends PluginSettingTab {
    */
   renderGlobalDefaultConfigSetting(containerEl) {
     new Setting(containerEl)
-      .setName('全局默认配置')
-      .setDesc('作为所有 yxmm 代码块的基础配置；文档配置区和主题属性会继续覆盖它。')
+      .setName(this.t('settings.defaultConfig.name'))
+      .setDesc(this.t('settings.defaultConfig.desc'))
       .addButton((button) => {
-        button.setButtonText('编辑默认配置').onClick(() => {
+        button.setButtonText(this.t('settings.defaultConfig.edit')).onClick(() => {
           this.openGlobalDefaultConfigModal();
         });
       })
       .addButton((button) => {
-        button.setButtonText('恢复内置默认值').onClick(async () => {
+        button.setButtonText(this.t('settings.defaultConfig.reset')).onClick(async () => {
           await this.yonxaoPlugin.updateGlobalDefaultConfig({});
-          new Notice('yonxao-mindmap: 已恢复插件内置默认配置。');
+          new Notice(this.t('settings.defaultConfig.resetNotice'));
           this.display();
         });
       });
@@ -78,13 +104,14 @@ export class YonxaoMindmapSettingTab extends PluginSettingTab {
    */
   openGlobalDefaultConfigModal() {
     const modal = new ConfigModal(this.app, {
-      title: '全局默认配置',
+      title: this.t('configModal.globalTitle'),
+      t: this.t.bind(this),
       rawConfig: this.yonxaoPlugin.getGlobalDefaultConfig(),
       onApply: async (nextConfig) => {
         const sanitizedConfig = this.sanitizeGlobalDefaultConfig(nextConfig);
         await this.yonxaoPlugin.updateGlobalDefaultConfig(sanitizedConfig);
         this.display();
-        new Notice('yonxao-mindmap: 全局默认配置已保存。');
+        new Notice(this.t('settings.defaultConfig.savedNotice'));
         return true;
       },
     });
@@ -113,7 +140,7 @@ export class YonxaoMindmapSettingTab extends PluginSettingTab {
     const summaryEl = containerEl.createDiv({ cls: 'setting-item-description' });
 
     if (!hasMeaningfulConfig(rawConfig)) {
-      summaryEl.setText('当前未设置全局默认配置，所有导图使用插件内置默认值。');
+      summaryEl.setText(this.t('settings.defaultConfig.empty'));
       return;
     }
 
@@ -121,17 +148,29 @@ export class YonxaoMindmapSettingTab extends PluginSettingTab {
      * 摘要只展示最常用的几项。
      * 具体完整配置仍然以弹框的“高级”页为准，避免设置页变成第二套编辑器。
      */
-    summaryEl.createEl('p', { text: '当前全局默认配置摘要：' });
+    summaryEl.createEl('p', { text: this.t('settings.defaultConfig.summaryTitle') });
     const listEl = summaryEl.createEl('ul');
     for (const item of [
-      `主题色系：${normalized.theme}`,
-      `布局类型：${normalized.layout}`,
-      `连线线型：${normalized.connector.style}`,
-      `鼠标滚轮缩放：${normalized.interaction.wheelZoom ? '开启' : '关闭'}`,
-      `主题字体：${normalized.font.family}`,
-      `主题字号：${normalized.font.size}`,
+      `${this.t('settings.summary.theme')}: ${normalized.theme}`,
+      `${this.t('settings.summary.layout')}: ${normalized.layout}`,
+      `${this.t('settings.summary.connector')}: ${normalized.connector.style}`,
+      `${this.t('settings.summary.wheelZoom')}: ${
+        normalized.interaction.wheelZoom
+          ? this.t('settings.summary.enabled')
+          : this.t('settings.summary.disabled')
+      }`,
+      `${this.t('settings.summary.fontFamily')}: ${normalized.font.family}`,
+      `${this.t('settings.summary.fontSize')}: ${normalized.font.size}`,
     ]) {
       listEl.createEl('li', { text: item });
     }
+  }
+
+  /*
+   * 作用：
+   * 设置页内部的翻译快捷方法。
+   */
+  t(key, replacements) {
+    return this.yonxaoPlugin.t(key, replacements);
   }
 }
