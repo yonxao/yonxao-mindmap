@@ -172,6 +172,16 @@ yonxao-mindmap uses these terms consistently across docs, config, UI text, and c
 
 A `yxmm` block can start with a `---` config block. The config block stores global defaults, while Markdown headings continue to describe the mind map structure.
 
+### Plugin Settings
+
+Obsidian `Settings` -> `Community plugins` -> `yonxao-mindmap` provides a plugin-level global default config.
+
+Global defaults are used as the base config for every `yxmm` block. A block-level config overrides global defaults, and topic attributes still override both:
+
+`topic attributes` > `block config` > `plugin global defaults` > `built-in defaults`
+
+This is useful for shared preferences such as theme, layout type, font, connector style, and mouse-wheel zoom. Obsidian stores these settings in the plugin's local `data.json`; they are not part of the release package and are not automatically written into every Markdown document.
+
 Supported config keys:
 
 - `canvas.height`: persisted canvas height. Drag the bottom handle to write it; double-click the handle to remove it and return to automatic height.

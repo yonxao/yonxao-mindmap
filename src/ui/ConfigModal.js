@@ -46,6 +46,7 @@ const RAINBOW_THEME_NAMES = new Set(['rainbow', 'pastel-rainbow', 'neon-rainbow'
 export class ConfigModal extends Modal {
   constructor(app, options) {
     super(app);
+    this.title = options.title || '思维导图配置';
     this.initialConfig = cloneConfig(options.rawConfig);
     this.draftConfig = cloneConfig(options.rawConfig);
     this.onApply = options.onApply;
@@ -66,7 +67,7 @@ export class ConfigModal extends Modal {
     contentEl.addClass('yonxao-mindmap-config-modal');
 
     const headerEl = contentEl.createDiv({ cls: 'yonxao-mindmap-config-header' });
-    headerEl.createEl('h2', { text: '思维导图配置' });
+    headerEl.createEl('h2', { text: this.title });
 
     const tabsEl = contentEl.createDiv({ cls: 'yonxao-mindmap-config-tabs' });
     for (const [id, label] of [

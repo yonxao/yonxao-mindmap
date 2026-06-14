@@ -28,6 +28,7 @@ import {
 import {
   deleteMindConfigPath,
   hasMeaningfulConfig,
+  mergeMindConfigObjects,
   normalizeMindConfig,
   serializeMindSource,
   setMindConfigPath,
@@ -73,7 +74,7 @@ export class YonxaoMindmapRenderer extends Component {
     this.editorContext = editorContext || null;
     this.root = null;
     this.rawConfig = {};
-    this.config = normalizeMindConfig({});
+    this.config = normalizeMindConfig(this.buildEffectiveRawConfig({}));
     this.hasConfigBlock = false;
     this.containerEl = null;
     this.toolbarEl = null;
@@ -175,7 +176,7 @@ export class YonxaoMindmapRenderer extends Component {
   parseAndApplyDocument(source) {
     const document = parseMindDocument(source);
     this.rawConfig = document.rawConfig || {};
-    this.config = document.config || normalizeMindConfig({});
+    this.refreshNormalizedConfig();
     this.hasConfigBlock = document.hasConfig;
     return document.root;
   }
@@ -1149,7 +1150,7 @@ export class YonxaoMindmapRenderer extends Component {
     this.source = nextSource;
     this.root = nextDocument.root;
     this.rawConfig = nextDocument.rawConfig || {};
-    this.config = nextDocument.config || normalizeMindConfig({});
+    this.refreshNormalizedConfig();
     this.hasConfigBlock = nextDocument.hasConfig;
     this.rememberViewModeConfig();
     this.collapsedIds.clear();
@@ -1765,10 +1766,44 @@ export class YonxaoMindmapRenderer extends Component {
 
   /*
    * 作用：
-   * rawConfig 变化后刷新运行时配置。
+   * 构建当前渲染真正使用的 raw config。
+   *
+   * 配置优先级：
+   * 插件全局默认配置 < 当前文档配置区 < 主题属性。
+   *
+   * 注意：
+   * 这里不会把全局默认配置写回 rawConfig，因为 rawConfig 表示当前文档自己的配置区。
+   */
+  buildEffectiveRawConfig(documentConfig = this.rawConfig) {
+    const globalDefaultConfig = this.plugin?.getGlobalDefaultConfig?.() || {};
+    return mergeMindConfigObjects(globalDefaultConfig, documentConfig || {});
+  }
+
+  /*
+   * 作用：
+   * rawConfig 或插件全局默认配置变化后刷新运行时配置。
    */
   refreshNormalizedConfig() {
-    this.config = normalizeMindConfig(this.rawConfig);
+    this.config = normalizeMindConfig(this.buildEffectiveRawConfig(this.rawConfig));
+  }
+
+  /*
+   * 作用：
+   * 插件偏好设置中的全局默认配置保存后，刷新当前渲染器。
+   *
+   * 关键点：
+   * 只重新计算运行时配置和视图，不修改当前 Markdown 代码块源码。
+   */
+  applyGlobalDefaultConfig() {
+    this.refreshNormalizedConfig();
+    this.applyRuntimeConfigToView();
+
+    if (this.isSourceMode) {
+      this.scheduleSourceModeHeight();
+      return;
+    }
+
+    this.renderMap(true);
   }
 
   /*

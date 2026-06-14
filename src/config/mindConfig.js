@@ -91,6 +91,26 @@ export const DEFAULT_MIND_CONFIG = Object.freeze({
 
 /*
  * 作用：
+ * 把“基础配置”和“覆盖配置”合并成新的普通对象。
+ *
+ * 调用场景：
+ * - 插件偏好设置里保存的是全局默认配置。
+ * - 单个 yxmm 代码块顶部保存的是文档自己的配置。
+ * - 渲染时需要先读全局默认配置，再用文档配置覆盖它。
+ *
+ * 实现逻辑：
+ * 这里只递归合并普通对象，例如 font.levels、toolbar、canvas。
+ * 标量值、数组和值为 null 的字段都直接使用覆盖配置，避免深层字段被错误拼接。
+ */
+export function mergeMindConfigObjects(baseConfig, overrideConfig) {
+  return deepMergePlainObjects(
+    isPlainObject(baseConfig) ? baseConfig : {},
+    isPlainObject(overrideConfig) ? overrideConfig : {}
+  );
+}
+
+/*
+ * 作用：
  * 将 yxmm 源码拆成“原始配置对象”和“主题级别标记正文”。
  *
  * 实现逻辑：
@@ -525,6 +545,33 @@ function stripYamlComment(line) {
 function clonePlainObject(value) {
   if (!isPlainObject(value)) return {};
   return JSON.parse(JSON.stringify(value));
+}
+
+/*
+ * 作用：
+ * 递归合并两个普通对象，并且始终返回全新的对象引用。
+ *
+ * 关键变量：
+ * - merged：先复制 base，保证不会修改调用方传入的全局配置对象。
+ * - overrideValue：当前覆盖字段；只有它和 baseValue 都是普通对象时才继续深入合并。
+ */
+function deepMergePlainObjects(base, override) {
+  const merged = clonePlainObject(base);
+
+  for (const [key, overrideValue] of Object.entries(override)) {
+    if (overrideValue === undefined) continue;
+
+    const baseValue = merged[key];
+    if (isPlainObject(baseValue) && isPlainObject(overrideValue)) {
+      merged[key] = deepMergePlainObjects(baseValue, overrideValue);
+    } else if (isPlainObject(overrideValue)) {
+      merged[key] = clonePlainObject(overrideValue);
+    } else {
+      merged[key] = overrideValue;
+    }
+  }
+
+  return merged;
 }
 
 /*
