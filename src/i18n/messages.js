@@ -3,7 +3,7 @@
  * 这里集中维护 yonxao-mindmap 的界面文案国际化配置。
  *
  * 当前支持：
- * - en：英文，插件默认语言。
+ * - en：英文，插件兜底语言；首次默认语言会跟随 Obsidian 当前语言。
  * - zh-CN：中文简体。
  * - zh-TW：中文繁体。
  *
@@ -13,10 +13,10 @@
  * 设计思路：
  * 1. 代码里只写稳定的 key，例如 configModal.tabs.basic。
  * 2. 具体显示文案全部放在 LOCALE_MESSAGES。
- * 3. 如果某个语言缺少 key，会回退到英文，避免界面出现 undefined。
+ * 3. 如果某个语言缺少 key，会回退到英文兜底语言，避免界面出现 undefined。
  */
 
-export const DEFAULT_LANGUAGE = 'en';
+export const FALLBACK_LANGUAGE = 'en';
 
 export const LANGUAGE_OPTIONS = Object.freeze([
   ['en', 'English'],
@@ -37,12 +37,48 @@ export const LANGUAGE_OPTIONS = Object.freeze([
   ['hi', 'हिन्दी'],
 ]);
 
+/*
+ * 作用：
+ * 把 Obsidian 返回的语言标识映射到插件支持的语言代码。
+ *
+ * 关键点：
+ * Obsidian 语言可能是 zh、zh-cn、zh-tw、pt-br 这类格式；插件内部统一使用
+ * LANGUAGE_OPTIONS 中声明的稳定代码。
+ */
+export function languageFromObsidianLocale(locale) {
+  const value = String(locale || '')
+    .trim()
+    .replace(/_/g, '-');
+  const lowerValue = value.toLowerCase();
+
+  if (lowerValue === 'zh' || lowerValue === 'zh-cn' || lowerValue === 'zh-hans') {
+    return 'zh-CN';
+  }
+  if (
+    lowerValue === 'zh-tw' ||
+    lowerValue === 'zh-hk' ||
+    lowerValue === 'zh-mo' ||
+    lowerValue === 'zh-hant'
+  ) {
+    return 'zh-TW';
+  }
+  if (lowerValue === 'pt-br') return 'pt-BR';
+
+  const exactMatch = LANGUAGE_OPTIONS.find(([language]) => language.toLowerCase() === lowerValue);
+  if (exactMatch) return exactMatch[0];
+
+  const primaryLanguage = lowerValue.split('-')[0];
+  const primaryMatch = LANGUAGE_OPTIONS.find(([language]) => language === primaryLanguage);
+  return primaryMatch ? primaryMatch[0] : FALLBACK_LANGUAGE;
+}
+
 const BASE_LOCALE_MESSAGES = Object.freeze({
   en: Object.freeze({
     'settings.description':
       'Configure plugin-level global defaults here. The config block at the top of an individual yxmm code block still has priority, which is useful for per-map overrides.',
     'settings.language.name': 'Language',
-    'settings.language.desc': 'Controls yonxao-mindmap UI text. The default language is English.',
+    'settings.language.desc':
+      'Controls yonxao-mindmap UI text. The initial default follows the current Obsidian language.',
     'settings.defaultConfig.name': 'Global default config',
     'settings.defaultConfig.desc':
       'Used as the base config for every yxmm code block; block config and topic attributes still override it.',
@@ -254,7 +290,8 @@ const BASE_LOCALE_MESSAGES = Object.freeze({
     'settings.description':
       '这里配置的是插件级别的全局默认配置。单个 yxmm 代码块顶部的配置区仍然优先，适合给某一张导图做局部覆盖。',
     'settings.language.name': '语言',
-    'settings.language.desc': '控制 yonxao-mindmap 的界面文案。默认语言是英文。',
+    'settings.language.desc':
+      '控制 yonxao-mindmap 的界面文案。首次默认语言会跟随 Obsidian 当前语言。',
     'settings.defaultConfig.name': '全局默认配置',
     'settings.defaultConfig.desc':
       '作为所有 yxmm 代码块的基础配置；文档配置区和主题属性会继续覆盖它。',
@@ -461,7 +498,8 @@ const BASE_LOCALE_MESSAGES = Object.freeze({
     'settings.description':
       '這裡配置的是插件級別的全域預設配置。單個 yxmm 程式碼區塊頂部的配置區仍然優先，適合給某一張導圖做局部覆蓋。',
     'settings.language.name': '語言',
-    'settings.language.desc': '控制 yonxao-mindmap 的介面文字。預設語言是英文。',
+    'settings.language.desc':
+      '控制 yonxao-mindmap 的介面文字。首次預設語言會跟隨 Obsidian 目前語言。',
     'settings.defaultConfig.name': '全域預設配置',
     'settings.defaultConfig.desc':
       '作為所有 yxmm 程式碼區塊的基礎配置；文件配置區和主題屬性會繼續覆蓋它。',
@@ -671,7 +709,8 @@ const ADDITIONAL_LOCALE_MESSAGES = Object.freeze({
       settingsDescription:
         'ここではプラグイン全体の既定設定を構成します。個別の yxmm コードブロック上部の設定ブロックが引き続き優先されます。',
       language: '言語',
-      languageDesc: 'yonxao-mindmap の UI テキストを制御します。既定言語は英語です。',
+      languageDesc:
+        'yonxao-mindmap の UI テキストを制御します。初期既定言語は Obsidian の現在の言語に従います。',
       globalDefaultConfig: 'グローバル既定設定',
       globalDefaultDesc:
         'すべての yxmm コードブロックの基本設定として使われます。ブロック設定とトピック属性が優先されます。',
@@ -740,7 +779,8 @@ const ADDITIONAL_LOCALE_MESSAGES = Object.freeze({
       settingsDescription:
         '여기에서 플러그인 전체 기본 설정을 구성합니다. 개별 yxmm 코드 블록 상단의 설정 블록이 계속 우선합니다.',
       language: '언어',
-      languageDesc: 'yonxao-mindmap UI 텍스트를 제어합니다. 기본 언어는 영어입니다.',
+      languageDesc:
+        'yonxao-mindmap UI 텍스트를 제어합니다. 초기 기본 언어는 현재 Obsidian 언어를 따릅니다.',
       globalDefaultConfig: '전역 기본 설정',
       globalDefaultDesc:
         '모든 yxmm 코드 블록의 기본 설정으로 사용됩니다. 블록 설정과 주제 속성이 계속 우선합니다.',
@@ -810,7 +850,7 @@ const ADDITIONAL_LOCALE_MESSAGES = Object.freeze({
         'Configurez ici les paramètres globaux du plugin. Le bloc de configuration de chaque bloc yxmm reste prioritaire.',
       language: 'Langue',
       languageDesc:
-        "Contrôle le texte de l'interface de yonxao-mindmap. La langue par défaut est l'anglais.",
+        "Contrôle le texte de l'interface de yonxao-mindmap. La langue initiale suit la langue actuelle d'Obsidian.",
       globalDefaultConfig: 'Configuration globale par défaut',
       globalDefaultDesc:
         'Utilisée comme configuration de base pour tous les blocs yxmm ; la configuration du bloc et les attributs de sujet restent prioritaires.',
@@ -880,7 +920,8 @@ const ADDITIONAL_LOCALE_MESSAGES = Object.freeze({
       settingsDescription:
         'Hier konfigurierst du globale Plugin-Standardwerte. Der Konfigurationsblock eines einzelnen yxmm-Codeblocks hat weiterhin Vorrang.',
       language: 'Sprache',
-      languageDesc: 'Steuert die UI-Texte von yonxao-mindmap. Die Standardsprache ist Englisch.',
+      languageDesc:
+        'Steuert die UI-Texte von yonxao-mindmap. Die anfängliche Standardsprache folgt der aktuellen Obsidian-Sprache.',
       globalDefaultConfig: 'Globale Standardkonfiguration',
       globalDefaultDesc:
         'Wird als Basiskonfiguration für alle yxmm-Codeblöcke verwendet; Blockkonfiguration und Themenattribute haben Vorrang.',
@@ -951,7 +992,7 @@ const ADDITIONAL_LOCALE_MESSAGES = Object.freeze({
         'Configura aquí los valores globales predeterminados del plugin. El bloque de configuración de cada bloque yxmm sigue teniendo prioridad.',
       language: 'Idioma',
       languageDesc:
-        'Controla los textos de la interfaz de yonxao-mindmap. El idioma predeterminado es inglés.',
+        'Controla los textos de la interfaz de yonxao-mindmap. El idioma inicial sigue el idioma actual de Obsidian.',
       globalDefaultConfig: 'Configuración global predeterminada',
       globalDefaultDesc:
         'Se usa como configuración base para todos los bloques yxmm; la configuración del bloque y los atributos del tema tienen prioridad.',
@@ -1021,7 +1062,8 @@ const ADDITIONAL_LOCALE_MESSAGES = Object.freeze({
       settingsDescription:
         'Configure aqui os padrões globais do plugin. O bloco de configuração de cada bloco yxmm ainda tem prioridade.',
       language: 'Idioma',
-      languageDesc: 'Controla os textos da interface do yonxao-mindmap. O idioma padrão é inglês.',
+      languageDesc:
+        'Controla os textos da interface do yonxao-mindmap. O idioma inicial segue o idioma atual do Obsidian.',
       globalDefaultConfig: 'Configuração global padrão',
       globalDefaultDesc:
         'Usada como configuração base para todos os blocos yxmm; a configuração do bloco e os atributos do tópico continuam tendo prioridade.',
@@ -1090,7 +1132,8 @@ const ADDITIONAL_LOCALE_MESSAGES = Object.freeze({
       settingsDescription:
         'Здесь настраиваются глобальные параметры плагина. Блок конфигурации отдельного блока yxmm по-прежнему имеет приоритет.',
       language: 'Язык',
-      languageDesc: 'Управляет текстом интерфейса yonxao-mindmap. Язык по умолчанию — английский.',
+      languageDesc:
+        'Управляет текстом интерфейса yonxao-mindmap. Начальный язык по умолчанию следует текущему языку Obsidian.',
       globalDefaultConfig: 'Глобальная конфигурация по умолчанию',
       globalDefaultDesc:
         'Используется как базовая конфигурация для всех блоков yxmm; конфигурация блока и атрибуты темы имеют приоритет.',
@@ -1160,7 +1203,7 @@ const ADDITIONAL_LOCALE_MESSAGES = Object.freeze({
         'Configura qui i valori predefiniti globali del plugin. Il blocco di configurazione di ogni blocco yxmm mantiene la priorità.',
       language: 'Lingua',
       languageDesc:
-        "Controlla i testi dell'interfaccia di yonxao-mindmap. La lingua predefinita è l'inglese.",
+        "Controlla i testi dell'interfaccia di yonxao-mindmap. La lingua iniziale segue la lingua corrente di Obsidian.",
       globalDefaultConfig: 'Configurazione globale predefinita',
       globalDefaultDesc:
         'Usata come configurazione di base per tutti i blocchi yxmm; la configurazione del blocco e gli attributi del topic hanno priorità.',
@@ -1230,7 +1273,8 @@ const ADDITIONAL_LOCALE_MESSAGES = Object.freeze({
       settingsDescription:
         'Konfigurasikan default global plugin di sini. Blok konfigurasi pada setiap blok yxmm tetap memiliki prioritas.',
       language: 'Bahasa',
-      languageDesc: 'Mengatur teks UI yonxao-mindmap. Bahasa default adalah Inggris.',
+      languageDesc:
+        'Mengatur teks UI yonxao-mindmap. Bahasa awal mengikuti bahasa Obsidian saat ini.',
       globalDefaultConfig: 'Konfigurasi default global',
       globalDefaultDesc:
         'Digunakan sebagai konfigurasi dasar untuk semua blok yxmm; konfigurasi blok dan atribut topik tetap menimpa.',
@@ -1299,7 +1343,8 @@ const ADDITIONAL_LOCALE_MESSAGES = Object.freeze({
       settingsDescription:
         'Eklenti genel varsayılanlarını burada yapılandırın. Tekil yxmm kod bloğunun üstündeki yapılandırma bloğu öncelikli kalır.',
       language: 'Dil',
-      languageDesc: 'yonxao-mindmap arayüz metinlerini kontrol eder. Varsayılan dil İngilizcedir.',
+      languageDesc:
+        'yonxao-mindmap arayüz metinlerini kontrol eder. İlk varsayılan dil mevcut Obsidian dilini izler.',
       globalDefaultConfig: 'Genel varsayılan yapılandırma',
       globalDefaultDesc:
         'Tüm yxmm kod blokları için temel yapılandırma olarak kullanılır; blok yapılandırması ve konu özellikleri önceliklidir.',
@@ -1369,7 +1414,8 @@ const ADDITIONAL_LOCALE_MESSAGES = Object.freeze({
       settingsDescription:
         'Cấu hình mặc định toàn cục của plugin tại đây. Khối cấu hình ở đầu từng khối yxmm vẫn được ưu tiên.',
       language: 'Ngôn ngữ',
-      languageDesc: 'Điều khiển văn bản giao diện yonxao-mindmap. Ngôn ngữ mặc định là tiếng Anh.',
+      languageDesc:
+        'Điều khiển văn bản giao diện yonxao-mindmap. Ngôn ngữ mặc định ban đầu theo ngôn ngữ hiện tại của Obsidian.',
       globalDefaultConfig: 'Cấu hình mặc định toàn cục',
       globalDefaultDesc:
         'Dùng làm cấu hình nền cho mọi khối yxmm; cấu hình khối và thuộc tính chủ đề vẫn được ưu tiên.',
@@ -1438,7 +1484,8 @@ const ADDITIONAL_LOCALE_MESSAGES = Object.freeze({
       settingsDescription:
         'กำหนดค่าเริ่มต้นส่วนกลางของปลั๊กอินที่นี่ บล็อกการตั้งค่าของ yxmm แต่ละบล็อกยังคงมีลำดับความสำคัญสูงกว่า',
       language: 'ภาษา',
-      languageDesc: 'ควบคุมข้อความ UI ของ yonxao-mindmap ภาษาเริ่มต้นคืออังกฤษ',
+      languageDesc:
+        'ควบคุมข้อความ UI ของ yonxao-mindmap ภาษาเริ่มต้นครั้งแรกจะตามภาษาปัจจุบันของ Obsidian',
       globalDefaultConfig: 'การตั้งค่าเริ่มต้นส่วนกลาง',
       globalDefaultDesc:
         'ใช้เป็นค่าพื้นฐานสำหรับทุกบล็อก yxmm โดยการตั้งค่าของบล็อกและคุณสมบัติหัวข้อยังคงมีลำดับความสำคัญ',
@@ -1508,7 +1555,7 @@ const ADDITIONAL_LOCALE_MESSAGES = Object.freeze({
         'यहाँ प्लगइन-स्तर की वैश्विक डिफ़ॉल्ट सेटिंग कॉन्फ़िगर करें। प्रत्येक yxmm कोड ब्लॉक का कॉन्फ़िग ब्लॉक अभी भी प्राथमिक रहेगा।',
       language: 'भाषा',
       languageDesc:
-        'yonxao-mindmap के UI टेक्स्ट को नियंत्रित करता है। डिफ़ॉल्ट भाषा अंग्रेज़ी है।',
+        'yonxao-mindmap के UI टेक्स्ट को नियंत्रित करता है। प्रारंभिक डिफ़ॉल्ट भाषा Obsidian की वर्तमान भाषा के अनुसार होगी।',
       globalDefaultConfig: 'वैश्विक डिफ़ॉल्ट कॉन्फ़िग',
       globalDefaultDesc:
         'सभी yxmm कोड ब्लॉकों के आधार कॉन्फ़िग के रूप में उपयोग होता है; ब्लॉक कॉन्फ़िग और विषय गुण प्राथमिक रहेंगे।',
@@ -1668,9 +1715,12 @@ function createAdditionalLocale(text) {
  * 作用：
  * 规范化语言代码，只允许当前插件声明支持的语言。
  */
-export function normalizeLanguage(language) {
+export function normalizeLanguage(language, fallbackLanguage = FALLBACK_LANGUAGE) {
   const value = String(language || '').trim();
-  return LANGUAGE_OPTIONS.some(([optionValue]) => optionValue === value) ? value : DEFAULT_LANGUAGE;
+  if (LANGUAGE_OPTIONS.some(([optionValue]) => optionValue === value)) return value;
+  return LANGUAGE_OPTIONS.some(([optionValue]) => optionValue === fallbackLanguage)
+    ? fallbackLanguage
+    : FALLBACK_LANGUAGE;
 }
 
 /*
@@ -1688,8 +1738,8 @@ export function createTranslator(language) {
  */
 export function translate(language, key, replacements = {}) {
   const normalizedLanguage = normalizeLanguage(language);
-  const messages = LOCALE_MESSAGES[normalizedLanguage] || LOCALE_MESSAGES[DEFAULT_LANGUAGE];
-  const fallbackMessages = LOCALE_MESSAGES[DEFAULT_LANGUAGE];
+  const messages = LOCALE_MESSAGES[normalizedLanguage] || LOCALE_MESSAGES[FALLBACK_LANGUAGE];
+  const fallbackMessages = LOCALE_MESSAGES[FALLBACK_LANGUAGE];
   const template = messages[key] ?? fallbackMessages[key] ?? key;
 
   return String(template).replace(/\{([^}]+)\}/g, (match, name) =>

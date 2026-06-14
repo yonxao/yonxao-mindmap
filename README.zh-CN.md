@@ -196,11 +196,24 @@ source:
 
 Obsidian 的 `设置` -> `第三方插件` -> `yonxao-mindmap` 中提供了插件级别的“全局默认配置”。
 
-偏好设置中还提供语言选项，当前支持：
+偏好设置中还提供语言选项，首次默认语言会跟随 Obsidian 当前语言；如果 Obsidian 语言暂不支持，则回退到 English。当前支持：
 
-- English：默认语言。
+- English：兜底语言。
 - 中文（简体）。
 - 中文（繁體）。
+- 日本語。
+- 한국어。
+- Français。
+- Deutsch。
+- Español。
+- Português (Brasil)。
+- Русский。
+- Italiano。
+- Bahasa Indonesia。
+- Türkçe。
+- Tiếng Việt。
+- ไทย。
+- हिन्दी。
 
 全局默认配置会作为所有 `yxmm` 代码块的基础配置；单个代码块顶部的配置区会覆盖全局默认配置，主题属性会继续覆盖配置区。例如：
 

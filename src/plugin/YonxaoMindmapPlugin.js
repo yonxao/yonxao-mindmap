@@ -12,11 +12,11 @@
  * main.js -> YonxaoMindmapPlugin.onload() -> registerMarkdownCodeBlockProcessor() -> YonxaoMindmapRenderer
  */
 
-import { Plugin } from 'obsidian';
+import { getLanguage, Plugin } from 'obsidian';
 
 import { CODE_BLOCK_NAME } from '../constants.js';
 import { normalizePluginSettings } from '../config/pluginSettings.js';
-import { createTranslator } from '../i18n/messages.js';
+import { createTranslator, languageFromObsidianLocale } from '../i18n/messages.js';
 import { renderPluginError } from '../obsidian/embed.js';
 import { YonxaoMindmapRenderer } from '../renderer/YonxaoMindmapRenderer.js';
 import { YonxaoMindmapSettingTab } from '../ui/YonxaoMindmapSettingTab.js';
@@ -33,7 +33,7 @@ export class YonxaoMindmapPlugin extends Plugin {
      * 也应该能收到通知并重新读取默认值。这里不保存文档数据，只保存运行中的 renderer 引用。
      */
     this.activeRenderers = new Set();
-    this.settings = normalizePluginSettings({});
+    this.settings = normalizePluginSettings({}, this.getObsidianLanguage());
     this.translate = createTranslator(this.settings.language);
   }
 
@@ -82,7 +82,7 @@ export class YonxaoMindmapPlugin extends Plugin {
    * 从 Obsidian data.json 读取插件偏好设置。
    */
   async loadSettings() {
-    this.settings = normalizePluginSettings(await this.loadData());
+    this.settings = normalizePluginSettings(await this.loadData(), this.getObsidianLanguage());
     this.refreshTranslator();
   }
 
@@ -99,7 +99,20 @@ export class YonxaoMindmapPlugin extends Plugin {
    * 读取当前界面语言。
    */
   getLanguage() {
-    return normalizePluginSettings(this.settings).language;
+    return normalizePluginSettings(this.settings, this.getObsidianLanguage()).language;
+  }
+
+  /*
+   * 作用：
+   * 读取 Obsidian 当前界面语言，并映射成插件支持的语言代码。
+   *
+   * 关键点：
+   * 这个值只作为首次默认语言；用户在插件偏好设置中手动选择后，会保存到 data.json，
+   * 后续就以保存值为准。
+   */
+  getObsidianLanguage() {
+    const obsidianLocale = typeof getLanguage === 'function' ? getLanguage() : '';
+    return languageFromObsidianLocale(obsidianLocale);
   }
 
   /*
@@ -107,10 +120,13 @@ export class YonxaoMindmapPlugin extends Plugin {
    * 更新界面语言并刷新当前已打开导图。
    */
   async updateLanguage(language) {
-    this.settings = normalizePluginSettings({
-      ...this.settings,
-      language,
-    });
+    this.settings = normalizePluginSettings(
+      {
+        ...this.settings,
+        language,
+      },
+      this.getObsidianLanguage()
+    );
     this.refreshTranslator();
     await this.saveSettings();
     this.refreshActiveRenderers();
@@ -143,7 +159,7 @@ export class YonxaoMindmapPlugin extends Plugin {
    * 返回的是 raw config，也就是和 yxmm 配置区一致的结构；renderer 会在使用前再统一规范化。
    */
   getGlobalDefaultConfig() {
-    return normalizePluginSettings(this.settings).defaultConfig;
+    return normalizePluginSettings(this.settings, this.getObsidianLanguage()).defaultConfig;
   }
 
   /*
@@ -151,10 +167,13 @@ export class YonxaoMindmapPlugin extends Plugin {
    * 更新全局默认配置，并通知当前页面里的渲染器重新读取默认值。
    */
   async updateGlobalDefaultConfig(defaultConfig) {
-    this.settings = normalizePluginSettings({
-      ...this.settings,
-      defaultConfig,
-    });
+    this.settings = normalizePluginSettings(
+      {
+        ...this.settings,
+        defaultConfig,
+      },
+      this.getObsidianLanguage()
+    );
     await this.saveSettings();
     this.refreshActiveRenderers();
   }
