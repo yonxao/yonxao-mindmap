@@ -823,7 +823,10 @@ export class ConfigModal extends Modal {
       },
       {
         group: this.t('configModal.layout.group.fishbone'),
-        options: [['fishbone-left', this.t('configModal.layout.fishboneLeft')]],
+        options: [
+          ['fishbone-left', this.t('configModal.layout.fishboneLeft')],
+          ['fishbone-right', this.t('configModal.layout.fishboneRight')],
+        ],
       },
       {
         group: this.t('configModal.layout.group.treeTable'),

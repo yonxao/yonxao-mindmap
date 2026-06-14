@@ -122,6 +122,7 @@ yonxao-mindmap uses these terms consistently across docs, config, UI text, and c
 | 时间轴     | timeline           | `timeline` / `timeline-up` / `timeline-down`                                                                    | Places branch topics on a horizontal axis with descendants above, below, or both. |
 | 放射图     | radial map         | `radial`                                                                                                        | Arranges first-level branches around the center topic.                            |
 | 鱼骨图     | fishbone diagram   | `fishbone-left`                                                                                                 | Renders a left-head fishbone diagram.                                             |
+|            |                    | `fishbone-right`                                                                                                | Renders a right-head fishbone diagram.                                            |
 | 树形表格   | tree table         | `tree-table` / `tree-table-stepped`                                                                             | Renders the topic tree as merged or stepped table cells.                          |
 
 ### Fishbone-Specific Structure
@@ -207,7 +208,7 @@ Supported config keys:
 - `toolbar.x` / `toolbar.y`: persisted floating toolbar position. Drag the toolbar grip to write it.
 - `interaction.wheelZoom`: whether the mouse wheel zooms the mind map. It is off by default; enabling it writes `true`, and disabling it can remove the key.
 - `theme`: built-in theme name: `default`, `ocean`, `forest`, `sunset`, `mono`, `rainbow`, `pastel-rainbow`, or `neon-rainbow`.
-- `layout`: layout type: `mindmap-right`, `mindmap-left`, `mindmap-bidirectional`, `mindmap-up`, `mindmap-down`, `mindmap-vertical`, `tree`, `tree-right`, `tree-left`, `org`, `org-right`, `timeline`, `timeline-up`, `timeline-down`, `radial`, `fishbone-left`, `tree-table`, or `tree-table-stepped`.
+- `layout`: layout type: `mindmap-right`, `mindmap-left`, `mindmap-bidirectional`, `mindmap-up`, `mindmap-down`, `mindmap-vertical`, `tree`, `tree-right`, `tree-left`, `org`, `org-right`, `timeline`, `timeline-up`, `timeline-down`, `radial`, `fishbone-left`, `fishbone-right`, `tree-table`, or `tree-table-stepped`.
 - `connector.style`: connector style: `curve`, `straight`, or `elbow`. `curve` is a cubic Bezier curve, `straight` is a straight line, and `elbow` is an orthogonal connector.
 - `font.family`, `font.size`, `font.weight`, `font.lineHeight`: global font defaults.
 - `font.levels.1`, `font.levels.2`: per-heading-level font overrides.
@@ -241,7 +242,7 @@ Layout types:
 - Organization chart: `org` organization chart, `org-right` right organization chart.
 - Timeline: `timeline` timeline, `timeline-up` upper timeline, `timeline-down` lower timeline.
 - Radial map: `radial` radial map.
-- Fishbone diagram: `fishbone-left` left fishbone diagram.
+- Fishbone diagram: `fishbone-left` left fishbone diagram, `fishbone-right` right fishbone diagram.
 - Tree table: `tree-table` tree table, `tree-table-stepped` stepped tree table.
 
 `mindmap-down` is still a mind-map layout focused on downward branching. `org` is an organization-chart layout focused on aligned hierarchy rows. `org-right` is a right organization-chart layout where first-level branches are arranged horizontally and deeper levels expand down-right from each branch.

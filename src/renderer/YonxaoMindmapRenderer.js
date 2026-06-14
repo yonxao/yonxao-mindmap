@@ -1227,6 +1227,7 @@ export class YonxaoMindmapRenderer extends Component {
       ['timeline-down', this.topicEditorLayoutLabel('timeline', 'timelineDown')],
       ['radial', this.topicEditorLayoutLabel('radial', 'radial')],
       ['fishbone-left', this.topicEditorLayoutLabel('fishbone', 'fishboneLeft')],
+      ['fishbone-right', this.topicEditorLayoutLabel('fishbone', 'fishboneRight')],
       ['tree-table', this.topicEditorLayoutLabel('treeTable', 'treeTable')],
       ['tree-table-stepped', this.topicEditorLayoutLabel('treeTable', 'treeTableStepped')],
     ]) {
@@ -2376,11 +2377,12 @@ export class YonxaoMindmapRenderer extends Component {
    * 避免后面的分支反复覆盖前面的主骨颜色。
    */
   renderFishboneMainSpine(layout) {
-    if (layout.mode !== 'fishbone-left') return null;
+    if (!this.isFishboneLayoutMode(layout.mode)) return null;
 
     const rootBox = this.root?._layout;
     if (!rootBox) return null;
 
+    const direction = layout.mode === 'fishbone-right' ? -1 : 1;
     const branchTopics = layout.topics
       .filter((topic) => {
         const side = topic._layout?.side;
@@ -2388,13 +2390,14 @@ export class YonxaoMindmapRenderer extends Component {
       })
       .sort(
         (left, right) =>
-          left._layout.fishboneMainSpineAttachX - right._layout.fishboneMainSpineAttachX
+          direction *
+          (left._layout.fishboneMainSpineAttachX - right._layout.fishboneMainSpineAttachX)
       );
 
     if (!branchTopics.length) return null;
 
     const groupEl = svg('g', { class: 'yonxao-mindmap-fishbone-main-spine' });
-    const spineStart = rootBox.x + rootBox.width / 2;
+    const spineStart = rootBox.x + direction * (rootBox.width / 2);
     const segmentStart = this.renderSequentialBranchColoredTrunk(
       groupEl,
       branchTopics,
@@ -2409,11 +2412,11 @@ export class YonxaoMindmapRenderer extends Component {
     );
 
     const lastTopic = branchTopics[branchTopics.length - 1];
-    const tailEnd = Math.max(
-      segmentStart + LEVEL_GAP * 1.7,
-      // this.visibleSubtreeRightBoundary(lastTopic) + LEVEL_GAP * 0.45
-      this.visibleSubtreeRightBoundary(lastTopic)
-    );
+    const tailBoundary = this.visibleSubtreeHorizontalBoundary(lastTopic, direction);
+    const tailEnd =
+      direction > 0
+        ? Math.max(segmentStart + LEVEL_GAP * 1.7, tailBoundary)
+        : Math.min(segmentStart - LEVEL_GAP * 1.7, tailBoundary);
     const tailEl = this.renderBranchColoredTrunkSegment(
       'x',
       rootBox.y,
@@ -2425,7 +2428,7 @@ export class YonxaoMindmapRenderer extends Component {
     if (tailEl) {
       groupEl.appendChild(tailEl);
     }
-    groupEl.appendChild(this.renderFishboneTail(tailEnd, rootBox.y));
+    groupEl.appendChild(this.renderFishboneTail(tailEnd, rootBox.y, direction));
 
     return groupEl;
   }
@@ -2434,14 +2437,15 @@ export class YonxaoMindmapRenderer extends Component {
    * 作用：
    * 绘制鱼骨图尾端的鱼尾形状。
    */
-  renderFishboneTail(x, y) {
+  renderFishboneTail(x, y, direction = 1) {
     const color = connectorColor(this.root, this.config);
     const wingX = 18;
     const wingY = 10;
+    const wingEndX = x + direction * wingX;
 
     return svg('path', {
       class: 'yonxao-mindmap-connector yonxao-mindmap-fishbone-tail',
-      d: ['M', x, y, 'L', x + wingX, y - wingY, 'M', x, y, 'L', x + wingX, y + wingY].join(' '),
+      d: ['M', x, y, 'L', wingEndX, y - wingY, 'M', x, y, 'L', wingEndX, y + wingY].join(' '),
       stroke: color || 'currentColor',
       style: `opacity: ${themeConnectorOpacity(this.config)}`,
     });
@@ -2449,24 +2453,26 @@ export class YonxaoMindmapRenderer extends Component {
 
   /*
    * 作用：
-   * 计算当前可见子树的最右侧边界。
+   * 计算当前可见子树在鱼尾方向上的水平边界。
    *
    * 调用场景：
    * 鱼骨图尾巴需要根据最后一个分支的可见内容自动延长。
    * 折叠主题的后代不会显示，所以这里遇到 collapsedIds 时停止递归。
    */
-  visibleSubtreeRightBoundary(topic) {
+  visibleSubtreeHorizontalBoundary(topic, direction = 1) {
     const box = topic?._layout;
-    if (!box) return -Infinity;
+    if (!box) return direction > 0 ? -Infinity : Infinity;
 
-    let maxRight = box.x + box.width / 2;
-    if (this.collapsedIds.has(topic.id)) return maxRight;
+    let boundary = direction > 0 ? box.x + box.width / 2 : box.x - box.width / 2;
+    if (this.collapsedIds.has(topic.id)) return boundary;
 
     for (const subtopic of topic.subtopics || []) {
-      maxRight = Math.max(maxRight, this.visibleSubtreeRightBoundary(subtopic));
+      const subtopicBoundary = this.visibleSubtreeHorizontalBoundary(subtopic, direction);
+      boundary =
+        direction > 0 ? Math.max(boundary, subtopicBoundary) : Math.min(boundary, subtopicBoundary);
     }
 
-    return maxRight;
+    return boundary;
   }
 
   /*
@@ -2542,6 +2548,14 @@ export class YonxaoMindmapRenderer extends Component {
    */
   isTimelineLayoutMode(mode) {
     return mode === 'timeline-up' || mode === 'timeline-down' || mode === 'timeline';
+  }
+
+  /*
+   * 作用：
+   * 判断当前布局是否属于“鱼骨图”系列。
+   */
+  isFishboneLayoutMode(mode) {
+    return mode === 'fishbone-left' || mode === 'fishbone-right';
   }
 
   /*
@@ -2973,21 +2987,23 @@ export class YonxaoMindmapRenderer extends Component {
     }
 
     if (side === 'fishbone-rib-descendant') {
+      const direction = subtopicBox.fishboneDirection || 1;
       return {
         kind: 'fishbone-rib-descendant',
-        startX: parentBox.x + parentBox.width / 2,
+        startX: parentBox.x + direction * (parentBox.width / 2),
         startY: parentBox.y,
-        endX: subtopicBox.x - subtopicBox.width / 2,
+        endX: subtopicBox.x - direction * (subtopicBox.width / 2),
         endY: subtopicBox.y,
       };
     }
 
     if (side === 'fishbone-rib-topic') {
+      const direction = subtopicBox.fishboneDirection || 1;
       return {
         kind: 'fishbone-rib-topic',
         startX: subtopicBox.fishboneDiagonalBoneAttachX,
         startY: subtopicBox.fishboneDiagonalBoneAttachY,
-        endX: subtopicBox.x - subtopicBox.width / 2,
+        endX: subtopicBox.x - direction * (subtopicBox.width / 2),
         endY: subtopicBox.y,
       };
     }
@@ -3369,13 +3385,12 @@ export class YonxaoMindmapRenderer extends Component {
    * 作用：
    * 返回当前鱼骨图的鱼头所在侧。
    *
-   * 当前状态：
-   * 布局层目前只实现了“鱼头在左，鱼尾向右”的鱼骨图。
-   * 先把这个方向封装到方法里，后续增加“鱼头在右”时，只需要从配置读取并修改这里，
-   * 按钮、出口和折叠点等交互逻辑就能跟着自动反向。
+   * 实现逻辑：
+   * fishbone-left 表示鱼头在左、鱼尾向右；fishbone-right 表示鱼头在右、鱼尾向左。
+   * 按钮、出口和折叠点等交互逻辑统一从这里读取方向，避免各处写死 left/right。
    */
   fishboneHeadSide() {
-    return 'left';
+    return this.config.layout === 'fishbone-right' ? 'right' : 'left';
   }
 
   /*
@@ -3395,7 +3410,7 @@ export class YonxaoMindmapRenderer extends Component {
    *
    * 设计逻辑：
    * 子线出口永远朝向鱼尾，也就是远离鱼头的一侧。
-   * 当前鱼头在左，所以出口在右；未来鱼头在右时，出口会自然变成左。
+   * 鱼头在左时出口在右；鱼头在右时出口在左。
    */
   fishboneSubtopicOutletSide() {
     return this.fishboneGrowthDirection() > 0 ? 'right' : 'left';
@@ -3584,7 +3599,7 @@ export class YonxaoMindmapRenderer extends Component {
     if (side === 'left' || side === 'right' || side === 'top' || side === 'bottom') return side;
     if (this.isFishboneTopicBox(box) || side === 'root') {
       const mode = this.config.layout;
-      if (mode === 'fishbone-left') return this.fishboneSubtopicOutletSide();
+      if (this.isFishboneLayoutMode(mode)) return this.fishboneSubtopicOutletSide();
     }
     if (this.isTreeTableBox(box)) return 'right';
     if (side === 'tree-left') return 'left';
@@ -3716,7 +3731,7 @@ export class YonxaoMindmapRenderer extends Component {
    */
   rootEditButtonPosition(topic, box, buttonSize) {
     const mode = this.config.layout;
-    if (mode === 'fishbone-left') {
+    if (this.isFishboneLayoutMode(mode)) {
       return this.fishboneEditButtonPosition(box, buttonSize);
     }
 

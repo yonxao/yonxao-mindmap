@@ -631,6 +631,7 @@ function normalizeLayoutType(value) {
       'timeline',
       'radial',
       'fishbone-left',
+      'fishbone-right',
       'tree-table',
       'tree-table-stepped',
     ].includes(text)
