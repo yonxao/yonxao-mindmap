@@ -115,7 +115,7 @@ export function buildRootFromRoots(roots) {
       : {
           id: '',
           text: 'Mind',
-          attributes: { layout: 'balanced' },
+          attributes: { layout: 'mindmap-bidirectional' },
           subtopics: roots,
           line: 0,
           level: 0,

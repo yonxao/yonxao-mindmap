@@ -4,7 +4,7 @@
  *
  * 执行逻辑：
  * 1. prepareTopic 先测量每个主题的宽高和换行文本。
- * 2. layoutTree 根据 layout.defaultDirection 选择布局策略。
+ * 2. layoutTree 根据 layout 布局类型选择布局策略。
  * 3. 各布局策略只负责写入 topic._layout.x/y/side。
  * 4. collectVisible 收集未折叠主题和连线，computeBounds 计算整体边界。
  *
@@ -29,23 +29,23 @@ import { normalizeIcon } from '../icons/renderIcon.js';
 import { clamp } from '../utils/math.js';
 import { visualUnits, wrapTopicText } from '../utils/text.js';
 
-export const LAYOUT_MODES = Object.freeze([
-  'right',
-  'left',
-  'balanced',
-  'down',
-  'up',
-  'vertical',
-  'tree',
+export const LAYOUT_TYPES = Object.freeze([
+  'mindmap-right',
+  'mindmap-left',
+  'mindmap-bidirectional',
+  'mindmap-down',
+  'mindmap-up',
+  'mindmap-vertical',
+  'tree-right',
   'tree-left',
-  'tree-balanced',
+  'tree',
   'org',
   'org-right',
   'timeline-up',
+  'timeline-down',
   'timeline',
-  'timeline-balanced',
   'radial',
-  'fishbone',
+  'fishbone-left',
   'tree-table',
   'tree-table-stepped',
 ]);
@@ -67,25 +67,33 @@ export function layoutTree(root, collapsedIds, config) {
   rootBox.y = 0;
   rootBox.side = 'root';
 
-  const mode = resolveLayoutMode(root, normalizedConfig);
-  if (mode === 'down' || mode === 'up' || mode === 'vertical') {
-    layoutVerticalMind(root, collapsedIds, mode);
-  } else if (mode === 'tree' || mode === 'tree-left' || mode === 'tree-balanced') {
-    layoutOutlineTree(root, collapsedIds, mode);
-  } else if (mode === 'org' || mode === 'org-right') {
-    layoutOrgChart(root, collapsedIds, mode);
-  } else if (mode === 'timeline-up' || mode === 'timeline' || mode === 'timeline-balanced') {
-    layoutTimeline(root, collapsedIds, mode);
-  } else if (mode === 'radial') {
+  const layoutType = resolveLayoutType(root, normalizedConfig);
+  if (
+    layoutType === 'mindmap-down' ||
+    layoutType === 'mindmap-up' ||
+    layoutType === 'mindmap-vertical'
+  ) {
+    layoutVerticalMind(root, collapsedIds, layoutType);
+  } else if (layoutType === 'tree-right' || layoutType === 'tree-left' || layoutType === 'tree') {
+    layoutOutlineTree(root, collapsedIds, layoutType);
+  } else if (layoutType === 'org' || layoutType === 'org-right') {
+    layoutOrgChart(root, collapsedIds, layoutType);
+  } else if (
+    layoutType === 'timeline-up' ||
+    layoutType === 'timeline-down' ||
+    layoutType === 'timeline'
+  ) {
+    layoutTimeline(root, collapsedIds, layoutType);
+  } else if (layoutType === 'radial') {
     layoutRadial(root, collapsedIds);
-  } else if (mode === 'fishbone') {
+  } else if (layoutType === 'fishbone-left') {
     layoutFishbone(root, collapsedIds);
-  } else if (mode === 'tree-table') {
+  } else if (layoutType === 'tree-table') {
     layoutTreeTable(root, collapsedIds, { fillLeafRemainderColumns: true });
-  } else if (mode === 'tree-table-stepped') {
+  } else if (layoutType === 'tree-table-stepped') {
     layoutTreeTable(root, collapsedIds, { fillLeafRemainderColumns: false });
   } else {
-    layoutHorizontalMind(root, collapsedIds, mode);
+    layoutHorizontalMind(root, collapsedIds, layoutType);
   }
 
   const topics = [];
@@ -96,7 +104,7 @@ export function layoutTree(root, collapsedIds, config) {
     topics,
     connectors,
     bounds: computeBounds(topics),
-    mode,
+    mode: layoutType,
   };
 }
 
@@ -149,30 +157,30 @@ export function measureTopic(topic, config) {
  * 决定当前整张图使用哪一种布局。
  *
  * 优先级：
- * 根主题属性 layout > 配置区 layout.defaultDirection > balanced。
+ * 根主题属性 layout > 配置区 layout > mindmap-right。
  */
-export function resolveLayoutMode(root, config) {
+export function resolveLayoutType(root, config) {
   return (
-    normalizeLayout(root?.attributes?.layout) ||
-    normalizeLayout(config?.layout?.defaultDirection) ||
-    'balanced'
+    normalizeLayoutType(root?.attributes?.layout) ||
+    normalizeLayoutType(config?.layout) ||
+    'mindmap-right'
   );
 }
 
 /*
  * 作用：
- * 规范化布局名。
+ * 规范化布局类型。
  */
-export function normalizeLayout(layout) {
+export function normalizeLayoutType(layout) {
   const value = String(layout || '')
     .trim()
     .toLowerCase();
-  return LAYOUT_MODES.includes(value) ? value : '';
+  return LAYOUT_TYPES.includes(value) ? value : '';
 }
 
 /*
  * 作用：
- * 水平思维导图布局，覆盖 right/left/balanced。
+ * 水平思维导图布局，覆盖 mindmap-right/mindmap-left/mindmap-bidirectional。
  *
  * 说明：
  * 这是水平导图的策略化版本，用统一函数承载右向、左向和左右平衡体验。
@@ -200,13 +208,16 @@ export function layoutHorizontalMind(root, collapsedIds, mode) {
  * 判断一级主题应该在左侧还是右侧。
  */
 export function rootSubtopicHorizontalSide(root, subtopic, index, mode) {
-  const subtopicLayout = normalizeLayout(subtopic.attributes.layout);
-  if (subtopicLayout === 'left' || subtopicLayout === 'right') return subtopicLayout;
+  const subtopicLayout = normalizeLayoutType(subtopic.attributes.layout);
+  if (subtopicLayout === 'mindmap-left') return 'left';
+  if (subtopicLayout === 'mindmap-right') return 'right';
 
-  const rootLayout = normalizeLayout(root.attributes.layout);
-  if (rootLayout === 'left' || rootLayout === 'right') return rootLayout;
+  const rootLayout = normalizeLayoutType(root.attributes.layout);
+  if (rootLayout === 'mindmap-left') return 'left';
+  if (rootLayout === 'mindmap-right') return 'right';
 
-  if (mode === 'left' || mode === 'right') return mode;
+  if (mode === 'mindmap-left') return 'left';
+  if (mode === 'mindmap-right') return 'right';
   return index % 2 === 0 ? 'right' : 'left';
 }
 
@@ -296,7 +307,7 @@ export function horizontalSubtreeHeight(topic, side, collapsedIds) {
 
 /*
  * 作用：
- * 竖向思维导图布局，覆盖 down/up/vertical。
+ * 竖向思维导图布局，覆盖 mindmap-down/mindmap-up/mindmap-vertical。
  */
 export function layoutVerticalMind(root, collapsedIds, mode) {
   const visibleRootSubtopics = visibleSubtopics(root, collapsedIds);
@@ -321,12 +332,12 @@ export function layoutVerticalMind(root, collapsedIds, mode) {
  * 判断一级主题应该在上方还是下方。
  */
 export function rootSubtopicVerticalSide(subtopic, index, mode) {
-  const subtopicLayout = normalizeLayout(subtopic.attributes.layout);
-  if (subtopicLayout === 'up') return 'top';
-  if (subtopicLayout === 'down') return 'bottom';
+  const subtopicLayout = normalizeLayoutType(subtopic.attributes.layout);
+  if (subtopicLayout === 'mindmap-up') return 'top';
+  if (subtopicLayout === 'mindmap-down') return 'bottom';
 
-  if (mode === 'up') return 'top';
-  if (mode === 'down') return 'bottom';
+  if (mode === 'mindmap-up') return 'top';
+  if (mode === 'mindmap-down') return 'bottom';
   return index % 2 === 0 ? 'bottom' : 'top';
 }
 
@@ -411,10 +422,10 @@ export function verticalSubtreeWidth(topic, side, collapsedIds) {
  * 树形结构布局，覆盖向右树、向左树和平衡树。
  *
  * 实现逻辑：
- * 树状结构需要先计算每棵子树的高度，再把父主题放在子树高度的中线位置。
+ * 树形图需要先计算每棵子树的高度，再把父主题放在子树高度的中线位置。
  * 这样每个分支都拥有自己的纵向空间，后代主题不会和相邻分支重叠。
  */
-export function layoutOutlineTree(root, collapsedIds, mode = 'tree') {
+export function layoutOutlineTree(root, collapsedIds, mode = 'tree-right') {
   const rootSubtopics = visibleSubtopics(root, collapsedIds);
   placeTreeTrunkSubtopics(root, rootSubtopics, mode, collapsedIds);
 }
@@ -424,8 +435,8 @@ export function layoutOutlineTree(root, collapsedIds, mode = 'tree') {
  * 沿中心主题下方的纵向主干摆放一级分支。
  *
  * 关键点：
- * 树状结构和普通导图的最大区别在一级分支：普通导图从中心点左右展开，
- * 树状结构则先形成一条自上而下的主干，再把一级分支挂在主干左右。
+ * 树形图和普通导图的最大区别在一级分支：普通导图从中心点左右展开，
+ * 树形图则先形成一条自上而下的主干，再把一级分支挂在主干左右。
  */
 export function placeTreeTrunkSubtopics(root, subtopics, mode, collapsedIds) {
   if (!subtopics.length) return;
@@ -458,21 +469,21 @@ export function placeTreeTrunkSubtopics(root, subtopics, mode, collapsedIds) {
 
 /*
  * 作用：
- * 判断树状结构的一级分支挂在主干哪一侧。
+ * 判断树形图的一级分支挂在主干哪一侧。
  */
 export function rootSubtopicTreeSide(subtopic, index, mode) {
-  const subtopicLayout = normalizeLayout(subtopic.attributes.layout);
-  if (subtopicLayout === 'left' || subtopicLayout === 'tree-left') return 'tree-left';
-  if (subtopicLayout === 'right' || subtopicLayout === 'tree') return 'tree-right';
+  const subtopicLayout = normalizeLayoutType(subtopic.attributes.layout);
+  if (subtopicLayout === 'tree-left') return 'tree-left';
+  if (subtopicLayout === 'tree-right') return 'tree-right';
 
   if (mode === 'tree-left') return 'tree-left';
-  if (mode === 'tree-balanced') return index % 2 === 0 ? 'tree-right' : 'tree-left';
+  if (mode === 'tree') return index % 2 === 0 ? 'tree-right' : 'tree-left';
   return 'tree-right';
 }
 
 /*
  * 作用：
- * 递归摆放树状结构中的后代主题。
+ * 递归摆放树形图中的后代主题。
  *
  * 实现逻辑：
  * 同一个父主题下的所有子主题先计算总高度，再围绕父主题的 y 坐标上下展开。
@@ -506,7 +517,7 @@ export function placeTreeDescendants(parent, side, collapsedIds) {
 
 /*
  * 作用：
- * 计算树状结构中一个子树实际需要占用的高度。
+ * 计算树形图中一个子树实际需要占用的高度。
  *
  * 为什么不直接复用主题高度：
  * 一个主题本身可能只有一行高，但它下面可能挂着很多后代。
@@ -530,7 +541,7 @@ export function treeSubtreeHeight(topic, side, collapsedIds) {
  *
  * 结构区别：
  * - org：标准组织结构图，父主题在上，子主题横向排布在下一层。
- * - org-right：下右展开结构，一级主题横向排列，后代从各自分支向右下展开。
+ * - org-right：右向组织结构图，一级主题横向排列，后代从各自分支向右下展开。
  */
 export function layoutOrgChart(root, collapsedIds, mode = 'org') {
   if (mode === 'org-right') {
@@ -631,7 +642,7 @@ export function orgSubtopicsWidth(subtopics, collapsedIds) {
 
 /*
  * 作用：
- * 摆放“下右展开”组织结构图的一级主题。
+ * 摆放“右向组织结构图”的一级主题。
  *
  * 实现逻辑：
  * 一级分支主题和标准组织图一样横向排列；每个一级分支再把自己的后代向右下展开。
@@ -670,7 +681,7 @@ export function placeOrgRightRootSubtopics(root, subtopics, collapsedIds) {
 
 /*
  * 作用：
- * 递归摆放“下右展开”组织结构图的后代主题。
+ * 递归摆放“右向组织结构图”的后代主题。
  *
  * 实现逻辑：
  * 子主题不是从父主题右侧展开，而是从父主题下方的竖向主线挂出。
@@ -748,7 +759,7 @@ export function collectOrgRightGridHeights(parent, collapsedIds, gridHeights, de
 
 /*
  * 作用：
- * 计算“下右展开”组织结构图中一个分支向右展开后需要占用的水平宽度。
+ * 计算“右向组织结构图”中一个分支向右展开后需要占用的水平宽度。
  */
 export function orgRightSubtreeWidth(topic, collapsedIds) {
   const box = topic._layout;
@@ -771,7 +782,7 @@ export function orgRightSubtreeWidth(topic, collapsedIds) {
  * 二级主题是时间轴上的时间点，始终落在同一条水平轴线上。
  * 三级及更深主题才根据模式展开到轴上方或轴下方，并向右递进。
  */
-export function layoutTimeline(root, collapsedIds, mode = 'timeline') {
+export function layoutTimeline(root, collapsedIds, mode = 'timeline-down') {
   const rootBox = root._layout;
   const subtopics = visibleSubtopics(root, collapsedIds);
   if (!subtopics.length) return;
@@ -811,12 +822,12 @@ export function layoutTimeline(root, collapsedIds, mode = 'timeline') {
  * 判断时间轴一级主题挂在轴线上方还是下方。
  */
 export function rootSubtopicTimelineSide(subtopic, index, mode) {
-  const subtopicLayout = normalizeLayout(subtopic.attributes.layout);
-  if (subtopicLayout === 'timeline-up' || subtopicLayout === 'up') return 'timeline-top';
-  if (subtopicLayout === 'timeline' || subtopicLayout === 'down') return 'timeline-bottom';
+  const subtopicLayout = normalizeLayoutType(subtopic.attributes.layout);
+  if (subtopicLayout === 'timeline-up') return 'timeline-top';
+  if (subtopicLayout === 'timeline-down') return 'timeline-bottom';
 
   if (mode === 'timeline-up') return 'timeline-top';
-  if (mode === 'timeline-balanced') return index % 2 === 0 ? 'timeline-top' : 'timeline-bottom';
+  if (mode === 'timeline') return index % 2 === 0 ? 'timeline-top' : 'timeline-bottom';
   return 'timeline-bottom';
 }
 

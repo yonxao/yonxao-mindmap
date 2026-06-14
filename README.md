@@ -14,10 +14,9 @@ canvas:
 toolbar:
   x: 8
   y: 8
-layout:
-  defaultDirection: right
+layout: mindmap-right
 connector:
-  type: curve
+  style: curve
 font:
   size: 14
   weight: 560
@@ -33,7 +32,7 @@ source:
   height: 520
 ---
 
-# AI学习 [color=#3b82f6 layout=right]
+# AI学习 [color=#3b82f6 layout=mindmap-right]
 
 ## 基础 [icon=book]
 
@@ -56,7 +55,7 @@ source:
 - Attributes are written at the end of a line with `[key=value]`.
 - Supported attributes:
   - `color=#3b82f6`
-  - `layout=right`, `layout=left`, `layout=balanced`
+  - `layout=mindmap-right`, `layout=mindmap-left`, `layout=mindmap-bidirectional`
   - `icon=book`
   - `fontSize=16`, `fontWeight=700`, `fontFamily="..."`, `lineHeight=20`
 
@@ -109,17 +108,21 @@ yonxao-mindmap uses these terms consistently across docs, config, UI text, and c
 
 ### Layout Structures
 
-| 中文术语     | English Term       | yxmm Term / Config Key                                     | Purpose                                                                                                     |
-| ------------ | ------------------ | ---------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------- |
-| 布局结构     | layout structure   | `layout.defaultDirection`                                  | Controls the overall arrangement.                                                                           |
-| 思维导图     | mind map           | `right` / `left` / `balanced` / `down` / `up` / `vertical` | Branches from the center topic in one or more directions.                                                   |
-| 树状结构     | tree structure     | `tree` / `tree-left` / `tree-balanced`                     | Emphasizes trunk and hierarchy expansion.                                                                   |
-| 组织结构图   | organization chart | `org` / `org-right`                                        | Emphasizes parent-child hierarchy and level alignment.                                                      |
-| 时间轴       | timeline           | `timeline-up` / `timeline` / `timeline-balanced`           | Places branch topics on a horizontal axis with descendants above, below, or both.                           |
-| 放射图       | radial map         | `radial`                                                   | Distributes branches radially around the center topic.                                                      |
-| 鱼骨图       | fishbone diagram   | `fishbone`                                                 | Uses the center topic as the fish head, a main spine toward the tail, and branch topics as bones.           |
-| 树形表格     | tree table         | `tree-table`                                               | Renders the topic tree as a table where leaf nodes fill remaining columns.                                  |
-| 树形阶梯表格 | stepped tree table | `tree-table-stepped`                                       | Renders the topic tree as a table where leaf nodes stay in their own columns, preserving a stepped outline. |
+| 中文术语 | English Term | yxmm Term / Config Key | Purpose                                                     |
+| -------- | ------------ | ---------------------- | ----------------------------------------------------------- |
+| 布局结构 | layout       | `layout`               | The config key that directly stores the layout type.        |
+| 布局分组 | layout group | -                      | Groups layout types so they are easier to choose and learn. |
+| 布局类型 | layout type  | `layout`               | Controls how topics and connectors are arranged.            |
+
+| 布局分组   | English Term       | yxmm Layout Types                                                                                               | Purpose                                                                           |
+| ---------- | ------------------ | --------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------- |
+| 思维导图   | mind map           | `mindmap-right` / `mindmap-left` / `mindmap-bidirectional` / `mindmap-up` / `mindmap-down` / `mindmap-vertical` | Branches from the center topic in one or more directions.                         |
+| 树形图     | tree diagram       | `tree` / `tree-right` / `tree-left`                                                                             | Emphasizes trunk and hierarchy expansion.                                         |
+| 组织结构图 | organization chart | `org` / `org-right`                                                                                             | Emphasizes parent-child hierarchy and level alignment.                            |
+| 时间轴     | timeline           | `timeline` / `timeline-up` / `timeline-down`                                                                    | Places branch topics on a horizontal axis with descendants above, below, or both. |
+| 放射图     | radial map         | `radial`                                                                                                        | Arranges first-level branches around the center topic.                            |
+| 鱼骨图     | fishbone diagram   | `fishbone-left`                                                                                                 | Renders a left-head fishbone diagram.                                             |
+| 树形表格   | tree table         | `tree-table` / `tree-table-stepped`                                                                             | Renders the topic tree as merged or stepped table cells.                          |
 
 ### Fishbone-Specific Structure
 
@@ -167,7 +170,7 @@ Supported config keys:
 - `toolbar.x` / `toolbar.y`: persisted floating toolbar position. Drag the toolbar grip to write it.
 - `interaction.wheelZoom`: whether the mouse wheel zooms the mind map. It is off by default; enabling it writes `true`, and disabling it can remove the key.
 - `theme`: built-in theme name: `default`, `ocean`, `forest`, `sunset`, `mono`, `rainbow`, `pastel-rainbow`, or `neon-rainbow`.
-- `layout.defaultDirection`: layout structure: `right`, `left`, `balanced`, `down`, `up`, `vertical`, `tree`, `tree-left`, `tree-balanced`, `org`, `org-right`, `timeline-up`, `timeline`, `timeline-balanced`, `radial`, `fishbone`, `tree-table`, or `tree-table-stepped`.
+- `layout`: layout type: `mindmap-right`, `mindmap-left`, `mindmap-bidirectional`, `mindmap-up`, `mindmap-down`, `mindmap-vertical`, `tree`, `tree-right`, `tree-left`, `org`, `org-right`, `timeline`, `timeline-up`, `timeline-down`, `radial`, `fishbone-left`, `tree-table`, or `tree-table-stepped`.
 - `connector.style`: connector style: `curve`, `straight`, or `elbow`. `curve` is a cubic Bezier curve, `straight` is a straight line, and `elbow` is an orthogonal connector.
 - `font.family`, `font.size`, `font.weight`, `font.lineHeight`: global font defaults.
 - `font.levels.1`, `font.levels.2`: per-heading-level font overrides.
@@ -194,15 +197,17 @@ Theme color priority:
 The center topic uses an independent center color from the theme. Topic attribute `color` changes only the topic itself, not the connector from its parent.
 Hex colors in the config block should be quoted, for example `defaultColor: '#66ed0c'`; the visual config modal writes quoted colors automatically.
 
-Layout structures:
+Layout types:
 
-- Mind map: `right` right expansion, `left` left expansion, `balanced` left-right balance, `down` downward expansion, `up` upward expansion, `vertical` up-down balance.
-- Tree structures: `tree` rightward tree, `tree-left` leftward tree, `tree-balanced` balanced tree.
-- Organization charts: `org` downward org chart, `org-right` down-right compact org chart.
-- Timelines: `timeline-up` above-axis timeline, `timeline` below-axis timeline, `timeline-balanced` balanced timeline.
-- Other: `radial` radial map, `fishbone` fishbone diagram, `tree-table` tree table, `tree-table-stepped` stepped tree table.
+- Mind map: `mindmap-right` right mind map, `mindmap-left` left mind map, `mindmap-bidirectional` bidirectional mind map, `mindmap-up` upward mind map, `mindmap-down` downward mind map, `mindmap-vertical` vertical bidirectional mind map.
+- Tree diagram: `tree` tree diagram, `tree-right` right tree diagram, `tree-left` left tree diagram.
+- Organization chart: `org` organization chart, `org-right` right organization chart.
+- Timeline: `timeline` timeline, `timeline-up` upper timeline, `timeline-down` lower timeline.
+- Radial map: `radial` radial map.
+- Fishbone diagram: `fishbone-left` left fishbone diagram.
+- Tree table: `tree-table` tree table, `tree-table-stepped` stepped tree table.
 
-`down` is still a mind-map layout focused on downward branching. `org` is an organization-chart layout focused on aligned hierarchy rows. `org-right` is a down-right organization-chart layout where first-level branches are arranged horizontally and deeper levels expand down-right from each branch.
+`mindmap-down` is still a mind-map layout focused on downward branching. `org` is an organization-chart layout focused on aligned hierarchy rows. `org-right` is a right organization-chart layout where first-level branches are arranged horizontally and deeper levels expand down-right from each branch.
 
 ## Controls
 

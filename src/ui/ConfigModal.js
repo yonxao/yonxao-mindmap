@@ -5,7 +5,7 @@
  * 主要功能：
  * - 基础：画布高度、源码高度、工具栏位置。
  * - 主题：主题名、默认主题颜色。
- * - 结构：布局结构、主题最大宽度。
+ * - 结构：布局类型、主题最大宽度。
  * - 字体：全局字体与 1/2/3 级标题字体。
  * - 源码：Tab 调整主题级别开关。
  * - 高级：直接编辑配置 YAML。
@@ -236,60 +236,61 @@ export class ConfigModal extends Modal {
 
   /*
    * 作用：
-   * 结构配置：布局方向和主题宽度。
+   * 结构配置：布局类型和主题宽度。
    */
   renderLayoutTab(normalized) {
     this.createSection('结构');
-    this.createSelectField(
-      '布局结构',
-      ['layout', 'defaultDirection'],
-      normalized.layout.defaultDirection,
-      [
-        {
-          group: '思维导图',
-          options: [
-            ['right', '右向展开'],
-            ['left', '左向展开'],
-            ['balanced', '左右平衡'],
-            ['down', '向下展开'],
-            ['up', '向上展开'],
-            ['vertical', '上下平衡'],
-          ],
-        },
-        {
-          group: '树状结构',
-          options: [
-            ['tree', '向右树'],
-            ['tree-left', '向左树'],
-            ['tree-balanced', '平衡树'],
-          ],
-        },
-        {
-          group: '组织结构图',
-          options: [
-            ['org', '向下展开'],
-            ['org-right', '下右展开'],
-          ],
-        },
-        {
-          group: '时间轴',
-          options: [
-            ['timeline-up', '轴上展开'],
-            ['timeline', '轴下展开'],
-            ['timeline-balanced', '上下平衡轴'],
-          ],
-        },
-        {
-          group: '其他',
-          options: [
-            ['radial', '放射图'],
-            ['fishbone', '鱼骨图'],
-            ['tree-table', '树形表格'],
-            ['tree-table-stepped', '树形阶梯表格'],
-          ],
-        },
-      ]
-    );
+    this.createSelectField('布局类型', ['layout'], normalized.layout, [
+      {
+        group: '思维导图',
+        options: [
+          ['mindmap-right', '右向思维导图'],
+          ['mindmap-left', '左向思维导图'],
+          ['mindmap-bidirectional', '双向思维导图'],
+          ['mindmap-up', '上向思维导图'],
+          ['mindmap-down', '下向思维导图'],
+          ['mindmap-vertical', '垂直双向思维导图'],
+        ],
+      },
+      {
+        group: '树形图',
+        options: [
+          ['tree', '树形图'],
+          ['tree-right', '右向树形图'],
+          ['tree-left', '左向树形图'],
+        ],
+      },
+      {
+        group: '组织结构图',
+        options: [
+          ['org', '组织结构图'],
+          ['org-right', '右向组织结构图'],
+        ],
+      },
+      {
+        group: '时间轴',
+        options: [
+          ['timeline', '时间轴'],
+          ['timeline-up', '上侧时间轴'],
+          ['timeline-down', '下侧时间轴'],
+        ],
+      },
+      {
+        group: '放射图',
+        options: [['radial', '放射图']],
+      },
+      {
+        group: '鱼骨图',
+        options: [['fishbone-left', '左向鱼骨图']],
+      },
+      {
+        group: '树形表格',
+        options: [
+          ['tree-table', '树形表格'],
+          ['tree-table-stepped', '阶梯树形表格'],
+        ],
+      },
+    ]);
     this.createNumberField('主题最大宽度', ['topic', 'maxWidth'], normalized.topic.maxWidth, {
       min: 120,
       max: 800,

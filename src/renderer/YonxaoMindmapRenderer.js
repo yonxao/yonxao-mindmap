@@ -33,7 +33,7 @@ import {
   setMindConfigPath,
 } from '../config/mindConfig.js';
 import { renderIcon } from '../icons/renderIcon.js';
-import { layoutTree, normalizeLayout } from '../layout/layoutTree.js';
+import { layoutTree, normalizeLayoutType } from '../layout/layoutTree.js';
 import { replaceCodeBlockSource } from '../markdown/codeBlock.js';
 import {
   containsTopicId,
@@ -1198,9 +1198,24 @@ export class YonxaoMindmapRenderer extends Component {
     layoutSelect.className = 'yonxao-mindmap-topic-editor-input';
     for (const [value, label] of [
       ['', '继承布局'],
-      ['right', '右侧'],
-      ['left', '左侧'],
-      ['balanced', '平衡'],
+      ['mindmap-right', '思维导图：右向思维导图'],
+      ['mindmap-left', '思维导图：左向思维导图'],
+      ['mindmap-bidirectional', '思维导图：双向思维导图'],
+      ['mindmap-up', '思维导图：上向思维导图'],
+      ['mindmap-down', '思维导图：下向思维导图'],
+      ['mindmap-vertical', '思维导图：垂直双向思维导图'],
+      ['tree', '树形图：树形图'],
+      ['tree-right', '树形图：右向树形图'],
+      ['tree-left', '树形图：左向树形图'],
+      ['org', '组织结构图：组织结构图'],
+      ['org-right', '组织结构图：右向组织结构图'],
+      ['timeline', '时间轴：时间轴'],
+      ['timeline-up', '时间轴：上侧时间轴'],
+      ['timeline-down', '时间轴：下侧时间轴'],
+      ['radial', '放射图：放射图'],
+      ['fishbone-left', '鱼骨图：左向鱼骨图'],
+      ['tree-table', '树形表格：树形表格'],
+      ['tree-table-stepped', '树形表格：阶梯树形表格'],
     ]) {
       const option = document.createElement('option');
       option.value = value;
@@ -1289,7 +1304,7 @@ export class YonxaoMindmapRenderer extends Component {
     this.topicEditorFields.text.value = topic.text || '';
     this.topicEditorFields.color.value = topic.attributes.color || '';
     this.topicEditorFields.icon.value = topic.attributes.icon || '';
-    this.topicEditorFields.layout.value = normalizeLayout(topic.attributes.layout) || '';
+    this.topicEditorFields.layout.value = normalizeLayoutType(topic.attributes.layout) || '';
     this.topicEditorFields.deleteButton.disabled = topic === this.root;
     this.topicEditorEl.hidden = false;
     this.topicEditorFields.text.focus();
@@ -1926,7 +1941,7 @@ export class YonxaoMindmapRenderer extends Component {
 
   /*
    * 作用：
-   * 在树状结构中绘制 root 下方的纵向主干。
+   * 在树形图中绘制 root 下方的纵向主干。
    *
    * 实现逻辑：
    * root -> 一级主题的每条边只负责横向分支；主干单独画一次。
@@ -1960,10 +1975,10 @@ export class YonxaoMindmapRenderer extends Component {
 
   /*
    * 作用：
-   * 判断当前布局是否属于“树状结构”系列。
+   * 判断当前布局是否属于“树形图”系列。
    */
   isTreeLayoutMode(mode) {
-    return mode === 'tree' || mode === 'tree-left' || mode === 'tree-balanced';
+    return mode === 'tree-right' || mode === 'tree-left' || mode === 'tree';
   }
 
   /*
@@ -1980,10 +1995,10 @@ export class YonxaoMindmapRenderer extends Component {
 
   /*
    * 作用：
-   * 绘制“下右展开”组织结构图的纵向主干。
+   * 绘制“右向”组织结构图的纵向主干。
    *
-   * 当前 org-right 已调整为一级分支横向排列，因此正常情况下不会再命中
-   * org-down-right；保留这个函数是为了让旧状态重绘时自然退化为空结果。
+   * 当前 org-right 的一级分支使用 org-right-branch，
+   * 这里只处理极少数直接落到 org-right side 的根连线兜底情况。
    */
   renderOrgRightTrunk(layout) {
     if (layout.mode !== 'org-right') return null;
@@ -1993,8 +2008,7 @@ export class YonxaoMindmapRenderer extends Component {
 
     const rootSubtopicConnectors = layout.connectors.filter(
       (connector) =>
-        connector.parentTopic === this.root &&
-        connector.subtopic?._layout?.side === 'org-down-right'
+        connector.parentTopic === this.root && connector.subtopic?._layout?.side === 'org-right'
     );
     if (!rootSubtopicConnectors.length) return null;
 
@@ -2177,7 +2191,7 @@ export class YonxaoMindmapRenderer extends Component {
    * 避免后面的分支反复覆盖前面的主骨颜色。
    */
   renderFishboneSpine(layout) {
-    if (layout.mode !== 'fishbone') return null;
+    if (layout.mode !== 'fishbone-left') return null;
 
     const rootBox = this.root?._layout;
     if (!rootBox) return null;
@@ -2347,7 +2361,7 @@ export class YonxaoMindmapRenderer extends Component {
    * 判断当前布局是否属于“时间轴”系列。
    */
   isTimelineLayoutMode(mode) {
-    return mode === 'timeline-up' || mode === 'timeline' || mode === 'timeline-balanced';
+    return mode === 'timeline-up' || mode === 'timeline-down' || mode === 'timeline';
   }
 
   /*
@@ -2402,7 +2416,7 @@ export class YonxaoMindmapRenderer extends Component {
       };
     }
 
-    if (parentBox.side === 'root' && side === 'org-down-right') {
+    if (parentBox.side === 'root' && side === 'org-right') {
       return {
         kind: 'trunk-branch',
         startX: parentBox.x,
@@ -2414,7 +2428,7 @@ export class YonxaoMindmapRenderer extends Component {
 
     if (parentBox.side === 'root' && side === 'org-right-branch') {
       return {
-        kind: 'org-down',
+        kind: 'org',
         startX: parentBox.x,
         startY: parentBox.y + parentBox.height / 2,
         endX: subtopicBox.x,
@@ -2490,7 +2504,7 @@ export class YonxaoMindmapRenderer extends Component {
 
     if (side === 'org-bottom') {
       return {
-        kind: 'org-down',
+        kind: 'org',
         startX: parentBox.x,
         startY: parentBox.y + parentBox.height / 2,
         endX: subtopicBox.x,
@@ -2567,7 +2581,7 @@ export class YonxaoMindmapRenderer extends Component {
       return ['M', startX, startY, 'H', endX].join(' ');
     }
 
-    if (kind === 'org-down') {
+    if (kind === 'org') {
       const midY = startY + (endY - startY) / 2;
       return ['M', startX, startY, 'V', midY, 'H', endX, 'V', endY].join(' ');
     }
@@ -2949,7 +2963,6 @@ export class YonxaoMindmapRenderer extends Component {
       'top',
       'bottom',
       'vertical',
-      'timeline',
       'timeline-point',
       'timeline-top',
       'timeline-bottom',
@@ -3049,25 +3062,25 @@ export class YonxaoMindmapRenderer extends Component {
     const side = String(box.side || '');
     if (side === 'left' || side === 'right' || side === 'top' || side === 'bottom') return side;
     if (this.isFishboneTopicBox(box) || side === 'root') {
-      const mode = this.config.layout.defaultDirection;
-      if (mode === 'fishbone') return this.fishboneSubtopicOutletSide();
+      const mode = this.config.layout;
+      if (mode === 'fishbone-left') return this.fishboneSubtopicOutletSide();
     }
     if (this.isTreeTableBox(box)) return 'right';
     if (side === 'tree-left') return 'left';
     if (side === 'org-bottom') return 'bottom';
-    if (side === 'org-down-right' || side === 'org-right' || side === 'org-right-branch') {
+    if (side === 'org-right' || side === 'org-right-branch') {
       return 'right';
     }
     if (side === 'timeline-point') return 'right';
     if (side === 'timeline-top') return 'top';
     if (side === 'timeline-bottom') return 'bottom';
     if (side === 'timeline-detail-top' || side === 'timeline-detail-bottom') return 'right';
-    if (side === 'timeline' || side === 'tree' || side === 'tree-right') return 'right';
+    if (side === 'tree-right') return 'right';
 
-    const mode = this.config.layout.defaultDirection;
-    if (mode === 'left') return 'left';
-    if (mode === 'up') return 'top';
-    if (mode === 'down' || mode === 'org') return 'bottom';
+    const mode = this.config.layout;
+    if (mode === 'mindmap-left') return 'left';
+    if (mode === 'mindmap-up') return 'top';
+    if (mode === 'mindmap-down' || mode === 'org') return 'bottom';
     if (mode === 'org-right') return 'right';
     return 'right';
   }
@@ -3151,12 +3164,10 @@ export class YonxaoMindmapRenderer extends Component {
     }
 
     if (
-      box.side === 'tree' ||
       box.side === 'tree-right' ||
       box.side === 'timeline-point' ||
       box.side === 'timeline-detail-top' ||
       box.side === 'timeline-detail-bottom' ||
-      box.side === 'org-down-right' ||
       box.side === 'org-right'
     ) {
       return {
@@ -3183,18 +3194,18 @@ export class YonxaoMindmapRenderer extends Component {
    * 计算中心主题编辑按钮位置。
    */
   rootEditButtonPosition(topic, box, buttonSize) {
-    const mode = this.config.layout.defaultDirection;
-    if (mode === 'fishbone') {
+    const mode = this.config.layout;
+    if (mode === 'fishbone-left') {
       return this.fishboneEditButtonPosition(box, buttonSize);
     }
 
     if (
-      mode === 'down' ||
+      mode === 'mindmap-down' ||
       mode === 'org' ||
       mode === 'org-right' ||
       mode === 'timeline-up' ||
-      mode === 'timeline' ||
-      mode === 'timeline-balanced'
+      mode === 'timeline-down' ||
+      mode === 'timeline'
     ) {
       return {
         x: box.width / 2 - buttonSize / 2,
@@ -3202,7 +3213,7 @@ export class YonxaoMindmapRenderer extends Component {
       };
     }
 
-    if (mode === 'up') {
+    if (mode === 'mindmap-up') {
       return {
         x: box.width / 2 - buttonSize / 2,
         y: box.height - buttonSize / 2,
@@ -3211,7 +3222,7 @@ export class YonxaoMindmapRenderer extends Component {
 
     const sides = new Set((topic.subtopics || []).map((subtopic) => subtopic._layout?.side));
     const hasLeftSubtopics = sides.has('left') || sides.has('tree-left');
-    const hasRightSubtopics = sides.has('right') || sides.has('tree') || sides.has('tree-right');
+    const hasRightSubtopics = sides.has('right') || sides.has('tree-right');
 
     if (hasLeftSubtopics && hasRightSubtopics) {
       return {
@@ -3757,7 +3768,6 @@ export class YonxaoMindmapRenderer extends Component {
     if (
       side === 'top' ||
       side === 'bottom' ||
-      side === 'timeline' ||
       side === 'timeline-point' ||
       side === 'timeline-top' ||
       side === 'timeline-bottom' ||

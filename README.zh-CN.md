@@ -16,10 +16,9 @@ canvas:
 toolbar:
   x: 8
   y: 8
-layout:
-  defaultDirection: right
+layout: mindmap-right
 connector:
-  type: curve
+  style: curve
 font:
   size: 14
   weight: 560
@@ -35,7 +34,7 @@ source:
   height: 520
 ---
 
-# AI学习 [color=#3b82f6 layout=right]
+# AI学习 [color=#3b82f6 layout=mindmap-right]
 
 ## 基础 [icon=book]
 
@@ -58,7 +57,7 @@ source:
 - 主题属性写在标题后面，格式为 `[key=value]`。
 - 当前支持的属性：
   - `color=#3b82f6`：主题颜色。
-  - `layout=right`、`layout=left`、`layout=balanced`：布局方向。
+  - `layout=mindmap-right`、`layout=mindmap-left`、`layout=mindmap-bidirectional`：局部布局类型。
   - `icon=book`：主题图标。
   - `fontSize=16`、`fontWeight=700`、`fontFamily="..."`、`lineHeight=20`：覆盖单个主题字体。
 
@@ -122,17 +121,28 @@ source:
 
 ### 布局结构
 
-| 中文术语     | English Term       | yxmm 术语                                                  | 作用或功能说明                                                 |
-| ------------ | ------------------ | ---------------------------------------------------------- | -------------------------------------------------------------- |
-| 布局结构     | layout structure   | `layout`                                                   | 控制整张图的组织方式。                                         |
-| 逻辑图       | mind map           | `right` / `left` / `balanced` / `down` / `up` / `vertical` | 围绕中心主题向一个或多个方向发散。                             |
-| 树形图       | tree structure     | `tree` / `tree-left` / `tree-balanced`                     | 强调主干和层级展开。                                           |
-| 组织结构图   | organization chart | `org` / `org-right`                                        | 强调上下级关系和同层对齐。                                     |
-| 时间轴       | timeline           | `timeline-up` / `timeline` / `timeline-balanced`           | 分支沿水平轴排列，后代在轴上方、下方或上下交替展开。           |
-| 放射图       | radial map         | `radial`                                                   | 围绕中心主题向四周径向分布。                                   |
-| 鱼骨图       | fishbone diagram   | `fishbone`                                                 | 中心主题作为鱼头，主骨向鱼尾延伸，分支像鱼刺一样挂在主骨上下。 |
-| 树形表格     | tree table         | `tree-table`                                               | 把主题树渲染为表格，叶子主题会横向填满剩余列。                 |
-| 树形阶梯表格 | stepped tree table | `tree-table-stepped`                                       | 把主题树渲染为表格，但叶子主题只占当前列，保留阶梯状轮廓。     |
+| 中文术语   | English Term       | yxmm 术语                             | 作用 / 功能说明                                                |
+| ---------- | ------------------ | ------------------------------------- | -------------------------------------------------------------- |
+| 布局类型   | layout type        | `layout`                              | 控制整张图的组织方式。                                         |
+| 思维导图   | mind map           | `mindmap-right`(默认)：右向思维导图   | 中心主题在左侧，分支向右展开。适合列表式、流程式阅读。         |
+|            |                    | `mindmap-left`：左向思维导图          | 中心主题在右侧，分支向左展开。适合与右向布局配合或特殊排版。   |
+|            |                    | `mindmap-bidirectional`：双向思维导图 | 中心主题居中，一级分支向左右两侧展开。最符合传统思维导图形态。 |
+|            |                    | `mindmap-up`：上向思维导图            | 中心主题在下方，分支向上展开。                                 |
+|            |                    | `mindmap-down`：下向思维导图          | 中心主题在上方，分支向下展开。                                 |
+|            |                    | `mindmap-vertical`：垂直双向思维导图  | 中心主题居中，一级分支向上、向下展开。                         |
+| 树形图     | tree diagram       | `tree`：树形图                        | 中心主题在顶部，二级主题为一根垂直主根，子节点交替在主根两侧   |
+|            |                    | `tree-right`：右向树形图              | 中心主题在顶部，二级主题为一根垂直主根，子节点交替在主根右侧   |
+|            |                    | `tree-left` ：左向树形图              | 中心主题在顶部，二级主题为一根垂直主根，子节点交替在主根左侧   |
+| 组织结构图 | organization chart | `org` ：组织结构图                    | 强调上下级关系和同层对齐。                                     |
+|            |                    | `org-right`：右向组织结构图           | 组织结构图的三级节点及其子节点向右展开。                       |
+| 时间轴     | timeline           | `timeline`：时间轴                    | 分支沿水平轴排列，后代在轴上下交替展开。                       |
+|            |                    | `timeline-up`：上侧时间轴             | 分支沿水平轴排列，后代在轴上方展开。                           |
+|            |                    | `timeline-down`：下侧时间轴           | 分支沿水平轴排列，后代在轴下方展开。                           |
+| 放射图     | radial map         | `radial`：放射图                      | 围绕中心主题向四周径向分布。                                   |
+| 鱼骨图     | fishbone diagram   | `fishbone-left`：左向鱼骨图           | 鱼头在左侧，主骨从右向左延伸。                                 |
+|            |                    | `fishbone-right`：右向鱼骨图          | 鱼头在右侧，主骨从左向右延伸。                                 |
+| 树形表格   | tree table         | `tree-table`：树形表格                | 把主题树渲染为表格，叶子主题会横向填满剩余列。                 |
+|            |                    | `tree-table-stepped`：阶梯树形表格    | 把主题树渲染为表格，但叶子主题只占当前列，保留阶梯状轮廓。     |
 
 ### 鱼骨图专用结构
 
@@ -188,7 +198,7 @@ source:
 - `toolbar.x` / `toolbar.y`：悬浮工具栏位置。拖动工具栏抓手后会自动写入。
 - `interaction.wheelZoom`：是否启用鼠标滚轮缩放。默认关闭；开启后会写入 `true`，关闭时可删除该项。
 - `theme`：主题名称，可选 `default`、`ocean`、`forest`、`sunset`、`mono`、`rainbow`、`pastel-rainbow`、`neon-rainbow`。
-- `layout.defaultDirection`：布局结构，可选 `right`、`left`、`balanced`、`down`、`up`、`vertical`、`tree`、`tree-left`、`tree-balanced`、`org`、`org-right`、`timeline-up`、`timeline`、`timeline-balanced`、`radial`、`fishbone`、`tree-table`、`tree-table-stepped`。
+- `layout`：布局类型，可选 `mindmap-right`、`mindmap-left`、`mindmap-bidirectional`、`mindmap-down`、`mindmap-up`、`mindmap-vertical`、`tree`、`tree-right`、`tree-left`、`org`、`org-right`、`timeline`、`timeline-up`、`timeline-down`、`radial`、`fishbone-left`、`tree-table`、`tree-table-stepped`。
 - `connector.style`：连线线型，可选 `curve`、`straight`、`elbow`。`curve` 是曲线，技术上是三次贝塞尔曲线；`straight` 是直线；`elbow` 是正交折线。
 - `font.family`、`font.size`、`font.weight`、`font.lineHeight`：全局默认字体。
 - `font.levels.1`、`font.levels.2`：按主题级别设置字体，数字对应 `#`、`##`、`###` 的层级。
@@ -215,15 +225,17 @@ source:
 中心主题会使用主题独立中心色；主题属性 `color` 只改变主题本身，不改变它和父主题之间的连接线颜色。
 配置区中的 hex 颜色建议写成带引号的字符串，例如 `defaultColor: '#66ed0c'`；通过配置弹框保存时会自动加引号。
 
-布局结构说明：
+布局类型说明：
 
-- 思维导图：`right` 右向展开、`left` 左向展开、`balanced` 左右平衡、`down` 向下展开、`up` 向上展开、`vertical` 上下平衡。
-- 树状结构：`tree` 向右树、`tree-left` 向左树、`tree-balanced` 平衡树。
-- 组织结构图：`org` 向下展开、`org-right` 下右展开。
-- 时间轴：`timeline-up` 轴上展开、`timeline` 轴下展开、`timeline-balanced` 上下平衡轴。
-- 其他：`radial` 放射图、`fishbone` 鱼骨图、`tree-table` 树形表格、`tree-table-stepped` 树形阶梯表格。
+- 思维导图：`mindmap-right` 右向思维导图、`mindmap-left` 左向思维导图、`mindmap-bidirectional` 双向思维导图、`mindmap-up` 上向思维导图、`mindmap-down` 下向思维导图、`mindmap-vertical` 垂直双向思维导图。
+- 树形图：`tree` 树形图、`tree-right` 右向树形图、`tree-left` 左向树形图。
+- 组织结构图：`org` 组织结构图、`org-right` 右向组织结构图。
+- 时间轴：`timeline` 时间轴、`timeline-up` 上侧时间轴、`timeline-down` 下侧时间轴。
+- 放射图：`radial` 放射图。
+- 鱼骨图：`fishbone-left` 左向鱼骨图。
+- 树形表格：`tree-table` 树形表格、`tree-table-stepped` 阶梯树形表格。
 
-`down` 属于思维导图布局，强调从中心主题向下发散；`org` 属于组织结构图，强调同层级横向对齐和上下级关系；`org-right` 属于下右展开组织结构图，一级分支横向排列，二级及更深主题从各自分支向右下展开。
+`mindmap-down` 属于思维导图布局，强调从中心主题向下发散；`org` 属于组织结构图，强调同层级横向对齐和上下级关系；`org-right` 属于右向组织结构图，一级分支横向排列，二级及更深主题从各自分支向右下展开。
 
 ## 操作
 

@@ -68,9 +68,7 @@ export const DEFAULT_MIND_CONFIG = Object.freeze({
     mode: 'map',
   }),
   theme: DEFAULT_THEME_NAME,
-  layout: Object.freeze({
-    defaultDirection: 'right',
-  }),
+  layout: 'mindmap-right',
   connector: Object.freeze({
     style: 'curve',
   }),
@@ -140,7 +138,7 @@ export function splitMindSourceConfig(source) {
 export function normalizeMindConfig(rawConfig) {
   const raw = isPlainObject(rawConfig) ? rawConfig : {};
   const font = isPlainObject(raw.font) ? raw.font : {};
-  const layout = isPlainObject(raw.layout) ? raw.layout : {};
+  const layout = raw.layout;
   const connector = isPlainObject(raw.connector) ? raw.connector : {};
   const topic = isPlainObject(raw.topic) ? raw.topic : {};
   const canvas = isPlainObject(raw.canvas) ? raw.canvas : {};
@@ -171,11 +169,7 @@ export function normalizeMindConfig(rawConfig) {
       mode: normalizeViewMode(view.mode) || DEFAULT_MIND_CONFIG.view.mode,
     },
     theme: normalizeMindThemeName(raw.theme),
-    layout: {
-      ...layout,
-      defaultDirection:
-        normalizeDirection(layout.defaultDirection) || DEFAULT_MIND_CONFIG.layout.defaultDirection,
-    },
+    layout: normalizeLayoutType(layout) || DEFAULT_MIND_CONFIG.layout,
     connector: {
       ...connector,
       style: normalizeConnectorStyle(connector.style) || DEFAULT_MIND_CONFIG.connector.style,
@@ -563,28 +557,33 @@ function normalizeOptionalNumber(value, min, max) {
 
 /*
  * 作用：
- * 规范化布局方向。
+ * 规范化布局类型。
+ *
+ * 关键点：
+ * layout 是配置区里的标量值，例如 layout: mindmap-left。
+ * 这里不接收旧的嵌套布局配置，也不接收 right/left 这类短名，
+ * 避免未发布阶段留下两套配置结构。
  */
-function normalizeDirection(value) {
+function normalizeLayoutType(value) {
   const text = normalizeText(value).toLowerCase();
   if (
     [
-      'left',
-      'right',
-      'balanced',
-      'down',
-      'up',
-      'vertical',
-      'tree',
+      'mindmap-right',
+      'mindmap-left',
+      'mindmap-bidirectional',
+      'mindmap-down',
+      'mindmap-up',
+      'mindmap-vertical',
+      'tree-right',
       'tree-left',
-      'tree-balanced',
+      'tree',
       'org',
       'org-right',
       'timeline-up',
+      'timeline-down',
       'timeline',
-      'timeline-balanced',
       'radial',
-      'fishbone',
+      'fishbone-left',
       'tree-table',
       'tree-table-stepped',
     ].includes(text)
