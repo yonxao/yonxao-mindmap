@@ -1965,6 +1965,10 @@ export class YonxaoMindmapRenderer extends Component {
     if (treeTrunk) {
       connectorLayer.appendChild(treeTrunk);
     }
+    const orgSharedTrunks = this.renderOrgSharedTrunks(layout);
+    if (orgSharedTrunks) {
+      connectorLayer.appendChild(orgSharedTrunks);
+    }
     const orgRightTrunk = this.renderOrgRightTrunk(layout);
     if (orgRightTrunk) {
       connectorLayer.appendChild(orgRightTrunk);
@@ -1993,6 +1997,7 @@ export class YonxaoMindmapRenderer extends Component {
     if (!this.isTreeTableLayoutMode(layout.mode)) {
       for (const connector of layout.connectors) {
         if (this.isMindMapRootElbowConnector(connector, layout.mode)) continue;
+        if (this.isOrgSharedTrunkConnector(connector, layout.mode)) continue;
 
         const connectorEl = this.renderConnector(connector);
         if (connectorEl) {
@@ -2080,6 +2085,110 @@ export class YonxaoMindmapRenderer extends Component {
 
   /*
    * 作用：
+   * 绘制标准组织结构图中的共享主干。
+   *
+   * 适用范围：
+   * - org：父主题向下连接一组子主题时，中间会形成一条横向总线。
+   * - org-right：root 到一级分支同样使用组织结构图式总线，只是后代继续向右展开。
+   *
+   * 绘制策略：
+   * 普通 org 连线会让每个子主题都重复绘制“父主题下探线 + 横向总线”，颜色会互相覆盖。
+   * 这里把共享部分单独拆出来：父主题到总线只画一次，总线按子主题位置分段着色，
+   * 子主题下探短线再分别使用各自子主题颜色。
+   */
+  renderOrgSharedTrunks(layout) {
+    if (layout.mode !== 'org' && layout.mode !== 'org-right') return null;
+
+    const groupedConnectors = new Map();
+    for (const connector of layout.connectors) {
+      if (!this.isOrgSharedTrunkConnector(connector, layout.mode)) continue;
+      if (!groupedConnectors.has(connector.parentTopic.id)) {
+        groupedConnectors.set(connector.parentTopic.id, []);
+      }
+      groupedConnectors.get(connector.parentTopic.id).push(connector);
+    }
+
+    if (!groupedConnectors.size) return null;
+
+    const groupEl = svg('g', { class: 'yonxao-mindmap-org-shared-trunks' });
+    for (const connectors of groupedConnectors.values()) {
+      const trunkGroupEl = this.renderOrgSharedTrunkGroup(connectors);
+      if (trunkGroupEl) groupEl.appendChild(trunkGroupEl);
+    }
+
+    return groupEl;
+  }
+
+  /*
+   * 作用：
+   * 判断一条组织结构图连线是否应该由共享主干逻辑接管。
+   */
+  isOrgSharedTrunkConnector(connector, layoutMode) {
+    const side = connector.subtopic?._layout?.side;
+    if (layoutMode === 'org') return side === 'org-bottom';
+    if (layoutMode === 'org-right') return side === 'org-right-branch';
+    return false;
+  }
+
+  /*
+   * 作用：
+   * 绘制某个父主题下面的一组组织结构图共享主干。
+   */
+  renderOrgSharedTrunkGroup(connectors) {
+    if (!connectors.length) return null;
+
+    const firstAnchors = this.connectorAnchors(
+      connectors[0].parentTopic._layout,
+      connectors[0].subtopic._layout
+    );
+    const busY = firstAnchors.startY + (firstAnchors.endY - firstAnchors.startY) / 2;
+    const nearestConnector = this.closestConnectorToRootAxis(connectors, 'x', firstAnchors.startX);
+    const nearestColor = connectorColor(nearestConnector.subtopic, this.config) || 'currentColor';
+    const opacityStyle = `opacity: ${themeConnectorOpacity(this.config)}`;
+    const groupEl = svg('g', { class: 'yonxao-mindmap-org-shared-trunk' });
+
+    /*
+     * 父主题到横向总线的短竖线没有明确属于哪一个子主题，
+     * 这里沿用基础思维导图的处理：使用离父主题最近的子主题颜色。
+     */
+    groupEl.appendChild(
+      this.renderConnectorPath(
+        ['M', firstAnchors.startX, firstAnchors.startY, 'V', busY],
+        nearestColor,
+        opacityStyle
+      )
+    );
+    this.renderRootTrunkSegments(
+      groupEl,
+      connectors,
+      {
+        axis: 'x',
+        fixedCoord: busY,
+        originCoord: firstAnchors.startX,
+      },
+      opacityStyle
+    );
+
+    for (const connector of connectors) {
+      const anchors = this.connectorAnchors(
+        connector.parentTopic._layout,
+        connector.subtopic._layout
+      );
+      const branchColor = connectorColor(connector.subtopic, this.config) || 'currentColor';
+      groupEl.appendChild(
+        this.renderConnectorPath(
+          ['M', anchors.endX, busY, 'V', anchors.endY],
+          branchColor,
+          opacityStyle
+        )
+      );
+    }
+
+    return groupEl;
+  }
+
+  /*
+   * 作用：
    * 绘制“右向”组织结构图的纵向主干。
    *
    * 当前 org-right 的一级分支使用 org-right-branch，
@@ -2098,17 +2207,20 @@ export class YonxaoMindmapRenderer extends Component {
     if (!rootSubtopicConnectors.length) return null;
 
     const startY = rootBox.y + rootBox.height / 2;
-    const endY = Math.max(
-      ...rootSubtopicConnectors.map((connector) => connector.subtopic._layout.y)
-    );
-    if (endY <= startY) return null;
+    const groupEl = svg('g', { class: 'yonxao-mindmap-org-trunk' });
 
-    return svg('path', {
-      class: 'yonxao-mindmap-connector yonxao-mindmap-org-trunk',
-      d: ['M', rootBox.x, startY, 'V', endY].join(' '),
-      stroke: 'currentColor',
-      style: `opacity: ${themeConnectorOpacity(this.config)}`,
-    });
+    this.renderRootTrunkSegments(
+      groupEl,
+      rootSubtopicConnectors,
+      {
+        axis: 'y',
+        fixedCoord: rootBox.x,
+        originCoord: startY,
+      },
+      `opacity: ${themeConnectorOpacity(this.config)}`
+    );
+
+    return groupEl;
   }
 
   /*
@@ -2125,6 +2237,7 @@ export class YonxaoMindmapRenderer extends Component {
     const groups = new Map();
     for (const connector of layout.connectors) {
       if (connector.subtopic?._layout?.side !== 'org-right') continue;
+      if (connector.parentTopic === this.root) continue;
       if (!groups.has(connector.parentTopic.id)) {
         groups.set(connector.parentTopic.id, []);
       }
@@ -2142,16 +2255,20 @@ export class YonxaoMindmapRenderer extends Component {
 
       const startX = parentBox.x;
       const startY = parentBox.y + parentBox.height / 2;
-      const endY = Math.max(...connectors.map((connector) => connector.subtopic._layout.y));
-      const color = connectorColor(parentTopic, this.config);
 
-      groupEl.appendChild(
-        svg('path', {
-          class: 'yonxao-mindmap-connector yonxao-mindmap-org-right-trunk',
-          d: ['M', startX, startY, 'V', endY].join(' '),
-          stroke: color || 'currentColor',
-          style: `opacity: ${themeConnectorOpacity(this.config)}`,
-        })
+      /*
+       * org-right 后代的纵向共享线也按子主题分段上色，
+       * 保持和基础思维导图 root 主干一致的颜色节奏。
+       */
+      this.renderRootTrunkSegments(
+        groupEl,
+        connectors,
+        {
+          axis: 'y',
+          fixedCoord: startX,
+          originCoord: startY,
+        },
+        `opacity: ${themeConnectorOpacity(this.config)}`
       );
     }
 

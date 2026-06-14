@@ -51,6 +51,13 @@ export const LAYOUT_TYPES = Object.freeze([
 ]);
 
 /*
+ * 右向组织结构图的后代主题更像“挂在竖线上的紧凑目录树”。
+ * 如果直接使用全局 LEVEL_GAP/SIBLING_GAP，小尺寸主题之间会显得线段过长、空白过大。
+ */
+const ORG_RIGHT_DESCENDANT_LEVEL_GAP = Math.round(LEVEL_GAP * 0.62);
+const ORG_RIGHT_DESCENDANT_SIBLING_GAP = Math.max(8, Math.round(SIBLING_GAP * 0.56));
+
+/*
  * 作用：
  * 计算整棵思维导图的可见主题、连线和整体边界。
  *
@@ -660,9 +667,6 @@ export function placeOrgRightRootSubtopics(root, subtopics, collapsedIds) {
     TOPIC_MIN_HEIGHT
   );
   const subtopicY = rootBox.y + rootBox.height / 2 + LEVEL_GAP + maxRootSubtopicHeight / 2;
-  const descendantStartTop =
-    subtopicY - maxRootSubtopicHeight / 2 + maxRootSubtopicHeight + SIBLING_GAP;
-  const rowTops = orgRightDescendantGridTops(subtopics, descendantStartTop, collapsedIds);
   let x = rootBox.x - totalWidth / 2;
 
   for (let index = 0; index < subtopics.length; index += 1) {
@@ -674,7 +678,7 @@ export function placeOrgRightRootSubtopics(root, subtopics, collapsedIds) {
     subtopicBox.x = x + subtopicBox.width / 2;
     subtopicBox.y = subtopicY - maxRootSubtopicHeight / 2 + subtopicBox.height / 2;
 
-    placeOrgRightDescendants(subtopic, collapsedIds, rowTops);
+    placeOrgRightDescendants(subtopic, collapsedIds);
     x += width + BRANCH_GAP;
   }
 }
@@ -684,77 +688,31 @@ export function placeOrgRightRootSubtopics(root, subtopics, collapsedIds) {
  * 递归摆放“右向组织结构图”的后代主题。
  *
  * 实现逻辑：
- * 子主题不是从父主题右侧展开，而是从父主题下方的竖向主线挂出。
- * 因此子主题的左边界按“父主题中心 + 缩进”计算，形成竖线向下、横线向右的目录树观感。
- * rowTops 是全局行表：按“层级 + 兄弟序号”共享同一个顶部 y。
- * 这样不同分支里的同级主题会自然横向对齐，长文案只会撑开当前行高。
+ * 子主题不是从父主题右侧直接散开，而是从父主题下方的竖向主线挂出。
+ * 但普通主题展开时要像右向树形图一样，为每个子树预留真实高度。
+ * 这样某个子主题继续展开后代时，不会和相邻兄弟主题互相重叠。
  */
-export function placeOrgRightDescendants(parent, collapsedIds, rowTops, depth = 0) {
+export function placeOrgRightDescendants(parent, collapsedIds) {
   const subtopics = visibleSubtopics(parent, collapsedIds);
   if (!subtopics.length) return;
 
   const parentBox = parent._layout;
+  const heights = subtopics.map((subtopic) => orgRightSubtreeHeight(subtopic, collapsedIds));
+  let y = parentBox.y + parentBox.height / 2 + ORG_RIGHT_DESCENDANT_SIBLING_GAP;
 
   for (let index = 0; index < subtopics.length; index += 1) {
     const subtopic = subtopics[index];
     const subtopicBox = subtopic._layout;
-    const top =
-      rowTops[depth]?.[index] ?? parentBox.y + parentBox.height / 2 + SIBLING_GAP + index * 48;
+    const height = heights[index];
 
     subtopicBox.side = 'org-right';
-    subtopicBox.x = parentBox.x + LEVEL_GAP + subtopicBox.width / 2;
-    subtopicBox.y = top + subtopicBox.height / 2;
+    subtopicBox.x =
+      parentBox.x + parentBox.width / 2 + ORG_RIGHT_DESCENDANT_LEVEL_GAP + subtopicBox.width / 2;
+    subtopicBox.y = y + subtopicBox.height / 2;
 
-    placeOrgRightDescendants(subtopic, collapsedIds, rowTops, depth + 1);
+    placeOrgRightDescendants(subtopic, collapsedIds);
+    y += height + ORG_RIGHT_DESCENDANT_SIBLING_GAP;
   }
-}
-
-/*
- * 作用：
- * 计算 org-right 后代的全局网格行顶部。
- *
- * 设计思路：
- * 第一维是相对层级，第二维是兄弟序号。
- * 例如所有一级分支下的第一个子主题共享 depth=0/index=0 的行。
- */
-export function orgRightDescendantGridTops(rootSubtopics, startTop, collapsedIds) {
-  const gridHeights = [];
-
-  for (const subtopic of rootSubtopics) {
-    collectOrgRightGridHeights(subtopic, collapsedIds, gridHeights);
-  }
-
-  const rowTops = [];
-  let y = startTop;
-  for (let depth = 0; depth < gridHeights.length; depth += 1) {
-    rowTops[depth] = [];
-    const heights = gridHeights[depth] || [];
-    for (let index = 0; index < heights.length; index += 1) {
-      const height = heights[index] || TOPIC_MIN_HEIGHT;
-      rowTops[depth][index] = y;
-      y += height + SIBLING_GAP;
-    }
-  }
-
-  return rowTops;
-}
-
-/*
- * 作用：
- * 按“层级 + 兄弟序号”统计 org-right 每个网格行所需高度。
- */
-export function collectOrgRightGridHeights(parent, collapsedIds, gridHeights, depth = 0) {
-  const subtopics = visibleSubtopics(parent, collapsedIds);
-  if (!subtopics.length) return;
-
-  if (!gridHeights[depth]) {
-    gridHeights[depth] = [];
-  }
-
-  subtopics.forEach((subtopic, index) => {
-    gridHeights[depth][index] = Math.max(gridHeights[depth][index] || 0, subtopic._layout.height);
-    collectOrgRightGridHeights(subtopic, collapsedIds, gridHeights, depth + 1);
-  });
 }
 
 /*
@@ -771,7 +729,27 @@ export function orgRightSubtreeWidth(topic, collapsedIds) {
     0
   );
 
-  return Math.max(box.width, box.width / 2 + LEVEL_GAP + subtopicWidth);
+  return Math.max(box.width, box.width + ORG_RIGHT_DESCENDANT_LEVEL_GAP + subtopicWidth);
+}
+
+/*
+ * 作用：
+ * 计算“右向组织结构图”中一个普通主题展开后需要占用的垂直高度。
+ *
+ * 为什么需要单独计算：
+ * 右向组织结构图的一级分支仍然横向排列，但一级分支下面的普通主题应该像右向树形图一样，
+ * 按每棵子树的实际高度向下展开，避免后代主题和兄弟主题重叠。
+ */
+export function orgRightSubtreeHeight(topic, collapsedIds) {
+  const box = topic._layout;
+  const subtopics = visibleSubtopics(topic, collapsedIds);
+  if (!subtopics.length) return box.height;
+
+  const subtopicHeight =
+    subtopics.reduce((sum, subtopic) => sum + orgRightSubtreeHeight(subtopic, collapsedIds), 0) +
+    Math.max(0, subtopics.length - 1) * ORG_RIGHT_DESCENDANT_SIBLING_GAP;
+
+  return box.height + ORG_RIGHT_DESCENDANT_SIBLING_GAP + subtopicHeight;
 }
 
 /*
