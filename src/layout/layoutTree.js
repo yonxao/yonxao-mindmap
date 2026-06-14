@@ -67,6 +67,18 @@ const TIMELINE_DETAIL_SIBLING_GAP = Math.max(24, Math.round(SIBLING_GAP * 1.35))
 const TIMELINE_AXIS_DETAIL_GAP = Math.max(30, Math.round(SIBLING_GAP * 1.7));
 
 /*
+ * 放射图的阅读体验更依赖“聚合感”：主题需要围绕中心聚在一起，而不是像普通导图一样
+ * 每层都拉开很长距离。这里单独定义更紧凑的放射间距，避免整张图占用过多空白。
+ */
+const RADIAL_ROOT_RADIUS_MIN = 168;
+const RADIAL_ROOT_RADIUS_EXTRA = 72;
+const RADIAL_LEVEL_GAP = Math.round(LEVEL_GAP * 0.82);
+const RADIAL_SIBLING_GAP = Math.max(16, Math.round(SIBLING_GAP * 0.9));
+const RADIAL_RADIUS_EXTRA_LIMIT = Math.round(LEVEL_GAP * 1.35);
+const RADIAL_COLLISION_MARGIN = 24;
+const RADIAL_COLLISION_ITERATIONS = 24;
+
+/*
  * 作用：
  * 计算整棵思维导图的可见主题、连线和整体边界。
  *
@@ -922,21 +934,118 @@ export function timelineDetailSubtreeHeight(topic, branchSide, collapsedIds) {
  */
 export function layoutRadial(root, collapsedIds) {
   const subtopics = visibleSubtopics(root, collapsedIds);
-  const radius = Math.max(220, root._layout.width / 2 + LEVEL_GAP + 110);
-  const stats = subtopics.map((subtopic) => radialBranchStats(subtopic, collapsedIds));
-  const weights = stats.map((stat) => radialBranchWeight(stat));
-  const totalWeight = weights.reduce((sum, weight) => sum + weight, 0) || 1;
-  const slices = weights.map((weight) => (weight / totalWeight) * Math.PI * 2);
-  let cursor = -Math.PI / 2 - (slices[0] || 0) / 2;
+  const radius = Math.max(
+    RADIAL_ROOT_RADIUS_MIN,
+    root._layout.width / 2 + RADIAL_LEVEL_GAP + RADIAL_ROOT_RADIUS_EXTRA
+  );
+  const branchPlans = radialBranchDirectionPlans(subtopics, collapsedIds);
 
-  subtopics.forEach((subtopic, index) => {
-    const slice = slices[index];
-    const angle = cursor + slice / 2;
-    const branchRadius = radialBranchRadius(radius, subtopic, angle, slice, collapsedIds);
+  branchPlans.forEach((plan) => {
+    const branchRadius = radialBranchRadius(
+      radius,
+      plan.subtopic,
+      plan.angle,
+      plan.slice,
+      collapsedIds
+    );
 
-    placeRadialRootBranch(root, subtopic, angle, branchRadius, collapsedIds);
-    cursor += slice;
+    placeRadialRootBranch(root, plan.subtopic, plan.angle, branchRadius, collapsedIds);
   });
+
+  resolveRadialRootBranchCollisions(root, subtopics, collapsedIds);
+}
+
+/*
+ * 作用：
+ * 给放射图一级主题分配绘制方向。
+ *
+ * 实现逻辑：
+ * - 先计算每个一级分支的占用面积和复杂度。
+ * - 再把大分支优先放到彼此相隔更远的角度槽位上。
+ * - 小分支最后填入剩余方向。
+ *
+ * 这样会牺牲“按文档顺序绕圈”的严格顺序，但能显著降低大分支挤在一起导致的重叠。
+ */
+export function radialBranchDirectionPlans(subtopics, collapsedIds) {
+  if (!subtopics.length) return [];
+
+  const slotAngle = (Math.PI * 2) / subtopics.length;
+  const angleSlots = radialSpreadAngleSlots(subtopics.length);
+  const branchPlans = subtopics.map((subtopic, documentIndex) => {
+    const stats = radialBranchStats(subtopic, collapsedIds);
+    return {
+      subtopic,
+      documentIndex,
+      stats,
+      areaScore: radialBranchAreaScore(stats),
+      // slice 表示该方向可用的理论扇区宽度，后续半径补偿会用它估算安全距离。
+      slice: slotAngle,
+    };
+  });
+
+  const largeBranchFirstPlans = [...branchPlans].sort((left, right) => {
+    if (right.areaScore !== left.areaScore) return right.areaScore - left.areaScore;
+    return left.documentIndex - right.documentIndex;
+  });
+
+  largeBranchFirstPlans.forEach((plan, index) => {
+    plan.angle = angleSlots[index];
+  });
+
+  return branchPlans;
+}
+
+/*
+ * 作用：
+ * 生成一组尽量“先远后近”的角度槽位。
+ *
+ * 例子：
+ * 如果有 8 个一级分支，分配顺序大致是上、下、右、左、右上、左下、右下、左上。
+ * 最大的几个分支会先落到相距更远的位置，减少外接矩形互相压住的概率。
+ */
+export function radialSpreadAngleSlots(count) {
+  const baseAngles = Array.from(
+    { length: count },
+    (_, index) => -Math.PI / 2 + (index * Math.PI * 2) / count
+  );
+  const orderedSlotIndexes = [];
+  const used = new Set();
+
+  const pushNearestUnusedSlot = (targetIndex) => {
+    for (let step = 0; step < count; step += 1) {
+      const rightIndex = (targetIndex + step) % count;
+      if (!used.has(rightIndex)) {
+        used.add(rightIndex);
+        orderedSlotIndexes.push(rightIndex);
+        return;
+      }
+
+      const leftIndex = (targetIndex - step + count) % count;
+      if (!used.has(leftIndex)) {
+        used.add(leftIndex);
+        orderedSlotIndexes.push(leftIndex);
+        return;
+      }
+    }
+  };
+
+  /*
+   * 先把四个主方向占住，再补四个斜向。
+   * 后续如果一级分支更多，再按照普通圆周顺序填剩余槽位。
+   */
+  const preferredFractions = [0, 0.5, 0.25, 0.75, 0.125, 0.625, 0.375, 0.875];
+  for (const fraction of preferredFractions) {
+    pushNearestUnusedSlot(Math.round(fraction * count) % count);
+  }
+
+  for (let index = 0; index < count; index += 1) {
+    if (!used.has(index)) {
+      used.add(index);
+      orderedSlotIndexes.push(index);
+    }
+  }
+
+  return orderedSlotIndexes.map((index) => baseAngles[index]);
 }
 
 /*
@@ -973,7 +1082,7 @@ export function placeRadialDescendants(parent, angle, collapsedIds) {
   const breadths = subtopics.map((subtopic) => radialSubtreeBreadth(subtopic, angle, collapsedIds));
   const totalBreadth =
     breadths.reduce((sum, breadth) => sum + breadth, 0) +
-    Math.max(0, subtopics.length - 1) * SIBLING_GAP;
+    Math.max(0, subtopics.length - 1) * RADIAL_SIBLING_GAP;
   const parentForward = radialExtent(parentBox, angle);
   let offset = -totalBreadth / 2;
 
@@ -981,7 +1090,7 @@ export function placeRadialDescendants(parent, angle, collapsedIds) {
     const subtopicBox = subtopic._layout;
     const breadth = breadths[index];
     const subtopicForward = radialExtent(subtopicBox, angle);
-    const along = parentForward + LEVEL_GAP + subtopicForward;
+    const along = parentForward + RADIAL_LEVEL_GAP + subtopicForward;
     const cross = offset + breadth / 2;
 
     subtopicBox.side = radialSide(angle);
@@ -990,7 +1099,7 @@ export function placeRadialDescendants(parent, angle, collapsedIds) {
     subtopicBox.y = parentBox.y + unit.y * along + normal.y * cross;
 
     placeRadialDescendants(subtopic, angle, collapsedIds);
-    offset += breadth + SIBLING_GAP;
+    offset += breadth + RADIAL_SIBLING_GAP;
   });
 }
 
@@ -1009,7 +1118,7 @@ export function radialSubtreeBreadth(topic, angle, collapsedIds) {
       (sum, subtopic) => sum + radialSubtreeBreadth(subtopic, angle, collapsedIds),
       0
     ) +
-    Math.max(0, subtopics.length - 1) * SIBLING_GAP;
+    Math.max(0, subtopics.length - 1) * RADIAL_SIBLING_GAP;
 
   return Math.max(ownBreadth, subtopicBreadth);
 }
@@ -1058,6 +1167,24 @@ export function radialBranchWeight(stat) {
 
 /*
  * 作用：
+ * 根据分支统计信息估算这个一级分支对空间的占用。
+ *
+ * 说明：
+ * 排方向时使用面积感更强的分数，而不是只看后代数量。
+ * 这样长文本分支、深层分支和直接子主题很多的分支都会优先拿到更独立的方向。
+ */
+export function radialBranchAreaScore(stat) {
+  return (
+    radialBranchWeight(stat) +
+    stat.directSubtopicCount * 1.2 +
+    stat.descendantCount * 0.45 +
+    stat.maxDepth * 1.1 +
+    stat.sizeScore * 1.8
+  );
+}
+
+/*
+ * 作用：
  * 根据分支内容和扇区宽度微调一级分支半径。
  *
  * 为什么需要半径补偿：
@@ -1066,10 +1193,167 @@ export function radialBranchWeight(stat) {
  */
 export function radialBranchRadius(baseRadius, topic, angle, slice, collapsedIds) {
   const breadth = radialSubtreeBreadth(topic, angle, collapsedIds);
-  const safeHalfAngle = Math.max(0.18, Math.min(slice * 0.36, Math.PI / 3));
+  const safeHalfAngle = Math.max(0.26, Math.min(slice * 0.48, Math.PI / 2.6));
   const requiredRadius = breadth / 2 / Math.tan(safeHalfAngle);
 
-  return Math.max(baseRadius, Math.min(baseRadius + 220, requiredRadius));
+  return Math.max(baseRadius, Math.min(baseRadius + RADIAL_RADIUS_EXTRA_LIMIT, requiredRadius));
+}
+
+/*
+ * 作用：
+ * 放射图排版后的防重叠修正。
+ *
+ * 为什么需要二次修正：
+ * 角度分配只能预估每个分支需要的扇区，真实主题是矩形，长文本、深层后代、不同方向的投影
+ * 都可能让两个相邻扇区实际碰到一起。因此这里把每个一级主题的整棵可见子树当成一个整体，
+ * 用矩形碰撞检测做最后一道保护，优先保证“不要重叠”。
+ */
+export function resolveRadialRootBranchCollisions(root, rootSubtopics, collapsedIds) {
+  for (let iteration = 0; iteration < RADIAL_COLLISION_ITERATIONS; iteration += 1) {
+    let moved = false;
+
+    /*
+     * 第一轮先处理中心主题和一级分支子树的碰撞。
+     * 中心主题是固定锚点，所以只把碰到中心主题的分支整体向外推。
+     */
+    for (const subtopic of rootSubtopics) {
+      const branchBounds = radialSubtreeBounds(subtopic, collapsedIds, RADIAL_COLLISION_MARGIN);
+      const rootBounds = radialTopicBounds(root._layout, RADIAL_COLLISION_MARGIN);
+      const push = radialCollisionPush(rootBounds, branchBounds);
+      if (!push) continue;
+
+      translateRadialSubtree(subtopic, push.dx, push.dy, collapsedIds);
+      updateRadialRootBranchDirection(root, subtopic);
+      moved = true;
+    }
+
+    /*
+     * 第二轮处理一级分支之间的碰撞。
+     * 两边各推一半，能保留整体围绕中心展开的感觉，不会让某一个分支承担全部位移。
+     */
+    for (let leftIndex = 0; leftIndex < rootSubtopics.length; leftIndex += 1) {
+      for (let rightIndex = leftIndex + 1; rightIndex < rootSubtopics.length; rightIndex += 1) {
+        const leftTopic = rootSubtopics[leftIndex];
+        const rightTopic = rootSubtopics[rightIndex];
+        const leftBounds = radialSubtreeBounds(leftTopic, collapsedIds, RADIAL_COLLISION_MARGIN);
+        const rightBounds = radialSubtreeBounds(rightTopic, collapsedIds, RADIAL_COLLISION_MARGIN);
+        const push = radialCollisionPush(leftBounds, rightBounds);
+        if (!push) continue;
+
+        translateRadialSubtree(leftTopic, -push.dx / 2, -push.dy / 2, collapsedIds);
+        translateRadialSubtree(rightTopic, push.dx / 2, push.dy / 2, collapsedIds);
+        updateRadialRootBranchDirection(root, leftTopic);
+        updateRadialRootBranchDirection(root, rightTopic);
+        moved = true;
+      }
+    }
+
+    if (!moved) return;
+  }
+}
+
+/*
+ * 作用：
+ * 计算一个放射分支整棵可见子树的外接矩形。
+ */
+export function radialSubtreeBounds(topic, collapsedIds, margin = 0) {
+  const topics = radialVisibleSubtreeTopics(topic, collapsedIds);
+  const left = Math.min(...topics.map((item) => item._layout.x - item._layout.width / 2));
+  const right = Math.max(...topics.map((item) => item._layout.x + item._layout.width / 2));
+  const top = Math.min(...topics.map((item) => item._layout.y - item._layout.height / 2));
+  const bottom = Math.max(...topics.map((item) => item._layout.y + item._layout.height / 2));
+
+  return {
+    left: left - margin,
+    right: right + margin,
+    top: top - margin,
+    bottom: bottom + margin,
+    x: (left + right) / 2,
+    y: (top + bottom) / 2,
+  };
+}
+
+/*
+ * 作用：
+ * 计算单个主题的外接矩形，主要用于中心主题这个固定碰撞体。
+ */
+export function radialTopicBounds(box, margin = 0) {
+  return {
+    left: box.x - box.width / 2 - margin,
+    right: box.x + box.width / 2 + margin,
+    top: box.y - box.height / 2 - margin,
+    bottom: box.y + box.height / 2 + margin,
+    x: box.x,
+    y: box.y,
+  };
+}
+
+/*
+ * 作用：
+ * 如果两个矩形发生重叠，计算把第二个矩形推出去所需的最小位移。
+ */
+export function radialCollisionPush(fixedBounds, movingBounds) {
+  const overlapX =
+    Math.min(fixedBounds.right, movingBounds.right) - Math.max(fixedBounds.left, movingBounds.left);
+  const overlapY =
+    Math.min(fixedBounds.bottom, movingBounds.bottom) - Math.max(fixedBounds.top, movingBounds.top);
+
+  if (overlapX <= 0 || overlapY <= 0) return null;
+
+  const signX = movingBounds.x >= fixedBounds.x ? 1 : -1;
+  const signY = movingBounds.y >= fixedBounds.y ? 1 : -1;
+
+  if (overlapX < overlapY) {
+    return { dx: signX * (overlapX + 1), dy: 0 };
+  }
+
+  return { dx: 0, dy: signY * (overlapY + 1) };
+}
+
+/*
+ * 作用：
+ * 收集一个放射分支下所有未折叠的可见主题。
+ */
+export function radialVisibleSubtreeTopics(topic, collapsedIds) {
+  const topics = [topic];
+  if (collapsedIds.has(topic.id)) return topics;
+
+  for (const subtopic of topic.subtopics) {
+    topics.push(...radialVisibleSubtreeTopics(subtopic, collapsedIds));
+  }
+
+  return topics;
+}
+
+/*
+ * 作用：
+ * 整体平移一个放射分支子树。
+ */
+export function translateRadialSubtree(topic, dx, dy, collapsedIds) {
+  topic._layout.x += dx;
+  topic._layout.y += dy;
+  if (collapsedIds.has(topic.id)) return;
+
+  for (const subtopic of topic.subtopics) {
+    translateRadialSubtree(subtopic, dx, dy, collapsedIds);
+  }
+}
+
+/*
+ * 作用：
+ * 分支子树被碰撞修正整体平移后，更新一级主题相对中心主题的角度和方向。
+ *
+ * 注意：
+ * 只更新一级主题本身。它的后代和父主题一起平移，父子相对方向没有改变，
+ * 所以后代仍然保留原来的 radialAngle。
+ */
+export function updateRadialRootBranchDirection(root, subtopic) {
+  const angle = Math.atan2(
+    subtopic._layout.y - root._layout.y,
+    subtopic._layout.x - root._layout.x
+  );
+  subtopic._layout.radialAngle = angle;
+  subtopic._layout.side = radialSide(angle);
 }
 
 /*
