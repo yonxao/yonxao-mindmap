@@ -58,6 +58,15 @@ const ORG_RIGHT_DESCENDANT_LEVEL_GAP = Math.round(LEVEL_GAP * 0.62);
 const ORG_RIGHT_DESCENDANT_SIBLING_GAP = Math.max(8, Math.round(SIBLING_GAP * 0.56));
 
 /*
+ * 时间轴详情区不是普通的“父子左右展开”，而是挂在时间轴竖线旁的事件详情树。
+ * 如果直接复用全局间距，三四级主题很容易贴在一起；这里单独放大一点，
+ * 让时间点下的详情内容读起来更像一组自然展开的事件说明。
+ */
+const TIMELINE_DETAIL_LEVEL_GAP = Math.round(LEVEL_GAP * 1.22);
+const TIMELINE_DETAIL_SIBLING_GAP = Math.max(24, Math.round(SIBLING_GAP * 1.35));
+const TIMELINE_AXIS_DETAIL_GAP = Math.max(30, Math.round(SIBLING_GAP * 1.7));
+
+/*
  * 作用：
  * 计算整棵思维导图的可见主题、连线和整体边界。
  *
@@ -827,14 +836,14 @@ export function placeTimelineDetails(parent, branchSide, collapsedIds) {
   );
   const totalHeight =
     heights.reduce((sum, height) => sum + height, 0) +
-    Math.max(0, subtopics.length - 1) * SIBLING_GAP;
+    Math.max(0, subtopics.length - 1) * TIMELINE_DETAIL_SIBLING_GAP;
   const isDetailParent =
     parentBox.side === 'timeline-detail-top' || parentBox.side === 'timeline-detail-bottom';
   let y = isDetailParent
     ? parentBox.y - totalHeight / 2
     : branchSide === 'timeline-top'
-      ? parentBox.y - parentBox.height / 2 - SIBLING_GAP - totalHeight
-      : parentBox.y + parentBox.height / 2 + SIBLING_GAP;
+      ? parentBox.y - parentBox.height / 2 - TIMELINE_AXIS_DETAIL_GAP - totalHeight
+      : parentBox.y + parentBox.height / 2 + TIMELINE_AXIS_DETAIL_GAP;
 
   for (let index = 0; index < subtopics.length; index += 1) {
     const subtopic = subtopics[index];
@@ -844,7 +853,12 @@ export function placeTimelineDetails(parent, branchSide, collapsedIds) {
 
     subtopicBox.side = isTopBranch ? 'timeline-detail-top' : 'timeline-detail-bottom';
     subtopicBox.timelineBranchSide = branchSide;
-    subtopicBox.x = parentBox.x + LEVEL_GAP + subtopicBox.width / 2;
+    /*
+     * 时间轴详情树使用更大的横向推进距离。
+     * 这样父主题右侧出口、竖向目录线和子主题之间会留出呼吸感，
+     * 避免多级节点挤成一团。
+     */
+    subtopicBox.x = parentBox.x + TIMELINE_DETAIL_LEVEL_GAP + subtopicBox.width / 2;
     /*
      * 每个主题都放在自己完整子树占位块的中线位置。
      * 这样当某个详情主题继续展开子主题时，父主题右侧出口能自然对齐子主题组的总高度中线。
@@ -852,7 +866,7 @@ export function placeTimelineDetails(parent, branchSide, collapsedIds) {
     subtopicBox.y = y + height / 2;
 
     placeTimelineDetails(subtopic, branchSide, collapsedIds);
-    y += height + SIBLING_GAP;
+    y += height + TIMELINE_DETAIL_SIBLING_GAP;
   }
 }
 
@@ -870,7 +884,7 @@ export function timelinePointWidth(topic, collapsedIds) {
     0
   );
 
-  return Math.max(box.width, box.width / 2 + LEVEL_GAP + subtopicWidth);
+  return Math.max(box.width, box.width / 2 + TIMELINE_DETAIL_LEVEL_GAP + subtopicWidth);
 }
 
 /*
@@ -887,7 +901,7 @@ export function timelineDetailSubtreeHeight(topic, branchSide, collapsedIds) {
       (sum, subtopic) => sum + timelineDetailSubtreeHeight(subtopic, branchSide, collapsedIds),
       0
     ) +
-    Math.max(0, subtopics.length - 1) * SIBLING_GAP;
+    Math.max(0, subtopics.length - 1) * TIMELINE_DETAIL_SIBLING_GAP;
 
   /*
    * 详情树是向右展开的：父主题和子主题组在横向上分列，垂直占位取二者较大值。
