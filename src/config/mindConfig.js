@@ -17,7 +17,7 @@
  * ```
  *
  * 设计思路：
- * - “配置区”只保存全局默认值，例如画布高度、工具栏位置、字体和主题默认样式。
+ * - “配置区”只保存全局默认值，例如幕布高度、工具栏位置、字体和主题默认样式。
  * - “正文区”只保存 主题级别标记主题，例如 #、##、###。
  * - 标题后的主题属性 [color=...]、[fontSize=...] 仍然保留，用来覆盖全局配置。
  *
@@ -276,7 +276,7 @@ export function resolveTopicFont(topic, config) {
  * 更新配置对象中的某条路径，并返回新的配置对象。
  *
  * 调用场景：
- * 画布高度拖拽结束后写入 canvas.height；工具栏拖动结束后写入 toolbar.x/y。
+ * 高度拖拽条结束后写入 canvas.height；工具栏拖动结束后写入 toolbar.x/y。
  */
 export function setMindConfigPath(rawConfig, path, value) {
   const next = clonePlainObject(rawConfig);
@@ -297,7 +297,7 @@ export function setMindConfigPath(rawConfig, path, value) {
  * 删除配置对象中的某条路径，并清理空父级。
  *
  * 调用场景：
- * 用户双击高度手柄恢复自动高度时，删除 canvas.height。
+ * 用户双击高度拖拽条恢复自动高度时，删除 canvas.height。
  */
 export function deleteMindConfigPath(rawConfig, path) {
   const next = clonePlainObject(rawConfig);

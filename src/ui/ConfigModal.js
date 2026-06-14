@@ -3,7 +3,7 @@
  * 这里定义可视化配置弹框，让用户不用手写 YAML 也能调整 yxmm 配置区。
  *
  * 主要功能：
- * - 基础：画布高度、源码高度、工具栏位置。
+ * - 基础：幕布高度、源码高度、工具栏位置。
  * - 主题：主题名、默认主题颜色。
  * - 结构：布局类型、主题最大宽度。
  * - 字体：全局字体与 1/2/3 级标题字体。
@@ -163,7 +163,7 @@ export class ConfigModal extends Modal {
       max: 1800,
       step: 10,
       placeholder: '自动',
-      help: '留空表示自动高度。拖动画布底部也会写入这个值。',
+      help: '留空表示自动高度。拖动幕布底部也会写入这个值。',
     });
     this.createNumberField('源码高度', ['source', 'height'], normalized.source.height, {
       min: 96,

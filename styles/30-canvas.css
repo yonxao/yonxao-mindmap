@@ -1,21 +1,21 @@
 /*
  * 文件作用：
- * 这里定义 SVG 画布和底部高度拖拽手柄的样式。
+ * 这里定义 SVG 幕布和底部高度拖拽条的样式。
  *
  * 执行逻辑：
- * SVG 占满 container，拖动画布时切换 is-panning；底部 resize handle 负责给用户一个可拖拽区域。
+ * SVG 占满 container，平移时切换 is-panning；底部高度拖拽条负责给用户一个可拖拽区域。
  * 当 container 进入源码模式时，SVG 被隐藏，源码编辑区接管可视区域。
  *
  * 调用链位置：
- * YonxaoMindmapRenderer.createSvg()/createResizeHandle() -> 本文件控制画布和高度手柄。
+ * YonxaoMindmapRenderer.createSvg()/createHeightResizeHandle() -> 本文件控制幕布和高度拖拽条。
  */
 
 /*
  * 作用：
- * SVG 主画布，承载所有主题、连线和交互区域。
+ * SVG 主幕布，承载所有主题、连线和交互区域。
  *
  * 关键点：
- * touch-action: none 避免触摸设备默认滚动手势干扰画布拖拽。
+ * touch-action: none 避免触摸设备默认滚动手势干扰平移。
  */
 .yonxao-mindmap-svg {
   display: block;
@@ -28,7 +28,7 @@
 
 /*
  * 作用：
- * 画布平移时切换抓取光标。
+ * 平移时切换抓取光标。
  */
 .yonxao-mindmap-svg.is-panning {
   cursor: grabbing;
@@ -36,12 +36,12 @@
 
 /*
  * 作用：
- * 底部高度拖拽手柄的可交互区域。
+ * 底部高度拖拽条的可交互区域。
  *
  * 调用链：
- * Renderer.createResizeHandle() 创建该元素，pointer 事件由 renderer 处理。
+ * Renderer.createHeightResizeHandle() 创建该元素，pointer 事件由 renderer 处理。
  */
-.yonxao-mindmap-resize-handle {
+.yonxao-mindmap-height-resize-handle {
   position: absolute;
   z-index: 5;
   left: 0;
@@ -55,9 +55,9 @@
 
 /*
  * 作用：
- * 高度拖拽手柄的视觉提示条。
+ * 高度拖拽条的视觉提示条。
  */
-.yonxao-mindmap-resize-handle::before {
+.yonxao-mindmap-height-resize-handle::before {
   content: '';
   position: absolute;
   left: 50%;
@@ -75,9 +75,9 @@
  * 作用：
  * hover、拖拽中或键盘聚焦时显示拖拽提示条。
  */
-.yonxao-mindmap-host:hover .yonxao-mindmap-resize-handle::before,
-.yonxao-mindmap-container.is-resizing .yonxao-mindmap-resize-handle::before,
-.yonxao-mindmap-resize-handle:focus-visible::before {
+.yonxao-mindmap-host:hover .yonxao-mindmap-height-resize-handle::before,
+.yonxao-mindmap-container.is-resizing .yonxao-mindmap-height-resize-handle::before,
+.yonxao-mindmap-height-resize-handle:focus-visible::before {
   opacity: 0.9;
 }
 

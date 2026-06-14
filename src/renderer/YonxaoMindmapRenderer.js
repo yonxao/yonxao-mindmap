@@ -3,10 +3,10 @@
  * 这是插件的核心渲染器，负责把 yxmm 源码变成可交互的思维导图界面。
  *
  * 主要功能：
- * - 创建工具栏、SVG 画布、源码编辑区、主题编辑面板和高度拖拽手柄。
+ * - 创建工具栏、SVG 幕布、源码编辑区、主题编辑面板和高度拖拽条。
  * - 调用 parser 把 主题级别标记源码解析成树。
  * - 调用 layout 计算主题坐标，再把主题和连线绘制成 SVG。
- * - 处理源码保存、导图主题编辑、折叠/展开、缩放、拖动画布和高度调整。
+ * - 处理源码保存、导图主题编辑、折叠/展开、缩放、拖动幕布和高度调整。
  *
  * 调用链位置：
  * YonxaoMindmapPlugin -> new YonxaoMindmapRenderer(...) -> mount() -> renderMap()
@@ -80,7 +80,7 @@ export class YonxaoMindmapRenderer extends Component {
     this.svgEl = null;
     this.mapEl = null;
     this.sourceEl = null;
-    this.resizeHandleEl = null;
+    this.heightResizeHandleEl = null;
     this.sourceInputEl = null;
     this.sourceStatusEl = null;
     this.topicEditorEl = null;
@@ -92,9 +92,9 @@ export class YonxaoMindmapRenderer extends Component {
     this.topicById = new Map();
     this.collapsedIds = new Set();
     this.viewBox = null;
-    this.dragState = null;
+    this.panState = null;
     this.topicDragState = null;
-    this.resizeState = null;
+    this.heightResizeState = null;
     this.toolbarDragState = null;
     this.manualCanvasHeight = false;
     this.manualSourceHeight = false;
@@ -149,7 +149,7 @@ export class YonxaoMindmapRenderer extends Component {
     this.createSvg();
     this.createSourceView();
     this.createTopicEditor();
-    this.createResizeHandle();
+    this.createHeightResizeHandle();
     this.applyRuntimeConfigToView();
     this.installEventBoundary();
     this.renderMap(true);
@@ -191,7 +191,7 @@ export class YonxaoMindmapRenderer extends Component {
    * 阅读视图通常位于 .markdown-reading-view/.markdown-preview-view。
    *
    * 注意：
-   * 折叠/展开、画布平移、工具栏缩放这类浏览行为不依赖这个判断。
+   * 折叠/展开、平移、缩放这类浏览行为不依赖这个判断。
    */
   canEditMindMap() {
     if (this.editorContext) return true;
@@ -209,7 +209,7 @@ export class YonxaoMindmapRenderer extends Component {
    * 把配置区里的运行时配置应用到当前 DOM 视图。
    *
    * 目前接入：
-   * - canvas.height 控制画布手动高度。
+   * - canvas.height 控制幕布手动高度。
    * - toolbar.x/y 控制工具栏初始位置。
    */
   applyRuntimeConfigToView() {
@@ -220,7 +220,7 @@ export class YonxaoMindmapRenderer extends Component {
 
   /*
    * 作用：
-   * 根据配置区 canvas.height 恢复用户上次手动调整的画布高度。
+   * 根据配置区 canvas.height 恢复用户上次手动调整的幕布高度。
    */
   applyConfiguredCanvasHeight() {
     if (!this.containerEl) return;
@@ -360,7 +360,7 @@ export class YonxaoMindmapRenderer extends Component {
       this.createToolbarButton(toolbar, '缩小', 'zoom-out', () => this.zoomAtCenter(1.18))
     );
     this.mapActionButtons.push(
-      this.createToolbarButton(toolbar, '重置', 'refresh-cw', () => {
+      this.createToolbarButton(toolbar, '重置折叠状态', 'refresh-cw', () => {
         this.collapsedIds.clear();
         this.renderMap(true);
       })
@@ -371,7 +371,7 @@ export class YonxaoMindmapRenderer extends Component {
 
   /*
    * 作用：
-   * 创建工具栏拖拽手柄，用来调整工具栏位置。
+   * 创建工具栏抓手，用来调整工具栏位置。
    *
    * 实现逻辑：
    * 只让这个小手柄负责拖动，普通工具按钮仍然保持点击语义，避免拖拽逻辑抢走按钮点击。
@@ -768,7 +768,7 @@ export class YonxaoMindmapRenderer extends Component {
 
   /*
    * 作用：
-   * 创建 SVG 画布并注册画布交互事件。
+   * 创建 SVG 幕布并注册幕布交互事件。
    *
    * 调用链：
    * mount() -> createSvg()；后续 renderMap() 会向 mapEl 写入主题和连线。
@@ -787,10 +787,10 @@ export class YonxaoMindmapRenderer extends Component {
     this.registerDomEvent(this.svgEl, 'dblclick', (event) => this.handleTopicDoubleClick(event));
     this.registerDomEvent(this.svgEl, 'contextmenu', (event) => this.handleTopicContextMenu(event));
     this.registerDomEvent(this.svgEl, 'wheel', (event) => this.handleWheel(event));
-    this.registerDomEvent(this.svgEl, 'pointerdown', (event) => this.handlePointerDown(event));
-    this.registerDomEvent(this.svgEl, 'pointermove', (event) => this.handlePointerMove(event));
-    this.registerDomEvent(this.svgEl, 'pointerup', (event) => this.handlePointerUp(event));
-    this.registerDomEvent(this.svgEl, 'pointercancel', (event) => this.handlePointerUp(event));
+    this.registerDomEvent(this.svgEl, 'pointerdown', (event) => this.handlePanPointerDown(event));
+    this.registerDomEvent(this.svgEl, 'pointermove', (event) => this.handlePanPointerMove(event));
+    this.registerDomEvent(this.svgEl, 'pointerup', (event) => this.handlePanPointerUp(event));
+    this.registerDomEvent(this.svgEl, 'pointercancel', (event) => this.handlePanPointerUp(event));
   }
 
   /*
@@ -855,50 +855,50 @@ export class YonxaoMindmapRenderer extends Component {
 
   /*
    * 作用：
-   * 创建画布底部高度拖拽手柄。
+   * 创建幕布底部高度拖拽条。
    *
    * 调用链：
-   * mount() -> createResizeHandle() -> handleResizePointerDown/Move/Up()。
+   * mount() -> createHeightResizeHandle() -> handleHeightResizePointerDown/Move/Up()。
    */
-  createResizeHandle() {
-    this.resizeHandleEl = document.createElement('div');
-    this.resizeHandleEl.className = 'yonxao-mindmap-resize-handle';
-    this.resizeHandleEl.setAttribute('role', 'separator');
-    this.resizeHandleEl.setAttribute('aria-orientation', 'horizontal');
-    this.resizeHandleEl.setAttribute('aria-label', '调整幕布高度');
-    this.resizeHandleEl.setAttribute('title', '拖拽调整幕布高度');
-    this.containerEl.appendChild(this.resizeHandleEl);
+  createHeightResizeHandle() {
+    this.heightResizeHandleEl = document.createElement('div');
+    this.heightResizeHandleEl.className = 'yonxao-mindmap-height-resize-handle';
+    this.heightResizeHandleEl.setAttribute('role', 'separator');
+    this.heightResizeHandleEl.setAttribute('aria-orientation', 'horizontal');
+    this.heightResizeHandleEl.setAttribute('aria-label', '调整幕布高度');
+    this.heightResizeHandleEl.setAttribute('title', '拖拽调整幕布高度');
+    this.containerEl.appendChild(this.heightResizeHandleEl);
 
-    this.registerDomEvent(this.resizeHandleEl, 'pointerdown', (event) => {
-      this.handleResizePointerDown(event);
+    this.registerDomEvent(this.heightResizeHandleEl, 'pointerdown', (event) => {
+      this.handleHeightResizePointerDown(event);
     });
-    this.registerDomEvent(this.resizeHandleEl, 'pointermove', (event) => {
-      this.handleResizePointerMove(event);
+    this.registerDomEvent(this.heightResizeHandleEl, 'pointermove', (event) => {
+      this.handleHeightResizePointerMove(event);
     });
-    this.registerDomEvent(this.resizeHandleEl, 'pointerup', (event) => {
-      this.handleResizePointerUp(event);
+    this.registerDomEvent(this.heightResizeHandleEl, 'pointerup', (event) => {
+      this.handleHeightResizePointerUp(event);
     });
-    this.registerDomEvent(this.resizeHandleEl, 'pointercancel', (event) => {
-      this.handleResizePointerUp(event);
+    this.registerDomEvent(this.heightResizeHandleEl, 'pointercancel', (event) => {
+      this.handleHeightResizePointerUp(event);
     });
-    this.registerDomEvent(this.resizeHandleEl, 'dblclick', (event) => {
+    this.registerDomEvent(this.heightResizeHandleEl, 'dblclick', (event) => {
       event.preventDefault();
       event.stopPropagation();
-      this.resetCanvasHeight();
+      this.resetManualHeight();
     });
   }
 
   /*
    * 作用：
-   * 开始调整画布高度，记录拖拽起点和初始高度。
+   * 开始调整幕布高度，记录拖拽起点和初始高度。
    */
-  handleResizePointerDown(event) {
+  handleHeightResizePointerDown(event) {
     if (!this.containerEl) return;
 
     event.preventDefault();
     event.stopPropagation();
 
-    this.resizeState = {
+    this.heightResizeState = {
       pointerId: event.pointerId,
       clientY: event.clientY,
       startHeight: this.containerEl.getBoundingClientRect().height,
@@ -911,7 +911,7 @@ export class YonxaoMindmapRenderer extends Component {
     this.containerEl.classList.add('is-resizing');
 
     try {
-      this.resizeHandleEl.setPointerCapture(event.pointerId);
+      this.heightResizeHandleEl.setPointerCapture(event.pointerId);
     } catch (_error) {
       // 旧版 WebView 可能不支持 Pointer Capture，不影响基本拖拽。
     }
@@ -922,35 +922,35 @@ export class YonxaoMindmapRenderer extends Component {
    * 根据指针移动距离实时更新容器高度。
    *
    * 实现逻辑：
-   * 高度通过 clamp 限制在最小画布高度和 maxCanvasHeight 之间。
+   * 高度通过 clamp 限制在最小幕布高度和 maxManualHeight 之间。
    */
-  handleResizePointerMove(event) {
-    if (!this.resizeState || !this.containerEl) return;
+  handleHeightResizePointerMove(event) {
+    if (!this.heightResizeState || !this.containerEl) return;
 
     event.preventDefault();
-    const deltaY = event.clientY - this.resizeState.clientY;
+    const deltaY = event.clientY - this.heightResizeState.clientY;
     const nextHeight = clamp(
-      this.resizeState.startHeight + deltaY,
+      this.heightResizeState.startHeight + deltaY,
       CANVAS_MIN_HEIGHT,
-      this.maxCanvasHeight()
+      this.maxManualHeight()
     );
     this.containerEl.style.height = `${Math.round(nextHeight)}px`;
   }
 
   /*
    * 作用：
-   * 结束画布高度拖拽，并释放 pointer capture。
+   * 结束高度拖拽条，并释放 pointer capture。
    */
-  handleResizePointerUp(event) {
-    if (!this.resizeState) return;
+  handleHeightResizePointerUp(event) {
+    if (!this.heightResizeState) return;
 
     try {
-      this.resizeHandleEl.releasePointerCapture(event.pointerId);
+      this.heightResizeHandleEl.releasePointerCapture(event.pointerId);
     } catch (_error) {
       // 未捕获指针时释放会失败，可以安全忽略。
     }
 
-    this.resizeState = null;
+    this.heightResizeState = null;
     if (this.containerEl) {
       this.containerEl.classList.remove('is-resizing');
       const height = Math.round(this.containerEl.getBoundingClientRect().height);
@@ -968,18 +968,18 @@ export class YonxaoMindmapRenderer extends Component {
 
   /*
    * 作用：
-   * 计算当前窗口下允许的最大手动画布高度。
+   * 计算当前窗口下允许的最大手动高度。
    */
-  maxCanvasHeight() {
+  maxManualHeight() {
     const viewportHeight = typeof window === 'undefined' ? 900 : window.innerHeight;
     return Math.max(CANVAS_MIN_HEIGHT, Math.min(CANVAS_MAX_HEIGHT, viewportHeight * 1.6));
   }
 
   /*
    * 作用：
-   * 清除手动高度，恢复自动适配高度。
+   * 清除手动高度，恢复自动高度。
    */
-  resetCanvasHeight() {
+  resetManualHeight() {
     if (!this.containerEl) return;
 
     this.manualCanvasHeight = false;
@@ -1100,7 +1100,7 @@ export class YonxaoMindmapRenderer extends Component {
     const nextHeight = clamp(
       inputHeight + sourcePadding + sourceGap + statusHeight + extraSpace,
       CANVAS_MIN_HEIGHT,
-      this.maxCanvasHeight()
+      this.maxManualHeight()
     );
 
     this.containerEl.style.height = `${Math.round(nextHeight)}px`;
@@ -1678,7 +1678,7 @@ export class YonxaoMindmapRenderer extends Component {
    * 只保存运行时配置，不改变主题树正文。
    *
    * 调用场景：
-   * 画布高度拖拽、工具栏位置拖拽这类交互只更新配置区。
+   * 高度拖拽条、工具栏位置拖拽这类交互只更新配置区。
    */
   async saveRuntimeConfigToFile() {
     const runtimeDocument = this.buildRuntimeDocumentForSave();
@@ -3357,7 +3357,7 @@ export class YonxaoMindmapRenderer extends Component {
    * 处理主题右键菜单。
    *
    * 实现逻辑：
-   * 只在右键点到真实主题时弹出菜单；右键空白画布仍交给 Obsidian 或浏览器默认行为。
+   * 只在右键点到真实主题时弹出菜单；右键空白幕布仍交给 Obsidian 或浏览器默认行为。
    * 菜单使用 Obsidian 原生 Menu，能自动适配不同主题和平台。
    */
   handleTopicContextMenu(event) {
@@ -3544,12 +3544,12 @@ export class YonxaoMindmapRenderer extends Component {
 
   /*
    * 作用：
-   * 开始画布平移拖拽。
+   * 开始平移。
    *
    * 实现逻辑：
    * 只在非主题区域响应左键拖拽，避免和主题点击/编辑冲突。
    */
-  handlePointerDown(event) {
+  handlePanPointerDown(event) {
     if (event.button !== 0 || !this.viewBox) return;
 
     const target = event.target;
@@ -3566,7 +3566,7 @@ export class YonxaoMindmapRenderer extends Component {
       return;
     }
 
-    this.dragState = {
+    this.panState = {
       pointerId: event.pointerId,
       clientX: event.clientX,
       clientY: event.clientY,
@@ -3583,35 +3583,35 @@ export class YonxaoMindmapRenderer extends Component {
 
   /*
    * 作用：
-   * 根据拖拽距离更新 SVG viewBox，实现画布平移。
+   * 根据拖拽距离更新 SVG viewBox，实现平移。
    */
-  handlePointerMove(event) {
+  handlePanPointerMove(event) {
     if (this.topicDragState) {
       this.handleTopicDragMove(event);
       return;
     }
 
-    if (!this.dragState || !this.viewBox) return;
+    if (!this.panState || !this.viewBox) return;
     const rect = this.svgEl.getBoundingClientRect();
     if (!rect.width || !rect.height) return;
 
-    const dx = event.clientX - this.dragState.clientX;
-    const dy = event.clientY - this.dragState.clientY;
+    const dx = event.clientX - this.panState.clientX;
+    const dy = event.clientY - this.panState.clientY;
 
     this.viewBox = {
-      x: this.dragState.startViewBox.x - (dx * this.dragState.startViewBox.width) / rect.width,
-      y: this.dragState.startViewBox.y - (dy * this.dragState.startViewBox.height) / rect.height,
-      width: this.dragState.startViewBox.width,
-      height: this.dragState.startViewBox.height,
+      x: this.panState.startViewBox.x - (dx * this.panState.startViewBox.width) / rect.width,
+      y: this.panState.startViewBox.y - (dy * this.panState.startViewBox.height) / rect.height,
+      width: this.panState.startViewBox.width,
+      height: this.panState.startViewBox.height,
     };
     this.applyViewBox();
   }
 
   /*
    * 作用：
-   * 结束画布平移拖拽。
+   * 结束平移。
    */
-  handlePointerUp(event) {
+  handlePanPointerUp(event) {
     if (this.topicDragState) {
       Promise.resolve(this.finishTopicDrag(event)).catch((error) => {
         new Notice(`yonxao-mindmap: ${error.message || String(error)}`);
@@ -3619,7 +3619,7 @@ export class YonxaoMindmapRenderer extends Component {
       return;
     }
 
-    if (!this.dragState) return;
+    if (!this.panState) return;
 
     try {
       this.svgEl.releasePointerCapture(event.pointerId);
@@ -3627,7 +3627,7 @@ export class YonxaoMindmapRenderer extends Component {
       // 没有捕获到指针时释放会失败，这里安全忽略。
     }
 
-    this.dragState = null;
+    this.panState = null;
     this.svgEl.classList.remove('is-panning');
   }
 
@@ -3905,7 +3905,7 @@ export class YonxaoMindmapRenderer extends Component {
 
   /*
    * 作用：
-   * 根据布局边界计算并应用适配视图的 viewBox。
+   * 根据布局边界计算并应用适配视图的视口。
    */
   fitView(bounds, options = {}) {
     if (this.isSourceMode) {
@@ -3932,7 +3932,7 @@ export class YonxaoMindmapRenderer extends Component {
 
   /*
    * 作用：
-   * 根据 viewBox 宽高比自动设置容器高度。
+   * 根据 视口宽高比自动设置容器高度。
    *
    * 实现逻辑：
    * 如果用户手动拖过高度，普通重绘会完全尊重手动高度，哪怕它小于自动计算高度。
@@ -4013,7 +4013,7 @@ export class YonxaoMindmapRenderer extends Component {
 
   /*
    * 作用：
-   * 按给定中心点缩放 viewBox。
+   * 按给定中心点缩放视口。
    */
   zoomViewBox(factor, centerX, centerY) {
     const nextWidth = clamp(this.viewBox.width * factor, 120, 8000);
@@ -4032,7 +4032,7 @@ export class YonxaoMindmapRenderer extends Component {
 
   /*
    * 作用：
-   * 把浏览器 client 坐标转换成 SVG viewBox 坐标。
+   * 把浏览器 client 坐标转换成 SVG 视口坐标。
    */
   clientPointToSvg(clientX, clientY) {
     const rect = this.svgEl.getBoundingClientRect();

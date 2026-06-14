@@ -4,7 +4,7 @@
  *
  * 执行逻辑：
  * 当解析失败或运行失败时显示 message/error；当用户点击主题编辑按钮时显示 topic-editor。
- * 面板固定在画布左下角，避免遮挡 Obsidian 右上角的原生“编辑这个块”按钮。
+ * 面板固定在幕布左下角，避免遮挡 Obsidian 右上角的原生“编辑这个块”按钮。
  *
  * 调用链位置：
  * YonxaoMindmapRenderer.renderMessage()/createTopicEditor() -> 本文件控制提示和面板。
@@ -49,7 +49,7 @@
 
 /*
  * 作用：
- * 主题编辑面板主体，固定在画布左下角。
+ * 主题编辑面板主体，固定在幕布左下角。
  */
 .yonxao-mindmap-topic-editor {
   position: absolute;

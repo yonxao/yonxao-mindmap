@@ -3,8 +3,8 @@
  * 这里定义源码模式的编辑区域、textarea 和保存状态提示。
  *
  * 设计边界：
- * 工具栏样式归 20-toolbar.css，SVG 和高度手柄归 30-canvas.css。
- * 本文件只关心源码模式本身，这样后续调整源码编辑体验时不会影响导图画布。
+ * 工具栏样式归 20-toolbar.css，SVG 和高度拖拽条归 30-canvas.css。
+ * 本文件只关心源码模式本身，这样后续调整源码编辑体验时不会影响导图幕布。
  *
  * 调用链位置：
  * YonxaoMindmapRenderer.createSourceView() -> 本文件控制源码模式 UI。

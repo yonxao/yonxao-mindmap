@@ -141,24 +141,32 @@ yonxao-mindmap uses these terms consistently across docs, config, UI text, and c
 | ------------- | ---------------------- | --------------------------------- | ------------------------------------------------------------------ |
 | 悬浮工具栏    | floating toolbar       | `toolbar.x` / `toolbar.y`         | Holds common action buttons and can be dragged.                    |
 | 配置弹框      | config modal           | -                                 | Visually edits theme, layout, font, source, and advanced settings. |
+| 主题编辑面板  | topic editor           | -                                 | Edits topic text, color, icon, layout, and related settings.       |
 | 编辑按钮      | edit button            | -                                 | Opens the topic editor; some compact layouts hide it.              |
 | 折叠/展开按钮 | collapse/expand button | -                                 | Hides or shows the current topic's subtree.                        |
 | 新增按钮      | add button             | -                                 | Adds a child topic or sibling topic.                               |
 | 右键菜单      | context menu           | -                                 | Provides topic actions such as add, delete, collapse, and expand.  |
+| 源码编辑区    | source editor          | -                                 | The text editing area in source mode.                              |
 | 工具栏抓手    | toolbar grip           | -                                 | Drags the floating toolbar.                                        |
 | 高度拖拽条    | height resize handle   | `canvas.height` / `source.height` | Adjusts map canvas height or source-mode height.                   |
 
 ### Visual And Interaction Areas
 
-| 中文术语     | English Term        | yxmm Term / Config Key | Purpose                                                                            |
-| ------------ | ------------------- | ---------------------- | ---------------------------------------------------------------------------------- |
-| 幕布         | canvas              | `canvas.height`        | The visible area that hosts the SVG map.                                           |
-| 视口         | viewport            | -                      | The current SVG coordinate range being viewed; panning and zooming change it.      |
-| 主题卡片     | topic card          | -                      | The rectangular visual shape of a topic, including background, border, and radius. |
-| 主题         | theme               | `theme`                | Controls the overall color scheme.                                                 |
-| 默认主题颜色 | default topic color | `topic.defaultColor`   | Overrides theme auto topic colors; topic attribute `color` still wins.             |
-| 字体         | font                | `font.*`               | Controls topic text styling.                                                       |
-| 连线线型     | connector style     | `connector.style`      | Controls whether connectors are curved, straight, or orthogonal.                   |
+| 中文术语     | English Term         | yxmm Term / Config Key | Purpose                                                                            |
+| ------------ | -------------------- | ---------------------- | ---------------------------------------------------------------------------------- |
+| 幕布         | canvas               | `canvas.height`        | The visible area that hosts the SVG map.                                           |
+| 视口         | viewport             | -                      | The current SVG coordinate range being viewed; panning and zooming change it.      |
+| 主题卡片     | topic card           | -                      | The rectangular visual shape of a topic, including background, border, and radius. |
+| 主题色系     | theme                | -                      | Controls the overall color scheme, distinct from topic.                            |
+| 默认主题颜色 | default topic color  | `topic.defaultColor`   | Overrides theme auto topic colors; topic attribute `color` still wins.             |
+| 字体         | font                 | `font.*`               | Controls topic text styling.                                                       |
+| 连线线型     | connector style      | `connector.style`      | Controls whether connectors are curved, straight, or orthogonal.                   |
+| 平移         | pan                  | -                      | Drags the canvas to change the viewport position.                                  |
+| 缩放         | zoom                 | -                      | Zooms the current viewport in or out.                                              |
+| 适配视图     | fit view             | -                      | Automatically adjusts the viewport so the map is shown as completely as possible.  |
+| 重置折叠状态 | reset collapse state | -                      | Clears current collapse records and expands all topics.                            |
+| 自动高度     | auto height          | -                      | Automatically calculates canvas height from map content.                           |
+| 手动高度     | manual height        | `canvas.height`        | The persisted canvas height after user resizing.                                   |
 
 ## Config Block
 
@@ -219,11 +227,11 @@ Layout types:
 - In source view, Tab/Shift+Tab promotes or demotes selected heading lines.
 - In editor/Live Preview mind map view, hover a topic and click the small edit button to edit text, color, icon, or layout.
 - The topic editor can also add a child topic or delete the selected topic.
-- Use the toolbar to fit, zoom in, zoom out, or reset collapsed nodes.
+- Use the toolbar to fit view, zoom in, zoom out, or reset collapse state.
 - Use the toolbar settings button to open the visual config modal; common fields have select presets, and the advanced tab supports direct YAML editing.
 - Drag the toolbar grip to move the floating toolbar away from content.
 - Drag the canvas to pan. By default, the mouse wheel keeps scrolling the Obsidian page; enable mouse-wheel zoom in the Basic tab of the config modal to zoom the current mind map with the wheel.
-- Drag the bottom connector of the canvas to manually adjust its height. Double-click the handle to return to automatic height.
+- Drag the canvas height resize handle to set manual height. Double-click the handle to return to auto height.
 
 Edits are written back to the same `yxmm` code block in the current Markdown file.
 
