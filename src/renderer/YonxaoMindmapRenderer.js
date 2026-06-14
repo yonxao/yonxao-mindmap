@@ -2049,7 +2049,7 @@ export class YonxaoMindmapRenderer extends Component {
      * 如果画成一整条单色线，就会丢失分支颜色；如果每条 root 边都重复画一遍，
      * 后绘制的分支又会覆盖前面的颜色。因此这里按一级主题位置分段绘制。
      */
-    this.renderRootTrunkSegments(
+    this.renderBranchColoredTrunkFromOrigin(
       groupEl,
       rootSubtopicConnectors,
       {
@@ -2158,7 +2158,7 @@ export class YonxaoMindmapRenderer extends Component {
         opacityStyle
       )
     );
-    this.renderRootTrunkSegments(
+    this.renderBranchColoredTrunkFromOrigin(
       groupEl,
       connectors,
       {
@@ -2209,7 +2209,7 @@ export class YonxaoMindmapRenderer extends Component {
     const startY = rootBox.y + rootBox.height / 2;
     const groupEl = svg('g', { class: 'yonxao-mindmap-org-trunk' });
 
-    this.renderRootTrunkSegments(
+    this.renderBranchColoredTrunkFromOrigin(
       groupEl,
       rootSubtopicConnectors,
       {
@@ -2260,7 +2260,7 @@ export class YonxaoMindmapRenderer extends Component {
        * org-right 后代的纵向共享线也按子主题分段上色，
        * 保持和基础思维导图 root 主干一致的颜色节奏。
        */
-      this.renderRootTrunkSegments(
+      this.renderBranchColoredTrunkFromOrigin(
         groupEl,
         connectors,
         {
@@ -2350,37 +2350,20 @@ export class YonxaoMindmapRenderer extends Component {
 
     const groupEl = svg('g', { class: 'yonxao-mindmap-timeline-axis' });
     const sortedTopics = [...eventTopics].sort((left, right) => left._layout.x - right._layout.x);
-    let segmentStart = rootBox.timelineAxisMinX ?? rootBox.x + rootBox.width / 2;
-
-    for (const topic of sortedTopics) {
-      const box = topic._layout;
-      const segmentEnd = box.x - box.width / 2;
-      const segmentEl = this.renderTimelineAxisSegment(segmentStart, segmentEnd, axisY, topic);
-
-      if (segmentEl) {
-        groupEl.appendChild(segmentEl);
-      }
-
-      segmentStart = box.x + box.width / 2;
-    }
+    this.renderSequentialBranchColoredTrunk(
+      groupEl,
+      sortedTopics,
+      {
+        axis: 'x',
+        fixedCoord: axisY,
+        startCoord: rootBox.timelineAxisMinX ?? rootBox.x + rootBox.width / 2,
+        segmentEndCoord: (topic) => topic._layout.x - topic._layout.width / 2,
+        nextStartCoord: (topic) => topic._layout.x + topic._layout.width / 2,
+      },
+      `opacity: ${themeConnectorOpacity(this.config)}`
+    );
 
     return groupEl;
-  }
-
-  /*
-   * 作用：
-   * 绘制一段按时间点着色的时间轴线。
-   */
-  renderTimelineAxisSegment(startX, endX, axisY, topic) {
-    if (!Number.isFinite(startX) || !Number.isFinite(endX) || endX <= startX) return null;
-
-    const color = connectorColor(topic, this.config);
-    return svg('path', {
-      class: 'yonxao-mindmap-connector yonxao-mindmap-timeline-line',
-      d: ['M', startX, axisY, 'H', endX].join(' '),
-      stroke: color || 'currentColor',
-      style: `opacity: ${themeConnectorOpacity(this.config)}`,
-    });
   }
 
   /*
@@ -2411,23 +2394,19 @@ export class YonxaoMindmapRenderer extends Component {
     if (!branchTopics.length) return null;
 
     const groupEl = svg('g', { class: 'yonxao-mindmap-fishbone-main-spine' });
-    let segmentStart = rootBox.x + rootBox.width / 2;
-
-    for (const topic of branchTopics) {
-      const segmentEnd = topic._layout.fishboneMainSpineAttachX;
-      const segmentEl = this.renderFishboneMainSpineSegment(
-        segmentStart,
-        segmentEnd,
-        rootBox.y,
-        topic
-      );
-
-      if (segmentEl) {
-        groupEl.appendChild(segmentEl);
-      }
-
-      segmentStart = segmentEnd;
-    }
+    const spineStart = rootBox.x + rootBox.width / 2;
+    const segmentStart = this.renderSequentialBranchColoredTrunk(
+      groupEl,
+      branchTopics,
+      {
+        axis: 'x',
+        fixedCoord: rootBox.y,
+        startCoord: spineStart,
+        segmentEndCoord: (topic) => topic._layout.fishboneMainSpineAttachX,
+        nextStartCoord: (topic) => topic._layout.fishboneMainSpineAttachX,
+      },
+      `opacity: ${themeConnectorOpacity(this.config)}`
+    );
 
     const lastTopic = branchTopics[branchTopics.length - 1];
     const tailEnd = Math.max(
@@ -2435,29 +2414,20 @@ export class YonxaoMindmapRenderer extends Component {
       // this.visibleSubtreeRightBoundary(lastTopic) + LEVEL_GAP * 0.45
       this.visibleSubtreeRightBoundary(lastTopic)
     );
-    const tailEl = this.renderFishboneMainSpineSegment(segmentStart, tailEnd, rootBox.y, this.root);
+    const tailEl = this.renderBranchColoredTrunkSegment(
+      'x',
+      rootBox.y,
+      segmentStart,
+      tailEnd,
+      connectorColor(this.root, this.config) || 'currentColor',
+      `opacity: ${themeConnectorOpacity(this.config)}`
+    );
     if (tailEl) {
       groupEl.appendChild(tailEl);
     }
     groupEl.appendChild(this.renderFishboneTail(tailEnd, rootBox.y));
 
     return groupEl;
-  }
-
-  /*
-   * 作用：
-   * 绘制一段鱼骨图主骨。
-   */
-  renderFishboneMainSpineSegment(startX, endX, y, topic) {
-    if (!Number.isFinite(startX) || !Number.isFinite(endX) || endX <= startX) return null;
-
-    const color = connectorColor(topic, this.config);
-    return svg('path', {
-      class: 'yonxao-mindmap-connector yonxao-mindmap-fishbone-main-spine-segment',
-      d: ['M', startX, y, 'H', endX].join(' '),
-      stroke: color || 'currentColor',
-      style: `opacity: ${themeConnectorOpacity(this.config)}`,
-    });
   }
 
   /*
@@ -2643,7 +2613,7 @@ export class YonxaoMindmapRenderer extends Component {
 
   /*
    * 作用：
-   * 判断一条连线是否应该交给 root 折线专用绘制逻辑处理。
+   * 判断一条连线是否应该交给“中心主题共享折线”绘制逻辑处理。
    */
   isMindMapRootElbowConnector(connector, layoutMode) {
     if (this.config.connector.style !== 'elbow') return false;
@@ -2674,7 +2644,7 @@ export class YonxaoMindmapRenderer extends Component {
 
   /*
    * 作用：
-   * 绘制某一个方向上的 root 折线主干和分支短线。
+   * 绘制某一个方向上的中心主题共享主干和分支短线。
    */
   renderMindMapRootElbowSide(side, connectors) {
     if (!connectors.length) return null;
@@ -2706,7 +2676,7 @@ export class YonxaoMindmapRenderer extends Component {
           opacityStyle
         )
       );
-      this.renderRootTrunkSegments(
+      this.renderBranchColoredTrunkFromOrigin(
         groupEl,
         connectors,
         {
@@ -2746,7 +2716,7 @@ export class YonxaoMindmapRenderer extends Component {
         opacityStyle
       )
     );
-    this.renderRootTrunkSegments(
+    this.renderBranchColoredTrunkFromOrigin(
       groupEl,
       connectors,
       {
@@ -2793,17 +2763,17 @@ export class YonxaoMindmapRenderer extends Component {
 
   /*
    * 作用：
-   * 按一级主题位置，把 root 共享主干拆成多个着色短段。
+   * 按一级主题位置，把共享主干拆成多个着色短段。
    *
    * 实现逻辑：
-   * 以 root 出口为原点，分别向上/下或左/右扩展：
-   * - 离 root 最近的一段使用最近一级主题颜色；
+   * 以中心主题出口为原点，分别向上/下或左/右扩展：
+   * - 离中心主题最近的一段使用最近一级主题颜色；
    * - 下一段使用下一个一级主题颜色；
    * - 依次类推。
    *
    * 这样得到的效果和鱼骨图、时间轴类似：主干不是被最后一个主题覆盖，而是按分支自然分段。
    */
-  renderRootTrunkSegments(groupEl, connectors, trunk, opacityStyle) {
+  renderBranchColoredTrunkFromOrigin(groupEl, connectors, trunk, opacityStyle) {
     const negativeSideConnectors = connectors
       .filter((connector) => connector.subtopic._layout[trunk.axis] < trunk.originCoord)
       .sort(
@@ -2815,40 +2785,82 @@ export class YonxaoMindmapRenderer extends Component {
         (left, right) => left.subtopic._layout[trunk.axis] - right.subtopic._layout[trunk.axis]
       );
 
-    this.renderRootTrunkSegmentRun(groupEl, negativeSideConnectors, trunk, opacityStyle);
-    this.renderRootTrunkSegmentRun(groupEl, positiveSideConnectors, trunk, opacityStyle);
+    this.renderBranchColoredTrunkRun(groupEl, negativeSideConnectors, trunk, opacityStyle);
+    this.renderBranchColoredTrunkRun(groupEl, positiveSideConnectors, trunk, opacityStyle);
   }
 
   /*
    * 作用：
-   * 从 root 出口开始，沿一个方向逐段绘制 root 共享主干。
+   * 从共享主干原点开始，沿一个方向逐段绘制主干。
    */
-  renderRootTrunkSegmentRun(groupEl, sortedConnectors, trunk, opacityStyle) {
+  renderBranchColoredTrunkRun(groupEl, sortedConnectors, trunk, opacityStyle) {
     let segmentStartCoord = trunk.originCoord;
 
     for (const connector of sortedConnectors) {
       const segmentEndCoord = connector.subtopic._layout[trunk.axis];
       const segmentColor = connectorColor(connector.subtopic, this.config) || 'currentColor';
-
-      groupEl.appendChild(
-        this.renderRootTrunkSegment(
-          trunk.axis,
-          trunk.fixedCoord,
-          segmentStartCoord,
-          segmentEndCoord,
-          segmentColor,
-          opacityStyle
-        )
+      const segmentEl = this.renderBranchColoredTrunkSegment(
+        trunk.axis,
+        trunk.fixedCoord,
+        segmentStartCoord,
+        segmentEndCoord,
+        segmentColor,
+        opacityStyle
       );
+
+      if (segmentEl) groupEl.appendChild(segmentEl);
       segmentStartCoord = segmentEndCoord;
     }
   }
 
   /*
    * 作用：
-   * 绘制 root 共享主干中的一个短段。
+   * 按主题顺序逐段绘制共享主干。
+   *
+   * 适用场景：
+   * 时间轴和鱼骨图这类结构不是以 root 出口为中心向两侧扩展，
+   * 而是从左到右逐段推进。它们仍然遵循同一条原则：每段主干使用当前主题颜色，
+   * 避免后绘制的主题覆盖前面主题的主干颜色。
+   *
+   * 返回值：
+   * 返回最后一段之后的起点，方便鱼骨图继续绘制尾巴。
    */
-  renderRootTrunkSegment(axis, fixedCoord, startCoord, endCoord, stroke, opacityStyle) {
+  renderSequentialBranchColoredTrunk(groupEl, topics, trunk, opacityStyle) {
+    let segmentStartCoord = trunk.startCoord;
+
+    for (const topic of topics) {
+      const segmentEndCoord = trunk.segmentEndCoord(topic);
+      const segmentColor = connectorColor(topic, this.config) || 'currentColor';
+      const segmentEl = this.renderBranchColoredTrunkSegment(
+        trunk.axis,
+        trunk.fixedCoord,
+        segmentStartCoord,
+        segmentEndCoord,
+        segmentColor,
+        opacityStyle
+      );
+
+      if (segmentEl) groupEl.appendChild(segmentEl);
+      segmentStartCoord = trunk.nextStartCoord(topic);
+    }
+
+    return segmentStartCoord;
+  }
+
+  /*
+   * 作用：
+   * 绘制共享主干中的一个短段。
+   */
+  renderBranchColoredTrunkSegment(axis, fixedCoord, startCoord, endCoord, stroke, opacityStyle) {
+    if (
+      !Number.isFinite(fixedCoord) ||
+      !Number.isFinite(startCoord) ||
+      !Number.isFinite(endCoord)
+    ) {
+      return null;
+    }
+    if (Math.abs(endCoord - startCoord) < 0.001) return null;
+
     const pathParts =
       axis === 'y'
         ? ['M', fixedCoord, startCoord, 'V', endCoord]
@@ -2859,7 +2871,7 @@ export class YonxaoMindmapRenderer extends Component {
 
   /*
    * 作用：
-   * 创建统一样式的连线路径，减少 root 折线拆段绘制时的重复代码。
+   * 创建统一样式的连线路径，减少共享主干拆段绘制时的重复代码。
    */
   renderConnectorPath(pathParts, stroke, opacityStyle) {
     return svg('path', {
