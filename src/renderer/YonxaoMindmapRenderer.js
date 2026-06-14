@@ -1906,9 +1906,9 @@ export class YonxaoMindmapRenderer extends Component {
     if (timelineAxis) {
       connectorLayer.appendChild(timelineAxis);
     }
-    const fishboneSpine = this.renderFishboneSpine(layout);
-    if (fishboneSpine) {
-      connectorLayer.appendChild(fishboneSpine);
+    const fishboneMainSpine = this.renderFishboneMainSpine(layout);
+    if (fishboneMainSpine) {
+      connectorLayer.appendChild(fishboneMainSpine);
     }
     const timelineDetailTrunks = this.renderTimelineDetailTrunks(layout);
     if (timelineDetailTrunks) {
@@ -2183,14 +2183,14 @@ export class YonxaoMindmapRenderer extends Component {
 
   /*
    * 作用：
-   * 绘制鱼骨图的水平主骨，并按一级分支分段着色。
+   * 绘制鱼骨图的水平主骨，并按大分支分段着色。
    *
    * 实现逻辑：
-   * root -> 一级分支的普通连线只负责斜骨；主骨在这里单独绘制。
-   * 每一段从上一个挂点延伸到当前挂点，颜色使用当前一级分支颜色，
+   * root -> 大分支的普通连线只负责斜骨线；主骨在这里单独绘制。
+   * 每一段从上一个挂点延伸到当前挂点，颜色使用当前大分支颜色，
    * 避免后面的分支反复覆盖前面的主骨颜色。
    */
-  renderFishboneSpine(layout) {
+  renderFishboneMainSpine(layout) {
     if (layout.mode !== 'fishbone-left') return null;
 
     const rootBox = this.root?._layout;
@@ -2201,16 +2201,24 @@ export class YonxaoMindmapRenderer extends Component {
         const side = topic._layout?.side;
         return side === 'fishbone-top' || side === 'fishbone-bottom';
       })
-      .sort((left, right) => left._layout.fishboneAttachX - right._layout.fishboneAttachX);
+      .sort(
+        (left, right) =>
+          left._layout.fishboneMainSpineAttachX - right._layout.fishboneMainSpineAttachX
+      );
 
     if (!branchTopics.length) return null;
 
-    const groupEl = svg('g', { class: 'yonxao-mindmap-fishbone-spine' });
+    const groupEl = svg('g', { class: 'yonxao-mindmap-fishbone-main-spine' });
     let segmentStart = rootBox.x + rootBox.width / 2;
 
     for (const topic of branchTopics) {
-      const segmentEnd = topic._layout.fishboneAttachX;
-      const segmentEl = this.renderFishboneSpineSegment(segmentStart, segmentEnd, rootBox.y, topic);
+      const segmentEnd = topic._layout.fishboneMainSpineAttachX;
+      const segmentEl = this.renderFishboneMainSpineSegment(
+        segmentStart,
+        segmentEnd,
+        rootBox.y,
+        topic
+      );
 
       if (segmentEl) {
         groupEl.appendChild(segmentEl);
@@ -2225,7 +2233,7 @@ export class YonxaoMindmapRenderer extends Component {
       // this.visibleSubtreeRightBoundary(lastTopic) + LEVEL_GAP * 0.45
       this.visibleSubtreeRightBoundary(lastTopic)
     );
-    const tailEl = this.renderFishboneSpineSegment(segmentStart, tailEnd, rootBox.y, this.root);
+    const tailEl = this.renderFishboneMainSpineSegment(segmentStart, tailEnd, rootBox.y, this.root);
     if (tailEl) {
       groupEl.appendChild(tailEl);
     }
@@ -2238,12 +2246,12 @@ export class YonxaoMindmapRenderer extends Component {
    * 作用：
    * 绘制一段鱼骨图主骨。
    */
-  renderFishboneSpineSegment(startX, endX, y, topic) {
+  renderFishboneMainSpineSegment(startX, endX, y, topic) {
     if (!Number.isFinite(startX) || !Number.isFinite(endX) || endX <= startX) return null;
 
     const color = connectorColor(topic, this.config);
     return svg('path', {
-      class: 'yonxao-mindmap-connector yonxao-mindmap-fishbone-spine-segment',
+      class: 'yonxao-mindmap-connector yonxao-mindmap-fishbone-main-spine-segment',
       d: ['M', startX, y, 'H', endX].join(' '),
       stroke: color || 'currentColor',
       style: `opacity: ${themeConnectorOpacity(this.config)}`,
@@ -2448,8 +2456,8 @@ export class YonxaoMindmapRenderer extends Component {
 
     if (parentBox.side === 'root' && (side === 'fishbone-top' || side === 'fishbone-bottom')) {
       return {
-        kind: 'fishbone-primary',
-        startX: subtopicBox.fishboneAttachX,
+        kind: 'fishbone-primary-bone',
+        startX: subtopicBox.fishboneMainSpineAttachX,
         startY: parentBox.y,
         endX: subtopicBox.x,
         endY:
@@ -2471,9 +2479,9 @@ export class YonxaoMindmapRenderer extends Component {
       };
     }
 
-    if (side === 'fishbone-detail') {
+    if (side === 'fishbone-rib-descendant') {
       return {
-        kind: 'fishbone-detail',
+        kind: 'fishbone-rib-descendant',
         startX: parentBox.x + parentBox.width / 2,
         startY: parentBox.y,
         endX: subtopicBox.x - subtopicBox.width / 2,
@@ -2481,11 +2489,11 @@ export class YonxaoMindmapRenderer extends Component {
       };
     }
 
-    if (side === 'fishbone-rib') {
+    if (side === 'fishbone-rib-topic') {
       return {
-        kind: 'fishbone-rib',
-        startX: subtopicBox.fishboneAttachX,
-        startY: subtopicBox.fishboneAttachY,
+        kind: 'fishbone-rib-topic',
+        startX: subtopicBox.fishboneDiagonalBoneAttachX,
+        startY: subtopicBox.fishboneDiagonalBoneAttachY,
         endX: subtopicBox.x - subtopicBox.width / 2,
         endY: subtopicBox.y,
       };
@@ -2598,16 +2606,16 @@ export class YonxaoMindmapRenderer extends Component {
       return ['M', startX, startY, 'L', endX, endY].join(' ');
     }
 
-    if (kind === 'fishbone-primary') {
+    if (kind === 'fishbone-primary-bone') {
       return ['M', startX, startY, 'L', endX, endY].join(' ');
     }
 
-    if (kind === 'fishbone-detail') {
+    if (kind === 'fishbone-rib-descendant') {
       const midX = startX + (endX - startX) / 2;
       return ['M', startX, startY, 'H', midX, 'V', endY, 'H', endX].join(' ');
     }
 
-    if (kind === 'fishbone-rib') {
+    if (kind === 'fishbone-rib-topic') {
       return ['M', startX, startY, 'H', endX].join(' ');
     }
 
@@ -2793,13 +2801,13 @@ export class YonxaoMindmapRenderer extends Component {
    * 作用：
    * 判断某个主题是否应该隐藏“新增兄弟/新增子主题”控件。
    *
-   * 鱼骨图的二级主题（Markdown 里的 ##，布局 side 为 fishbone-top/bottom）
-   * 是主骨上的大分支。它们的子主题不是从主题右侧自然长出，而是挂在斜骨上；
+   * 鱼骨图的大分支（Markdown 里的 ##，布局 side 为 fishbone-top/bottom）
+   * 是主骨上的一级结构。它们的子主题不是从主题右侧自然长出，而是挂在斜骨线上；
    * 如果继续显示新增按钮，按钮会和鱼骨结构的交点互相干扰，所以这里统一隐藏。
    */
   shouldHideAddControls(topic) {
     const box = topic?._layout;
-    return this.isFishbonePrimaryBranchBox(box) || this.isTreeTableBox(box);
+    return this.isFishbonePrimaryBoneBox(box) || this.isTreeTableBox(box);
   }
 
   /*
@@ -2835,13 +2843,13 @@ export class YonxaoMindmapRenderer extends Component {
 
   /*
    * 作用：
-   * 判断主题是否是鱼骨图的一级大分支。
+   * 判断主题是否是鱼骨图的大分支。
    *
    * 命名说明：
    * Markdown 源码里这些主题是二级标题（##），但在鱼骨图视觉结构里，
-   * 它们是从主骨斜着伸出去的“大分支”，所以这里命名为 primaryBranch。
+   * 它们是从主骨斜着伸出去的“大分支”，所以这里命名为 primaryBone。
    */
-  isFishbonePrimaryBranchBox(box) {
+  isFishbonePrimaryBoneBox(box) {
     const side = String(box?.side || '');
     return side === 'fishbone-top' || side === 'fishbone-bottom';
   }
@@ -2859,8 +2867,8 @@ export class YonxaoMindmapRenderer extends Component {
     return (
       side === 'fishbone-top' ||
       side === 'fishbone-bottom' ||
-      side === 'fishbone-rib' ||
-      side === 'fishbone-detail'
+      side === 'fishbone-rib-topic' ||
+      side === 'fishbone-rib-descendant'
     );
   }
 
@@ -3033,21 +3041,21 @@ export class YonxaoMindmapRenderer extends Component {
    * 作用：
    * 计算折叠/展开按钮的位置。
    *
-   * 普通布局直接复用子线出口位置；鱼骨图二级主题比较特殊：
-   * 它的子线不是从右侧出去，而是从主题内侧连到斜骨。
-   * 因此折叠按钮应吸附在斜骨和主题边框的交点，用户能更直观看到它控制的是整条鱼骨分支。
+   * 普通布局直接复用子线出口位置；鱼骨图大分支比较特殊：
+   * 它的子线不是从右侧出去，而是从主题内侧连到斜骨线。
+   * 因此折叠按钮应吸附在斜骨线和主题边框的交点，用户能更直观看到它控制的是整条大分支。
    */
   topicTogglePoint(box) {
     const side = String(box?.side || '');
     if (
       (side === 'fishbone-top' || side === 'fishbone-bottom') &&
-      Number.isFinite(box.fishboneBoneEndX) &&
-      Number.isFinite(box.fishboneBoneEndY)
+      Number.isFinite(box.fishboneDiagonalBoneEndX) &&
+      Number.isFinite(box.fishboneDiagonalBoneEndY)
     ) {
       return {
         side: side === 'fishbone-top' ? 'bottom' : 'top',
-        x: box.fishboneBoneEndX - (box.x - box.width / 2),
-        y: box.fishboneBoneEndY - (box.y - box.height / 2),
+        x: box.fishboneDiagonalBoneEndX - (box.x - box.width / 2),
+        y: box.fishboneDiagonalBoneEndY - (box.y - box.height / 2),
       };
     }
 

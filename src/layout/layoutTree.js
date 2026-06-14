@@ -1133,13 +1133,13 @@ function radialPerpendicularExtent(box, angle) {
 
 /*
  * 作用：
- * 鱼骨图布局，中心主题在左侧，一级分支交替挂在主骨上下。
+ * 鱼骨图布局，中心主题在左侧，一级大分支交替挂在主骨上下。
  *
  * 实现逻辑：
  * - 根主题右侧延伸出一条水平主骨。
- * - 一级主题按照上下交替的方式挂到主骨上，形成鱼骨的大斜骨。
- * - 二级主题挂在斜骨中段。
- * - 三级及更深主题从二级主题右侧继续树状展开。
+ * - 一级主题按照上下交替的方式挂到主骨上，形成鱼骨的大分支和斜骨线。
+ * - 三级主题是鱼刺主题，挂在斜骨线中段。
+ * - 三级及更深主题是鱼刺主题的后代，从鱼刺主题右侧继续树状展开。
  */
 export function layoutFishbone(root, collapsedIds) {
   const rootBox = root._layout;
@@ -1157,84 +1157,100 @@ export function layoutFishbone(root, collapsedIds) {
     const subtopicBox = subtopic._layout;
     const sign = index % 2 === 0 ? -1 : 1;
     const sideKey = sign < 0 ? 'top' : 'bottom';
-    const subtreeHeight = fishboneSubtreeHeight(subtopic, collapsedIds);
-    const subtreeWidth = fishboneSubtreeWidth(subtopic, collapsedIds);
+    // 大分支的子树高度决定它离主骨多远，避免上下两侧的鱼刺主题互相压住。
+    const primaryBoneHeight = fishbonePrimaryBoneSubtreeHeight(subtopic, collapsedIds);
+    // 大分支的子树宽度决定下一个大分支在主骨上的挂点，避免横向重叠。
+    const primaryBoneWidth = fishbonePrimaryBoneSubtreeWidth(subtopic, collapsedIds);
     const attachX = sideCursors[sideKey];
-    const subtopicLeft = attachX + diagonalX + Math.max(0, subtreeHeight - TOPIC_MIN_HEIGHT) * 0.18;
+    const subtopicLeft =
+      attachX + diagonalX + Math.max(0, primaryBoneHeight - TOPIC_MIN_HEIGHT) * 0.18;
 
     subtopicBox.side = sign < 0 ? 'fishbone-top' : 'fishbone-bottom';
     subtopicBox.fishboneSign = sign;
-    subtopicBox.fishboneAttachX = attachX;
+    // 大分支挂到主骨上的 x 坐标，渲染主骨分段时也依赖它来确定每段颜色。
+    subtopicBox.fishboneMainSpineAttachX = attachX;
     subtopicBox.x = subtopicLeft + subtopicBox.width / 2;
     subtopicBox.y =
       rootBox.y +
-      sign * (TOPIC_MIN_HEIGHT + SIBLING_GAP * 2 + subtreeHeight + subtopicBox.height / 2);
-    subtopicBox.fishboneBoneStartX = attachX;
-    subtopicBox.fishboneBoneStartY = rootBox.y;
-    subtopicBox.fishboneBoneEndX = subtopicBox.x;
-    subtopicBox.fishboneBoneEndY =
+      sign * (TOPIC_MIN_HEIGHT + SIBLING_GAP * 2 + primaryBoneHeight + subtopicBox.height / 2);
+    // 斜骨线从主骨挂点出发，终点落在大分支主题靠近主骨的一侧边框中点。
+    subtopicBox.fishboneDiagonalBoneStartX = attachX;
+    subtopicBox.fishboneDiagonalBoneStartY = rootBox.y;
+    subtopicBox.fishboneDiagonalBoneEndX = subtopicBox.x;
+    subtopicBox.fishboneDiagonalBoneEndY =
       sign < 0 ? subtopicBox.y + subtopicBox.height / 2 : subtopicBox.y - subtopicBox.height / 2;
 
-    placeFishboneRibs(subtopic, sign, collapsedIds);
-    sideCursors[sideKey] += diagonalX + subtreeWidth + BRANCH_GAP * 0.35;
+    placeFishboneRibTopics(subtopic, sign, collapsedIds);
+    sideCursors[sideKey] += diagonalX + primaryBoneWidth + BRANCH_GAP * 0.35;
   });
 }
 
 /*
  * 作用：
- * 摆放鱼骨图中挂在斜骨上的二级主题。
+ * 摆放鱼骨图中挂在斜骨线上的鱼刺主题。
+ *
+ * 实现逻辑：
+ * 鱼刺主题不是按普通树从大分支主题右侧长出，而是先沿着斜骨线寻找挂点；
+ * 挂点的 y 坐标由鱼刺主题子树高度决定，挂点的 x 坐标再通过斜骨线线性插值得到。
  */
-export function placeFishboneRibs(parent, sign, collapsedIds) {
+export function placeFishboneRibTopics(parent, sign, collapsedIds) {
   const subtopics = visibleSubtopics(parent, collapsedIds);
   if (!subtopics.length) return;
 
   const parentBox = parent._layout;
-  const boneStartX = parentBox.fishboneBoneStartX;
-  const boneStartY = parentBox.fishboneBoneStartY;
-  const boneEndX = parentBox.fishboneBoneEndX;
-  const boneEndY = parentBox.fishboneBoneEndY;
-  const ribHeights = subtopics.map((subtopic) =>
-    fishboneDetailSubtreeHeight(subtopic, collapsedIds)
+  const diagonalBoneStartX = parentBox.fishboneDiagonalBoneStartX;
+  const diagonalBoneStartY = parentBox.fishboneDiagonalBoneStartY;
+  const diagonalBoneEndX = parentBox.fishboneDiagonalBoneEndX;
+  const diagonalBoneEndY = parentBox.fishboneDiagonalBoneEndY;
+  const ribTopicHeights = subtopics.map((subtopic) =>
+    fishboneRibTopicSubtreeHeight(subtopic, collapsedIds)
   );
   const totalRibHeight =
-    ribHeights.reduce((sum, height) => sum + height, 0) +
+    ribTopicHeights.reduce((sum, height) => sum + height, 0) +
     Math.max(0, subtopics.length - 1) * SIBLING_GAP;
-  const boneHeight = Math.abs(boneEndY - boneStartY);
-  const usableHeight = Math.max(1, boneHeight - parentBox.height - SIBLING_GAP * 2);
+  const diagonalBoneHeight = Math.abs(diagonalBoneEndY - diagonalBoneStartY);
+  const usableHeight = Math.max(1, diagonalBoneHeight - parentBox.height - SIBLING_GAP * 2);
   const contentStart = SIBLING_GAP + Math.max(0, (usableHeight - totalRibHeight) / 2);
   let offset = 0;
 
   subtopics.forEach((subtopic, index) => {
     const subtopicBox = subtopic._layout;
-    const height = ribHeights[index];
-    const centerOnBone = contentStart + offset + height / 2;
-    const subtopicY = boneEndY - sign * centerOnBone;
-    const ratio = clamp((subtopicY - boneStartY) / (boneEndY - boneStartY || 1), 0, 1);
-    const attachX = boneStartX + (boneEndX - boneStartX) * ratio;
+    const height = ribTopicHeights[index];
+    const centerOnDiagonalBone = contentStart + offset + height / 2;
+    const subtopicY = diagonalBoneEndY - sign * centerOnDiagonalBone;
+    const ratio = clamp(
+      (subtopicY - diagonalBoneStartY) / (diagonalBoneEndY - diagonalBoneStartY || 1),
+      0,
+      1
+    );
+    const attachX = diagonalBoneStartX + (diagonalBoneEndX - diagonalBoneStartX) * ratio;
     const attachY = subtopicY;
 
-    subtopicBox.side = 'fishbone-rib';
+    subtopicBox.side = 'fishbone-rib-topic';
     subtopicBox.fishboneSign = sign;
-    subtopicBox.fishboneAttachX = attachX;
-    subtopicBox.fishboneAttachY = attachY;
+    // 鱼刺主题挂到斜骨线上的交点，渲染连线和折叠点都会用到。
+    subtopicBox.fishboneDiagonalBoneAttachX = attachX;
+    subtopicBox.fishboneDiagonalBoneAttachY = attachY;
     subtopicBox.x = attachX + LEVEL_GAP + subtopicBox.width / 2;
     subtopicBox.y = subtopicY;
 
-    placeFishboneDetails(subtopic, sign, collapsedIds);
+    placeFishboneRibDescendants(subtopic, sign, collapsedIds);
     offset += height + SIBLING_GAP;
   });
 }
 
 /*
  * 作用：
- * 摆放鱼骨图三级及更深主题。
+ * 摆放鱼刺主题的后代主题。
  */
-export function placeFishboneDetails(parent, sign, collapsedIds) {
+export function placeFishboneRibDescendants(parent, sign, collapsedIds) {
   const subtopics = visibleSubtopics(parent, collapsedIds);
   if (!subtopics.length) return;
 
   const parentBox = parent._layout;
-  const heights = subtopics.map((subtopic) => fishboneDetailSubtreeHeight(subtopic, collapsedIds));
+  const heights = subtopics.map((subtopic) =>
+    fishboneRibTopicSubtreeHeight(subtopic, collapsedIds)
+  );
   const totalHeight =
     heights.reduce((sum, height) => sum + height, 0) +
     Math.max(0, subtopics.length - 1) * SIBLING_GAP;
@@ -1244,28 +1260,28 @@ export function placeFishboneDetails(parent, sign, collapsedIds) {
     const subtopicBox = subtopic._layout;
     const height = heights[index];
 
-    subtopicBox.side = 'fishbone-detail';
+    subtopicBox.side = 'fishbone-rib-descendant';
     subtopicBox.fishboneSign = sign;
     subtopicBox.x = parentBox.x + parentBox.width / 2 + LEVEL_GAP + subtopicBox.width / 2;
     subtopicBox.y = y + height / 2;
 
-    placeFishboneDetails(subtopic, sign, collapsedIds);
+    placeFishboneRibDescendants(subtopic, sign, collapsedIds);
     y += height + SIBLING_GAP;
   });
 }
 
 /*
  * 作用：
- * 计算鱼骨图子树需要占用的垂直高度。
+ * 计算鱼骨图大分支子树需要占用的垂直高度。
  */
-export function fishboneSubtreeHeight(topic, collapsedIds) {
+export function fishbonePrimaryBoneSubtreeHeight(topic, collapsedIds) {
   const box = topic._layout;
   const subtopics = visibleSubtopics(topic, collapsedIds);
   if (!subtopics.length) return box.height;
 
   const ribHeight =
     subtopics.reduce(
-      (sum, subtopic) => sum + fishboneDetailSubtreeHeight(subtopic, collapsedIds),
+      (sum, subtopic) => sum + fishboneRibTopicSubtreeHeight(subtopic, collapsedIds),
       0
     ) +
     Math.max(0, subtopics.length - 1) * SIBLING_GAP;
@@ -1275,16 +1291,16 @@ export function fishboneSubtreeHeight(topic, collapsedIds) {
 
 /*
  * 作用：
- * 计算鱼骨图三级及更深主题需要占用的垂直高度。
+ * 计算鱼刺主题及其后代需要占用的垂直高度。
  */
-export function fishboneDetailSubtreeHeight(topic, collapsedIds) {
+export function fishboneRibTopicSubtreeHeight(topic, collapsedIds) {
   const box = topic._layout;
   const subtopics = visibleSubtopics(topic, collapsedIds);
   if (!subtopics.length) return box.height;
 
   const subtopicHeight =
     subtopics.reduce(
-      (sum, subtopic) => sum + fishboneDetailSubtreeHeight(subtopic, collapsedIds),
+      (sum, subtopic) => sum + fishboneRibTopicSubtreeHeight(subtopic, collapsedIds),
       0
     ) +
     Math.max(0, subtopics.length - 1) * SIBLING_GAP;
@@ -1294,15 +1310,15 @@ export function fishboneDetailSubtreeHeight(topic, collapsedIds) {
 
 /*
  * 作用：
- * 计算鱼骨图子树从一级分支主题开始向右延伸的宽度。
+ * 计算鱼骨图大分支子树向鱼尾方向延伸的宽度。
  */
-export function fishboneSubtreeWidth(topic, collapsedIds) {
+export function fishbonePrimaryBoneSubtreeWidth(topic, collapsedIds) {
   const box = topic._layout;
   const subtopics = visibleSubtopics(topic, collapsedIds);
   if (!subtopics.length) return box.width;
 
   const subtopicWidth = subtopics.reduce(
-    (max, subtopic) => Math.max(max, fishboneDetailSubtreeWidth(subtopic, collapsedIds)),
+    (max, subtopic) => Math.max(max, fishboneRibTopicSubtreeWidth(subtopic, collapsedIds)),
     0
   );
 
@@ -1311,15 +1327,15 @@ export function fishboneSubtreeWidth(topic, collapsedIds) {
 
 /*
  * 作用：
- * 计算鱼骨图三级及更深主题向右延伸的宽度。
+ * 计算鱼刺主题及其后代向鱼尾方向延伸的宽度。
  */
-export function fishboneDetailSubtreeWidth(topic, collapsedIds) {
+export function fishboneRibTopicSubtreeWidth(topic, collapsedIds) {
   const box = topic._layout;
   const subtopics = visibleSubtopics(topic, collapsedIds);
   if (!subtopics.length) return box.width;
 
   const subtopicWidth = subtopics.reduce(
-    (max, subtopic) => Math.max(max, fishboneDetailSubtreeWidth(subtopic, collapsedIds)),
+    (max, subtopic) => Math.max(max, fishboneRibTopicSubtreeWidth(subtopic, collapsedIds)),
     0
   );
 

@@ -153,7 +153,7 @@ source:
 | 鱼尾     | fish tail     | -                  | 主骨末端的尾部标记。                                     |
 | 大分支   | primary bone  | `##`               | 鱼骨图中的一级分支主题，通过斜骨线连接到主骨。           |
 | 斜骨线   | diagonal bone | -                  | 大分支和主骨之间的斜向连接线。                           |
-| 鱼刺主题 | rib topic     | `###`              | 挂在斜骨上的主题。                                       |
+| 鱼刺主题 | rib topic     | `###`              | 挂在斜骨线上的主题。                                     |
 
 ### 功能组件
 
@@ -177,7 +177,7 @@ source:
 | 幕布         | canvas               | `canvas.height`      | 承载 SVG 导图的可视区域。                               |
 | 视口         | viewport             | -                    | 当前 SVG 中正在被查看的坐标范围；平移和缩放会改变视口。 |
 | 主题卡片     | topic card           | -                    | 主题的矩形外观，包括背景、边框和圆角。                  |
-| 主题方案     | theme                | `theme`              | 控制整体颜色方案，避免和“主题 / Topic”混淆。            |
+| 主题色系     | theme                | -                    | 控制整体颜色方案，避免和“主题 / Topic”混淆。            |
 | 默认主题颜色 | default topic color  | `topic.defaultColor` | 覆盖主题自动配色；主题属性 `color` 仍然优先。           |
 | 字体         | font                 | `font.*`             | 控制主题文字样式。                                      |
 | 连线线型     | connector style      | `connector.style`    | 控制连线为曲线、直线或折线。                            |

@@ -132,8 +132,8 @@ yonxao-mindmap uses these terms consistently across docs, config, UI text, and c
 | 主骨     | main spine    | -                      | The horizontal main line from fish head to fish tail.                                                                        |
 | 鱼尾     | fish tail     | -                      | The tail marker at the end of the main spine.                                                                                |
 | 大分支   | primary bone  | `##`                   | A first-level branch topic connected to the main spine by a diagonal bone.                                                   |
-| 斜骨     | diagonal bone | -                      | The diagonal connector between a primary bone and the main spine.                                                            |
-| 鱼刺主题 | rib topic     | `###`                  | A topic attached to a diagonal bone.                                                                                         |
+| 斜骨线   | diagonal bone | -                      | The diagonal connector line between a primary bone and the main spine.                                                       |
+| 鱼刺主题 | rib topic     | `###`                  | A topic attached to a diagonal bone line.                                                                                    |
 
 ### Functional Components
 
