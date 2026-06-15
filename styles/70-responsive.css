@@ -4,7 +4,7 @@
  *
  * 执行逻辑：
  * 当视口宽度小于 640px 时，降低默认幕布高度，避免一个导图块在手机或窄窗口里占满太多空间。
- * 工具栏仍固定在左上角，保持和桌面端一致的操作位置。
+ * 工具栏位置由 Renderer 根据当前吸附配置计算，小屏下只调整幕布高度。
  *
  * 调用链位置：
  * Obsidian 窗口尺寸变化 -> CSS media query 自动生效。
@@ -22,14 +22,5 @@
   .yonxao-mindmap-container {
     height: min(460px, 62vh);
     min-height: 96px;
-  }
-
-  /*
-   * 作用：
-   * 保持移动端工具栏仍吸附在左上角。
-   */
-  .yonxao-mindmap-toolbar {
-    top: 8px;
-    left: 8px;
   }
 }

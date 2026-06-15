@@ -12,8 +12,8 @@ yonxao-mindmap renders Markdown-heading-style `yxmm` code blocks as interactive 
 canvas:
   height: 420
 toolbar:
-  x: 8
-  y: 8
+  corner: top-right
+  placement: outside
 layout: mindmap-right
 connector:
   style: curve
@@ -138,18 +138,18 @@ yonxao-mindmap uses these terms consistently across docs, config, UI text, and c
 
 ### Functional Components
 
-| 中文术语      | English Term           | yxmm Term / Config Key            | Purpose                                                            |
-| ------------- | ---------------------- | --------------------------------- | ------------------------------------------------------------------ |
-| 悬浮工具栏    | floating toolbar       | `toolbar.x` / `toolbar.y`         | Holds common action buttons and can be dragged.                    |
-| 配置弹框      | config modal           | -                                 | Visually edits theme, layout, font, source, and advanced settings. |
-| 主题编辑面板  | topic editor           | -                                 | Edits topic text, color, icon, layout, and related settings.       |
-| 编辑按钮      | edit button            | -                                 | Opens the topic editor; some compact layouts hide it.              |
-| 折叠/展开按钮 | collapse/expand button | -                                 | Hides or shows the current topic's subtree.                        |
-| 新增按钮      | add button             | -                                 | Adds a child topic or sibling topic.                               |
-| 右键菜单      | context menu           | -                                 | Provides topic actions such as add, delete, collapse, and expand.  |
-| 源码编辑区    | source editor          | -                                 | The text editing area in source mode.                              |
-| 工具栏抓手    | toolbar grip           | -                                 | Drags the floating toolbar.                                        |
-| 高度拖拽条    | height resize handle   | `canvas.height` / `source.height` | Adjusts map canvas height or source-mode height.                   |
+| 中文术语      | English Term           | yxmm Term / Config Key                 | Purpose                                                             |
+| ------------- | ---------------------- | -------------------------------------- | ------------------------------------------------------------------- |
+| 悬浮工具栏    | floating toolbar       | `toolbar.corner` / `toolbar.placement` | Holds common action buttons and snaps to a dragged corner position. |
+| 配置弹框      | config modal           | -                                      | Visually edits theme, layout, font, source, and advanced settings.  |
+| 主题编辑面板  | topic editor           | -                                      | Edits topic text, color, icon, layout, and related settings.        |
+| 编辑按钮      | edit button            | -                                      | Opens the topic editor; some compact layouts hide it.               |
+| 折叠/展开按钮 | collapse/expand button | -                                      | Hides or shows the current topic's subtree.                         |
+| 新增按钮      | add button             | -                                      | Adds a child topic or sibling topic.                                |
+| 右键菜单      | context menu           | -                                      | Provides topic actions such as add, delete, collapse, and expand.   |
+| 源码编辑区    | source editor          | -                                      | The text editing area in source mode.                               |
+| 工具栏抓手    | toolbar grip           | -                                      | Drags the floating toolbar.                                         |
+| 高度拖拽条    | height resize handle   | `canvas.height` / `source.height`      | Adjusts map canvas height or source-mode height.                    |
 
 ### Visual And Interaction Areas
 
@@ -205,7 +205,7 @@ This is useful for shared preferences such as theme, layout type, font, connecto
 Supported config keys:
 
 - `canvas.height`: persisted canvas height. Drag the bottom handle to write it; double-click the handle to remove it and return to automatic height.
-- `toolbar.x` / `toolbar.y`: persisted floating toolbar position. Drag the toolbar grip to write it.
+- `toolbar.corner` / `toolbar.placement`: persisted floating toolbar snap position. `corner` can be `top-left`, `top-right`, `bottom-left`, or `bottom-right`; `placement` can be `inside` or `outside`. Dragging the toolbar grip snaps to the nearest position and writes it.
 - `interaction.wheelZoom`: whether the mouse wheel zooms the mind map. It is off by default; enabling it writes `true`, and disabling it can remove the key.
 - `theme`: built-in theme name: `default`, `ocean`, `forest`, `sunset`, `mono`, `rainbow`, `pastel-rainbow`, or `neon-rainbow`.
 - `layout`: layout type: `mindmap-right`, `mindmap-left`, `mindmap-bidirectional`, `mindmap-up`, `mindmap-down`, `mindmap-vertical`, `tree`, `tree-right`, `tree-left`, `org`, `org-right`, `timeline`, `timeline-up`, `timeline-down`, `radial`, `fishbone-left`, `fishbone-right`, `tree-table`, or `tree-table-stepped`.
@@ -258,7 +258,7 @@ Layout types:
 - In editor/Live Preview mind map view, hover a topic and click the small edit button to edit text, color, icon, or layout.
 - Use the toolbar to fit view, zoom in, zoom out, or reset collapse state.
 - Use the toolbar settings button to open the visual config modal; common fields have select presets, and the advanced tab supports direct YAML editing.
-- Drag the toolbar grip to move the floating toolbar away from content.
+- Drag the toolbar grip to snap the floating toolbar to the nearest inside/outside corner position.
 - Drag the canvas to pan. By default, the mouse wheel keeps scrolling the Obsidian page; enable mouse-wheel zoom in the Basic tab of the config modal to zoom the current mind map with the wheel.
 - Drag the canvas height resize handle to set manual height. Double-click the handle to return to auto height.
 

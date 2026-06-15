@@ -1,9 +1,9 @@
 /*
  * 文件作用：
- * 这里定义插件左上角悬浮工具栏，以及工具栏按钮的显示、隐藏和交互状态。
+ * 这里定义插件悬浮工具栏，以及工具栏按钮的显示、隐藏和交互状态。
  *
  * 执行逻辑：
- * 工具栏默认透明且不接收点击；当鼠标进入插件区域或插件内部获得焦点时显示。
+ * 工具栏挂在 body 上，默认透明且不接收点击；当鼠标进入插件区域、工具栏或内部获得焦点时显示。
  * 源码模式会复用同一组工具按钮，源码保存由切回导图或 Ctrl/Cmd+S 触发。
  * 拖拽位置由 Renderer 写入 inline left/top，并在 yxmm 配置区持久化。
  *
@@ -13,15 +13,15 @@
 
 /*
  * 作用：
- * 悬浮工具栏主体，默认隐藏在左上角。
+ * 悬浮工具栏主体，默认隐藏；具体吸附位置由 Renderer 写入 fixed 坐标。
  *
  * 实现逻辑：
  * 通过 opacity/visibility 隐藏，不改变文档流，因此显示工具栏时不会把导图主体向下挤。
  * 背景使用 30% 不透明度，降低工具栏遮住主题内容时的视觉压迫感。
  */
 .yonxao-mindmap-toolbar {
-  position: absolute;
-  z-index: 20;
+  position: fixed;
+  z-index: 1000;
   top: 8px;
   left: 8px;
   display: flex;
@@ -45,10 +45,9 @@
 
 /*
  * 作用：
- * 插件被 hover 或内部获得焦点时显示工具栏。
+ * Renderer 根据当前导图和工具栏交互状态切换显示。
  */
-.yonxao-mindmap-host:hover .yonxao-mindmap-toolbar,
-.yonxao-mindmap-host:focus-within .yonxao-mindmap-toolbar {
+.yonxao-mindmap-toolbar.is-visible {
   opacity: 1;
   visibility: visible;
   pointer-events: auto;

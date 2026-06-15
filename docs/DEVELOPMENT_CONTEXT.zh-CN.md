@@ -217,7 +217,7 @@ src/config/mindConfig.js
 
 - `canvas.height`：导图幕布高度。
 - `source.height`：源码模式高度，和导图幕布高度分开保存。
-- `toolbar.x` / `toolbar.y`：悬浮工具栏位置。
+- `toolbar.corner` / `toolbar.placement`：悬浮工具栏吸附位置，角落可选四角，位置可选内侧或外侧。
 - `interaction.wheelZoom`：是否启用鼠标滚轮缩放，默认关闭。
 - `view.mode`：当前代码块视图模式，通常为 `map` 或 `source`。
 - `theme`：主题色系。
@@ -469,8 +469,8 @@ Obsidian 编辑视图：
 
 已确认规则：
 
-- 工具栏位置可拖动。
-- 工具栏位置保存到当前实例配置 `toolbar.x` / `toolbar.y`。
+- 工具栏位置可拖动，松手后吸附到最近的四角内侧或外侧位置。
+- 工具栏位置保存到当前实例配置 `toolbar.corner` / `toolbar.placement`。
 - 拖动工具栏不应触发视图从源码模式切回导图模式。
 - 工具栏透明度有过调整，避免遮挡导图内容。
 - 工具栏不要和 Obsidian 自带“编辑这个块”按钮冲突，必要时偏左上放置。

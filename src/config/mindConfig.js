@@ -41,6 +41,13 @@ export const FONT_WEIGHT_MIN = 100;
 export const FONT_WEIGHT_MAX = 900;
 export const FONT_LINE_HEIGHT_MIN = 12;
 export const FONT_LINE_HEIGHT_MAX = 160;
+export const TOOLBAR_CORNERS = Object.freeze([
+  'top-left',
+  'top-right',
+  'bottom-left',
+  'bottom-right',
+]);
+export const TOOLBAR_PLACEMENTS = Object.freeze(['inside', 'outside']);
 
 export const DEFAULT_FONT_FAMILY =
   "'Sarasa Mono SC', 'Noto Sans Mono CJK SC', 'Source Han Mono SC', 'Cascadia Mono', 'JetBrains Mono', 'Liberation Mono', monospace";
@@ -58,8 +65,8 @@ export const DEFAULT_MIND_CONFIG = Object.freeze({
     height: null,
   }),
   toolbar: Object.freeze({
-    x: null,
-    y: null,
+    corner: 'top-right',
+    placement: 'outside',
   }),
   interaction: Object.freeze({
     wheelZoom: false,
@@ -177,9 +184,9 @@ export function normalizeMindConfig(rawConfig) {
       height: normalizeOptionalNumber(canvas.height, CANVAS_MIN_HEIGHT, CANVAS_MAX_HEIGHT),
     },
     toolbar: {
-      ...toolbar,
-      x: normalizeOptionalNumber(toolbar.x, 0, 10000),
-      y: normalizeOptionalNumber(toolbar.y, 0, 10000),
+      corner: normalizeToolbarCorner(toolbar.corner) || DEFAULT_MIND_CONFIG.toolbar.corner,
+      placement:
+        normalizeToolbarPlacement(toolbar.placement) || DEFAULT_MIND_CONFIG.toolbar.placement,
     },
     interaction: {
       ...interaction,
@@ -304,7 +311,7 @@ export function resolveTopicFont(topic, config) {
  * 更新配置对象中的某条路径，并返回新的配置对象。
  *
  * 调用场景：
- * 高度拖拽条结束后写入 canvas.height；工具栏拖动结束后写入 toolbar.x/y。
+ * 高度拖拽条结束后写入 canvas.height；工具栏拖动结束后写入 toolbar.corner/placement。
  */
 export function setMindConfigPath(rawConfig, path, value) {
   const next = clonePlainObject(rawConfig);
@@ -493,6 +500,7 @@ function configKeyOrder(path) {
   }
   if (keyPath === 'connector') return ['style'];
   if (keyPath === 'branch') return ['expansion'];
+  if (keyPath === 'toolbar') return ['corner', 'placement'];
   if (keyPath === 'interaction') return ['wheelZoom'];
   if (keyPath === 'font') return ['family', 'size', 'weight', 'lineHeight', 'levels'];
   if (/^font\.levels\.[^.]+$/.test(keyPath)) {
@@ -669,6 +677,24 @@ export function normalizeBranchExpansion(value) {
   const text = normalizeText(value).toLowerCase();
   if (text === 'side' || text === 'hanging') return text;
   return '';
+}
+
+/*
+ * 作用：
+ * 规范化工具栏吸附角落。
+ */
+export function normalizeToolbarCorner(value) {
+  const text = normalizeText(value).toLowerCase();
+  return TOOLBAR_CORNERS.includes(text) ? text : '';
+}
+
+/*
+ * 作用：
+ * 规范化工具栏相对幕布边框的位置。
+ */
+export function normalizeToolbarPlacement(value) {
+  const text = normalizeText(value).toLowerCase();
+  return TOOLBAR_PLACEMENTS.includes(text) ? text : '';
 }
 
 /*

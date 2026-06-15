@@ -73,7 +73,7 @@ export class YonxaoMindmapPlugin extends Plugin {
      *
      * 因此当前版本不再注册自定义 CodeMirror 扩展，而是走 Obsidian 官方 Markdown 代码块渲染管线。
      * 源码/导图切换、主题编辑、幕布高度调整仍然由同一个 renderer 完成。
-     * Obsidian 自带的“编辑这个块”按钮继续保留，插件工具栏放在左上角来避开它。
+     * Obsidian 自带的“编辑这个块”按钮继续保留，插件工具栏按配置吸附在幕布四角内侧或外侧。
      */
   }
 

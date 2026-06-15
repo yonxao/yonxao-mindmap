@@ -32,6 +32,8 @@ import {
   FONT_SIZE_MIN,
   FONT_WEIGHT_MAX,
   FONT_WEIGHT_MIN,
+  TOOLBAR_CORNERS,
+  TOOLBAR_PLACEMENTS,
   normalizeMindConfig,
 } from '../config/mindConfig.js';
 import { createTranslator } from '../i18n/messages.js';
@@ -339,27 +341,17 @@ export class ConfigModal extends Modal {
         help: this.t('configModal.basic.sourceHeight.help'),
       }
     );
-    this.createNumberField(
-      this.t('configModal.basic.toolbarX'),
-      ['toolbar', 'x'],
-      normalized.toolbar.x,
-      {
-        min: 0,
-        max: 10000,
-        step: 1,
-        placeholder: this.t('configModal.basic.placeholder.default'),
-      }
+    this.createSelectField(
+      this.t('configModal.basic.toolbarCorner'),
+      ['toolbar', 'corner'],
+      normalized.toolbar.corner,
+      this.toolbarCornerOptions()
     );
-    this.createNumberField(
-      this.t('configModal.basic.toolbarY'),
-      ['toolbar', 'y'],
-      normalized.toolbar.y,
-      {
-        min: 0,
-        max: 10000,
-        step: 1,
-        placeholder: this.t('configModal.basic.placeholder.default'),
-      }
+    this.createSelectField(
+      this.t('configModal.basic.toolbarPlacement'),
+      ['toolbar', 'placement'],
+      normalized.toolbar.placement,
+      this.toolbarPlacementOptions()
     );
     this.createToggleField(
       this.t('configModal.basic.wheelZoom'),
@@ -371,8 +363,8 @@ export class ConfigModal extends Modal {
       }
     );
     this.createInlineResetButton(this.t('configModal.basic.resetToolbar'), [
-      ['toolbar', 'x'],
-      ['toolbar', 'y'],
+      ['toolbar', 'corner'],
+      ['toolbar', 'placement'],
     ]);
   }
 
@@ -1064,6 +1056,32 @@ export class ConfigModal extends Modal {
       ['side', this.t('configModal.branchExpansion.side')],
       ['hanging', this.t('configModal.branchExpansion.hanging')],
     ];
+  }
+
+  /*
+   * 作用：
+   * 工具栏吸附角落选项。
+   */
+  toolbarCornerOptions() {
+    const labels = {
+      'top-left': this.t('configModal.toolbarCorner.topLeft'),
+      'top-right': this.t('configModal.toolbarCorner.topRight'),
+      'bottom-left': this.t('configModal.toolbarCorner.bottomLeft'),
+      'bottom-right': this.t('configModal.toolbarCorner.bottomRight'),
+    };
+    return TOOLBAR_CORNERS.map((value) => [value, labels[value]]);
+  }
+
+  /*
+   * 作用：
+   * 工具栏在幕布内侧/外侧的选项。
+   */
+  toolbarPlacementOptions() {
+    const labels = {
+      inside: this.t('configModal.toolbarPlacement.inside'),
+      outside: this.t('configModal.toolbarPlacement.outside'),
+    };
+    return TOOLBAR_PLACEMENTS.map((value) => [value, labels[value]]);
   }
 
   /*

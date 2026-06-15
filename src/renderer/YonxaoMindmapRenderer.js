@@ -33,6 +33,8 @@ import {
   FONT_SIZE_MIN,
   FONT_WEIGHT_MAX,
   FONT_WEIGHT_MIN,
+  TOOLBAR_CORNERS,
+  TOOLBAR_PLACEMENTS,
   hasMeaningfulConfig,
   mergeMindConfigObjects,
   normalizeMindConfig,
@@ -122,6 +124,9 @@ export class YonxaoMindmapRenderer extends Component {
     this.topicDragState = null;
     this.heightResizeState = null;
     this.toolbarDragState = null;
+    this.pendingToolbarHideTimer = null;
+    this.pendingToolbarScrollTimer = null;
+    this.suppressToolbarDuringScroll = false;
     this.topicEditorDragState = null;
     this.manualCanvasHeight = false;
     this.manualSourceHeight = false;
@@ -141,7 +146,7 @@ export class YonxaoMindmapRenderer extends Component {
 
   /*
    * 作用：
-   * Renderer 被 Obsidian 卸载时，清理挂在 body 上的主题编辑浮层。
+   * Renderer 被 Obsidian 卸载时，清理挂在 body 上的浮层。
    */
   onunload() {
     this.closeTopicEditor();
@@ -150,6 +155,18 @@ export class YonxaoMindmapRenderer extends Component {
     }
     this.topicEditorEl = null;
     this.topicEditorFields = null;
+    if (this.pendingToolbarHideTimer) {
+      window.clearTimeout(this.pendingToolbarHideTimer);
+      this.pendingToolbarHideTimer = null;
+    }
+    if (this.pendingToolbarScrollTimer) {
+      window.clearTimeout(this.pendingToolbarScrollTimer);
+      this.pendingToolbarScrollTimer = null;
+    }
+    if (this.toolbarEl) {
+      this.toolbarEl.remove();
+    }
+    this.toolbarEl = null;
   }
 
   /*
@@ -203,6 +220,7 @@ export class YonxaoMindmapRenderer extends Component {
       this.scheduleFitView();
       this.scheduleApplyToolbarPosition();
     });
+    this.installToolbarScrollListeners();
   }
 
   /*
@@ -250,7 +268,7 @@ export class YonxaoMindmapRenderer extends Component {
    *
    * 目前接入：
    * - canvas.height 控制幕布手动高度。
-   * - toolbar.x/y 控制工具栏初始位置。
+   * - toolbar.corner/placement 控制工具栏吸附位置。
    */
   applyRuntimeConfigToView() {
     this.applyConfiguredCanvasHeight();
@@ -368,7 +386,7 @@ export class YonxaoMindmapRenderer extends Component {
 
   /*
    * 作用：
-   * 创建左上角悬浮工具栏。
+   * 创建可吸附到幕布四角内侧或外侧的悬浮工具栏。
    *
    * 调用链：
    * mount() -> createToolbar() -> createToolbarButton()。
@@ -377,7 +395,10 @@ export class YonxaoMindmapRenderer extends Component {
     const toolbar = document.createElement('div');
     toolbar.className = 'yonxao-mindmap-toolbar';
     this.toolbarEl = toolbar;
-    this.hostEl.insertBefore(toolbar, this.containerEl);
+    document.body.appendChild(toolbar);
+
+    this.installToolbarVisibilityEvents();
+    this.installToolbarEventBoundary();
 
     this.createToolbarDragHandle(toolbar);
 
@@ -416,6 +437,181 @@ export class YonxaoMindmapRenderer extends Component {
     );
 
     this.updateToggleViewButton();
+  }
+
+  /*
+   * 作用：
+   * body 级工具栏不能再依赖 .host:hover CSS 选择器，这里用事件控制显示和隐藏。
+   */
+  installToolbarVisibilityEvents() {
+    const show = () => this.showToolbar();
+    const scheduleHide = () => this.scheduleHideToolbar();
+
+    this.registerDomEvent(this.hostEl, 'mouseenter', show);
+    this.registerDomEvent(this.hostEl, 'mouseleave', scheduleHide);
+    this.registerDomEvent(this.hostEl, 'focusin', show);
+    this.registerDomEvent(this.hostEl, 'focusout', scheduleHide);
+    this.registerDomEvent(this.toolbarEl, 'mouseenter', show);
+    this.registerDomEvent(this.toolbarEl, 'mouseleave', scheduleHide);
+    this.registerDomEvent(this.toolbarEl, 'focusin', show);
+    this.registerDomEvent(this.toolbarEl, 'focusout', scheduleHide);
+    this.registerDomEvent(this.hostEl, 'wheel', () => this.handleToolbarScroll(260));
+    this.registerDomEvent(this.hostEl, 'pointerdown', (event) => {
+      if (event.button === 1) this.handleToolbarScroll(700);
+    });
+  }
+
+  /*
+   * 作用：
+   * 监听 Obsidian 内部真实滚动容器。Live Preview 的滚动常发生在内部 scroller，
+   * 只听 window/document 普通 scroll 不够稳定，所以这里把可滚动祖先也纳入监听。
+   */
+  installToolbarScrollListeners() {
+    const targets = new Set([window, document]);
+    let element = this.hostEl;
+    while (element && element !== document.body) {
+      if (this.isScrollableElement(element)) {
+        targets.add(element);
+      }
+      element = element.parentElement;
+    }
+
+    const listener = () => this.handleToolbarScroll();
+    for (const target of targets) {
+      target.addEventListener('scroll', listener, { capture: true, passive: true });
+      this.register(() => {
+        target.removeEventListener('scroll', listener, { capture: true });
+      });
+    }
+  }
+
+  /*
+   * 作用：
+   * 判断某个祖先元素是否可能是 Obsidian 的滚动容器。
+   */
+  isScrollableElement(element) {
+    if (!element || element === document.documentElement) return false;
+    const style = window.getComputedStyle(element);
+    const overflow = `${style.overflow} ${style.overflowY} ${style.overflowX}`;
+    if (!/(auto|scroll|overlay)/.test(overflow)) return false;
+    return element.scrollHeight > element.clientHeight || element.scrollWidth > element.clientWidth;
+  }
+
+  /*
+   * 作用：
+   * 工具栏挂到 body 后，需要自己阻止事件继续冒泡到 Obsidian 外层编辑器。
+   */
+  installToolbarEventBoundary() {
+    for (const eventName of [
+      'mousedown',
+      'mouseup',
+      'click',
+      'dblclick',
+      'pointerdown',
+      'pointerup',
+      'keydown',
+      'keyup',
+      'wheel',
+    ]) {
+      this.registerDomEvent(this.toolbarEl, eventName, (event) => {
+        event.stopPropagation();
+      });
+    }
+  }
+
+  /*
+   * 作用：
+   * 显示 body 级工具栏，并取消正在等待的隐藏动作。
+   */
+  showToolbar() {
+    if (!this.toolbarEl) return;
+    if (this.pendingToolbarHideTimer) {
+      window.clearTimeout(this.pendingToolbarHideTimer);
+      this.pendingToolbarHideTimer = null;
+    }
+    if (this.suppressToolbarDuringScroll) {
+      this.hideToolbar();
+      return;
+    }
+    if (!this.isToolbarHostNearViewport()) {
+      this.hideToolbar();
+      return;
+    }
+    this.applyToolbarPosition();
+    this.toolbarEl.classList.add('is-visible');
+    this.scheduleApplyToolbarPosition();
+  }
+
+  /*
+   * 作用：
+   * 延迟隐藏工具栏，给鼠标从导图区域移动到 body 级工具栏留一点时间。
+   */
+  scheduleHideToolbar() {
+    if (this.pendingToolbarHideTimer) {
+      window.clearTimeout(this.pendingToolbarHideTimer);
+    }
+    this.pendingToolbarHideTimer = window.setTimeout(() => {
+      this.pendingToolbarHideTimer = null;
+      if (this.shouldKeepToolbarVisible()) return;
+      this.hideToolbar();
+    }, 140);
+  }
+
+  /*
+   * 作用：
+   * 隐藏 body 级工具栏。
+   */
+  hideToolbar() {
+    this.toolbarEl?.classList.remove('is-visible');
+  }
+
+  /*
+   * 作用：
+   * 判断工具栏是否仍应保持可见。
+   */
+  shouldKeepToolbarVisible() {
+    if (this.toolbarDragState) return true;
+    if (this.suppressToolbarDuringScroll) return false;
+    const activeElement = document.activeElement;
+    return Boolean(
+      this.hostEl?.matches?.(':hover') ||
+      this.toolbarEl?.matches?.(':hover') ||
+      (activeElement && this.hostEl?.contains(activeElement)) ||
+      (activeElement && this.toolbarEl?.contains(activeElement))
+    );
+  }
+
+  /*
+   * 作用：
+   * 页面滚动时不显示工具栏，避免 body 级浮层在旧位置闪现或跟随滚动造成干扰。
+   */
+  handleToolbarScroll(quietMs = 180) {
+    if (!this.toolbarEl) return;
+    this.suppressToolbarDuringScroll = true;
+    this.hideToolbar();
+
+    if (this.pendingToolbarScrollTimer) {
+      window.clearTimeout(this.pendingToolbarScrollTimer);
+    }
+
+    this.pendingToolbarScrollTimer = window.setTimeout(() => {
+      this.pendingToolbarScrollTimer = null;
+      this.suppressToolbarDuringScroll = false;
+      if (this.shouldKeepToolbarVisible()) {
+        this.showToolbar();
+      }
+    }, quietMs);
+  }
+
+  /*
+   * 作用：
+   * 判断当前导图宿主是否仍在视口附近。
+   */
+  isToolbarHostNearViewport() {
+    if (!this.hostEl) return false;
+    const rect = this.hostEl.getBoundingClientRect();
+    const margin = 64;
+    return rect.bottom >= -margin && rect.top <= window.innerHeight + margin;
   }
 
   /*
@@ -510,12 +706,15 @@ export class YonxaoMindmapRenderer extends Component {
     this.toolbarDragState = null;
     this.toolbarEl.classList.remove('is-dragging-toolbar');
 
-    const position = this.currentToolbarPosition();
-    if (!position) return;
+    const snap = this.nearestToolbarSnap();
+    if (!snap) return;
 
-    this.rawConfig = setMindConfigPath(this.rawConfig, ['toolbar', 'x'], Math.round(position.x));
-    this.rawConfig = setMindConfigPath(this.rawConfig, ['toolbar', 'y'], Math.round(position.y));
+    this.rawConfig = setMindConfigPath(this.rawConfig, ['toolbar', 'corner'], snap.corner);
+    this.rawConfig = setMindConfigPath(this.rawConfig, ['toolbar', 'placement'], snap.placement);
+    this.rawConfig = deleteMindConfigPath(this.rawConfig, ['toolbar', 'x']);
+    this.rawConfig = deleteMindConfigPath(this.rawConfig, ['toolbar', 'y']);
     this.rememberViewModeConfig();
+    this.refreshNormalizedConfig();
     this.scheduleApplyToolbarPosition();
     Promise.resolve(this.saveRuntimeConfigToFile()).catch((error) => {
       new Notice(`yonxao-mindmap: ${error.message || String(error)}`);
@@ -524,19 +723,12 @@ export class YonxaoMindmapRenderer extends Component {
 
   /*
    * 作用：
-   * 从配置区恢复工具栏位置；没有配置时使用 CSS 默认左上角。
+   * 从配置区恢复工具栏吸附位置。
    */
   applyToolbarPosition() {
     if (!this.toolbarEl) return;
 
-    const { x, y } = this.config.toolbar;
-    if (x === null || y === null) {
-      this.toolbarEl.style.left = '';
-      this.toolbarEl.style.top = '';
-      return;
-    }
-
-    this.setToolbarPosition(x, y);
+    this.setToolbarSnap(this.config.toolbar.corner, this.config.toolbar.placement);
   }
 
   /*
@@ -545,7 +737,7 @@ export class YonxaoMindmapRenderer extends Component {
    *
    * 为什么要延迟：
    * Obsidian 保存代码块后可能会立刻重建预览 DOM；新 DOM 刚创建时，host/container 的尺寸还未稳定。
-   * 如果这时立刻 clamp toolbar.x/y，位置可能被误夹到左上角，看起来就像拖动后“闪回”。
+   * 如果这时立刻计算吸附点，位置可能因宿主尺寸未稳定而短暂偏移。
    */
   scheduleApplyToolbarPosition() {
     if (this.pendingToolbarFrame || typeof window === 'undefined') return;
@@ -558,40 +750,104 @@ export class YonxaoMindmapRenderer extends Component {
 
   /*
    * 作用：
-   * 设置工具栏坐标，并限制在插件宿主区域内。
+   * 设置 body 级工具栏坐标。拖动过程中允许临时停在任意位置。
    */
   setToolbarPosition(x, y) {
     if (!this.toolbarEl || !this.hostEl) return;
 
     const hostRect = this.hostEl.getBoundingClientRect();
     const toolbarRect = this.toolbarEl.getBoundingClientRect();
-    if (!hostRect.width || !hostRect.height || !toolbarRect.width || !toolbarRect.height) {
+    if (!hostRect.width || !toolbarRect.width || !toolbarRect.height) {
       this.scheduleApplyToolbarPosition();
       return;
     }
 
-    const maxX = Math.max(0, hostRect.width - toolbarRect.width - 4);
-    const maxY = Math.max(0, hostRect.height - toolbarRect.height - 4);
-    const minX = Math.min(4, maxX);
-    const minY = Math.min(4, maxY);
+    const gap = 8;
+    const maxLeft = Math.max(gap, window.innerWidth - toolbarRect.width - gap);
+    const maxTop = Math.max(gap, window.innerHeight - toolbarRect.height - gap);
+    const left = clamp(hostRect.left + x, gap, maxLeft);
+    const top = clamp(hostRect.top + y, gap, maxTop);
 
-    this.toolbarEl.style.left = `${Math.round(clamp(x, minX, maxX))}px`;
-    this.toolbarEl.style.top = `${Math.round(clamp(y, minY, maxY))}px`;
+    this.toolbarEl.style.left = `${Math.round(left)}px`;
+    this.toolbarEl.style.top = `${Math.round(top)}px`;
   }
 
   /*
    * 作用：
-   * 读取工具栏当前坐标，供拖动结束后写入配置区。
+   * 根据配置的角落和内外侧设置工具栏吸附位置。
    */
-  currentToolbarPosition() {
+  setToolbarSnap(corner, placement) {
+    const point = this.toolbarSnapPoint(corner, placement);
+    if (!point) {
+      this.scheduleApplyToolbarPosition();
+      return;
+    }
+
+    this.toolbarEl.style.left = `${Math.round(point.left)}px`;
+    this.toolbarEl.style.top = `${Math.round(point.top)}px`;
+  }
+
+  /*
+   * 作用：
+   * 计算某个“角落 + 内外侧”对应的 fixed 屏幕坐标。
+   */
+  toolbarSnapPoint(corner, placement) {
     if (!this.toolbarEl || !this.hostEl) return null;
 
-    const toolbarRect = this.toolbarEl.getBoundingClientRect();
     const hostRect = this.hostEl.getBoundingClientRect();
+    const toolbarRect = this.toolbarEl.getBoundingClientRect();
+    if (!hostRect.width || !hostRect.height || !toolbarRect.width || !toolbarRect.height) {
+      return null;
+    }
+
+    const gap = 8;
+    const [vertical, horizontal] = String(corner || '').split('-');
+    const isRight = horizontal === 'right';
+    const isBottom = vertical === 'bottom';
+    const left = isRight ? hostRect.right - toolbarRect.width - gap : hostRect.left + gap;
+    let top = isBottom ? hostRect.bottom - toolbarRect.height - gap : hostRect.top + gap;
+
+    if (placement === 'outside') {
+      top = isBottom ? hostRect.bottom + gap : hostRect.top - toolbarRect.height - gap;
+    }
+
+    const maxLeft = Math.max(gap, window.innerWidth - toolbarRect.width - gap);
+    const maxTop = Math.max(gap, window.innerHeight - toolbarRect.height - gap);
     return {
-      x: toolbarRect.left - hostRect.left,
-      y: toolbarRect.top - hostRect.top,
+      left: clamp(left, gap, maxLeft),
+      top: clamp(top, gap, maxTop),
     };
+  }
+
+  /*
+   * 作用：
+   * 拖动结束后，把当前临时位置吸附到最近的 8 个工具栏位置。
+   */
+  nearestToolbarSnap() {
+    if (!this.toolbarEl) return null;
+
+    const toolbarRect = this.toolbarEl.getBoundingClientRect();
+    const currentCenter = {
+      x: toolbarRect.left + toolbarRect.width / 2,
+      y: toolbarRect.top + toolbarRect.height / 2,
+    };
+    let best = null;
+
+    for (const corner of TOOLBAR_CORNERS) {
+      for (const placement of TOOLBAR_PLACEMENTS) {
+        const point = this.toolbarSnapPoint(corner, placement);
+        if (!point) continue;
+
+        const centerX = point.left + toolbarRect.width / 2;
+        const centerY = point.top + toolbarRect.height / 2;
+        const distance = Math.hypot(currentCenter.x - centerX, currentCenter.y - centerY);
+        if (!best || distance < best.distance) {
+          best = { corner, placement, distance };
+        }
+      }
+    }
+
+    return best;
   }
 
   /*
@@ -2323,10 +2579,13 @@ export class YonxaoMindmapRenderer extends Component {
 
   /*
    * 作用：
-   * 生成写回 Markdown 的配置对象，移除只属于当前会话的视图模式。
+   * 生成写回 Markdown 的配置对象，移除只属于当前会话或旧实验配置的字段。
    */
   documentConfigForSave(config) {
-    return deleteMindConfigPath(config || {}, ['view', 'mode']);
+    let next = deleteMindConfigPath(config || {}, ['view', 'mode']);
+    next = deleteMindConfigPath(next, ['toolbar', 'x']);
+    next = deleteMindConfigPath(next, ['toolbar', 'y']);
+    return next;
   }
 
   /*
