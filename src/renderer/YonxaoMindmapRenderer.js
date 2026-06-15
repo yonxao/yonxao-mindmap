@@ -163,6 +163,8 @@ export class YonxaoMindmapRenderer extends Component {
     this.pendingFitFrame = null;
     this.pendingToolbarFrame = null;
     this.pendingSourceHeightFrame = null;
+    this.containerResizeObserver = null;
+    this.lastObservedContainerWidth = 0;
     this.sourceLineCount = 1;
     this.fitRetryCount = 0;
   }
@@ -196,6 +198,10 @@ export class YonxaoMindmapRenderer extends Component {
       this.toolbarEl.remove();
     }
     this.toolbarEl = null;
+    if (this.containerResizeObserver) {
+      this.containerResizeObserver.disconnect();
+      this.containerResizeObserver = null;
+    }
   }
 
   /*
@@ -237,6 +243,7 @@ export class YonxaoMindmapRenderer extends Component {
     this.createTopicEditor();
     this.createHeightResizeHandle();
     this.applyRuntimeConfigToView();
+    this.installContainerResizeObserver();
     this.installEventBoundary();
     this.renderMap(true);
     if (parseError) {
@@ -322,6 +329,36 @@ export class YonxaoMindmapRenderer extends Component {
 
     this.manualCanvasHeight = false;
     this.containerEl.style.height = '';
+  }
+
+  /*
+   * 作用：
+   * 监听幕布宽度变化，在 Obsidian 切换阅读视图或侧栏布局稳定后重新适配自动高度。
+   *
+   * 为什么需要：
+   * Markdown 阅读视图切换时，代码块渲染常常早于最终内容宽度稳定。
+   * 如果只按首次宽度计算自动高度，容器可能保留默认高度，导致上下出现大块空白。
+   */
+  installContainerResizeObserver() {
+    if (
+      !this.containerEl ||
+      typeof window === 'undefined' ||
+      typeof window.ResizeObserver !== 'function'
+    ) {
+      return;
+    }
+
+    this.containerResizeObserver = new window.ResizeObserver((entries) => {
+      const entry = entries[0];
+      const width =
+        entry?.contentRect?.width || this.containerEl?.getBoundingClientRect().width || 0;
+      if (!width || Math.abs(width - this.lastObservedContainerWidth) < 1) return;
+
+      this.lastObservedContainerWidth = width;
+      this.scheduleFitView();
+      this.scheduleApplyToolbarPosition();
+    });
+    this.containerResizeObserver.observe(this.containerEl);
   }
 
   /*
