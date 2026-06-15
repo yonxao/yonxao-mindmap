@@ -113,6 +113,8 @@ export class YonxaoMindmapRenderer extends Component {
     this.sourceStatusEl = null;
     this.topicEditorEl = null;
     this.topicEditorFields = null;
+    this.topicTextEditorEl = null;
+    this.topicTextEditorInput = null;
     this.inlineTextEditorEl = null;
     this.inlineEditingTopicId = null;
     this.inlineTextEditorSaving = false;
@@ -128,6 +130,7 @@ export class YonxaoMindmapRenderer extends Component {
     this.pendingToolbarScrollTimer = null;
     this.suppressToolbarDuringScroll = false;
     this.topicEditorDragState = null;
+    this.topicTextEditorDragState = null;
     this.manualCanvasHeight = false;
     this.manualSourceHeight = false;
     this.isSourceMode = false;
@@ -155,6 +158,11 @@ export class YonxaoMindmapRenderer extends Component {
     }
     this.topicEditorEl = null;
     this.topicEditorFields = null;
+    if (this.topicTextEditorEl) {
+      this.topicTextEditorEl.remove();
+    }
+    this.topicTextEditorEl = null;
+    this.topicTextEditorInput = null;
     if (this.pendingToolbarHideTimer) {
       window.clearTimeout(this.pendingToolbarHideTimer);
       this.pendingToolbarHideTimer = null;
@@ -1490,6 +1498,7 @@ export class YonxaoMindmapRenderer extends Component {
     const textInput = document.createElement('textarea');
     textInput.className = 'yonxao-mindmap-topic-editor-input yonxao-mindmap-topic-editor-textarea';
     textInput.placeholder = this.t('topicEditor.text');
+    const textField = this.createTopicEditorTextField(textInput);
 
     const colorField = this.createTopicEditorColorField();
     const colorInput = document.createElement('input');
@@ -1565,7 +1574,7 @@ export class YonxaoMindmapRenderer extends Component {
     actions.appendChild(cancelButton);
 
     this.topicEditorEl.appendChild(titleEl);
-    this.topicEditorEl.appendChild(createLabeledField(this.t('topicEditor.text'), textInput));
+    this.topicEditorEl.appendChild(textField);
     this.topicEditorEl.appendChild(createLabeledField(this.t('topicEditor.color'), colorField));
     this.topicEditorEl.appendChild(createLabeledField(this.t('topicEditor.icon'), iconPicker));
     this.topicEditorEl.appendChild(
@@ -1635,6 +1644,129 @@ export class YonxaoMindmapRenderer extends Component {
         Promise.resolve(this.saveTopicEditor()).catch((error) => {
           new Notice(`yonxao-mindmap: ${error.message || String(error)}`);
         });
+      }
+    });
+
+    this.createTopicTextEditor();
+  }
+
+  /*
+   * 作用：
+   * 创建主题文本输入行，左侧标签下方放一个放大编辑按钮。
+   */
+  createTopicEditorTextField(textInput) {
+    const field = document.createElement('div');
+    field.className = 'yonxao-mindmap-topic-editor-field yonxao-mindmap-topic-editor-text-control';
+
+    const labelColumn = document.createElement('div');
+    labelColumn.className = 'yonxao-mindmap-topic-editor-text-label';
+
+    const labelText = document.createElement('span');
+    labelText.textContent = this.t('topicEditor.text');
+
+    const expandButton = document.createElement('button');
+    expandButton.type = 'button';
+    expandButton.className =
+      'yonxao-mindmap-topic-editor-icon-button yonxao-mindmap-topic-editor-text-expand';
+
+    try {
+      setIcon(expandButton, 'maximize-2');
+    } catch (_error) {
+      expandButton.textContent = '...';
+    }
+
+    const expandButtonText = document.createElement('span');
+    expandButtonText.className = 'yonxao-mindmap-topic-editor-sr-only';
+    expandButtonText.textContent = this.t('topicEditor.expandText');
+    expandButton.appendChild(expandButtonText);
+
+    labelColumn.appendChild(labelText);
+    labelColumn.appendChild(expandButton);
+    field.appendChild(labelColumn);
+    field.appendChild(textInput);
+
+    this.registerDomEvent(expandButton, 'click', (event) => {
+      event.preventDefault();
+      event.stopPropagation();
+      this.openTopicTextEditor();
+    });
+
+    return field;
+  }
+
+  /*
+   * 作用：
+   * 创建用于编辑长主题文本的独立浮层。
+   */
+  createTopicTextEditor() {
+    this.topicTextEditorEl = document.createElement('div');
+    this.topicTextEditorEl.className = 'yonxao-mindmap-topic-text-editor';
+    this.topicTextEditorEl.hidden = true;
+
+    const titleEl = document.createElement('div');
+    titleEl.className = 'yonxao-mindmap-topic-text-editor-title';
+    titleEl.textContent = this.t('topicEditor.textEditorTitle');
+
+    const inputEl = document.createElement('textarea');
+    inputEl.className = 'yonxao-mindmap-topic-editor-input yonxao-mindmap-topic-text-editor-input';
+    inputEl.placeholder = this.t('topicEditor.text');
+    inputEl.spellcheck = false;
+
+    const actions = document.createElement('div');
+    actions.className = 'yonxao-mindmap-topic-editor-actions';
+    const applyButton = this.createPanelButton(this.t('topicEditor.applyText'), () => {
+      this.closeTopicTextEditor(true);
+    });
+    const cancelButton = this.createPanelButton(this.t('topicEditor.cancel'), () => {
+      this.closeTopicTextEditor(false);
+    });
+    actions.appendChild(applyButton);
+    actions.appendChild(cancelButton);
+
+    this.topicTextEditorEl.appendChild(titleEl);
+    this.topicTextEditorEl.appendChild(inputEl);
+    this.topicTextEditorEl.appendChild(actions);
+    document.body.appendChild(this.topicTextEditorEl);
+
+    this.topicTextEditorInput = inputEl;
+
+    for (const eventName of [
+      'mousedown',
+      'mouseup',
+      'click',
+      'dblclick',
+      'pointerdown',
+      'pointerup',
+      'keydown',
+      'keyup',
+      'input',
+      'change',
+      'wheel',
+    ]) {
+      this.registerDomEvent(this.topicTextEditorEl, eventName, (event) => {
+        event.stopPropagation();
+      });
+    }
+
+    this.registerDomEvent(titleEl, 'pointerdown', (event) => {
+      this.startTopicTextEditorDrag(event);
+    });
+    this.registerDomEvent(titleEl, 'pointermove', (event) => {
+      this.handleTopicTextEditorDragMove(event);
+    });
+    this.registerDomEvent(titleEl, 'pointerup', (event) => {
+      this.finishTopicTextEditorDrag(event);
+    });
+    this.registerDomEvent(titleEl, 'pointercancel', (event) => {
+      this.finishTopicTextEditorDrag(event);
+    });
+    this.registerDomEvent(inputEl, 'keydown', (event) => {
+      if (event.key === 'Enter' && (event.metaKey || event.ctrlKey)) {
+        event.preventDefault();
+        this.closeTopicTextEditor(true);
+      } else if (event.key === 'Escape') {
+        event.preventDefault();
+        this.closeTopicTextEditor(false);
       }
     });
   }
@@ -1994,6 +2126,137 @@ export class YonxaoMindmapRenderer extends Component {
 
   /*
    * 作用：
+   * 打开长主题文本编辑浮层。
+   */
+  openTopicTextEditor() {
+    if (!this.topicEditorFields?.text || !this.topicTextEditorEl || !this.topicTextEditorInput) {
+      return;
+    }
+
+    this.topicTextEditorInput.value = this.topicEditorFields.text.value || '';
+    this.topicTextEditorEl.hidden = false;
+    this.positionTopicTextEditor();
+    this.topicTextEditorInput.focus();
+    this.topicTextEditorInput.select();
+  }
+
+  /*
+   * 作用：
+   * 关闭长主题文本编辑浮层；apply 为 true 时把内容回填到主题编辑面板。
+   */
+  closeTopicTextEditor(apply = false) {
+    if (!this.topicTextEditorEl) return;
+
+    if (apply && this.topicEditorFields?.text && this.topicTextEditorInput) {
+      this.topicEditorFields.text.value = this.topicTextEditorInput.value;
+      this.topicEditorFields.text.focus();
+    }
+
+    this.topicTextEditorEl.hidden = true;
+    this.topicTextEditorEl.style.left = '';
+    this.topicTextEditorEl.style.top = '';
+    this.topicTextEditorEl.classList.remove('is-dragging');
+    this.topicTextEditorDragState = null;
+  }
+
+  /*
+   * 作用：
+   * 初次打开长文本编辑浮层时放在视口中央。
+   */
+  positionTopicTextEditor() {
+    if (!this.topicTextEditorEl) return;
+
+    const rect = this.topicTextEditorEl.getBoundingClientRect();
+    const left = (window.innerWidth - rect.width) / 2;
+    const top = (window.innerHeight - rect.height) / 2;
+    const position = this.clampTopicTextEditorPosition(left, top, rect);
+    this.topicTextEditorEl.style.left = `${Math.round(position.left)}px`;
+    this.topicTextEditorEl.style.top = `${Math.round(position.top)}px`;
+  }
+
+  /*
+   * 作用：
+   * 限制长文本编辑浮层停留在视口内。
+   */
+  clampTopicTextEditorPosition(left, top, rect = null) {
+    const gap = 12;
+    const panelRect = rect || this.topicTextEditorEl?.getBoundingClientRect();
+    const width = panelRect?.width || 520;
+    const height = panelRect?.height || 420;
+    return {
+      left: clamp(left, gap, Math.max(gap, window.innerWidth - width - gap)),
+      top: clamp(top, gap, Math.max(gap, window.innerHeight - height - gap)),
+    };
+  }
+
+  /*
+   * 作用：
+   * 开始拖动长文本编辑浮层。
+   */
+  startTopicTextEditorDrag(event) {
+    if (event.button !== 0 || !this.topicTextEditorEl || this.topicTextEditorEl.hidden) return;
+
+    event.preventDefault();
+    event.stopPropagation();
+
+    const rect = this.topicTextEditorEl.getBoundingClientRect();
+    this.topicTextEditorDragState = {
+      pointerId: event.pointerId,
+      startClientX: event.clientX,
+      startClientY: event.clientY,
+      startLeft: rect.left,
+      startTop: rect.top,
+    };
+    this.topicTextEditorEl.classList.add('is-dragging');
+
+    try {
+      event.currentTarget.setPointerCapture(event.pointerId);
+    } catch (_error) {
+      // Pointer Capture 不可用时仍可在标题栏范围内拖动。
+    }
+  }
+
+  /*
+   * 作用：
+   * 处理长文本编辑浮层拖动。
+   */
+  handleTopicTextEditorDragMove(event) {
+    const state = this.topicTextEditorDragState;
+    if (!state || event.pointerId !== state.pointerId || !this.topicTextEditorEl) return;
+
+    event.preventDefault();
+    event.stopPropagation();
+
+    const nextLeft = state.startLeft + event.clientX - state.startClientX;
+    const nextTop = state.startTop + event.clientY - state.startClientY;
+    const position = this.clampTopicTextEditorPosition(nextLeft, nextTop);
+    this.topicTextEditorEl.style.left = `${Math.round(position.left)}px`;
+    this.topicTextEditorEl.style.top = `${Math.round(position.top)}px`;
+  }
+
+  /*
+   * 作用：
+   * 结束长文本编辑浮层拖动。
+   */
+  finishTopicTextEditorDrag(event) {
+    const state = this.topicTextEditorDragState;
+    if (!state || event.pointerId !== state.pointerId) return;
+
+    event.preventDefault();
+    event.stopPropagation();
+
+    try {
+      event.currentTarget.releasePointerCapture(event.pointerId);
+    } catch (_error) {
+      // 没有捕获到指针时释放会失败，这里安全忽略。
+    }
+
+    this.topicTextEditorDragState = null;
+    this.topicTextEditorEl?.classList.remove('is-dragging');
+  }
+
+  /*
+   * 作用：
    * 把主题编辑面板定位到当前主题附近。
    */
   positionTopicEditor(topic) {
@@ -2108,6 +2371,7 @@ export class YonxaoMindmapRenderer extends Component {
    */
   closeTopicEditor() {
     this.editingTopicId = null;
+    this.closeTopicTextEditor(false);
     if (this.topicEditorEl) {
       this.topicEditorEl.hidden = true;
       this.topicEditorEl.style.left = '';

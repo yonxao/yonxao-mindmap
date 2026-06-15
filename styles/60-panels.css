@@ -130,14 +130,59 @@
 
 /*
  * 作用：
- * 主题文本编辑框，默认保持紧凑，但允许用户拖拽放大。
+ * 主题文本编辑框，默认保持紧凑，只允许用户纵向拖高。
  */
 .yonxao-mindmap-topic-editor-textarea {
   min-height: 64px;
   max-height: 220px;
-  resize: both;
+  resize: vertical;
   line-height: 1.45;
   white-space: pre-wrap;
+}
+
+/*
+ * 作用：
+ * 主题文本输入区，右侧提供长文本编辑入口。
+ */
+.yonxao-mindmap-topic-editor-text-control {
+  align-items: start;
+}
+
+.yonxao-mindmap-topic-editor-text-label {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 6px;
+}
+
+.yonxao-mindmap-topic-editor-icon-button.yonxao-mindmap-topic-editor-text-expand {
+  width: 30px;
+  height: 30px;
+  min-height: 30px;
+  align-items: center;
+  justify-content: center;
+  padding: 5px;
+  flex: 0 0 30px;
+  gap: 0;
+}
+
+.yonxao-mindmap-topic-editor-icon-button.yonxao-mindmap-topic-editor-text-expand svg {
+  display: block;
+  margin: 0;
+  flex: 0 0 auto;
+}
+
+.yonxao-mindmap-topic-editor-sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  border: 0;
+  margin: -1px;
+  white-space: nowrap;
 }
 
 /*
@@ -317,6 +362,56 @@
   color: var(--text-faint);
   cursor: default;
   opacity: 0.55;
+}
+
+/*
+ * 作用：
+ * 长主题文本编辑浮层，独立悬浮在视口中，避免被幕布裁切。
+ */
+.yonxao-mindmap-topic-text-editor {
+  --yonxao-mindmap-mono-font:
+    'Sarasa Mono SC', 'Noto Sans Mono CJK SC', 'Source Han Mono SC', 'Cascadia Mono',
+    'JetBrains Mono', 'Liberation Mono', monospace;
+  position: fixed;
+  z-index: 1001;
+  left: 12px;
+  top: 12px;
+  width: min(560px, calc(100vw - 24px));
+  max-height: calc(100vh - 24px);
+  box-sizing: border-box;
+  display: grid;
+  gap: 10px;
+  padding: 12px;
+  border: 1px solid var(--background-modifier-border);
+  border-radius: 8px;
+  background: var(--background-primary);
+  box-shadow: var(--shadow-l);
+  overscroll-behavior: contain;
+}
+
+.yonxao-mindmap-topic-text-editor[hidden] {
+  display: none;
+}
+
+.yonxao-mindmap-topic-text-editor.is-dragging {
+  user-select: none;
+}
+
+.yonxao-mindmap-topic-text-editor-title {
+  color: var(--text-normal);
+  font-size: var(--font-ui-small);
+  font-weight: 700;
+  cursor: move;
+  user-select: none;
+  touch-action: none;
+}
+
+.yonxao-mindmap-topic-text-editor-input {
+  min-height: min(320px, 52vh);
+  max-height: calc(100vh - 140px);
+  resize: vertical;
+  line-height: 1.55;
+  white-space: pre-wrap;
 }
 
 /*
