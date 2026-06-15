@@ -27,13 +27,20 @@ import {
 } from '../constants.js';
 import {
   deleteMindConfigPath,
+  FONT_LINE_HEIGHT_MAX,
+  FONT_LINE_HEIGHT_MIN,
+  FONT_SIZE_MAX,
+  FONT_SIZE_MIN,
+  FONT_WEIGHT_MAX,
+  FONT_WEIGHT_MIN,
   hasMeaningfulConfig,
   mergeMindConfigObjects,
   normalizeMindConfig,
   serializeMindSource,
   setMindConfigPath,
 } from '../config/mindConfig.js';
-import { renderIcon } from '../icons/renderIcon.js';
+import { ICON_PATHS } from '../icons/iconPaths.js';
+import { normalizeIcon, renderIcon } from '../icons/renderIcon.js';
 import { layoutTree, normalizeLayoutType } from '../layout/layoutTree.js';
 import { replaceCodeBlockSource } from '../markdown/codeBlock.js';
 import {
@@ -50,10 +57,28 @@ import { serializeMindDocument } from '../parser/serializeMind.js';
 import { applyTopicLevelKey } from '../source/topicLevelKeys.js';
 import { themeConnectorOpacity, themeTopicFillAlpha } from '../theme/mindThemes.js';
 import { ConfigModal } from '../ui/ConfigModal.js';
+import {
+  CUSTOM_FONT_VALUE,
+  getLocalizedFontFamilyGroups,
+  isPresetFontValue,
+} from '../ui/fontOptions.js';
 import { connectorColor, topicColor, transparentColor } from '../utils/color.js';
 import { createLabeledField } from '../utils/dom.js';
 import { clamp } from '../utils/math.js';
 import { svg } from '../utils/svg.js';
+
+const TOPIC_EDITOR_COLOR_SWATCHES = Object.freeze([
+  '#ef4444',
+  '#f97316',
+  '#f59e0b',
+  '#22c55e',
+  '#14b8a6',
+  '#06b6d4',
+  '#3b82f6',
+  '#8b5cf6',
+  '#ec4899',
+  '#64748b',
+]);
 
 export class YonxaoMindmapRenderer extends Component {
   static viewModeMemory = new Map();
@@ -1192,20 +1217,39 @@ export class YonxaoMindmapRenderer extends Component {
     titleEl.className = 'yonxao-mindmap-topic-editor-title';
     titleEl.textContent = this.t('topicEditor.title');
 
-    const textInput = document.createElement('input');
-    textInput.type = 'text';
-    textInput.className = 'yonxao-mindmap-topic-editor-input';
+    const textInput = document.createElement('textarea');
+    textInput.className = 'yonxao-mindmap-topic-editor-input yonxao-mindmap-topic-editor-textarea';
     textInput.placeholder = this.t('topicEditor.text');
 
+    const colorField = this.createTopicEditorColorField();
     const colorInput = document.createElement('input');
-    colorInput.type = 'text';
-    colorInput.className = 'yonxao-mindmap-topic-editor-input';
-    colorInput.placeholder = '#3b82f6';
+    colorInput.type = 'hidden';
+    colorField.appendChild(colorInput);
 
+    const iconPicker = this.createTopicEditorIconPicker();
     const iconInput = document.createElement('input');
-    iconInput.type = 'text';
-    iconInput.className = 'yonxao-mindmap-topic-editor-input';
-    iconInput.placeholder = 'book';
+    iconInput.type = 'hidden';
+    iconPicker.appendChild(iconInput);
+
+    const fontFamilyField = this.createTopicEditorFontFamilyField();
+    const fontSizeInput = this.createTopicEditorNumberInput({
+      min: FONT_SIZE_MIN,
+      max: FONT_SIZE_MAX,
+      step: 1,
+      placeholder: '14',
+    });
+    const fontWeightInput = this.createTopicEditorNumberInput({
+      min: FONT_WEIGHT_MIN,
+      max: FONT_WEIGHT_MAX,
+      step: 100,
+      placeholder: '400',
+    });
+    const lineHeightInput = this.createTopicEditorNumberInput({
+      min: FONT_LINE_HEIGHT_MIN,
+      max: FONT_LINE_HEIGHT_MAX,
+      step: 1,
+      placeholder: '22',
+    });
 
     const layoutSelect = document.createElement('select');
     layoutSelect.className = 'yonxao-mindmap-topic-editor-input';
@@ -1243,28 +1287,29 @@ export class YonxaoMindmapRenderer extends Component {
     const saveButton = this.createPanelButton(this.t('topicEditor.save'), async () => {
       await this.saveTopicEditor();
     });
-    const addSubtopicButton = this.createPanelButton(
-      this.t('topicEditor.addSubtopic'),
-      async () => {
-        await this.addSubtopicFromTopicEditor();
-      }
-    );
-    const deleteButton = this.createPanelButton(this.t('topicEditor.delete'), async () => {
-      await this.deleteTopicFromEditor();
-    });
     const cancelButton = this.createPanelButton(this.t('topicEditor.cancel'), () => {
       this.closeTopicEditor();
     });
 
     actions.appendChild(saveButton);
-    actions.appendChild(addSubtopicButton);
-    actions.appendChild(deleteButton);
     actions.appendChild(cancelButton);
 
     this.topicEditorEl.appendChild(titleEl);
     this.topicEditorEl.appendChild(createLabeledField(this.t('topicEditor.text'), textInput));
-    this.topicEditorEl.appendChild(createLabeledField(this.t('topicEditor.color'), colorInput));
-    this.topicEditorEl.appendChild(createLabeledField(this.t('topicEditor.icon'), iconInput));
+    this.topicEditorEl.appendChild(createLabeledField(this.t('topicEditor.color'), colorField));
+    this.topicEditorEl.appendChild(createLabeledField(this.t('topicEditor.icon'), iconPicker));
+    this.topicEditorEl.appendChild(
+      createLabeledField(this.t('topicEditor.fontFamily'), fontFamilyField)
+    );
+    this.topicEditorEl.appendChild(
+      createLabeledField(this.t('topicEditor.fontSize'), fontSizeInput)
+    );
+    this.topicEditorEl.appendChild(
+      createLabeledField(this.t('topicEditor.fontWeight'), fontWeightInput)
+    );
+    this.topicEditorEl.appendChild(
+      createLabeledField(this.t('topicEditor.lineHeight'), lineHeightInput)
+    );
     this.topicEditorEl.appendChild(createLabeledField(this.t('topicEditor.layout'), layoutSelect));
     this.topicEditorEl.appendChild(actions);
     this.containerEl.appendChild(this.topicEditorEl);
@@ -1272,19 +1317,333 @@ export class YonxaoMindmapRenderer extends Component {
     this.topicEditorFields = {
       text: textInput,
       color: colorInput,
+      colorField,
       icon: iconInput,
+      iconPicker,
+      fontFamily: fontFamilyField._valueInput,
+      fontFamilyField,
+      fontSize: fontSizeInput,
+      fontWeight: fontWeightInput,
+      lineHeight: lineHeightInput,
       layout: layoutSelect,
-      deleteButton,
     };
 
     this.registerDomEvent(textInput, 'keydown', (event) => {
-      if (event.key === 'Enter') {
+      if (event.key === 'Enter' && (event.metaKey || event.ctrlKey)) {
         event.preventDefault();
         Promise.resolve(this.saveTopicEditor()).catch((error) => {
           new Notice(`yonxao-mindmap: ${error.message || String(error)}`);
         });
       }
     });
+  }
+
+  /*
+   * 作用：
+   * 创建主题编辑面板中的字体选择控件。
+   *
+   * 实现逻辑：
+   * 字体预设复用配置弹窗里的分组；空值表示不写主题属性，继续继承上级/全局字体。
+   */
+  createTopicEditorFontFamilyField() {
+    const field = document.createElement('div');
+    field.className = 'yonxao-mindmap-topic-editor-font-family';
+
+    const select = document.createElement('select');
+    select.className = 'yonxao-mindmap-topic-editor-input';
+    this.appendTopicEditorFontOptions(select);
+
+    const customInput = document.createElement('input');
+    customInput.type = 'text';
+    customInput.className = 'yonxao-mindmap-topic-editor-input';
+    customInput.placeholder = this.t('topicEditor.fontCustomPlaceholder');
+    customInput.hidden = true;
+
+    const valueInput = document.createElement('input');
+    valueInput.type = 'hidden';
+
+    field.appendChild(select);
+    field.appendChild(customInput);
+    field.appendChild(valueInput);
+    field._select = select;
+    field._customInput = customInput;
+    field._valueInput = valueInput;
+
+    this.registerDomEvent(select, 'change', () => {
+      if (select.value === CUSTOM_FONT_VALUE) {
+        customInput.hidden = false;
+        valueInput.value = customInput.value.trim();
+        customInput.focus();
+        return;
+      }
+
+      customInput.hidden = true;
+      customInput.value = '';
+      valueInput.value = select.value;
+    });
+
+    this.registerDomEvent(customInput, 'input', () => {
+      valueInput.value = customInput.value.trim();
+    });
+
+    return field;
+  }
+
+  /*
+   * 作用：
+   * 把字体预设按当前界面语言写入主题编辑面板的字体下拉框。
+   */
+  appendTopicEditorFontOptions(select) {
+    const translate = (key, replacements) => this.t(key, replacements);
+    for (const group of getLocalizedFontFamilyGroups(translate)) {
+      const groupEl = document.createElement('optgroup');
+      groupEl.label = group.group;
+
+      for (const [optionValue, optionLabel] of group.options) {
+        const option = document.createElement('option');
+        option.value = optionValue;
+        option.textContent = optionLabel;
+        groupEl.appendChild(option);
+      }
+
+      select.appendChild(groupEl);
+    }
+  }
+
+  /*
+   * 作用：
+   * 同步编辑面板中的字体下拉、自定义输入框和保存值。
+   */
+  setTopicEditorFontFamilyValue(value) {
+    const fields = this.topicEditorFields;
+    if (!fields?.fontFamily || !fields.fontFamilyField) return;
+
+    const fontFamily = String(value || '').trim();
+    const select = fields.fontFamilyField._select;
+    const customInput = fields.fontFamilyField._customInput;
+    fields.fontFamily.value = fontFamily;
+
+    if (!fontFamily) {
+      select.value = '';
+      customInput.value = '';
+      customInput.hidden = true;
+      return;
+    }
+
+    if (isPresetFontValue(fontFamily)) {
+      select.value = fontFamily;
+      customInput.value = '';
+      customInput.hidden = true;
+      return;
+    }
+
+    select.value = CUSTOM_FONT_VALUE;
+    customInput.value = fontFamily;
+    customInput.hidden = false;
+  }
+
+  /*
+   * 作用：
+   * 创建主题编辑面板中的数字输入控件。
+   */
+  createTopicEditorNumberInput({ min, max, step, placeholder }) {
+    const input = document.createElement('input');
+    input.type = 'number';
+    input.className = 'yonxao-mindmap-topic-editor-input';
+    input.min = String(min);
+    input.max = String(max);
+    input.step = String(step);
+    input.placeholder = placeholder;
+    return input;
+  }
+
+  /*
+   * 作用：
+   * 创建主题编辑面板中的颜色控件。
+   */
+  createTopicEditorColorField() {
+    const field = document.createElement('div');
+    field.className = 'yonxao-mindmap-topic-editor-color';
+
+    const input = document.createElement('input');
+    input.type = 'text';
+    input.className = 'yonxao-mindmap-topic-editor-input';
+    input.placeholder = '#3b82f6';
+
+    const picker = document.createElement('input');
+    picker.type = 'color';
+    picker.className = 'yonxao-mindmap-topic-editor-color-picker';
+    picker.value = TOPIC_EDITOR_COLOR_SWATCHES[6];
+
+    const swatches = document.createElement('div');
+    swatches.className = 'yonxao-mindmap-topic-editor-swatches';
+    for (const color of TOPIC_EDITOR_COLOR_SWATCHES) {
+      const button = document.createElement('button');
+      button.type = 'button';
+      button.className = 'yonxao-mindmap-topic-editor-swatch';
+      button.style.backgroundColor = color;
+      button.setAttribute('aria-label', color);
+      button.dataset.color = color;
+      swatches.appendChild(button);
+    }
+
+    field.appendChild(input);
+    field.appendChild(picker);
+    field.appendChild(swatches);
+    field._textInput = input;
+    field._colorPicker = picker;
+
+    this.registerDomEvent(input, 'input', () => {
+      this.setTopicEditorColorValue(input.value, { updateText: false });
+    });
+    this.registerDomEvent(picker, 'input', () => {
+      this.setTopicEditorColorValue(picker.value);
+    });
+    this.registerDomEvent(swatches, 'click', (event) => {
+      const swatch = event.target?.closest?.('.yonxao-mindmap-topic-editor-swatch');
+      if (!swatch) return;
+      event.preventDefault();
+      this.setTopicEditorColorValue(swatch.dataset.color || '');
+    });
+
+    return field;
+  }
+
+  /*
+   * 作用：
+   * 同步编辑面板中的颜色文本、取色器和保存值。
+   */
+  setTopicEditorColorValue(value, options = {}) {
+    const fields = this.topicEditorFields;
+    if (!fields?.color || !fields.colorField) return;
+
+    const text = String(value || '').trim();
+    fields.color.value = text;
+    if (options.updateText !== false) {
+      fields.colorField._textInput.value = text;
+    }
+
+    if (/^#[0-9a-f]{6}$/i.test(text)) {
+      fields.colorField._colorPicker.value = text;
+    }
+  }
+
+  /*
+   * 作用：
+   * 创建主题编辑面板中的图标下拉控件。
+   */
+  createTopicEditorIconPicker() {
+    const picker = document.createElement('div');
+    picker.className = 'yonxao-mindmap-topic-editor-icon-picker';
+
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.className = 'yonxao-mindmap-topic-editor-icon-button';
+    button.setAttribute('aria-haspopup', 'listbox');
+    button.setAttribute('aria-expanded', 'false');
+
+    const menu = document.createElement('div');
+    menu.className = 'yonxao-mindmap-topic-editor-icon-menu';
+    menu.hidden = true;
+    menu.setAttribute('role', 'listbox');
+
+    for (const iconName of ['', ...Object.keys(ICON_PATHS)]) {
+      const option = document.createElement('button');
+      option.type = 'button';
+      option.className = 'yonxao-mindmap-topic-editor-icon-option';
+      option.dataset.icon = iconName;
+      option.setAttribute('role', 'option');
+      this.renderTopicEditorIconOption(option, iconName);
+      menu.appendChild(option);
+    }
+
+    picker.appendChild(button);
+    picker.appendChild(menu);
+    picker._button = button;
+    picker._menu = menu;
+
+    this.registerDomEvent(button, 'click', (event) => {
+      event.preventDefault();
+      event.stopPropagation();
+      const nextOpen = menu.hidden;
+      menu.hidden = !nextOpen;
+      button.setAttribute('aria-expanded', String(nextOpen));
+    });
+    this.registerDomEvent(menu, 'click', (event) => {
+      const option = event.target?.closest?.('.yonxao-mindmap-topic-editor-icon-option');
+      if (!option) return;
+      event.preventDefault();
+      event.stopPropagation();
+      this.setTopicEditorIconValue(option.dataset.icon || '');
+      menu.hidden = true;
+      button.setAttribute('aria-expanded', 'false');
+    });
+
+    return picker;
+  }
+
+  /*
+   * 作用：
+   * 渲染图标下拉中的一项。
+   */
+  renderTopicEditorIconOption(container, iconName) {
+    container.textContent = '';
+    const preview = document.createElement('span');
+    preview.className = 'yonxao-mindmap-topic-editor-icon-preview';
+    preview.appendChild(this.createTopicEditorIconSvg(iconName));
+
+    const name = document.createElement('span');
+    name.textContent = iconName || this.t('topicEditor.noIcon');
+
+    container.appendChild(preview);
+    container.appendChild(name);
+  }
+
+  /*
+   * 作用：
+   * 为 HTML 图标选择器创建一个小 SVG 预览。
+   */
+  createTopicEditorIconSvg(iconName) {
+    const iconSvg = svg('svg', {
+      viewBox: '0 0 24 24',
+      width: 16,
+      height: 16,
+      fill: 'none',
+      stroke: 'currentColor',
+      'stroke-width': 2,
+      'stroke-linecap': 'round',
+      'stroke-linejoin': 'round',
+    });
+
+    const normalized = normalizeIcon(iconName);
+    const paths = ICON_PATHS[normalized];
+    if (!paths) {
+      iconSvg.appendChild(svg('path', { d: 'M5 12h14' }));
+      return iconSvg;
+    }
+
+    for (const d of paths) {
+      iconSvg.appendChild(svg('path', { d }));
+    }
+    return iconSvg;
+  }
+
+  /*
+   * 作用：
+   * 同步编辑面板中的图标下拉和保存值。
+   */
+  setTopicEditorIconValue(value) {
+    const fields = this.topicEditorFields;
+    if (!fields?.icon || !fields.iconPicker) return;
+
+    const iconName = normalizeIcon(value);
+    fields.icon.value = iconName;
+    this.renderTopicEditorIconOption(fields.iconPicker._button, iconName);
+    for (const option of fields.iconPicker._menu.querySelectorAll(
+      '.yonxao-mindmap-topic-editor-icon-option'
+    )) {
+      option.setAttribute('aria-selected', String((option.dataset.icon || '') === iconName));
+    }
   }
 
   /*
@@ -1319,13 +1678,54 @@ export class YonxaoMindmapRenderer extends Component {
     this.closeInlineTextEditor(false);
     this.editingTopicId = topic.id;
     this.topicEditorFields.text.value = topic.text || '';
-    this.topicEditorFields.color.value = topic.attributes.color || '';
-    this.topicEditorFields.icon.value = topic.attributes.icon || '';
+    this.setTopicEditorColorValue(topic.attributes.color || '');
+    this.setTopicEditorIconValue(topic.attributes.icon || '');
+    this.setTopicEditorFontFamilyValue(topic.attributes.fontFamily || '');
+    this.topicEditorFields.fontSize.value = topic.attributes.fontSize || '';
+    this.topicEditorFields.fontWeight.value = topic.attributes.fontWeight || '';
+    this.topicEditorFields.lineHeight.value = topic.attributes.lineHeight || '';
     this.topicEditorFields.layout.value = normalizeLayoutType(topic.attributes.layout) || '';
-    this.topicEditorFields.deleteButton.disabled = topic === this.root;
     this.topicEditorEl.hidden = false;
+    this.positionTopicEditor(topic);
     this.topicEditorFields.text.focus();
     this.topicEditorFields.text.select();
+  }
+
+  /*
+   * 作用：
+   * 把主题编辑面板定位到当前主题附近。
+   */
+  positionTopicEditor(topic) {
+    if (!this.containerEl || !this.topicEditorEl || !this.mapEl || !topic) return;
+
+    const topicEl = Array.from(this.mapEl.querySelectorAll('.yonxao-mindmap-topic')).find(
+      (element) => element.getAttribute('data-topic-id') === topic.id
+    );
+    const cardEl = topicEl ? topicEl.querySelector('.yonxao-mindmap-topic-card') : null;
+    if (!cardEl) return;
+
+    const gap = 12;
+    const containerRect = this.containerEl.getBoundingClientRect();
+    const cardRect = cardEl.getBoundingClientRect();
+    const editorRect = this.topicEditorEl.getBoundingClientRect();
+    const maxLeft = Math.max(gap, containerRect.width - editorRect.width - gap);
+    const maxTop = Math.max(gap, containerRect.height - editorRect.height - gap);
+    const rightLeft = cardRect.right - containerRect.left + gap;
+    const rightFits = rightLeft + editorRect.width + gap <= containerRect.width;
+    let left = rightFits ? rightLeft : cardRect.left - containerRect.left;
+    let top = rightFits
+      ? cardRect.top - containerRect.top
+      : cardRect.bottom - containerRect.top + gap;
+
+    if (top + editorRect.height + gap > containerRect.height) {
+      top = cardRect.top - containerRect.top - editorRect.height - gap;
+    }
+
+    left = clamp(left, gap, maxLeft);
+    top = clamp(top, gap, maxTop);
+
+    this.topicEditorEl.style.left = `${Math.round(left)}px`;
+    this.topicEditorEl.style.top = `${Math.round(top)}px`;
   }
 
   /*
@@ -1336,6 +1736,16 @@ export class YonxaoMindmapRenderer extends Component {
     this.editingTopicId = null;
     if (this.topicEditorEl) {
       this.topicEditorEl.hidden = true;
+      this.topicEditorEl.style.left = '';
+      this.topicEditorEl.style.top = '';
+    }
+    if (this.topicEditorFields?.text) {
+      this.topicEditorFields.text.style.width = '';
+      this.topicEditorFields.text.style.height = '';
+    }
+    if (this.topicEditorFields?.iconPicker?._menu) {
+      this.topicEditorFields.iconPicker._menu.hidden = true;
+      this.topicEditorFields.iconPicker._button.setAttribute('aria-expanded', 'false');
     }
   }
 
@@ -1495,7 +1905,7 @@ export class YonxaoMindmapRenderer extends Component {
     const topic = this.topicById.get(this.editingTopicId);
     if (!topic || !this.topicEditorFields) return false;
 
-    const text = this.topicEditorFields.text.value.trim();
+    const text = this.topicEditorFields.text.value.replace(/\s*\n+\s*/g, ' ').trim();
     if (!text) {
       new Notice(this.t('notice.topicTextRequired'));
       return false;
@@ -1504,6 +1914,22 @@ export class YonxaoMindmapRenderer extends Component {
     topic.text = text;
     setOptionalTopicAttribute(topic.attributes, 'color', this.topicEditorFields.color.value);
     setOptionalTopicAttribute(topic.attributes, 'icon', this.topicEditorFields.icon.value);
+    setOptionalTopicAttribute(
+      topic.attributes,
+      'fontFamily',
+      this.topicEditorFields.fontFamily.value
+    );
+    setOptionalTopicAttribute(topic.attributes, 'fontSize', this.topicEditorFields.fontSize.value);
+    setOptionalTopicAttribute(
+      topic.attributes,
+      'fontWeight',
+      this.topicEditorFields.fontWeight.value
+    );
+    setOptionalTopicAttribute(
+      topic.attributes,
+      'lineHeight',
+      this.topicEditorFields.lineHeight.value
+    );
     setOptionalTopicAttribute(topic.attributes, 'layout', this.topicEditorFields.layout.value);
 
     const saved = await this.saveTreeToSourceAndFile('主题已保存。');

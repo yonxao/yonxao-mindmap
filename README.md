@@ -256,7 +256,6 @@ Layout types:
 - In source view, edit the textarea; switching back to the mind map auto-saves, and Ctrl/Cmd+S also saves.
 - In source view, Tab/Shift+Tab promotes or demotes selected heading lines.
 - In editor/Live Preview mind map view, hover a topic and click the small edit button to edit text, color, icon, or layout.
-- The topic editor can also add a child topic or delete the selected topic.
 - Use the toolbar to fit view, zoom in, zoom out, or reset collapse state.
 - Use the toolbar settings button to open the visual config modal; common fields have select presets, and the advanced tab supports direct YAML editing.
 - Drag the toolbar grip to move the floating toolbar away from content.

@@ -4,7 +4,7 @@
  *
  * 执行逻辑：
  * 当解析失败或运行失败时显示 message/error；当用户点击主题编辑按钮时显示 topic-editor。
- * 面板固定在幕布左下角，避免遮挡 Obsidian 右上角的原生“编辑这个块”按钮。
+ * 面板会跟随当前主题定位到附近，减少鼠标在画布里的移动距离。
  *
  * 调用链位置：
  * YonxaoMindmapRenderer.renderMessage()/createTopicEditor() -> 本文件控制提示和面板。
@@ -49,14 +49,14 @@
 
 /*
  * 作用：
- * 主题编辑面板主体，固定在幕布左下角。
+ * 主题编辑面板主体。
  */
 .yonxao-mindmap-topic-editor {
   position: absolute;
   z-index: 3;
-  left: 10px;
-  bottom: 10px;
-  width: min(320px, calc(100% - 20px));
+  left: 12px;
+  top: 12px;
+  width: min(300px, calc(100% - 24px));
   box-sizing: border-box;
   padding: 12px;
   border: 1px solid var(--background-modifier-border);
@@ -83,7 +83,7 @@
 .yonxao-mindmap-topic-editor-field {
   display: grid;
   grid-template-columns: 48px minmax(0, 1fr);
-  align-items: center;
+  align-items: start;
   gap: 8px;
   margin-bottom: 8px;
   color: var(--text-muted);
@@ -113,6 +113,154 @@
  */
 .yonxao-mindmap-topic-editor-input:focus {
   border-color: var(--interactive-accent);
+}
+
+/*
+ * 作用：
+ * 主题文本编辑框，默认保持紧凑，但允许用户拖拽放大。
+ */
+.yonxao-mindmap-topic-editor-textarea {
+  min-height: 64px;
+  max-height: 220px;
+  resize: both;
+  line-height: 1.45;
+  white-space: pre-wrap;
+}
+
+/*
+ * 作用：
+ * 颜色输入区，组合手输值、原生取色器和常用色盘。
+ */
+.yonxao-mindmap-topic-editor-color {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 34px;
+  gap: 6px;
+  min-width: 0;
+}
+
+.yonxao-mindmap-topic-editor-color-picker {
+  width: 34px;
+  height: 32px;
+  padding: 2px;
+  border: 1px solid var(--background-modifier-border);
+  border-radius: 6px;
+  background: var(--background-secondary);
+}
+
+.yonxao-mindmap-topic-editor-swatches {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  min-width: 0;
+}
+
+.yonxao-mindmap-topic-editor-swatch {
+  width: 22px;
+  height: 22px;
+  flex: 0 0 22px;
+  padding: 0;
+  border: 1px solid var(--background-modifier-border);
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.yonxao-mindmap-topic-editor-swatch:hover,
+.yonxao-mindmap-topic-editor-swatch:focus-visible {
+  outline: 2px solid var(--interactive-accent);
+  outline-offset: 1px;
+}
+
+/*
+ * 作用：
+ * 图标下拉区，选中项和菜单项都显示图标预览与名称。
+ */
+.yonxao-mindmap-topic-editor-icon-picker {
+  position: relative;
+  min-width: 0;
+}
+
+.yonxao-mindmap-topic-editor-icon-button,
+.yonxao-mindmap-topic-editor-icon-option {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 8px;
+  box-sizing: border-box;
+  color: var(--text-normal);
+  border: 1px solid var(--background-modifier-border);
+  background: var(--background-secondary);
+  text-align: left;
+}
+
+.yonxao-mindmap-topic-editor-icon-button {
+  justify-content: flex-start;
+  min-height: 32px;
+  padding: 6px 8px;
+  border-radius: 6px;
+}
+
+.yonxao-mindmap-topic-editor-icon-menu {
+  position: absolute;
+  z-index: 4;
+  top: calc(100% + 4px);
+  right: 0;
+  left: 0;
+  max-height: 190px;
+  overflow: auto;
+  padding: 4px;
+  border: 1px solid var(--background-modifier-border);
+  border-radius: 6px;
+  background: var(--background-primary);
+  box-shadow: var(--shadow-s);
+}
+
+.yonxao-mindmap-topic-editor-icon-option {
+  padding: 6px;
+  border-color: transparent;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+.yonxao-mindmap-topic-editor-icon-button span:last-child,
+.yonxao-mindmap-topic-editor-icon-option span:last-child {
+  min-width: 0;
+  flex: 1 1 auto;
+  text-align: left;
+}
+
+.yonxao-mindmap-topic-editor-icon-option:hover,
+.yonxao-mindmap-topic-editor-icon-option[aria-selected='true'] {
+  background: var(--background-modifier-hover);
+}
+
+.yonxao-mindmap-topic-editor-icon-preview {
+  display: inline-flex;
+  width: 18px;
+  height: 18px;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  color: var(--text-muted);
+}
+
+/*
+ * 作用：
+ * 字体选择区，预设下拉保持一行；只有选择自定义字体时才显示手输框。
+ */
+.yonxao-mindmap-topic-editor-font-family {
+  display: grid;
+  gap: 6px;
+  min-width: 0;
+}
+
+.yonxao-mindmap-topic-editor-font-family input[hidden] {
+  display: none;
+}
+
+.yonxao-mindmap-topic-editor input[type='number'].yonxao-mindmap-topic-editor-input {
+  font-family: var(--font-interface);
 }
 
 /*
