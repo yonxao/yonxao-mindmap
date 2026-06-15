@@ -65,6 +65,10 @@ const ORG_RIGHT_DESCENDANT_SIBLING_GAP = Math.max(8, Math.round(SIBLING_GAP * 0.
  */
 const TIMELINE_DETAIL_LEVEL_GAP = Math.round(LEVEL_GAP * 1.22);
 const TIMELINE_DETAIL_SIBLING_GAP = Math.max(24, Math.round(SIBLING_GAP * 1.35));
+const TIMELINE_DETAIL_HANGING_SIBLING_GAP = Math.max(
+  TIMELINE_DETAIL_SIBLING_GAP,
+  Math.round(SIBLING_GAP * 2.1)
+);
 const TIMELINE_AXIS_DETAIL_GAP = Math.max(30, Math.round(SIBLING_GAP * 1.7));
 
 /*
@@ -78,6 +82,11 @@ const RADIAL_SIBLING_GAP = Math.max(16, Math.round(SIBLING_GAP * 0.9));
 const RADIAL_RADIUS_EXTRA_LIMIT = Math.round(LEVEL_GAP * 1.35);
 const RADIAL_COLLISION_MARGIN = 24;
 const RADIAL_COLLISION_ITERATIONS = 24;
+const HANGING_LEVEL_GAP = Math.round(LEVEL_GAP * 0.72);
+const HANGING_SIBLING_GAP = SIBLING_GAP;
+const FISHBONE_PRIMARY_BONE_ANGLE = Math.PI * 0.32;
+const FISHBONE_PRIMARY_BONE_SLOPE = Math.tan(FISHBONE_PRIMARY_BONE_ANGLE);
+const FISHBONE_PRIMARY_BONE_MIN_EDGE_OFFSET = Math.round(TOPIC_MIN_HEIGHT * 2.4);
 
 /*
  * 作用：
@@ -97,32 +106,33 @@ export function layoutTree(root, collapsedIds, config) {
   rootBox.side = 'root';
 
   const layoutType = resolveLayoutType(root, normalizedConfig);
+  const branchExpansion = resolveEffectiveBranchExpansion(layoutType, normalizedConfig);
   if (
     layoutType === 'mindmap-down' ||
     layoutType === 'mindmap-up' ||
     layoutType === 'mindmap-vertical'
   ) {
-    layoutVerticalMind(root, collapsedIds, layoutType);
+    layoutVerticalMind(root, collapsedIds, layoutType, branchExpansion);
   } else if (layoutType === 'tree-right' || layoutType === 'tree-left' || layoutType === 'tree') {
-    layoutOutlineTree(root, collapsedIds, layoutType);
+    layoutOutlineTree(root, collapsedIds, layoutType, branchExpansion);
   } else if (layoutType === 'org' || layoutType === 'org-right') {
-    layoutOrgChart(root, collapsedIds, layoutType);
+    layoutOrgChart(root, collapsedIds, layoutType, branchExpansion);
   } else if (
     layoutType === 'timeline-up' ||
     layoutType === 'timeline-down' ||
     layoutType === 'timeline'
   ) {
-    layoutTimeline(root, collapsedIds, layoutType);
+    layoutTimeline(root, collapsedIds, layoutType, branchExpansion);
   } else if (layoutType === 'radial') {
     layoutRadial(root, collapsedIds);
   } else if (layoutType === 'fishbone-left' || layoutType === 'fishbone-right') {
-    layoutFishbone(root, collapsedIds, layoutType);
+    layoutFishbone(root, collapsedIds, layoutType, branchExpansion);
   } else if (layoutType === 'tree-table') {
     layoutTreeTable(root, collapsedIds, { fillLeafRemainderColumns: true });
   } else if (layoutType === 'tree-table-stepped') {
     layoutTreeTable(root, collapsedIds, { fillLeafRemainderColumns: false });
   } else {
-    layoutHorizontalMind(root, collapsedIds, layoutType);
+    layoutHorizontalMind(root, collapsedIds, layoutType, branchExpansion);
   }
 
   const topics = [];
@@ -135,6 +145,104 @@ export function layoutTree(root, collapsedIds, config) {
     bounds: computeBounds(topics),
     mode: layoutType,
   };
+}
+
+/*
+ * 作用：
+ * 判断当前布局是否支持普通主题的子主题展开方式。
+ */
+export function isBranchExpansionSupportedLayout(layoutType) {
+  return (
+    layoutType !== 'radial' && layoutType !== 'tree-table' && layoutType !== 'tree-table-stepped'
+  );
+}
+
+/*
+ * 作用：
+ * 计算布局实际使用的连线线型。
+ *
+ * 规则：
+ * 只有思维导图组读取 connector.style；其他结构图固定折线。
+ */
+export function effectiveConnectorStyleForLayout(layoutType, config) {
+  return isMindMapLayoutType(layoutType) ? config.connector.style : 'elbow';
+}
+
+/*
+ * 作用：
+ * 根据布局和实际线型决定普通主题展开方式是否生效。
+ */
+export function resolveEffectiveBranchExpansion(layoutType, config) {
+  if (!isBranchExpansionSupportedLayout(layoutType)) return 'side';
+  if (effectiveConnectorStyleForLayout(layoutType, config) !== 'elbow') return 'side';
+  return config.branch.expansion === 'hanging' ? 'hanging' : 'side';
+}
+
+/*
+ * 作用：
+ * 判断布局是否属于“思维导图”分组。
+ */
+export function isMindMapLayoutType(layoutType) {
+  return (
+    layoutType === 'mindmap-right' ||
+    layoutType === 'mindmap-left' ||
+    layoutType === 'mindmap-bidirectional' ||
+    layoutType === 'mindmap-down' ||
+    layoutType === 'mindmap-up' ||
+    layoutType === 'mindmap-vertical'
+  );
+}
+
+/*
+ * 作用：
+ * 子主题展开方式只作用于三级及更深主题继续展开子主题。
+ */
+function shouldUseHangingExpansion(parent, branchExpansion) {
+  return branchExpansion === 'hanging' && Number(parent?.level || 1) >= 3;
+}
+
+/*
+ * 作用：
+ * 在垂直堆叠的占位块中计算主题 y 坐标。
+ *
+ * 关键点：
+ * 如果这个主题自己会继续下挂展开，它的后代会从它下方长出；
+ * 因此主题必须靠近占位块顶部，而不是放在整块中线，否则后代会溢出并压住后续兄弟主题。
+ */
+function verticalBlockTopicY(blockTop, blockHeight, topic, branchExpansion) {
+  const box = topic._layout;
+  return (
+    blockTop +
+    (shouldUseHangingExpansion(topic, branchExpansion) ? box.height / 2 : blockHeight / 2)
+  );
+}
+
+/*
+ * 作用：
+ * 在水平堆叠的占位块中计算主题 x 坐标。
+ *
+ * 说明：
+ * 这是 verticalBlockTopicY 的转置版本，用于向上/向下展开的思维导图。
+ */
+function horizontalBlockTopicX(blockLeft, blockWidth, topic, branchExpansion) {
+  const box = topic._layout;
+  return (
+    blockLeft + (shouldUseHangingExpansion(topic, branchExpansion) ? box.width / 2 : blockWidth / 2)
+  );
+}
+
+/*
+ * 作用：
+ * 时间轴详情区在下挂展开时需要更保守的同级间距。
+ *
+ * 原因：
+ * 时间轴详情主题会沿同一侧竖向排列；下挂子主题再向下展开时，
+ * 如果仍使用普通详情间距，视觉上很容易贴到下一条详情分支。
+ */
+function timelineDetailSiblingGapForParent(parent, branchExpansion) {
+  return shouldUseHangingExpansion(parent, branchExpansion)
+    ? TIMELINE_DETAIL_HANGING_SIBLING_GAP
+    : TIMELINE_DETAIL_SIBLING_GAP;
 }
 
 /*
@@ -214,7 +322,7 @@ export function normalizeLayoutType(layout) {
  * 说明：
  * 这是水平导图的策略化版本，用统一函数承载右向、左向和左右平衡体验。
  */
-export function layoutHorizontalMind(root, collapsedIds, mode) {
+export function layoutHorizontalMind(root, collapsedIds, mode, branchExpansion = 'side') {
   const visibleRootSubtopics = visibleSubtopics(root, collapsedIds);
   const rightSubtopics = [];
   const leftSubtopics = [];
@@ -228,8 +336,8 @@ export function layoutHorizontalMind(root, collapsedIds, mode) {
     }
   });
 
-  placeHorizontalRootSide(root, rightSubtopics, 'right', collapsedIds);
-  placeHorizontalRootSide(root, leftSubtopics, 'left', collapsedIds);
+  placeHorizontalRootSide(root, rightSubtopics, 'right', collapsedIds, branchExpansion);
+  placeHorizontalRootSide(root, leftSubtopics, 'left', collapsedIds, branchExpansion);
 }
 
 /*
@@ -254,12 +362,12 @@ export function rootSubtopicHorizontalSide(root, subtopic, index, mode) {
  * 作用：
  * 摆放根主题某一侧的一级子树。
  */
-export function placeHorizontalRootSide(root, subtopics, side, collapsedIds) {
+export function placeHorizontalRootSide(root, subtopics, side, collapsedIds, branchExpansion) {
   if (!subtopics.length) return;
 
   const rootBox = root._layout;
   const heights = subtopics.map((subtopic) =>
-    horizontalSubtreeHeight(subtopic, side, collapsedIds)
+    horizontalSubtreeHeight(subtopic, side, collapsedIds, branchExpansion)
   );
   const totalHeight =
     heights.reduce((sum, height) => sum + height, 0) +
@@ -275,9 +383,9 @@ export function placeHorizontalRootSide(root, subtopics, side, collapsedIds) {
 
     subtopicBox.side = side;
     subtopicBox.x = rootBox.x + dir * (rootBox.width / 2 + LEVEL_GAP + subtopicBox.width / 2);
-    subtopicBox.y = y + height / 2;
+    subtopicBox.y = verticalBlockTopicY(y, height, subtopic, branchExpansion);
 
-    placeHorizontalDescendants(subtopic, side, collapsedIds);
+    placeHorizontalDescendants(subtopic, side, collapsedIds, branchExpansion);
     y += height + BRANCH_GAP;
   }
 }
@@ -286,13 +394,18 @@ export function placeHorizontalRootSide(root, subtopics, side, collapsedIds) {
  * 作用：
  * 递归摆放水平布局中的非根后代。
  */
-export function placeHorizontalDescendants(parent, side, collapsedIds) {
+export function placeHorizontalDescendants(parent, side, collapsedIds, branchExpansion = 'side') {
   const subtopics = visibleSubtopics(parent, collapsedIds);
   if (!subtopics.length) return;
 
+  if (shouldUseHangingExpansion(parent, branchExpansion)) {
+    placeHorizontalHangingDescendants(parent, side, collapsedIds, branchExpansion);
+    return;
+  }
+
   const parentBox = parent._layout;
   const heights = subtopics.map((subtopic) =>
-    horizontalSubtreeHeight(subtopic, side, collapsedIds)
+    horizontalSubtreeHeight(subtopic, side, collapsedIds, branchExpansion)
   );
   const totalHeight =
     heights.reduce((sum, height) => sum + height, 0) +
@@ -308,28 +421,74 @@ export function placeHorizontalDescendants(parent, side, collapsedIds) {
 
     subtopicBox.side = side;
     subtopicBox.x = parentBox.x + dir * (parentBox.width / 2 + LEVEL_GAP + subtopicBox.width / 2);
-    subtopicBox.y = y + height / 2;
+    subtopicBox.y = verticalBlockTopicY(y, height, subtopic, branchExpansion);
 
-    placeHorizontalDescendants(subtopic, side, collapsedIds);
+    placeHorizontalDescendants(subtopic, side, collapsedIds, branchExpansion);
     y += height + SIBLING_GAP;
   }
 }
 
 /*
  * 作用：
+ * 水平布局的下挂展开：父主题从下方引出纵向支线，子主题再向左右侧接出。
+ *
+ * 说明：
+ * 相比侧向展开，它不再从父主题侧边缘继续推进，从而减少横向占用；
+ * 代价是父主题和子主题组会在垂直方向上串开，占用更多高度。
+ */
+export function placeHorizontalHangingDescendants(parent, side, collapsedIds, branchExpansion) {
+  const subtopics = visibleSubtopics(parent, collapsedIds);
+  if (!subtopics.length) return;
+
+  const parentBox = parent._layout;
+  parentBox.childBranchExpansion = 'hanging-horizontal';
+  const heights = subtopics.map((subtopic) =>
+    horizontalSubtreeHeight(subtopic, side, collapsedIds, branchExpansion)
+  );
+  const totalHeight =
+    heights.reduce((sum, height) => sum + height, 0) +
+    Math.max(0, subtopics.length - 1) * HANGING_SIBLING_GAP;
+  const dir = side === 'left' ? -1 : 1;
+  let y = parentBox.y + parentBox.height / 2 + HANGING_SIBLING_GAP;
+
+  for (let index = 0; index < subtopics.length; index += 1) {
+    const subtopic = subtopics[index];
+    const height = heights[index];
+    const subtopicBox = subtopic._layout;
+
+    subtopicBox.side = side;
+    subtopicBox.branchExpansion = 'hanging';
+    subtopicBox.x = parentBox.x + dir * (HANGING_LEVEL_GAP + subtopicBox.width / 2);
+    subtopicBox.y = verticalBlockTopicY(y, height, subtopic, branchExpansion);
+
+    placeHorizontalDescendants(subtopic, side, collapsedIds, branchExpansion);
+    y += height + HANGING_SIBLING_GAP;
+  }
+
+  parentBox.hangingSubtopicsHeight = totalHeight;
+}
+
+/*
+ * 作用：
  * 计算水平布局中一个子树需要的垂直高度。
  */
-export function horizontalSubtreeHeight(topic, side, collapsedIds) {
+export function horizontalSubtreeHeight(topic, side, collapsedIds, branchExpansion = 'side') {
   const box = topic._layout;
   const subtopics = visibleSubtopics(topic, collapsedIds);
   if (!subtopics.length) return box.height;
 
   const subtopicHeight =
     subtopics.reduce(
-      (sum, subtopic) => sum + horizontalSubtreeHeight(subtopic, side, collapsedIds),
+      (sum, subtopic) =>
+        sum + horizontalSubtreeHeight(subtopic, side, collapsedIds, branchExpansion),
       0
     ) +
-    Math.max(0, subtopics.length - 1) * SIBLING_GAP;
+    Math.max(0, subtopics.length - 1) *
+      (shouldUseHangingExpansion(topic, branchExpansion) ? HANGING_SIBLING_GAP : SIBLING_GAP);
+
+  if (shouldUseHangingExpansion(topic, branchExpansion)) {
+    return box.height + HANGING_SIBLING_GAP + subtopicHeight;
+  }
 
   return Math.max(box.height, subtopicHeight);
 }
@@ -338,7 +497,7 @@ export function horizontalSubtreeHeight(topic, side, collapsedIds) {
  * 作用：
  * 竖向思维导图布局，覆盖 mindmap-down/mindmap-up/mindmap-vertical。
  */
-export function layoutVerticalMind(root, collapsedIds, mode) {
+export function layoutVerticalMind(root, collapsedIds, mode, branchExpansion = 'side') {
   const visibleRootSubtopics = visibleSubtopics(root, collapsedIds);
   const bottomSubtopics = [];
   const topSubtopics = [];
@@ -352,8 +511,8 @@ export function layoutVerticalMind(root, collapsedIds, mode) {
     }
   });
 
-  placeVerticalRootSide(root, bottomSubtopics, 'bottom', collapsedIds);
-  placeVerticalRootSide(root, topSubtopics, 'top', collapsedIds);
+  placeVerticalRootSide(root, bottomSubtopics, 'bottom', collapsedIds, branchExpansion);
+  placeVerticalRootSide(root, topSubtopics, 'top', collapsedIds, branchExpansion);
 }
 
 /*
@@ -374,11 +533,13 @@ export function rootSubtopicVerticalSide(subtopic, index, mode) {
  * 作用：
  * 摆放竖向布局中根主题某一侧的一级子树。
  */
-export function placeVerticalRootSide(root, subtopics, side, collapsedIds) {
+export function placeVerticalRootSide(root, subtopics, side, collapsedIds, branchExpansion) {
   if (!subtopics.length) return;
 
   const rootBox = root._layout;
-  const widths = subtopics.map((subtopic) => verticalSubtreeWidth(subtopic, side, collapsedIds));
+  const widths = subtopics.map((subtopic) =>
+    verticalSubtreeWidth(subtopic, side, collapsedIds, branchExpansion)
+  );
   const totalWidth =
     widths.reduce((sum, width) => sum + width, 0) + Math.max(0, subtopics.length - 1) * BRANCH_GAP;
   const dir = side === 'top' ? -1 : 1;
@@ -390,10 +551,10 @@ export function placeVerticalRootSide(root, subtopics, side, collapsedIds) {
     const subtopicBox = subtopic._layout;
 
     subtopicBox.side = side;
-    subtopicBox.x = x + width / 2;
+    subtopicBox.x = horizontalBlockTopicX(x, width, subtopic, branchExpansion);
     subtopicBox.y = rootBox.y + dir * (rootBox.height / 2 + LEVEL_GAP + subtopicBox.height / 2);
 
-    placeVerticalDescendants(subtopic, side, collapsedIds);
+    placeVerticalDescendants(subtopic, side, collapsedIds, branchExpansion);
     x += width + BRANCH_GAP;
   }
 }
@@ -402,12 +563,19 @@ export function placeVerticalRootSide(root, subtopics, side, collapsedIds) {
  * 作用：
  * 递归摆放竖向布局中的后代。
  */
-export function placeVerticalDescendants(parent, side, collapsedIds) {
+export function placeVerticalDescendants(parent, side, collapsedIds, branchExpansion = 'side') {
   const subtopics = visibleSubtopics(parent, collapsedIds);
   if (!subtopics.length) return;
 
+  if (shouldUseHangingExpansion(parent, branchExpansion)) {
+    placeVerticalHangingDescendants(parent, side, collapsedIds, branchExpansion);
+    return;
+  }
+
   const parentBox = parent._layout;
-  const widths = subtopics.map((subtopic) => verticalSubtreeWidth(subtopic, side, collapsedIds));
+  const widths = subtopics.map((subtopic) =>
+    verticalSubtreeWidth(subtopic, side, collapsedIds, branchExpansion)
+  );
   const totalWidth =
     widths.reduce((sum, width) => sum + width, 0) + Math.max(0, subtopics.length - 1) * SIBLING_GAP;
   const dir = side === 'top' ? -1 : 1;
@@ -419,29 +587,73 @@ export function placeVerticalDescendants(parent, side, collapsedIds) {
     const subtopicBox = subtopic._layout;
 
     subtopicBox.side = side;
-    subtopicBox.x = x + width / 2;
+    subtopicBox.x = horizontalBlockTopicX(x, width, subtopic, branchExpansion);
     subtopicBox.y = parentBox.y + dir * (parentBox.height / 2 + LEVEL_GAP + subtopicBox.height / 2);
 
-    placeVerticalDescendants(subtopic, side, collapsedIds);
+    placeVerticalDescendants(subtopic, side, collapsedIds, branchExpansion);
     x += width + SIBLING_GAP;
   }
 }
 
 /*
  * 作用：
+ * 竖向布局的下挂展开：从主题侧边拉出一条横向支线，再向上/下接到子主题。
+ *
+ * 说明：
+ * 这是水平下挂展开的转置版本，用更多横向空间换取更短的纵向推进距离。
+ */
+export function placeVerticalHangingDescendants(parent, side, collapsedIds, branchExpansion) {
+  const subtopics = visibleSubtopics(parent, collapsedIds);
+  if (!subtopics.length) return;
+
+  const parentBox = parent._layout;
+  parentBox.childBranchExpansion = 'hanging-vertical';
+  const widths = subtopics.map((subtopic) =>
+    verticalSubtreeWidth(subtopic, side, collapsedIds, branchExpansion)
+  );
+  const totalWidth =
+    widths.reduce((sum, width) => sum + width, 0) +
+    Math.max(0, subtopics.length - 1) * HANGING_SIBLING_GAP;
+  const dir = side === 'top' ? -1 : 1;
+  let x = parentBox.x + parentBox.width / 2 + HANGING_SIBLING_GAP;
+
+  for (let index = 0; index < subtopics.length; index += 1) {
+    const subtopic = subtopics[index];
+    const width = widths[index];
+    const subtopicBox = subtopic._layout;
+
+    subtopicBox.side = side;
+    subtopicBox.branchExpansion = 'hanging';
+    subtopicBox.x = horizontalBlockTopicX(x, width, subtopic, branchExpansion);
+    subtopicBox.y = parentBox.y + dir * (HANGING_LEVEL_GAP + subtopicBox.height / 2);
+
+    placeVerticalDescendants(subtopic, side, collapsedIds, branchExpansion);
+    x += width + HANGING_SIBLING_GAP;
+  }
+
+  parentBox.hangingSubtopicsWidth = totalWidth;
+}
+
+/*
+ * 作用：
  * 计算竖向布局中一个子树需要的水平宽度。
  */
-export function verticalSubtreeWidth(topic, side, collapsedIds) {
+export function verticalSubtreeWidth(topic, side, collapsedIds, branchExpansion = 'side') {
   const box = topic._layout;
   const subtopics = visibleSubtopics(topic, collapsedIds);
   if (!subtopics.length) return box.width;
 
   const subtopicWidth =
     subtopics.reduce(
-      (sum, subtopic) => sum + verticalSubtreeWidth(subtopic, side, collapsedIds),
+      (sum, subtopic) => sum + verticalSubtreeWidth(subtopic, side, collapsedIds, branchExpansion),
       0
     ) +
-    Math.max(0, subtopics.length - 1) * SIBLING_GAP;
+    Math.max(0, subtopics.length - 1) *
+      (shouldUseHangingExpansion(topic, branchExpansion) ? HANGING_SIBLING_GAP : SIBLING_GAP);
+
+  if (shouldUseHangingExpansion(topic, branchExpansion)) {
+    return box.width + HANGING_SIBLING_GAP + subtopicWidth;
+  }
 
   return Math.max(box.width, subtopicWidth);
 }
@@ -454,9 +666,14 @@ export function verticalSubtreeWidth(topic, side, collapsedIds) {
  * 树形图需要先计算每棵子树的高度，再把父主题放在子树高度的中线位置。
  * 这样每个分支都拥有自己的纵向空间，后代主题不会和相邻分支重叠。
  */
-export function layoutOutlineTree(root, collapsedIds, mode = 'tree-right') {
+export function layoutOutlineTree(
+  root,
+  collapsedIds,
+  mode = 'tree-right',
+  branchExpansion = 'side'
+) {
   const rootSubtopics = visibleSubtopics(root, collapsedIds);
-  placeTreeTrunkSubtopics(root, rootSubtopics, mode, collapsedIds);
+  placeTreeTrunkSubtopics(root, rootSubtopics, mode, collapsedIds, branchExpansion);
 }
 
 /*
@@ -467,13 +684,13 @@ export function layoutOutlineTree(root, collapsedIds, mode = 'tree-right') {
  * 树形图和普通导图的最大区别在一级分支：普通导图从中心点左右展开，
  * 树形图则先形成一条自上而下的主干，再把一级分支挂在主干左右。
  */
-export function placeTreeTrunkSubtopics(root, subtopics, mode, collapsedIds) {
+export function placeTreeTrunkSubtopics(root, subtopics, mode, collapsedIds, branchExpansion) {
   if (!subtopics.length) return;
 
   const rootBox = root._layout;
   const sides = subtopics.map((subtopic, index) => rootSubtopicTreeSide(subtopic, index, mode));
   const heights = subtopics.map((subtopic, index) =>
-    treeSubtreeHeight(subtopic, sides[index], collapsedIds)
+    treeSubtreeHeight(subtopic, sides[index], collapsedIds, branchExpansion)
   );
   let y = rootBox.y + rootBox.height / 2 + LEVEL_GAP;
 
@@ -486,9 +703,9 @@ export function placeTreeTrunkSubtopics(root, subtopics, mode, collapsedIds) {
 
     subtopicBox.side = side;
     subtopicBox.x = rootBox.x + dir * (LEVEL_GAP + subtopicBox.width / 2);
-    subtopicBox.y = y + height / 2;
+    subtopicBox.y = verticalBlockTopicY(y, height, subtopic, branchExpansion);
 
-    placeTreeDescendants(subtopic, side, collapsedIds);
+    placeTreeDescendants(subtopic, side, collapsedIds, branchExpansion);
     y += height + BRANCH_GAP;
   }
 
@@ -518,12 +735,19 @@ export function rootSubtopicTreeSide(subtopic, index, mode) {
  * 同一个父主题下的所有子主题先计算总高度，再围绕父主题的 y 坐标上下展开。
  * 父主题因此会自然位于子树的视觉中线，连线也更像常见树图结构。
  */
-export function placeTreeDescendants(parent, side, collapsedIds) {
+export function placeTreeDescendants(parent, side, collapsedIds, branchExpansion = 'side') {
   const subtopics = visibleSubtopics(parent, collapsedIds);
   if (!subtopics.length) return;
 
+  if (shouldUseHangingExpansion(parent, branchExpansion)) {
+    placeTreeHangingDescendants(parent, side, collapsedIds, branchExpansion);
+    return;
+  }
+
   const parentBox = parent._layout;
-  const heights = subtopics.map((subtopic) => treeSubtreeHeight(subtopic, side, collapsedIds));
+  const heights = subtopics.map((subtopic) =>
+    treeSubtreeHeight(subtopic, side, collapsedIds, branchExpansion)
+  );
   const totalHeight =
     heights.reduce((sum, height) => sum + height, 0) +
     Math.max(0, subtopics.length - 1) * SIBLING_GAP;
@@ -537,11 +761,47 @@ export function placeTreeDescendants(parent, side, collapsedIds) {
 
     subtopicBox.side = side;
     subtopicBox.x = parentBox.x + dir * (parentBox.width / 2 + LEVEL_GAP + subtopicBox.width / 2);
-    subtopicBox.y = y + height / 2;
+    subtopicBox.y = verticalBlockTopicY(y, height, subtopic, branchExpansion);
 
-    placeTreeDescendants(subtopic, side, collapsedIds);
+    placeTreeDescendants(subtopic, side, collapsedIds, branchExpansion);
     y += height + SIBLING_GAP;
   }
+}
+
+/*
+ * 作用：
+ * 树形图的下挂展开，用父主题下方出口换取更短的横向推进距离。
+ */
+export function placeTreeHangingDescendants(parent, side, collapsedIds, branchExpansion) {
+  const subtopics = visibleSubtopics(parent, collapsedIds);
+  if (!subtopics.length) return;
+
+  const parentBox = parent._layout;
+  parentBox.childBranchExpansion = 'hanging-horizontal';
+  const heights = subtopics.map((subtopic) =>
+    treeSubtreeHeight(subtopic, side, collapsedIds, branchExpansion)
+  );
+  const totalHeight =
+    heights.reduce((sum, height) => sum + height, 0) +
+    Math.max(0, subtopics.length - 1) * HANGING_SIBLING_GAP;
+  const dir = side === 'tree-left' ? -1 : 1;
+  let y = parentBox.y + parentBox.height / 2 + HANGING_SIBLING_GAP;
+
+  for (let index = 0; index < subtopics.length; index += 1) {
+    const subtopic = subtopics[index];
+    const height = heights[index];
+    const subtopicBox = subtopic._layout;
+
+    subtopicBox.side = side;
+    subtopicBox.branchExpansion = 'hanging';
+    subtopicBox.x = parentBox.x + dir * (HANGING_LEVEL_GAP + subtopicBox.width / 2);
+    subtopicBox.y = verticalBlockTopicY(y, height, subtopic, branchExpansion);
+
+    placeTreeDescendants(subtopic, side, collapsedIds, branchExpansion);
+    y += height + HANGING_SIBLING_GAP;
+  }
+
+  parentBox.hangingSubtopicsHeight = totalHeight;
 }
 
 /*
@@ -552,14 +812,22 @@ export function placeTreeDescendants(parent, side, collapsedIds) {
  * 一个主题本身可能只有一行高，但它下面可能挂着很多后代。
  * 如果只看主题高度，兄弟分支就会彼此重叠；所以这里递归累加可见子树高度。
  */
-export function treeSubtreeHeight(topic, side, collapsedIds) {
+export function treeSubtreeHeight(topic, side, collapsedIds, branchExpansion = 'side') {
   const box = topic._layout;
   const subtopics = visibleSubtopics(topic, collapsedIds);
   if (!subtopics.length) return box.height;
 
   const subtopicHeight =
-    subtopics.reduce((sum, subtopic) => sum + treeSubtreeHeight(subtopic, side, collapsedIds), 0) +
-    Math.max(0, subtopics.length - 1) * SIBLING_GAP;
+    subtopics.reduce(
+      (sum, subtopic) => sum + treeSubtreeHeight(subtopic, side, collapsedIds, branchExpansion),
+      0
+    ) +
+    Math.max(0, subtopics.length - 1) *
+      (shouldUseHangingExpansion(topic, branchExpansion) ? HANGING_SIBLING_GAP : SIBLING_GAP);
+
+  if (shouldUseHangingExpansion(topic, branchExpansion)) {
+    return box.height + HANGING_SIBLING_GAP + subtopicHeight;
+  }
 
   return Math.max(box.height, subtopicHeight);
 }
@@ -572,14 +840,19 @@ export function treeSubtreeHeight(topic, side, collapsedIds) {
  * - org：标准组织结构图，父主题在上，子主题横向排布在下一层。
  * - org-right：右向组织结构图，一级主题横向排列，后代从各自分支向右下展开。
  */
-export function layoutOrgChart(root, collapsedIds, mode = 'org') {
+export function layoutOrgChart(root, collapsedIds, mode = 'org', branchExpansion = 'side') {
   if (mode === 'org-right') {
-    placeOrgRightRootSubtopics(root, visibleSubtopics(root, collapsedIds), collapsedIds);
+    placeOrgRightRootSubtopics(
+      root,
+      visibleSubtopics(root, collapsedIds),
+      collapsedIds,
+      branchExpansion
+    );
     return;
   }
 
   const levelTops = orgLevelTops(root, collapsedIds);
-  placeOrgSubtree(root, 0, 0, levelTops, collapsedIds);
+  placeOrgSubtree(root, 0, 0, levelTops, collapsedIds, branchExpansion);
 }
 
 /*
@@ -591,10 +864,17 @@ export function layoutOrgChart(root, collapsedIds, mode = 'org') {
  * 因此 y 坐标先从 levelTops 读取同层统一顶部，再加上主题自身高度的一半。
  * 这样长文案主题只会向下撑开，不会向上顶到父级连线区域。
  */
-export function placeOrgSubtree(topic, centerX, depth, levelTops, collapsedIds) {
+export function placeOrgSubtree(
+  topic,
+  centerX,
+  depth,
+  levelTops,
+  collapsedIds,
+  branchExpansion = 'side'
+) {
   const box = topic._layout;
   const subtopics = visibleSubtopics(topic, collapsedIds);
-  const subtreeWidth = orgSubtreeWidth(topic, collapsedIds);
+  const subtreeWidth = orgSubtreeWidth(topic, collapsedIds, branchExpansion);
 
   box.side = box.side === 'root' ? 'root' : 'org-bottom';
   box.x = centerX;
@@ -602,16 +882,58 @@ export function placeOrgSubtree(topic, centerX, depth, levelTops, collapsedIds) 
 
   if (!subtopics.length) return subtreeWidth;
 
-  const subtopicGroupWidth = orgSubtopicsWidth(subtopics, collapsedIds);
+  if (shouldUseHangingExpansion(topic, branchExpansion)) {
+    placeOrgHangingDescendants(topic, collapsedIds, branchExpansion);
+    return subtreeWidth;
+  }
+
+  const subtopicGroupWidth = orgSubtopicsWidth(subtopics, collapsedIds, branchExpansion);
   let x = centerX - subtopicGroupWidth / 2;
 
   for (const subtopic of subtopics) {
-    const width = orgSubtreeWidth(subtopic, collapsedIds);
-    placeOrgSubtree(subtopic, x + width / 2, depth + 1, levelTops, collapsedIds);
+    const width = orgSubtreeWidth(subtopic, collapsedIds, branchExpansion);
+    placeOrgSubtree(
+      subtopic,
+      horizontalBlockTopicX(x, width, subtopic, branchExpansion),
+      depth + 1,
+      levelTops,
+      collapsedIds,
+      branchExpansion
+    );
     x += width + SIBLING_GAP;
   }
 
   return subtreeWidth;
+}
+
+/*
+ * 作用：
+ * 标准组织结构图的深层下挂展开。
+ */
+export function placeOrgHangingDescendants(parent, collapsedIds, branchExpansion) {
+  const subtopics = visibleSubtopics(parent, collapsedIds);
+  if (!subtopics.length) return;
+
+  const parentBox = parent._layout;
+  parentBox.childBranchExpansion = 'hanging-horizontal';
+  const heights = subtopics.map((subtopic) =>
+    orgHangingSubtreeHeight(subtopic, collapsedIds, branchExpansion)
+  );
+  let y = parentBox.y + parentBox.height / 2 + HANGING_SIBLING_GAP;
+
+  for (let index = 0; index < subtopics.length; index += 1) {
+    const subtopic = subtopics[index];
+    const subtopicBox = subtopic._layout;
+    const height = heights[index];
+
+    subtopicBox.side = 'org-hanging';
+    subtopicBox.branchExpansion = 'hanging';
+    subtopicBox.x = parentBox.x + HANGING_LEVEL_GAP + subtopicBox.width / 2;
+    subtopicBox.y = verticalBlockTopicY(y, height, subtopic, branchExpansion);
+
+    placeOrgHangingDescendants(subtopic, collapsedIds, branchExpansion);
+    y += height + HANGING_SIBLING_GAP;
+  }
 }
 
 /*
@@ -648,12 +970,20 @@ export function orgLevelTops(root, collapsedIds) {
  * 作用：
  * 计算组织架构图子树宽度。
  */
-export function orgSubtreeWidth(topic, collapsedIds) {
+export function orgSubtreeWidth(topic, collapsedIds, branchExpansion = 'side') {
   const box = topic._layout;
   const subtopics = visibleSubtopics(topic, collapsedIds);
   if (!subtopics.length) return box.width;
 
-  const subtopicWidth = orgSubtopicsWidth(subtopics, collapsedIds);
+  if (shouldUseHangingExpansion(topic, branchExpansion)) {
+    const hangingWidth = subtopics.reduce(
+      (max, subtopic) => Math.max(max, orgSubtreeWidth(subtopic, collapsedIds, branchExpansion)),
+      0
+    );
+    return Math.max(box.width, box.width / 2 + HANGING_LEVEL_GAP + hangingWidth);
+  }
+
+  const subtopicWidth = orgSubtopicsWidth(subtopics, collapsedIds, branchExpansion);
 
   return Math.max(box.width, subtopicWidth);
 }
@@ -662,11 +992,37 @@ export function orgSubtreeWidth(topic, collapsedIds) {
  * 作用：
  * 计算一组组织结构图子主题横向排布所需的总宽度。
  */
-export function orgSubtopicsWidth(subtopics, collapsedIds) {
+export function orgSubtopicsWidth(subtopics, collapsedIds, branchExpansion = 'side') {
   return (
-    subtopics.reduce((sum, subtopic) => sum + orgSubtreeWidth(subtopic, collapsedIds), 0) +
+    subtopics.reduce(
+      (sum, subtopic) => sum + orgSubtreeWidth(subtopic, collapsedIds, branchExpansion),
+      0
+    ) +
     Math.max(0, subtopics.length - 1) * SIBLING_GAP
   );
+}
+
+/*
+ * 作用：
+ * 估算标准组织结构图下挂子树的纵向占位。
+ */
+export function orgHangingSubtreeHeight(topic, collapsedIds, branchExpansion = 'side') {
+  const box = topic._layout;
+  const subtopics = visibleSubtopics(topic, collapsedIds);
+  if (!subtopics.length) return box.height;
+
+  const subtopicHeight =
+    subtopics.reduce(
+      (sum, subtopic) => sum + orgHangingSubtreeHeight(subtopic, collapsedIds, branchExpansion),
+      0
+    ) +
+    Math.max(0, subtopics.length - 1) * HANGING_SIBLING_GAP;
+
+  if (shouldUseHangingExpansion(topic, branchExpansion)) {
+    return box.height + HANGING_SIBLING_GAP + subtopicHeight;
+  }
+
+  return Math.max(box.height, subtopicHeight);
 }
 
 /*
@@ -677,11 +1033,13 @@ export function orgSubtopicsWidth(subtopics, collapsedIds) {
  * 一级分支主题和标准组织图一样横向排列；每个一级分支再把自己的后代向右下展开。
  * 因此横向槽位不能只看一级主题宽度，还要把该分支右侧子树的宽度算进去。
  */
-export function placeOrgRightRootSubtopics(root, subtopics, collapsedIds) {
+export function placeOrgRightRootSubtopics(root, subtopics, collapsedIds, branchExpansion) {
   if (!subtopics.length) return;
 
   const rootBox = root._layout;
-  const widths = subtopics.map((subtopic) => orgRightSubtreeWidth(subtopic, collapsedIds));
+  const widths = subtopics.map((subtopic) =>
+    orgRightSubtreeWidth(subtopic, collapsedIds, branchExpansion)
+  );
   const totalWidth =
     widths.reduce((sum, width) => sum + width, 0) + Math.max(0, subtopics.length - 1) * BRANCH_GAP;
   const maxRootSubtopicHeight = subtopics.reduce(
@@ -700,7 +1058,7 @@ export function placeOrgRightRootSubtopics(root, subtopics, collapsedIds) {
     subtopicBox.x = x + subtopicBox.width / 2;
     subtopicBox.y = subtopicY - maxRootSubtopicHeight / 2 + subtopicBox.height / 2;
 
-    placeOrgRightDescendants(subtopic, collapsedIds);
+    placeOrgRightDescendants(subtopic, collapsedIds, branchExpansion);
     x += width + BRANCH_GAP;
   }
 }
@@ -714,12 +1072,20 @@ export function placeOrgRightRootSubtopics(root, subtopics, collapsedIds) {
  * 但普通主题展开时要像右向树形图一样，为每个子树预留真实高度。
  * 这样某个子主题继续展开后代时，不会和相邻兄弟主题互相重叠。
  */
-export function placeOrgRightDescendants(parent, collapsedIds) {
+export function placeOrgRightDescendants(parent, collapsedIds, branchExpansion = 'side') {
   const subtopics = visibleSubtopics(parent, collapsedIds);
   if (!subtopics.length) return;
 
+  if (Number(parent?.level || 1) >= 3 && branchExpansion === 'side') {
+    placeOrgRightSideDescendants(parent, collapsedIds, branchExpansion);
+    return;
+  }
+
   const parentBox = parent._layout;
-  const heights = subtopics.map((subtopic) => orgRightSubtreeHeight(subtopic, collapsedIds));
+  parentBox.childBranchExpansion = 'hanging-horizontal';
+  const heights = subtopics.map((subtopic) =>
+    orgRightSubtreeHeight(subtopic, collapsedIds, branchExpansion)
+  );
   let y = parentBox.y + parentBox.height / 2 + ORG_RIGHT_DESCENDANT_SIBLING_GAP;
 
   for (let index = 0; index < subtopics.length; index += 1) {
@@ -728,11 +1094,45 @@ export function placeOrgRightDescendants(parent, collapsedIds) {
     const height = heights[index];
 
     subtopicBox.side = 'org-right';
+    subtopicBox.branchExpansion = 'hanging';
     subtopicBox.x =
       parentBox.x + parentBox.width / 2 + ORG_RIGHT_DESCENDANT_LEVEL_GAP + subtopicBox.width / 2;
     subtopicBox.y = y + subtopicBox.height / 2;
 
-    placeOrgRightDescendants(subtopic, collapsedIds);
+    placeOrgRightDescendants(subtopic, collapsedIds, branchExpansion);
+    y += height + ORG_RIGHT_DESCENDANT_SIBLING_GAP;
+  }
+}
+
+/*
+ * 作用：
+ * 右向组织结构图的侧向展开：普通主题从右侧直接展开子主题组。
+ */
+export function placeOrgRightSideDescendants(parent, collapsedIds, branchExpansion) {
+  const subtopics = visibleSubtopics(parent, collapsedIds);
+  if (!subtopics.length) return;
+
+  const parentBox = parent._layout;
+  const heights = subtopics.map((subtopic) =>
+    orgRightSubtreeHeight(subtopic, collapsedIds, branchExpansion)
+  );
+  const totalHeight =
+    heights.reduce((sum, height) => sum + height, 0) +
+    Math.max(0, subtopics.length - 1) * ORG_RIGHT_DESCENDANT_SIBLING_GAP;
+  let y = parentBox.y - totalHeight / 2;
+
+  for (let index = 0; index < subtopics.length; index += 1) {
+    const subtopic = subtopics[index];
+    const subtopicBox = subtopic._layout;
+    const height = heights[index];
+
+    subtopicBox.side = 'org-right';
+    subtopicBox.branchExpansion = 'side';
+    subtopicBox.x =
+      parentBox.x + parentBox.width / 2 + ORG_RIGHT_DESCENDANT_LEVEL_GAP + subtopicBox.width / 2;
+    subtopicBox.y = verticalBlockTopicY(y, height, subtopic, branchExpansion);
+
+    placeOrgRightDescendants(subtopic, collapsedIds, branchExpansion);
     y += height + ORG_RIGHT_DESCENDANT_SIBLING_GAP;
   }
 }
@@ -741,13 +1141,13 @@ export function placeOrgRightDescendants(parent, collapsedIds) {
  * 作用：
  * 计算“右向组织结构图”中一个分支向右展开后需要占用的水平宽度。
  */
-export function orgRightSubtreeWidth(topic, collapsedIds) {
+export function orgRightSubtreeWidth(topic, collapsedIds, branchExpansion = 'side') {
   const box = topic._layout;
   const subtopics = visibleSubtopics(topic, collapsedIds);
   if (!subtopics.length) return box.width;
 
   const subtopicWidth = subtopics.reduce(
-    (max, subtopic) => Math.max(max, orgRightSubtreeWidth(subtopic, collapsedIds)),
+    (max, subtopic) => Math.max(max, orgRightSubtreeWidth(subtopic, collapsedIds, branchExpansion)),
     0
   );
 
@@ -762,14 +1162,21 @@ export function orgRightSubtreeWidth(topic, collapsedIds) {
  * 右向组织结构图的一级分支仍然横向排列，但一级分支下面的普通主题应该像右向树形图一样，
  * 按每棵子树的实际高度向下展开，避免后代主题和兄弟主题重叠。
  */
-export function orgRightSubtreeHeight(topic, collapsedIds) {
+export function orgRightSubtreeHeight(topic, collapsedIds, branchExpansion = 'side') {
   const box = topic._layout;
   const subtopics = visibleSubtopics(topic, collapsedIds);
   if (!subtopics.length) return box.height;
 
   const subtopicHeight =
-    subtopics.reduce((sum, subtopic) => sum + orgRightSubtreeHeight(subtopic, collapsedIds), 0) +
+    subtopics.reduce(
+      (sum, subtopic) => sum + orgRightSubtreeHeight(subtopic, collapsedIds, branchExpansion),
+      0
+    ) +
     Math.max(0, subtopics.length - 1) * ORG_RIGHT_DESCENDANT_SIBLING_GAP;
+
+  if (Number(topic?.level || 1) >= 3 && branchExpansion === 'side') {
+    return Math.max(box.height, subtopicHeight);
+  }
 
   return box.height + ORG_RIGHT_DESCENDANT_SIBLING_GAP + subtopicHeight;
 }
@@ -782,7 +1189,12 @@ export function orgRightSubtreeHeight(topic, collapsedIds) {
  * 二级主题是时间轴上的时间点，始终落在同一条水平轴线上。
  * 三级及更深主题才根据模式展开到轴上方或轴下方，并向右递进。
  */
-export function layoutTimeline(root, collapsedIds, mode = 'timeline-down') {
+export function layoutTimeline(
+  root,
+  collapsedIds,
+  mode = 'timeline-down',
+  branchExpansion = 'side'
+) {
   const rootBox = root._layout;
   const subtopics = visibleSubtopics(root, collapsedIds);
   if (!subtopics.length) return;
@@ -790,7 +1202,9 @@ export function layoutTimeline(root, collapsedIds, mode = 'timeline-down') {
   const branchSides = subtopics.map((subtopic, index) =>
     rootSubtopicTimelineSide(subtopic, index, mode)
   );
-  const widths = subtopics.map((subtopic) => timelinePointWidth(subtopic, collapsedIds));
+  const widths = subtopics.map((subtopic) =>
+    timelinePointWidth(subtopic, collapsedIds, branchExpansion)
+  );
   const totalWidth =
     widths.reduce((sum, width) => sum + width, 0) + Math.max(0, subtopics.length - 1) * BRANCH_GAP;
 
@@ -812,7 +1226,7 @@ export function layoutTimeline(root, collapsedIds, mode = 'timeline-down') {
     subtopicBox.y = axisY;
     subtopicBox.timelineAxisY = axisY;
 
-    placeTimelineDetails(subtopic, branchSide, collapsedIds);
+    placeTimelineDetails(subtopic, branchSide, collapsedIds, branchExpansion);
     x += width + BRANCH_GAP;
   }
 }
@@ -839,17 +1253,27 @@ export function rootSubtopicTimelineSide(subtopic, index, mode) {
  * 时间点本身在轴线上；详情主题从时间点上方或下方拉出一条竖线，
  * 再在竖线右侧逐层递进，形成时间轴常见的事件详情区。
  */
-export function placeTimelineDetails(parent, branchSide, collapsedIds) {
+export function placeTimelineDetails(parent, branchSide, collapsedIds, branchExpansion = 'side') {
   const subtopics = visibleSubtopics(parent, collapsedIds);
   if (!subtopics.length) return;
 
+  if (Number(parent?.level || 1) >= 3 && branchExpansion === 'side') {
+    placeTimelineSideDetails(parent, branchSide, collapsedIds, branchExpansion);
+    return;
+  }
+
+  if (Number(parent?.level || 1) >= 3 && branchExpansion === 'hanging') {
+    placeTimelineHangingDetails(parent, branchSide, collapsedIds, branchExpansion);
+    return;
+  }
+
   const parentBox = parent._layout;
   const heights = subtopics.map((subtopic) =>
-    timelineDetailSubtreeHeight(subtopic, branchSide, collapsedIds)
+    timelineDetailSubtreeHeight(subtopic, branchSide, collapsedIds, branchExpansion)
   );
   const totalHeight =
     heights.reduce((sum, height) => sum + height, 0) +
-    Math.max(0, subtopics.length - 1) * TIMELINE_DETAIL_SIBLING_GAP;
+    Math.max(0, subtopics.length - 1) * timelineDetailSiblingGapForParent(parent, branchExpansion);
   const isDetailParent =
     parentBox.side === 'timeline-detail-top' || parentBox.side === 'timeline-detail-bottom';
   let y = isDetailParent
@@ -865,6 +1289,7 @@ export function placeTimelineDetails(parent, branchSide, collapsedIds) {
     const isTopBranch = branchSide === 'timeline-top';
 
     subtopicBox.side = isTopBranch ? 'timeline-detail-top' : 'timeline-detail-bottom';
+    subtopicBox.branchExpansion = '';
     subtopicBox.timelineBranchSide = branchSide;
     /*
      * 时间轴详情树使用更大的横向推进距离。
@@ -876,10 +1301,84 @@ export function placeTimelineDetails(parent, branchSide, collapsedIds) {
      * 每个主题都放在自己完整子树占位块的中线位置。
      * 这样当某个详情主题继续展开子主题时，父主题右侧出口能自然对齐子主题组的总高度中线。
      */
-    subtopicBox.y = y + height / 2;
+    subtopicBox.y = verticalBlockTopicY(y, height, subtopic, branchExpansion);
 
-    placeTimelineDetails(subtopic, branchSide, collapsedIds);
-    y += height + TIMELINE_DETAIL_SIBLING_GAP;
+    placeTimelineDetails(subtopic, branchSide, collapsedIds, branchExpansion);
+    y += height + timelineDetailSiblingGapForParent(parent, branchExpansion);
+  }
+}
+
+/*
+ * 作用：
+ * 时间轴详情区的下挂展开。
+ *
+ * 关键点：
+ * 时间轴上侧/下侧只决定详情树挂在主轴哪一侧；
+ * 进入三级及更深的普通主题后，“下挂展开”仍然从主题下方出线并向下排列。
+ */
+export function placeTimelineHangingDetails(parent, branchSide, collapsedIds, branchExpansion) {
+  const subtopics = visibleSubtopics(parent, collapsedIds);
+  if (!subtopics.length) return;
+
+  const parentBox = parent._layout;
+  const isTopBranch = branchSide === 'timeline-top';
+  const gap = timelineDetailSiblingGapForParent(parent, branchExpansion);
+  const heights = subtopics.map((subtopic) =>
+    timelineDetailSubtreeHeight(subtopic, branchSide, collapsedIds, branchExpansion)
+  );
+  let blockTopY = parentBox.y + parentBox.height / 2 + gap;
+
+  parentBox.childBranchExpansion = 'hanging-horizontal';
+
+  for (let index = 0; index < subtopics.length; index += 1) {
+    const subtopic = subtopics[index];
+    const subtopicBox = subtopic._layout;
+    const height = heights[index];
+
+    subtopicBox.side = isTopBranch ? 'timeline-detail-top' : 'timeline-detail-bottom';
+    subtopicBox.branchExpansion = 'hanging';
+    subtopicBox.timelineBranchSide = branchSide;
+    subtopicBox.x =
+      parentBox.x + parentBox.width / 2 + TIMELINE_DETAIL_LEVEL_GAP + subtopicBox.width / 2;
+    subtopicBox.y = verticalBlockTopicY(blockTopY, height, subtopic, branchExpansion);
+
+    placeTimelineDetails(subtopic, branchSide, collapsedIds, branchExpansion);
+    blockTopY += height + gap;
+  }
+}
+
+/*
+ * 作用：
+ * 时间轴详情区的侧向展开：三级及更深主题从右侧直接继续展开。
+ */
+export function placeTimelineSideDetails(parent, branchSide, collapsedIds, branchExpansion) {
+  const subtopics = visibleSubtopics(parent, collapsedIds);
+  if (!subtopics.length) return;
+
+  const parentBox = parent._layout;
+  const heights = subtopics.map((subtopic) =>
+    timelineDetailSubtreeHeight(subtopic, branchSide, collapsedIds, branchExpansion)
+  );
+  const totalHeight =
+    heights.reduce((sum, height) => sum + height, 0) +
+    Math.max(0, subtopics.length - 1) * timelineDetailSiblingGapForParent(parent, branchExpansion);
+  let y = parentBox.y - totalHeight / 2;
+
+  for (let index = 0; index < subtopics.length; index += 1) {
+    const subtopic = subtopics[index];
+    const subtopicBox = subtopic._layout;
+    const height = heights[index];
+    const isTopBranch = branchSide === 'timeline-top';
+
+    subtopicBox.side = isTopBranch ? 'timeline-detail-top' : 'timeline-detail-bottom';
+    subtopicBox.branchExpansion = 'side';
+    subtopicBox.timelineBranchSide = branchSide;
+    subtopicBox.x =
+      parentBox.x + parentBox.width / 2 + TIMELINE_DETAIL_LEVEL_GAP + subtopicBox.width / 2;
+    subtopicBox.y = verticalBlockTopicY(y, height, subtopic, branchExpansion);
+
+    placeTimelineDetails(subtopic, branchSide, collapsedIds, branchExpansion);
+    y += height + timelineDetailSiblingGapForParent(parent, branchExpansion);
   }
 }
 
@@ -887,13 +1386,13 @@ export function placeTimelineDetails(parent, branchSide, collapsedIds) {
  * 作用：
  * 计算某个时间点连同详情区需要占用的横向宽度。
  */
-export function timelinePointWidth(topic, collapsedIds) {
+export function timelinePointWidth(topic, collapsedIds, branchExpansion = 'side') {
   const box = topic._layout;
   const subtopics = visibleSubtopics(topic, collapsedIds);
   if (!subtopics.length) return box.width;
 
   const subtopicWidth = subtopics.reduce(
-    (max, subtopic) => Math.max(max, timelinePointWidth(subtopic, collapsedIds)),
+    (max, subtopic) => Math.max(max, timelinePointWidth(subtopic, collapsedIds, branchExpansion)),
     0
   );
 
@@ -904,17 +1403,27 @@ export function timelinePointWidth(topic, collapsedIds) {
  * 作用：
  * 计算时间轴详情子树需要占用的垂直高度。
  */
-export function timelineDetailSubtreeHeight(topic, branchSide, collapsedIds) {
+export function timelineDetailSubtreeHeight(
+  topic,
+  branchSide,
+  collapsedIds,
+  branchExpansion = 'side'
+) {
   const box = topic._layout;
   const subtopics = visibleSubtopics(topic, collapsedIds);
   if (!subtopics.length) return box.height;
 
   const subtopicHeight =
     subtopics.reduce(
-      (sum, subtopic) => sum + timelineDetailSubtreeHeight(subtopic, branchSide, collapsedIds),
+      (sum, subtopic) =>
+        sum + timelineDetailSubtreeHeight(subtopic, branchSide, collapsedIds, branchExpansion),
       0
     ) +
-    Math.max(0, subtopics.length - 1) * TIMELINE_DETAIL_SIBLING_GAP;
+    Math.max(0, subtopics.length - 1) * timelineDetailSiblingGapForParent(topic, branchExpansion);
+
+  if (Number(topic?.level || 1) >= 3 && branchExpansion === 'hanging') {
+    return box.height + timelineDetailSiblingGapForParent(topic, branchExpansion) + subtopicHeight;
+  }
 
   /*
    * 详情树是向右展开的：父主题和子主题组在横向上分列，垂直占位取二者较大值。
@@ -1419,13 +1928,17 @@ function radialPerpendicularExtent(box, angle) {
  * - 三级主题是鱼刺主题，挂在斜骨线中段。
  * - 三级及更深主题是鱼刺主题的后代，继续朝鱼尾方向树状展开。
  */
-export function layoutFishbone(root, collapsedIds, mode = 'fishbone-left') {
+export function layoutFishbone(
+  root,
+  collapsedIds,
+  mode = 'fishbone-left',
+  branchExpansion = 'side'
+) {
   const rootBox = root._layout;
   const subtopics = visibleSubtopics(root, collapsedIds);
   if (!subtopics.length) return;
 
   const direction = mode === 'fishbone-right' ? -1 : 1;
-  const diagonalX = Math.max(72, LEVEL_GAP);
   const firstAttachX = rootBox.x + direction * (rootBox.width / 2 + LEVEL_GAP);
   const sideCursors = {
     top: firstAttachX,
@@ -1439,26 +1952,30 @@ export function layoutFishbone(root, collapsedIds, mode = 'fishbone-left') {
     const sign = index % 2 === 0 ? -1 : 1;
     const sideKey = sign < 0 ? 'top' : 'bottom';
     // 大分支的子树高度决定它离主骨多远，避免上下两侧的鱼刺主题互相压住。
-    const primaryBoneHeight = fishbonePrimaryBoneSubtreeHeight(subtopic, collapsedIds);
-    // 大分支的子树宽度决定下一个大分支在主骨上的挂点，避免横向重叠。
-    const primaryBoneWidth = fishbonePrimaryBoneSubtreeWidth(subtopic, collapsedIds);
+    const primaryBoneHeight = fishbonePrimaryBoneSubtreeHeight(
+      subtopic,
+      collapsedIds,
+      branchExpansion
+    );
     const attachX = sideCursors[sideKey];
     /*
-     * 大分支主题相对主骨挂点向鱼尾方向偏移。
-     * direction 为 1 时向右，-1 时向左；这样左右鱼骨图可以共享同一套计算。
+     * 大分支斜骨使用固定倾角，避免不同分支因为自身高度不同而出现忽陡忽缓的观感。
+     * 先根据子树高度算出大分支主题靠近主骨一侧边缘的纵向偏移，
+     * 再用固定斜率反推水平投影，这样斜骨线角度稳定，仍然给高分支留出足够空间。
      */
-    const primaryBoneDistance =
-      diagonalX + Math.max(0, primaryBoneHeight - TOPIC_MIN_HEIGHT) * 0.18;
+    const primaryBoneEdgeOffset = Math.max(
+      FISHBONE_PRIMARY_BONE_MIN_EDGE_OFFSET,
+      primaryBoneHeight + SIBLING_GAP * 2.5
+    );
+    const primaryBoneRun = primaryBoneEdgeOffset / FISHBONE_PRIMARY_BONE_SLOPE;
 
     subtopicBox.side = sign < 0 ? 'fishbone-top' : 'fishbone-bottom';
     subtopicBox.fishboneSign = sign;
     subtopicBox.fishboneDirection = direction;
     // 大分支挂到主骨上的 x 坐标，渲染主骨分段时也依赖它来确定每段颜色。
     subtopicBox.fishboneMainSpineAttachX = attachX;
-    subtopicBox.x = attachX + direction * (primaryBoneDistance + subtopicBox.width / 2);
-    subtopicBox.y =
-      rootBox.y +
-      sign * (TOPIC_MIN_HEIGHT + SIBLING_GAP * 2 + primaryBoneHeight + subtopicBox.height / 2);
+    subtopicBox.x = attachX + direction * primaryBoneRun;
+    subtopicBox.y = rootBox.y + sign * (primaryBoneEdgeOffset + subtopicBox.height / 2);
     // 斜骨线从主骨挂点出发，终点落在大分支主题靠近主骨的一侧边框中点。
     subtopicBox.fishboneDiagonalBoneStartX = attachX;
     subtopicBox.fishboneDiagonalBoneStartY = rootBox.y;
@@ -1466,8 +1983,16 @@ export function layoutFishbone(root, collapsedIds, mode = 'fishbone-left') {
     subtopicBox.fishboneDiagonalBoneEndY =
       sign < 0 ? subtopicBox.y + subtopicBox.height / 2 : subtopicBox.y - subtopicBox.height / 2;
 
-    placeFishboneRibTopics(subtopic, sign, direction, collapsedIds);
-    sideCursors[sideKey] += direction * (diagonalX + primaryBoneWidth + BRANCH_GAP * 0.35);
+    placeFishboneRibTopics(subtopic, sign, direction, collapsedIds, branchExpansion);
+    /*
+     * 同侧下一条大分支的挂点，落在上一条大分支可见子树末端垂线与主骨的交点上。
+     * 这比使用“预估宽度 + 安全间距”更贴近鱼骨图语义，也避免主骨上出现过大的空白段。
+     */
+    sideCursors[sideKey] = fishboneVisibleSubtreeHorizontalBoundary(
+      subtopic,
+      direction,
+      collapsedIds
+    );
   });
 }
 
@@ -1479,7 +2004,7 @@ export function layoutFishbone(root, collapsedIds, mode = 'fishbone-left') {
  * 鱼刺主题不是按普通树从大分支主题右侧长出，而是先沿着斜骨线寻找挂点；
  * 挂点的 y 坐标由鱼刺主题子树高度决定，挂点的 x 坐标再通过斜骨线线性插值得到。
  */
-export function placeFishboneRibTopics(parent, sign, direction, collapsedIds) {
+export function placeFishboneRibTopics(parent, sign, direction, collapsedIds, branchExpansion) {
   const subtopics = visibleSubtopics(parent, collapsedIds);
   if (!subtopics.length) return;
 
@@ -1489,7 +2014,7 @@ export function placeFishboneRibTopics(parent, sign, direction, collapsedIds) {
   const diagonalBoneEndX = parentBox.fishboneDiagonalBoneEndX;
   const diagonalBoneEndY = parentBox.fishboneDiagonalBoneEndY;
   const ribTopicHeights = subtopics.map((subtopic) =>
-    fishboneRibTopicSubtreeHeight(subtopic, collapsedIds)
+    fishboneRibTopicSubtreeHeight(subtopic, collapsedIds, branchExpansion)
   );
   const totalRibHeight =
     ribTopicHeights.reduce((sum, height) => sum + height, 0) +
@@ -1502,8 +2027,12 @@ export function placeFishboneRibTopics(parent, sign, direction, collapsedIds) {
   subtopics.forEach((subtopic, index) => {
     const subtopicBox = subtopic._layout;
     const height = ribTopicHeights[index];
-    const centerOnDiagonalBone = contentStart + offset + height / 2;
-    const subtopicY = diagonalBoneEndY - sign * centerOnDiagonalBone;
+    const blockStartOnDiagonal = contentStart + offset;
+    const blockEndOnDiagonal = blockStartOnDiagonal + height;
+    const blockStartY = diagonalBoneEndY - sign * blockStartOnDiagonal;
+    const blockEndY = diagonalBoneEndY - sign * blockEndOnDiagonal;
+    const blockTopY = Math.min(blockStartY, blockEndY);
+    const subtopicY = verticalBlockTopicY(blockTopY, height, subtopic, branchExpansion);
     const ratio = clamp(
       (subtopicY - diagonalBoneStartY) / (diagonalBoneEndY - diagonalBoneStartY || 1),
       0,
@@ -1521,7 +2050,7 @@ export function placeFishboneRibTopics(parent, sign, direction, collapsedIds) {
     subtopicBox.x = attachX + direction * (LEVEL_GAP + subtopicBox.width / 2);
     subtopicBox.y = subtopicY;
 
-    placeFishboneRibDescendants(subtopic, sign, direction, collapsedIds);
+    placeFishboneRibDescendants(subtopic, sign, direction, collapsedIds, branchExpansion);
     offset += height + SIBLING_GAP;
   });
 }
@@ -1530,13 +2059,24 @@ export function placeFishboneRibTopics(parent, sign, direction, collapsedIds) {
  * 作用：
  * 摆放鱼刺主题的后代主题。
  */
-export function placeFishboneRibDescendants(parent, sign, direction, collapsedIds) {
+export function placeFishboneRibDescendants(
+  parent,
+  sign,
+  direction,
+  collapsedIds,
+  branchExpansion = 'side'
+) {
   const subtopics = visibleSubtopics(parent, collapsedIds);
   if (!subtopics.length) return;
 
+  if (shouldUseHangingExpansion(parent, branchExpansion)) {
+    placeFishboneHangingRibDescendants(parent, sign, direction, collapsedIds, branchExpansion);
+    return;
+  }
+
   const parentBox = parent._layout;
   const heights = subtopics.map((subtopic) =>
-    fishboneRibTopicSubtreeHeight(subtopic, collapsedIds)
+    fishboneRibTopicSubtreeHeight(subtopic, collapsedIds, branchExpansion)
   );
   const totalHeight =
     heights.reduce((sum, height) => sum + height, 0) +
@@ -1552,10 +2092,47 @@ export function placeFishboneRibDescendants(parent, sign, direction, collapsedId
     subtopicBox.fishboneDirection = direction;
     subtopicBox.x =
       parentBox.x + direction * (parentBox.width / 2 + LEVEL_GAP + subtopicBox.width / 2);
-    subtopicBox.y = y + height / 2;
+    subtopicBox.y = verticalBlockTopicY(y, height, subtopic, branchExpansion);
 
-    placeFishboneRibDescendants(subtopic, sign, direction, collapsedIds);
+    placeFishboneRibDescendants(subtopic, sign, direction, collapsedIds, branchExpansion);
     y += height + SIBLING_GAP;
+  });
+}
+
+/*
+ * 作用：
+ * 鱼刺后代的下挂展开：从鱼刺主题下方出线，再朝鱼尾方向接到子主题。
+ */
+export function placeFishboneHangingRibDescendants(
+  parent,
+  sign,
+  direction,
+  collapsedIds,
+  branchExpansion
+) {
+  const subtopics = visibleSubtopics(parent, collapsedIds);
+  if (!subtopics.length) return;
+
+  const parentBox = parent._layout;
+  parentBox.childBranchExpansion = 'hanging-horizontal';
+  const heights = subtopics.map((subtopic) =>
+    fishboneRibTopicSubtreeHeight(subtopic, collapsedIds, branchExpansion)
+  );
+  let y = parentBox.y + parentBox.height / 2 + HANGING_SIBLING_GAP;
+
+  subtopics.forEach((subtopic, index) => {
+    const subtopicBox = subtopic._layout;
+    const height = heights[index];
+
+    subtopicBox.side = 'fishbone-rib-descendant';
+    subtopicBox.branchExpansion = 'hanging';
+    subtopicBox.fishboneSign = sign;
+    subtopicBox.fishboneDirection = direction;
+    subtopicBox.x = parentBox.x + direction * (HANGING_LEVEL_GAP + subtopicBox.width / 2);
+    subtopicBox.y = verticalBlockTopicY(y, height, subtopic, branchExpansion);
+
+    placeFishboneRibDescendants(subtopic, sign, direction, collapsedIds, branchExpansion);
+    y += height + HANGING_SIBLING_GAP;
   });
 }
 
@@ -1563,14 +2140,15 @@ export function placeFishboneRibDescendants(parent, sign, direction, collapsedId
  * 作用：
  * 计算鱼骨图大分支子树需要占用的垂直高度。
  */
-export function fishbonePrimaryBoneSubtreeHeight(topic, collapsedIds) {
+export function fishbonePrimaryBoneSubtreeHeight(topic, collapsedIds, branchExpansion = 'side') {
   const box = topic._layout;
   const subtopics = visibleSubtopics(topic, collapsedIds);
   if (!subtopics.length) return box.height;
 
   const ribHeight =
     subtopics.reduce(
-      (sum, subtopic) => sum + fishboneRibTopicSubtreeHeight(subtopic, collapsedIds),
+      (sum, subtopic) =>
+        sum + fishboneRibTopicSubtreeHeight(subtopic, collapsedIds, branchExpansion),
       0
     ) +
     Math.max(0, subtopics.length - 1) * SIBLING_GAP;
@@ -1582,17 +2160,23 @@ export function fishbonePrimaryBoneSubtreeHeight(topic, collapsedIds) {
  * 作用：
  * 计算鱼刺主题及其后代需要占用的垂直高度。
  */
-export function fishboneRibTopicSubtreeHeight(topic, collapsedIds) {
+export function fishboneRibTopicSubtreeHeight(topic, collapsedIds, branchExpansion = 'side') {
   const box = topic._layout;
   const subtopics = visibleSubtopics(topic, collapsedIds);
   if (!subtopics.length) return box.height;
 
   const subtopicHeight =
     subtopics.reduce(
-      (sum, subtopic) => sum + fishboneRibTopicSubtreeHeight(subtopic, collapsedIds),
+      (sum, subtopic) =>
+        sum + fishboneRibTopicSubtreeHeight(subtopic, collapsedIds, branchExpansion),
       0
     ) +
-    Math.max(0, subtopics.length - 1) * SIBLING_GAP;
+    Math.max(0, subtopics.length - 1) *
+      (shouldUseHangingExpansion(topic, branchExpansion) ? HANGING_SIBLING_GAP : SIBLING_GAP);
+
+  if (shouldUseHangingExpansion(topic, branchExpansion)) {
+    return box.height + HANGING_SIBLING_GAP + subtopicHeight;
+  }
 
   return Math.max(box.height, subtopicHeight);
 }
@@ -1601,13 +2185,14 @@ export function fishboneRibTopicSubtreeHeight(topic, collapsedIds) {
  * 作用：
  * 计算鱼骨图大分支子树向鱼尾方向延伸的宽度。
  */
-export function fishbonePrimaryBoneSubtreeWidth(topic, collapsedIds) {
+export function fishbonePrimaryBoneSubtreeWidth(topic, collapsedIds, branchExpansion = 'side') {
   const box = topic._layout;
   const subtopics = visibleSubtopics(topic, collapsedIds);
   if (!subtopics.length) return box.width;
 
   const subtopicWidth = subtopics.reduce(
-    (max, subtopic) => Math.max(max, fishboneRibTopicSubtreeWidth(subtopic, collapsedIds)),
+    (max, subtopic) =>
+      Math.max(max, fishboneRibTopicSubtreeWidth(subtopic, collapsedIds, branchExpansion)),
     0
   );
 
@@ -1618,17 +2203,48 @@ export function fishbonePrimaryBoneSubtreeWidth(topic, collapsedIds) {
  * 作用：
  * 计算鱼刺主题及其后代向鱼尾方向延伸的宽度。
  */
-export function fishboneRibTopicSubtreeWidth(topic, collapsedIds) {
+export function fishboneRibTopicSubtreeWidth(topic, collapsedIds, branchExpansion = 'side') {
   const box = topic._layout;
   const subtopics = visibleSubtopics(topic, collapsedIds);
   if (!subtopics.length) return box.width;
 
   const subtopicWidth = subtopics.reduce(
-    (max, subtopic) => Math.max(max, fishboneRibTopicSubtreeWidth(subtopic, collapsedIds)),
+    (max, subtopic) =>
+      Math.max(max, fishboneRibTopicSubtreeWidth(subtopic, collapsedIds, branchExpansion)),
     0
   );
 
+  if (shouldUseHangingExpansion(topic, branchExpansion)) {
+    return Math.max(box.width, HANGING_LEVEL_GAP + subtopicWidth);
+  }
+
   return box.width + LEVEL_GAP + subtopicWidth;
+}
+
+/*
+ * 作用：
+ * 计算鱼骨图某条大分支可见子树在鱼尾方向上的水平边界。
+ *
+ * 使用场景：
+ * 同侧下一条大分支的斜骨起点，应放在上一条大分支末端垂线和主骨的交点上。
+ * 这个“末端垂线”就是整棵可见子树在鱼尾方向上的最远边界。
+ */
+export function fishboneVisibleSubtreeHorizontalBoundary(topic, direction, collapsedIds) {
+  const box = topic?._layout;
+  if (!box) return 0;
+
+  let boundary = direction > 0 ? box.x + box.width / 2 : box.x - box.width / 2;
+  for (const subtopic of visibleSubtopics(topic, collapsedIds)) {
+    const subtopicBoundary = fishboneVisibleSubtreeHorizontalBoundary(
+      subtopic,
+      direction,
+      collapsedIds
+    );
+    boundary =
+      direction > 0 ? Math.max(boundary, subtopicBoundary) : Math.min(boundary, subtopicBoundary);
+  }
+
+  return boundary;
 }
 
 /*

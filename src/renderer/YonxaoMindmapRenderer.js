@@ -2238,6 +2238,7 @@ export class YonxaoMindmapRenderer extends Component {
     const groups = new Map();
     for (const connector of layout.connectors) {
       if (connector.subtopic?._layout?.side !== 'org-right') continue;
+      if (connector.subtopic?._layout?.branchExpansion === 'side') continue;
       if (connector.parentTopic === this.root) continue;
       if (!groups.has(connector.parentTopic.id)) {
         groups.set(connector.parentTopic.id, []);
@@ -2486,6 +2487,8 @@ export class YonxaoMindmapRenderer extends Component {
     for (const connector of layout.connectors) {
       const side = connector.subtopic?._layout?.side;
       if (side !== 'timeline-detail-top' && side !== 'timeline-detail-bottom') continue;
+      if (connector.subtopic?._layout?.branchExpansion === 'side') continue;
+      if (connector.subtopic?._layout?.branchExpansion === 'hanging') continue;
       if (!groups.has(connector.parentTopic.id)) {
         groups.set(connector.parentTopic.id, []);
       }
@@ -2931,6 +2934,29 @@ export class YonxaoMindmapRenderer extends Component {
   connectorAnchors(parentBox, subtopicBox) {
     const side = subtopicBox.side;
 
+    if (subtopicBox.branchExpansion === 'hanging') {
+      if (side === 'top' || side === 'bottom') {
+        const direction = side === 'top' ? -1 : 1;
+        return {
+          kind: 'hanging-vertical',
+          startX: parentBox.x + parentBox.width / 2,
+          startY: parentBox.y,
+          endX: subtopicBox.x,
+          endY: subtopicBox.y - direction * (subtopicBox.height / 2),
+        };
+      }
+
+      const direction =
+        side === 'left' || side === 'tree-left' || subtopicBox.fishboneDirection < 0 ? -1 : 1;
+      return {
+        kind: 'hanging-horizontal',
+        startX: parentBox.x,
+        startY: parentBox.y + parentBox.height / 2,
+        endX: subtopicBox.x - direction * (subtopicBox.width / 2),
+        endY: subtopicBox.y,
+      };
+    }
+
     if (parentBox.side === 'root' && (side === 'tree-left' || side === 'tree-right')) {
       return {
         kind: 'tree-branch',
@@ -3022,6 +3048,17 @@ export class YonxaoMindmapRenderer extends Component {
     }
 
     if (side === 'timeline-detail-top' || side === 'timeline-detail-bottom') {
+      if (subtopicBox.branchExpansion === 'side') {
+        return {
+          startX: parentBox.x + parentBox.width / 2,
+          startY: parentBox.y,
+          endX: subtopicBox.x - subtopicBox.width / 2,
+          endY: subtopicBox.y,
+          axis: 'x',
+          sign: 1,
+        };
+      }
+
       const startX = this.timelineDetailBranchX(parentBox, [subtopicBox]);
       return {
         kind: 'timeline-detail',
@@ -3042,7 +3079,28 @@ export class YonxaoMindmapRenderer extends Component {
       };
     }
 
+    if (side === 'org-hanging') {
+      return {
+        kind: 'hanging-horizontal',
+        startX: parentBox.x,
+        startY: parentBox.y + parentBox.height / 2,
+        endX: subtopicBox.x - subtopicBox.width / 2,
+        endY: subtopicBox.y,
+      };
+    }
+
     if (side === 'org-right') {
+      if (subtopicBox.branchExpansion === 'side') {
+        return {
+          startX: parentBox.x + parentBox.width / 2,
+          startY: parentBox.y,
+          endX: subtopicBox.x - subtopicBox.width / 2,
+          endY: subtopicBox.y,
+          axis: 'x',
+          sign: 1,
+        };
+      }
+
       return {
         kind: 'org-right-subtopic',
         startX: this.orgRightBranchX(parentBox),
@@ -3123,6 +3181,14 @@ export class YonxaoMindmapRenderer extends Component {
 
     if (kind === 'timeline-detail') {
       return ['M', startX, startY, 'H', endX].join(' ');
+    }
+
+    if (kind === 'hanging-horizontal') {
+      return ['M', startX, startY, 'V', endY, 'H', endX].join(' ');
+    }
+
+    if (kind === 'hanging-vertical') {
+      return ['M', startX, startY, 'H', endX, 'V', endY].join(' ');
     }
 
     if (kind === 'radial') {
@@ -3610,6 +3676,8 @@ export class YonxaoMindmapRenderer extends Component {
    */
   topicOutletSide(box) {
     const side = String(box.side || '');
+    if (box.childBranchExpansion === 'hanging-horizontal') return 'bottom';
+    if (box.childBranchExpansion === 'hanging-vertical') return 'right';
     if (side === 'left' || side === 'right' || side === 'top' || side === 'bottom') return side;
     if (this.isFishboneTopicBox(box) || side === 'root') {
       const mode = this.config.layout;

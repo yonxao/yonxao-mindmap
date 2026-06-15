@@ -72,6 +72,9 @@ export const DEFAULT_MIND_CONFIG = Object.freeze({
   connector: Object.freeze({
     style: 'curve',
   }),
+  branch: Object.freeze({
+    expansion: 'side',
+  }),
   font: Object.freeze({
     family: DEFAULT_FONT_FAMILY,
     size: 14,
@@ -160,6 +163,7 @@ export function normalizeMindConfig(rawConfig) {
   const font = isPlainObject(raw.font) ? raw.font : {};
   const layout = raw.layout;
   const connector = isPlainObject(raw.connector) ? raw.connector : {};
+  const branch = isPlainObject(raw.branch) ? raw.branch : {};
   const topic = isPlainObject(raw.topic) ? raw.topic : {};
   const canvas = isPlainObject(raw.canvas) ? raw.canvas : {};
   const toolbar = isPlainObject(raw.toolbar) ? raw.toolbar : {};
@@ -193,6 +197,10 @@ export function normalizeMindConfig(rawConfig) {
     connector: {
       ...connector,
       style: normalizeConnectorStyle(connector.style) || DEFAULT_MIND_CONFIG.connector.style,
+    },
+    branch: {
+      ...branch,
+      expansion: normalizeBranchExpansion(branch.expansion) || DEFAULT_MIND_CONFIG.branch.expansion,
     },
     font: normalizeFontConfig(font),
     topic: {
@@ -478,11 +486,13 @@ function configKeyOrder(path) {
       'theme',
       'layout',
       'connector',
+      'branch',
       'topic',
       'font',
     ];
   }
   if (keyPath === 'connector') return ['style'];
+  if (keyPath === 'branch') return ['expansion'];
   if (keyPath === 'interaction') return ['wheelZoom'];
   if (keyPath === 'font') return ['family', 'size', 'weight', 'lineHeight', 'levels'];
   if (/^font\.levels\.[^.]+$/.test(keyPath)) {
@@ -648,6 +658,16 @@ function normalizeLayoutType(value) {
 function normalizeConnectorStyle(value) {
   const text = normalizeText(value).toLowerCase();
   if (text === 'curve' || text === 'straight' || text === 'elbow') return text;
+  return '';
+}
+
+/*
+ * 作用：
+ * 规范化普通主题的子主题展开方式。
+ */
+export function normalizeBranchExpansion(value) {
+  const text = normalizeText(value).toLowerCase();
+  if (text === 'side' || text === 'hanging') return text;
   return '';
 }
 

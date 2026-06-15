@@ -53,12 +53,36 @@ const CONNECTOR_STYLE_CONFIGURABLE_LAYOUTS = new Set([
   'mindmap-vertical',
 ]);
 
+const BRANCH_EXPANSION_UNSUPPORTED_LAYOUTS = new Set([
+  'radial',
+  'tree-table',
+  'tree-table-stepped',
+]);
+
 /*
  * 作用：
  * 对外提供“当前布局是否允许设置连线线型”的统一判断。
  */
 export function isConnectorStyleConfigurableLayout(layout) {
   return CONNECTOR_STYLE_CONFIGURABLE_LAYOUTS.has(String(layout || ''));
+}
+
+/*
+ * 作用：
+ * 判断当前布局是否支持普通主题的子主题展开方式。
+ */
+export function isBranchExpansionSupportedLayout(layout) {
+  return !BRANCH_EXPANSION_UNSUPPORTED_LAYOUTS.has(String(layout || ''));
+}
+
+/*
+ * 作用：
+ * 判断当前布局和实际线型是否允许编辑子主题展开方式。
+ */
+export function isBranchExpansionConfigurable(layout, connectorStyle) {
+  if (!isBranchExpansionSupportedLayout(layout)) return false;
+  if (isConnectorStyleConfigurableLayout(layout)) return connectorStyle === 'elbow';
+  return true;
 }
 
 /*
@@ -300,16 +324,30 @@ export class ConfigModal extends Modal {
     );
 
     if (this.isConnectorStyleConfigurable(normalized.layout)) {
-      this.createSelectField(
+      const connectorSelect = this.createSelectField(
         this.t('configModal.layout.connectorStyle'),
         ['connector', 'style'],
         normalized.connector.style,
         this.connectorOptions()
       );
+      connectorSelect.addEventListener('change', () => {
+        this.render();
+      });
+    } else {
+      this.createDisabledConnectorStyleField();
+    }
+
+    if (this.isBranchExpansionConfigurable(normalized.layout, normalized.connector.style)) {
+      this.createSelectField(
+        this.t('configModal.layout.branchExpansion'),
+        ['branch', 'expansion'],
+        normalized.branch.expansion,
+        this.branchExpansionOptions()
+      );
       return;
     }
 
-    this.createDisabledConnectorStyleField();
+    this.createDisabledBranchExpansionField(normalized.layout, normalized.connector.style);
   }
 
   /*
@@ -903,10 +941,47 @@ export class ConfigModal extends Modal {
 
   /*
    * 作用：
+   * 返回子主题展开方式下拉框选项。
+   */
+  branchExpansionOptions() {
+    return [
+      ['side', this.t('configModal.branchExpansion.side')],
+      ['hanging', this.t('configModal.branchExpansion.hanging')],
+    ];
+  }
+
+  /*
+   * 作用：
    * 判断当前布局是否允许用户手动选择连接线线型。
    */
   isConnectorStyleConfigurable(layout) {
     return isConnectorStyleConfigurableLayout(layout);
+  }
+
+  /*
+   * 作用：
+   * 判断当前布局和线型是否允许配置子主题展开方式。
+   */
+  isBranchExpansionConfigurable(layout, connectorStyle) {
+    return isBranchExpansionConfigurable(layout, connectorStyle);
+  }
+
+  /*
+   * 作用：
+   * 当前布局或线型不支持时展示只读反馈，避免写入不会生效的配置噪音。
+   */
+  createDisabledBranchExpansionField(layout, connectorStyle) {
+    const help = !isBranchExpansionSupportedLayout(layout)
+      ? this.t('configModal.layout.branchExpansion.unsupportedHelp')
+      : connectorStyle === 'elbow'
+        ? this.t('configModal.layout.branchExpansion.unsupportedHelp')
+        : this.t('configModal.layout.branchExpansion.elbowOnlyHelp');
+    const fieldEl = this.createField(this.t('configModal.layout.branchExpansion'), undefined, help);
+    const select = fieldEl.createEl('select');
+    const option = select.createEl('option', { text: this.t('configModal.branchExpansion.side') });
+    option.value = 'side';
+    select.value = 'side';
+    select.disabled = true;
   }
 
   /*

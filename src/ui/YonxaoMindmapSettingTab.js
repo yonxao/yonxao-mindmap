@@ -19,7 +19,12 @@ import {
   normalizeMindConfig,
 } from '../config/mindConfig.js';
 import { LANGUAGE_OPTIONS } from '../i18n/messages.js';
-import { ConfigModal, isConnectorStyleConfigurableLayout } from './ConfigModal.js';
+import {
+  ConfigModal,
+  isBranchExpansionConfigurable,
+  isBranchExpansionSupportedLayout,
+  isConnectorStyleConfigurableLayout,
+} from './ConfigModal.js';
 
 /*
  * 作用：
@@ -153,11 +158,20 @@ export class YonxaoMindmapSettingTab extends PluginSettingTab {
     const connectorSummary = isConnectorStyleConfigurableLayout(normalized.layout)
       ? normalized.connector.style
       : this.t('settings.summary.connector.fixedElbow');
+    const branchExpansionSummary = isBranchExpansionConfigurable(
+      normalized.layout,
+      normalized.connector.style
+    )
+      ? normalized.branch.expansion
+      : isBranchExpansionSupportedLayout(normalized.layout)
+        ? this.t('settings.summary.branchExpansion.elbowOnly')
+        : this.t('settings.summary.branchExpansion.unsupported');
 
     for (const item of [
       `${this.t('settings.summary.theme')}: ${normalized.theme}`,
       `${this.t('settings.summary.layout')}: ${normalized.layout}`,
       `${this.t('settings.summary.connector')}: ${connectorSummary}`,
+      `${this.t('settings.summary.branchExpansion')}: ${branchExpansionSummary}`,
       `${this.t('settings.summary.wheelZoom')}: ${
         normalized.interaction.wheelZoom
           ? this.t('settings.summary.enabled')
