@@ -135,6 +135,7 @@ export class YonxaoMindmapRenderer extends Component {
     this.topicTextEditorEl = null;
     this.topicTextEditorInput = null;
     this.inlineTextEditorEl = null;
+    this.inlineTextEditorInput = null;
     this.inlineEditingTopicId = null;
     this.inlineTextEditorSaving = false;
     this.topicDropIndicatorEl = null;
@@ -172,6 +173,7 @@ export class YonxaoMindmapRenderer extends Component {
    */
   onunload() {
     this.closeTopicEditor();
+    this.closeInlineTextEditor(false);
     if (this.topicEditorEl) {
       this.topicEditorEl.remove();
     }
@@ -2410,12 +2412,11 @@ export class YonxaoMindmapRenderer extends Component {
 
   /*
    * 作用：
-   * 在 SVG 主题上方覆盖一个 HTML input，用于“双击直接改主题文字”。
+   * 在主题附近覆盖一个放大的多行文本框，用于“双击直接改主题文字”。
    *
    * 为什么这样实现：
-   * SVG 的 <text> 元素本身没有稳定好用的文本编辑能力；如果把主题改成
-   * contenteditable，还会遇到光标、中文输入法、选区和换行兼容性问题。
-   * 因此这里把真实输入交给浏览器原生 input，再用主题 rect 的屏幕坐标把它覆盖到主题上。
+   * 这个编辑框仍然保持“就地快速编辑”的轻量手感，但尺寸比主题卡片更宽裕，
+   * 避免主题较窄或多行文本时内容显示不全。
    *
    * 调用链：
    * handleTopicDoubleClick() -> openInlineTextEditor() -> saveInlineTextEditor() ->
@@ -2423,7 +2424,7 @@ export class YonxaoMindmapRenderer extends Component {
    */
   openInlineTextEditor(topic) {
     if (!this.canEditMindMap()) return;
-    if (!topic || topic._virtual || !this.containerEl) return;
+    if (!topic || topic._virtual) return;
 
     this.closeTopicEditor();
     this.closeInlineTextEditor(false);
@@ -2435,23 +2436,15 @@ export class YonxaoMindmapRenderer extends Component {
     if (!cardEl) return;
 
     const cardRect = cardEl.getBoundingClientRect();
-    const containerRect = this.containerEl.getBoundingClientRect();
     const box = topic._layout;
 
-    const inputEl = document.createElement('input');
-    inputEl.type = 'text';
+    const inputEl = document.createElement('textarea');
     inputEl.className = 'yonxao-mindmap-inline-text-editor';
     inputEl.value = topic.text || '';
     inputEl.spellcheck = false;
     inputEl.setAttribute('aria-label', this.t('topicEditor.editTextAria'));
 
-    // input 是 HTML 元素，坐标系来自容器；cardRect 是浏览器屏幕坐标，所以要减去容器坐标。
-    inputEl.style.left = `${cardRect.left - containerRect.left}px`;
-    inputEl.style.top = `${cardRect.top - containerRect.top}px`;
-    inputEl.style.width = `${cardRect.width}px`;
-    inputEl.style.height = `${cardRect.height}px`;
-
-    // 字体使用当前主题布局计算出的配置，确保覆盖输入框和 SVG 主题尽量同高同宽。
+    // 字体使用当前主题布局计算出的配置，让弹出编辑框和主题文本保持相近观感。
     if (box && box.font) {
       inputEl.style.fontFamily = box.font.family;
       inputEl.style.fontSize = `${box.font.size}px`;
@@ -2459,14 +2452,27 @@ export class YonxaoMindmapRenderer extends Component {
       inputEl.style.lineHeight = `${box.font.lineHeight}px`;
     }
 
-    const stopEvent = (event) => event.stopPropagation();
-    inputEl.addEventListener('pointerdown', stopEvent);
-    inputEl.addEventListener('click', stopEvent);
-    inputEl.addEventListener('dblclick', stopEvent);
+    for (const eventName of [
+      'mousedown',
+      'mouseup',
+      'click',
+      'dblclick',
+      'pointerdown',
+      'pointerup',
+      'keydown',
+      'keyup',
+      'input',
+      'change',
+      'wheel',
+    ]) {
+      inputEl.addEventListener(eventName, (event) => {
+        event.stopPropagation();
+      });
+    }
 
     inputEl.addEventListener('keydown', (event) => {
       event.stopPropagation();
-      if (event.key === 'Enter') {
+      if (event.key === 'Enter' && !event.shiftKey) {
         event.preventDefault();
         Promise.resolve(this.saveInlineTextEditor()).catch((error) => {
           new Notice(`yonxao-mindmap: ${error.message || String(error)}`);
@@ -2486,16 +2492,53 @@ export class YonxaoMindmapRenderer extends Component {
       });
     });
 
+    document.body.appendChild(inputEl);
     this.inlineTextEditorEl = inputEl;
+    this.inlineTextEditorInput = inputEl;
     this.inlineEditingTopicId = topic.id;
-    this.containerEl.appendChild(inputEl);
+    this.positionInlineTextEditor(cardRect, topic, box);
     inputEl.focus();
     inputEl.select();
   }
 
   /*
    * 作用：
-   * 保存内联 input 中的主题文字，并同步回当前 yxmm 源码。
+   * 把双击编辑文本框放在主题附近，并按字号、行高和内容量放大。
+   */
+  positionInlineTextEditor(anchorRect, topic, box) {
+    if (!this.inlineTextEditorEl) return;
+
+    const gap = 12;
+    const lineHeight = box?.font?.lineHeight || 20;
+    const lineCount = Math.max(
+      3,
+      box?.lines?.length || String(topic?.text || '').split(/\r?\n/).length || 1
+    );
+    const width = clamp(
+      Math.max(anchorRect.width + 120, 240),
+      180,
+      Math.max(180, window.innerWidth - gap * 2)
+    );
+    const height = clamp(
+      Math.max(anchorRect.height + 44, lineCount * lineHeight + 34),
+      86,
+      Math.max(86, window.innerHeight - gap * 2)
+    );
+    const left = anchorRect.left - Math.max(0, (width - anchorRect.width) / 2);
+    const top = anchorRect.top - Math.max(0, (height - anchorRect.height) / 2);
+    const position = {
+      left: clamp(left, gap, Math.max(gap, window.innerWidth - width - gap)),
+      top: clamp(top, gap, Math.max(gap, window.innerHeight - height - gap)),
+    };
+    this.inlineTextEditorEl.style.width = `${Math.round(width)}px`;
+    this.inlineTextEditorEl.style.height = `${Math.round(height)}px`;
+    this.inlineTextEditorEl.style.left = `${Math.round(position.left)}px`;
+    this.inlineTextEditorEl.style.top = `${Math.round(position.top)}px`;
+  }
+
+  /*
+   * 作用：
+   * 保存内联 textarea 中的主题文字，并同步回当前 yxmm 源码。
    *
    * 实现逻辑：
    * 只更新 topic.text，不碰颜色、图标、布局等主题属性；这样双击编辑就是“快速改名”，
@@ -2504,7 +2547,7 @@ export class YonxaoMindmapRenderer extends Component {
   async saveInlineTextEditor() {
     if (!this.canEditMindMap()) return false;
 
-    const inputEl = this.inlineTextEditorEl;
+    const inputEl = this.inlineTextEditorInput;
     const topic = this.topicById.get(this.inlineEditingTopicId);
     if (!inputEl || !topic) return false;
 
@@ -2551,6 +2594,7 @@ export class YonxaoMindmapRenderer extends Component {
       this.inlineTextEditorEl.remove();
     }
     this.inlineTextEditorEl = null;
+    this.inlineTextEditorInput = null;
     this.inlineEditingTopicId = null;
   }
 
