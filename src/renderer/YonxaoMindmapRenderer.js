@@ -3396,7 +3396,9 @@ export class YonxaoMindmapRenderer extends Component {
    */
   shouldHideAddControls(topic) {
     const box = topic?._layout;
-    return this.isFishbonePrimaryBoneBox(box) || this.isTreeTableBox(box);
+    return (
+      this.isFishbonePrimaryBoneBox(box) || this.isTreeTableBox(box) || this.isTimelinePointBox(box)
+    );
   }
 
   /*
@@ -3441,6 +3443,14 @@ export class YonxaoMindmapRenderer extends Component {
   isFishbonePrimaryBoneBox(box) {
     const side = String(box?.side || '');
     return side === 'fishbone-top' || side === 'fishbone-bottom';
+  }
+
+  /*
+   * 作用：
+   * 判断主题是否是时间轴上的二级时间点主题。
+   */
+  isTimelinePointBox(box) {
+    return String(box?.side || '') === 'timeline-point';
   }
 
   /*
@@ -3689,7 +3699,9 @@ export class YonxaoMindmapRenderer extends Component {
     if (side === 'org-right' || side === 'org-right-branch') {
       return 'right';
     }
-    if (side === 'timeline-point') return 'right';
+    if (side === 'timeline-point') {
+      return box.timelineBranchSide === 'timeline-top' ? 'top' : 'bottom';
+    }
     if (side === 'timeline-top') return 'top';
     if (side === 'timeline-bottom') return 'bottom';
     if (side === 'timeline-detail-top' || side === 'timeline-detail-bottom') return 'right';

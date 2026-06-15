@@ -699,18 +699,43 @@ export function layoutOutlineTree(
 export function placeTreeTrunkSubtopics(root, subtopics, mode, collapsedIds, branchExpansion) {
   if (!subtopics.length) return;
 
+  const sideEntries = {
+    'tree-left': [],
+    'tree-right': [],
+  };
+  subtopics.forEach((subtopic, index) => {
+    const side = rootSubtopicTreeSide(subtopic, index, mode);
+    sideEntries[side].push({
+      subtopic,
+      side,
+      height: treeSubtreeHeight(subtopic, side, collapsedIds, branchExpansion),
+    });
+  });
+
+  placeTreeTrunkSide(root, sideEntries['tree-right'], collapsedIds, branchExpansion);
+  placeTreeTrunkSide(root, sideEntries['tree-left'], collapsedIds, branchExpansion);
+
+  // 中心主题保持在树的顶部中间；整体 bounds 会自然包含下方所有一级分支。
+  // 这里不调用 centerVisibleTopics，避免把顶部根主题又拉回普通导图的视觉中心。
+}
+
+/*
+ * 作用：
+ * 紧凑摆放树形图主干某一侧的一级分支。
+ *
+ * 关键点：
+ * 平衡树左右两侧互不重叠，因此可以各自独立堆叠；
+ * 这样左侧大子树不会把右侧分支整体推空，反之亦然。
+ */
+export function placeTreeTrunkSide(root, entries, collapsedIds, branchExpansion) {
+  if (!entries.length) return;
+
   const rootBox = root._layout;
-  const sides = subtopics.map((subtopic, index) => rootSubtopicTreeSide(subtopic, index, mode));
-  const heights = subtopics.map((subtopic, index) =>
-    treeSubtreeHeight(subtopic, sides[index], collapsedIds, branchExpansion)
-  );
   let y = rootBox.y + rootBox.height / 2 + LEVEL_GAP;
 
-  for (let index = 0; index < subtopics.length; index += 1) {
-    const subtopic = subtopics[index];
+  for (const entry of entries) {
+    const { subtopic, side, height } = entry;
     const subtopicBox = subtopic._layout;
-    const height = heights[index];
-    const side = sides[index];
     const dir = side === 'tree-left' ? -1 : 1;
 
     subtopicBox.side = side;
@@ -720,9 +745,6 @@ export function placeTreeTrunkSubtopics(root, subtopics, mode, collapsedIds, bra
     placeTreeDescendants(subtopic, side, collapsedIds, branchExpansion);
     y += height + BRANCH_GAP;
   }
-
-  // 中心主题保持在树的顶部中间；整体 bounds 会自然包含下方所有一级分支。
-  // 这里不调用 centerVisibleTopics，避免把顶部根主题又拉回普通导图的视觉中心。
 }
 
 /*
@@ -1226,33 +1248,49 @@ export function layoutTimeline(
   const branchSides = subtopics.map((subtopic, index) =>
     rootSubtopicTimelineSide(subtopic, index, mode)
   );
-  const widths = subtopics.map((subtopic) =>
-    timelinePointWidth(subtopic, collapsedIds, branchExpansion)
+  const axisBandHalfHeight = subtopics.reduce(
+    (max, subtopic) => Math.max(max, subtopic._layout.height / 2),
+    TOPIC_MIN_HEIGHT / 2
   );
-  const totalWidth =
-    widths.reduce((sum, width) => sum + width, 0) + Math.max(0, subtopics.length - 1) * BRANCH_GAP;
 
   const axisY = rootBox.y;
-  rootBox.timelineAxisY = axisY;
-  rootBox.timelineAxisMinX = rootBox.x + rootBox.width / 2;
-  rootBox.timelineAxisMaxX = rootBox.x + rootBox.width / 2 + LEVEL_GAP + totalWidth;
+  const axisStartX = rootBox.x + rootBox.width / 2;
+  const firstPointLeftX = axisStartX + LEVEL_GAP;
+  const sideCursors = {
+    'timeline-top': firstPointLeftX,
+    'timeline-bottom': firstPointLeftX,
+  };
+  let pointCursorX = firstPointLeftX;
+  let axisEndX = axisStartX;
 
-  let x = rootBox.x + rootBox.width / 2 + LEVEL_GAP;
+  rootBox.timelineAxisY = axisY;
+  rootBox.timelineAxisMinX = axisStartX;
+
   for (let index = 0; index < subtopics.length; index += 1) {
     const subtopic = subtopics[index];
     const subtopicBox = subtopic._layout;
-    const width = widths[index];
     const branchSide = branchSides[index];
+    const width = timelinePointWidth(subtopic, collapsedIds, branchExpansion);
+    /*
+     * 时间轴的上侧详情和下侧详情不会互相重叠，可以分别用独立游标压缩横向空间；
+     * 轴上时间点本身仍使用 pointCursorX 避免同一条轴上的主题互相覆盖。
+     */
+    const blockLeftX = Math.max(pointCursorX, sideCursors[branchSide]);
 
     subtopicBox.side = 'timeline-point';
     subtopicBox.timelineBranchSide = branchSide;
-    subtopicBox.x = x + subtopicBox.width / 2;
+    subtopicBox.x = blockLeftX + subtopicBox.width / 2;
     subtopicBox.y = axisY;
     subtopicBox.timelineAxisY = axisY;
+    subtopicBox.timelineAxisBandHalfHeight = axisBandHalfHeight;
 
     placeTimelineDetails(subtopic, branchSide, collapsedIds, branchExpansion);
-    x += width + BRANCH_GAP;
+    pointCursorX = subtopicBox.x + subtopicBox.width / 2 + BRANCH_GAP;
+    sideCursors[branchSide] = blockLeftX + width + BRANCH_GAP;
+    axisEndX = Math.max(axisEndX, subtopicBox.x + subtopicBox.width / 2);
   }
+
+  rootBox.timelineAxisMaxX = axisEndX;
 }
 
 /*
@@ -1300,11 +1338,14 @@ export function placeTimelineDetails(parent, branchSide, collapsedIds, branchExp
     Math.max(0, subtopics.length - 1) * timelineDetailSiblingGapForParent(parent, branchExpansion);
   const isDetailParent =
     parentBox.side === 'timeline-detail-top' || parentBox.side === 'timeline-detail-bottom';
+  const axisBandHalfHeight = Number.isFinite(parentBox.timelineAxisBandHalfHeight)
+    ? parentBox.timelineAxisBandHalfHeight
+    : parentBox.height / 2;
   let y = isDetailParent
     ? parentBox.y - totalHeight / 2
     : branchSide === 'timeline-top'
-      ? parentBox.y - parentBox.height / 2 - TIMELINE_AXIS_DETAIL_GAP - totalHeight
-      : parentBox.y + parentBox.height / 2 + TIMELINE_AXIS_DETAIL_GAP;
+      ? parentBox.y - axisBandHalfHeight - TIMELINE_AXIS_DETAIL_GAP - totalHeight
+      : parentBox.y + axisBandHalfHeight + TIMELINE_AXIS_DETAIL_GAP;
 
   for (let index = 0; index < subtopics.length; index += 1) {
     const subtopic = subtopics[index];
