@@ -105,7 +105,7 @@ export function layoutTree(root, collapsedIds, config) {
   rootBox.y = 0;
   rootBox.side = 'root';
 
-  const layoutType = resolveLayoutType(root, normalizedConfig);
+  const layoutType = resolveLayoutType(normalizedConfig);
   const branchExpansion = resolveEffectiveBranchExpansion(layoutType, normalizedConfig);
   if (
     layoutType === 'mindmap-down' ||
@@ -306,14 +306,10 @@ export function measureTopic(topic, config) {
  * 决定当前整张图使用哪一种布局。
  *
  * 优先级：
- * 根主题属性 layout > 配置区 layout > mindmap-right。
+ * 配置区 layout > mindmap-right。
  */
-export function resolveLayoutType(root, config) {
-  return (
-    normalizeLayoutType(root?.attributes?.layout) ||
-    normalizeLayoutType(config?.layout) ||
-    'mindmap-right'
-  );
+export function resolveLayoutType(config) {
+  return normalizeLayoutType(config?.layout) || 'mindmap-right';
 }
 
 /*
@@ -340,7 +336,7 @@ export function layoutHorizontalMind(root, collapsedIds, mode, branchExpansion =
   const leftSubtopics = [];
 
   visibleRootSubtopics.forEach((subtopic, index) => {
-    const side = rootSubtopicHorizontalSide(root, subtopic, index, mode);
+    const side = rootSubtopicHorizontalSide(index, mode);
     if (side === 'left') {
       leftSubtopics.push(subtopic);
     } else {
@@ -356,15 +352,7 @@ export function layoutHorizontalMind(root, collapsedIds, mode, branchExpansion =
  * 作用：
  * 判断一级主题应该在左侧还是右侧。
  */
-export function rootSubtopicHorizontalSide(root, subtopic, index, mode) {
-  const subtopicLayout = normalizeLayoutType(subtopic.attributes.layout);
-  if (subtopicLayout === 'mindmap-left') return 'left';
-  if (subtopicLayout === 'mindmap-right') return 'right';
-
-  const rootLayout = normalizeLayoutType(root.attributes.layout);
-  if (rootLayout === 'mindmap-left') return 'left';
-  if (rootLayout === 'mindmap-right') return 'right';
-
+export function rootSubtopicHorizontalSide(index, mode) {
   if (mode === 'mindmap-left') return 'left';
   if (mode === 'mindmap-right') return 'right';
   return index % 2 === 0 ? 'right' : 'left';
@@ -515,7 +503,7 @@ export function layoutVerticalMind(root, collapsedIds, mode, branchExpansion = '
   const topSubtopics = [];
 
   visibleRootSubtopics.forEach((subtopic, index) => {
-    const side = rootSubtopicVerticalSide(subtopic, index, mode);
+    const side = rootSubtopicVerticalSide(index, mode);
     if (side === 'top') {
       topSubtopics.push(subtopic);
     } else {
@@ -531,11 +519,7 @@ export function layoutVerticalMind(root, collapsedIds, mode, branchExpansion = '
  * 作用：
  * 判断一级主题应该在上方还是下方。
  */
-export function rootSubtopicVerticalSide(subtopic, index, mode) {
-  const subtopicLayout = normalizeLayoutType(subtopic.attributes.layout);
-  if (subtopicLayout === 'mindmap-up') return 'top';
-  if (subtopicLayout === 'mindmap-down') return 'bottom';
-
+export function rootSubtopicVerticalSide(index, mode) {
   if (mode === 'mindmap-up') return 'top';
   if (mode === 'mindmap-down') return 'bottom';
   return index % 2 === 0 ? 'bottom' : 'top';
@@ -704,7 +688,7 @@ export function placeTreeTrunkSubtopics(root, subtopics, mode, collapsedIds, bra
     'tree-right': [],
   };
   subtopics.forEach((subtopic, index) => {
-    const side = rootSubtopicTreeSide(subtopic, index, mode);
+    const side = rootSubtopicTreeSide(index, mode);
     sideEntries[side].push({
       subtopic,
       side,
@@ -751,11 +735,7 @@ export function placeTreeTrunkSide(root, entries, collapsedIds, branchExpansion)
  * 作用：
  * 判断树形图的一级分支挂在主干哪一侧。
  */
-export function rootSubtopicTreeSide(subtopic, index, mode) {
-  const subtopicLayout = normalizeLayoutType(subtopic.attributes.layout);
-  if (subtopicLayout === 'tree-left') return 'tree-left';
-  if (subtopicLayout === 'tree-right') return 'tree-right';
-
+export function rootSubtopicTreeSide(index, mode) {
   if (mode === 'tree-left') return 'tree-left';
   if (mode === 'tree') return index % 2 === 0 ? 'tree-right' : 'tree-left';
   return 'tree-right';
@@ -1245,9 +1225,7 @@ export function layoutTimeline(
   const subtopics = visibleSubtopics(root, collapsedIds);
   if (!subtopics.length) return;
 
-  const branchSides = subtopics.map((subtopic, index) =>
-    rootSubtopicTimelineSide(subtopic, index, mode)
-  );
+  const branchSides = subtopics.map((subtopic, index) => rootSubtopicTimelineSide(index, mode));
   const axisBandHalfHeight = subtopics.reduce(
     (max, subtopic) => Math.max(max, subtopic._layout.height / 2),
     TOPIC_MIN_HEIGHT / 2
@@ -1297,11 +1275,7 @@ export function layoutTimeline(
  * 作用：
  * 判断时间轴一级主题挂在轴线上方还是下方。
  */
-export function rootSubtopicTimelineSide(subtopic, index, mode) {
-  const subtopicLayout = normalizeLayoutType(subtopic.attributes.layout);
-  if (subtopicLayout === 'timeline-up') return 'timeline-top';
-  if (subtopicLayout === 'timeline-down') return 'timeline-bottom';
-
+export function rootSubtopicTimelineSide(index, mode) {
   if (mode === 'timeline-up') return 'timeline-top';
   if (mode === 'timeline') return index % 2 === 0 ? 'timeline-top' : 'timeline-bottom';
   return 'timeline-bottom';

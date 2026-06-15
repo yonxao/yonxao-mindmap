@@ -43,7 +43,7 @@ import {
 } from '../config/mindConfig.js';
 import { ICON_PATHS } from '../icons/iconPaths.js';
 import { normalizeIcon, renderIcon } from '../icons/renderIcon.js';
-import { layoutTree, normalizeLayoutType } from '../layout/layoutTree.js';
+import { layoutTree } from '../layout/layoutTree.js';
 import { replaceCodeBlockSource } from '../markdown/codeBlock.js';
 import {
   containsTopicId,
@@ -1551,36 +1551,6 @@ export class YonxaoMindmapRenderer extends Component {
       placeholder: '22',
     });
 
-    const layoutSelect = document.createElement('select');
-    layoutSelect.className = 'yonxao-mindmap-topic-editor-input';
-    for (const [value, label] of [
-      ['', this.t('topicEditor.inheritLayout')],
-      ['mindmap-right', this.topicEditorLayoutLabel('mindmap', 'mindmapRight')],
-      ['mindmap-left', this.topicEditorLayoutLabel('mindmap', 'mindmapLeft')],
-      ['mindmap-bidirectional', this.topicEditorLayoutLabel('mindmap', 'mindmapBidirectional')],
-      ['mindmap-up', this.topicEditorLayoutLabel('mindmap', 'mindmapUp')],
-      ['mindmap-down', this.topicEditorLayoutLabel('mindmap', 'mindmapDown')],
-      ['mindmap-vertical', this.topicEditorLayoutLabel('mindmap', 'mindmapVertical')],
-      ['tree', this.topicEditorLayoutLabel('tree', 'tree')],
-      ['tree-right', this.topicEditorLayoutLabel('tree', 'treeRight')],
-      ['tree-left', this.topicEditorLayoutLabel('tree', 'treeLeft')],
-      ['org', this.topicEditorLayoutLabel('org', 'org')],
-      ['org-right', this.topicEditorLayoutLabel('org', 'orgRight')],
-      ['timeline', this.topicEditorLayoutLabel('timeline', 'timeline')],
-      ['timeline-up', this.topicEditorLayoutLabel('timeline', 'timelineUp')],
-      ['timeline-down', this.topicEditorLayoutLabel('timeline', 'timelineDown')],
-      ['radial', this.topicEditorLayoutLabel('radial', 'radial')],
-      ['fishbone-left', this.topicEditorLayoutLabel('fishbone', 'fishboneLeft')],
-      ['fishbone-right', this.topicEditorLayoutLabel('fishbone', 'fishboneRight')],
-      ['tree-table', this.topicEditorLayoutLabel('treeTable', 'treeTable')],
-      ['tree-table-stepped', this.topicEditorLayoutLabel('treeTable', 'treeTableStepped')],
-    ]) {
-      const option = document.createElement('option');
-      option.value = value;
-      option.textContent = label;
-      layoutSelect.appendChild(option);
-    }
-
     const actions = document.createElement('div');
     actions.className = 'yonxao-mindmap-topic-editor-actions';
 
@@ -1610,7 +1580,6 @@ export class YonxaoMindmapRenderer extends Component {
     this.topicEditorEl.appendChild(
       createLabeledField(this.t('topicEditor.lineHeight'), lineHeightInput)
     );
-    this.topicEditorEl.appendChild(createLabeledField(this.t('topicEditor.layout'), layoutSelect));
     this.topicEditorEl.appendChild(actions);
     document.body.appendChild(this.topicEditorEl);
 
@@ -1625,7 +1594,6 @@ export class YonxaoMindmapRenderer extends Component {
       fontSize: fontSizeInput,
       fontWeight: fontWeightInput,
       lineHeight: lineHeightInput,
-      layout: layoutSelect,
     };
 
     for (const eventName of [
@@ -2138,7 +2106,6 @@ export class YonxaoMindmapRenderer extends Component {
     this.topicEditorFields.fontSize.value = topic.attributes.fontSize || '';
     this.topicEditorFields.fontWeight.value = topic.attributes.fontWeight || '';
     this.topicEditorFields.lineHeight.value = topic.attributes.lineHeight || '';
-    this.topicEditorFields.layout.value = normalizeLayoutType(topic.attributes.layout) || '';
     this.topicEditorEl.hidden = false;
     this.positionTopicEditor(topic);
     this.topicEditorFields.text.focus();
@@ -2633,7 +2600,7 @@ export class YonxaoMindmapRenderer extends Component {
       'lineHeight',
       this.topicEditorFields.lineHeight.value
     );
-    setOptionalTopicAttribute(topic.attributes, 'layout', this.topicEditorFields.layout.value);
+    setOptionalTopicAttribute(topic.attributes, 'layout', '');
 
     const saved = await this.saveTreeToSourceAndFile('主题已保存。');
     if (saved) this.closeTopicEditor();
@@ -3064,16 +3031,6 @@ export class YonxaoMindmapRenderer extends Component {
    */
   t(key, replacements) {
     return this.plugin?.t?.(key, replacements) || key;
-  }
-
-  /*
-   * 作用：
-   * 组合主题编辑面板里的“布局分组：布局类型”显示文本。
-   */
-  topicEditorLayoutLabel(groupKey, layoutKey) {
-    return `${this.t(`configModal.layout.group.${groupKey}`)}：${this.t(
-      `configModal.layout.${layoutKey}`
-    )}`;
   }
 
   /*
