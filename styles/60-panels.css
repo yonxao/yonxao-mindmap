@@ -4,7 +4,7 @@
  *
  * 执行逻辑：
  * 当解析失败或运行失败时显示 message/error；当用户点击主题编辑按钮时显示 topic-editor。
- * 面板会跟随当前主题定位到附近，减少鼠标在画布里的移动距离。
+ * 面板会跟随当前主题定位到附近，并挂在 body 层避免被幕布和 Live Preview 外壳裁剪。
  *
  * 调用链位置：
  * YonxaoMindmapRenderer.renderMessage()/createTopicEditor() -> 本文件控制提示和面板。
@@ -52,28 +52,41 @@
  * 主题编辑面板主体。
  */
 .yonxao-mindmap-topic-editor {
-  position: absolute;
-  z-index: 3;
+  --yonxao-mindmap-mono-font:
+    'Sarasa Mono SC', 'Noto Sans Mono CJK SC', 'Source Han Mono SC', 'Cascadia Mono',
+    'JetBrains Mono', 'Liberation Mono', monospace;
+  position: fixed;
+  z-index: 1000;
   left: 12px;
   top: 12px;
-  width: min(300px, calc(100% - 24px));
+  width: min(300px, calc(100vw - 24px));
+  max-height: calc(100vh - 24px);
   box-sizing: border-box;
+  overflow: auto;
   padding: 12px;
   border: 1px solid var(--background-modifier-border);
   border-radius: 8px;
   background: var(--background-primary);
   box-shadow: var(--shadow-l);
+  overscroll-behavior: contain;
+}
+
+.yonxao-mindmap-topic-editor.is-dragging {
+  user-select: none;
 }
 
 /*
  * 作用：
- * 主题编辑面板标题。
+ * 主题编辑面板标题，同时作为拖拽手柄。
  */
 .yonxao-mindmap-topic-editor-title {
   margin-bottom: 8px;
   color: var(--text-normal);
   font-size: var(--font-ui-small);
   font-weight: 700;
+  cursor: move;
+  user-select: none;
+  touch-action: none;
 }
 
 /*

@@ -29,12 +29,22 @@
 }
 
 /*
- * 标题区域保持克制，只承担信息层级，不做额外装饰。
+ * 标题区域保持克制，同时作为配置弹框拖拽手柄。
  */
+.yonxao-mindmap-config-header {
+  cursor: move;
+  user-select: none;
+  touch-action: none;
+}
+
 .yonxao-mindmap-config-header h2 {
   margin: 0;
   font-size: var(--font-ui-large);
   font-weight: var(--font-semibold);
+}
+
+.yonxao-mindmap-config-modal-host.is-dragging-config-modal {
+  user-select: none;
 }
 
 /*

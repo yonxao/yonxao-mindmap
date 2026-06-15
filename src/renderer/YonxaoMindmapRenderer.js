@@ -122,6 +122,7 @@ export class YonxaoMindmapRenderer extends Component {
     this.topicDragState = null;
     this.heightResizeState = null;
     this.toolbarDragState = null;
+    this.topicEditorDragState = null;
     this.manualCanvasHeight = false;
     this.manualSourceHeight = false;
     this.isSourceMode = false;
@@ -136,6 +137,19 @@ export class YonxaoMindmapRenderer extends Component {
     this.pendingSourceHeightFrame = null;
     this.sourceLineCount = 1;
     this.fitRetryCount = 0;
+  }
+
+  /*
+   * 作用：
+   * Renderer 被 Obsidian 卸载时，清理挂在 body 上的主题编辑浮层。
+   */
+  onunload() {
+    this.closeTopicEditor();
+    if (this.topicEditorEl) {
+      this.topicEditorEl.remove();
+    }
+    this.topicEditorEl = null;
+    this.topicEditorFields = null;
   }
 
   /*
@@ -1312,7 +1326,7 @@ export class YonxaoMindmapRenderer extends Component {
     );
     this.topicEditorEl.appendChild(createLabeledField(this.t('topicEditor.layout'), layoutSelect));
     this.topicEditorEl.appendChild(actions);
-    this.containerEl.appendChild(this.topicEditorEl);
+    document.body.appendChild(this.topicEditorEl);
 
     this.topicEditorFields = {
       text: textInput,
@@ -1327,6 +1341,37 @@ export class YonxaoMindmapRenderer extends Component {
       lineHeight: lineHeightInput,
       layout: layoutSelect,
     };
+
+    for (const eventName of [
+      'mousedown',
+      'mouseup',
+      'click',
+      'dblclick',
+      'pointerdown',
+      'pointerup',
+      'keydown',
+      'keyup',
+      'input',
+      'change',
+      'wheel',
+    ]) {
+      this.registerDomEvent(this.topicEditorEl, eventName, (event) => {
+        event.stopPropagation();
+      });
+    }
+
+    this.registerDomEvent(titleEl, 'pointerdown', (event) => {
+      this.startTopicEditorDrag(event);
+    });
+    this.registerDomEvent(titleEl, 'pointermove', (event) => {
+      this.handleTopicEditorDragMove(event);
+    });
+    this.registerDomEvent(titleEl, 'pointerup', (event) => {
+      this.finishTopicEditorDrag(event);
+    });
+    this.registerDomEvent(titleEl, 'pointercancel', (event) => {
+      this.finishTopicEditorDrag(event);
+    });
 
     this.registerDomEvent(textInput, 'keydown', (event) => {
       if (event.key === 'Enter' && (event.metaKey || event.ctrlKey)) {
@@ -1696,7 +1741,7 @@ export class YonxaoMindmapRenderer extends Component {
    * 把主题编辑面板定位到当前主题附近。
    */
   positionTopicEditor(topic) {
-    if (!this.containerEl || !this.topicEditorEl || !this.mapEl || !topic) return;
+    if (!this.topicEditorEl || !this.mapEl || !topic) return;
 
     const topicEl = Array.from(this.mapEl.querySelectorAll('.yonxao-mindmap-topic')).find(
       (element) => element.getAttribute('data-topic-id') === topic.id
@@ -1705,27 +1750,100 @@ export class YonxaoMindmapRenderer extends Component {
     if (!cardEl) return;
 
     const gap = 12;
-    const containerRect = this.containerEl.getBoundingClientRect();
     const cardRect = cardEl.getBoundingClientRect();
     const editorRect = this.topicEditorEl.getBoundingClientRect();
-    const maxLeft = Math.max(gap, containerRect.width - editorRect.width - gap);
-    const maxTop = Math.max(gap, containerRect.height - editorRect.height - gap);
-    const rightLeft = cardRect.right - containerRect.left + gap;
-    const rightFits = rightLeft + editorRect.width + gap <= containerRect.width;
-    let left = rightFits ? rightLeft : cardRect.left - containerRect.left;
-    let top = rightFits
-      ? cardRect.top - containerRect.top
-      : cardRect.bottom - containerRect.top + gap;
+    const rightLeft = cardRect.right + gap;
+    const rightFits = rightLeft + editorRect.width + gap <= window.innerWidth;
+    let left = rightFits ? rightLeft : cardRect.left;
+    let top = rightFits ? cardRect.top : cardRect.bottom + gap;
 
-    if (top + editorRect.height + gap > containerRect.height) {
-      top = cardRect.top - containerRect.top - editorRect.height - gap;
-    }
-
-    left = clamp(left, gap, maxLeft);
-    top = clamp(top, gap, maxTop);
+    ({ left, top } = this.clampTopicEditorPosition(left, top, editorRect));
 
     this.topicEditorEl.style.left = `${Math.round(left)}px`;
     this.topicEditorEl.style.top = `${Math.round(top)}px`;
+  }
+
+  /*
+   * 作用：
+   * 把 body 级主题编辑浮层限制在当前窗口可视区域内。
+   */
+  clampTopicEditorPosition(left, top, rect = null) {
+    const gap = 12;
+    const editorRect = rect || this.topicEditorEl?.getBoundingClientRect();
+    const width = editorRect?.width || 300;
+    const height = editorRect?.height || 320;
+    const maxLeft = Math.max(gap, window.innerWidth - width - gap);
+    const maxTop = Math.max(gap, window.innerHeight - height - gap);
+    return {
+      left: clamp(left, gap, maxLeft),
+      top: clamp(top, gap, maxTop),
+    };
+  }
+
+  /*
+   * 作用：
+   * 主题编辑面板标题栏作为拖拽手柄，记录拖动起点。
+   */
+  startTopicEditorDrag(event) {
+    if (event.button !== 0 || !this.topicEditorEl || this.topicEditorEl.hidden) return;
+
+    event.preventDefault();
+    event.stopPropagation();
+
+    const rect = this.topicEditorEl.getBoundingClientRect();
+    this.topicEditorDragState = {
+      pointerId: event.pointerId,
+      startClientX: event.clientX,
+      startClientY: event.clientY,
+      startLeft: rect.left,
+      startTop: rect.top,
+    };
+    this.topicEditorEl.classList.add('is-dragging');
+
+    try {
+      event.currentTarget.setPointerCapture(event.pointerId);
+    } catch (_error) {
+      // Pointer Capture 在少数环境可能不可用；拖拽仍可在标题栏范围内继续。
+    }
+  }
+
+  /*
+   * 作用：
+   * 处理主题编辑面板拖拽移动。
+   */
+  handleTopicEditorDragMove(event) {
+    const state = this.topicEditorDragState;
+    if (!state || event.pointerId !== state.pointerId || !this.topicEditorEl) return;
+
+    event.preventDefault();
+    event.stopPropagation();
+
+    const nextLeft = state.startLeft + event.clientX - state.startClientX;
+    const nextTop = state.startTop + event.clientY - state.startClientY;
+    const { left, top } = this.clampTopicEditorPosition(nextLeft, nextTop);
+    this.topicEditorEl.style.left = `${Math.round(left)}px`;
+    this.topicEditorEl.style.top = `${Math.round(top)}px`;
+  }
+
+  /*
+   * 作用：
+   * 结束主题编辑面板拖拽。
+   */
+  finishTopicEditorDrag(event) {
+    const state = this.topicEditorDragState;
+    if (!state || event.pointerId !== state.pointerId) return;
+
+    event.preventDefault();
+    event.stopPropagation();
+
+    try {
+      event.currentTarget.releasePointerCapture(event.pointerId);
+    } catch (_error) {
+      // 没有捕获到指针时释放会失败，这里安全忽略。
+    }
+
+    this.topicEditorDragState = null;
+    this.topicEditorEl?.classList.remove('is-dragging');
   }
 
   /*
@@ -1738,7 +1856,9 @@ export class YonxaoMindmapRenderer extends Component {
       this.topicEditorEl.hidden = true;
       this.topicEditorEl.style.left = '';
       this.topicEditorEl.style.top = '';
+      this.topicEditorEl.classList.remove('is-dragging');
     }
+    this.topicEditorDragState = null;
     if (this.topicEditorFields?.text) {
       this.topicEditorFields.text.style.width = '';
       this.topicEditorFields.text.style.height = '';

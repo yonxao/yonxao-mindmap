@@ -40,6 +40,7 @@ import {
   getLocalizedFontFamilyGroups,
   isPresetFontValue,
 } from './fontOptions.js';
+import { clamp } from '../utils/math.js';
 
 const RAINBOW_THEME_NAMES = new Set(['rainbow', 'pastel-rainbow', 'neon-rainbow']);
 
@@ -101,6 +102,7 @@ export class ConfigModal extends Modal {
     this.formEl = null;
     this.advancedInputEl = null;
     this.statusEl = null;
+    this.dragState = null;
   }
 
   /*
@@ -115,6 +117,7 @@ export class ConfigModal extends Modal {
 
     const headerEl = contentEl.createDiv({ cls: 'yonxao-mindmap-config-header' });
     headerEl.createEl('h2', { text: this.title });
+    this.installModalDrag(headerEl);
 
     const tabsEl = contentEl.createDiv({ cls: 'yonxao-mindmap-config-tabs' });
     for (const [id, label] of this.tabOptions()) {
@@ -152,7 +155,120 @@ export class ConfigModal extends Modal {
    * 关闭弹框时清理 DOM。
    */
   onClose() {
+    this.dragState = null;
+    this.modalEl.classList.remove('is-dragging-config-modal');
+    this.modalEl.style.position = '';
+    this.modalEl.style.left = '';
+    this.modalEl.style.top = '';
+    this.modalEl.style.margin = '';
+    this.modalEl.style.transform = '';
     this.contentEl.empty();
+  }
+
+  /*
+   * 作用：
+   * 给配置弹框标题栏增加拖动能力。
+   */
+  installModalDrag(headerEl) {
+    headerEl.addEventListener('pointerdown', (event) => {
+      this.startModalDrag(event);
+    });
+    headerEl.addEventListener('pointermove', (event) => {
+      this.handleModalDragMove(event);
+    });
+    headerEl.addEventListener('pointerup', (event) => {
+      this.finishModalDrag(event);
+    });
+    headerEl.addEventListener('pointercancel', (event) => {
+      this.finishModalDrag(event);
+    });
+  }
+
+  /*
+   * 作用：
+   * 记录配置弹框拖动起点，并把 Obsidian 默认居中的弹框转换为固定坐标。
+   */
+  startModalDrag(event) {
+    if (event.button !== 0) return;
+
+    event.preventDefault();
+    event.stopPropagation();
+
+    const rect = this.modalEl.getBoundingClientRect();
+    this.modalEl.style.position = 'fixed';
+    this.modalEl.style.left = `${Math.round(rect.left)}px`;
+    this.modalEl.style.top = `${Math.round(rect.top)}px`;
+    this.modalEl.style.margin = '0';
+    this.modalEl.style.transform = 'none';
+
+    this.dragState = {
+      pointerId: event.pointerId,
+      startClientX: event.clientX,
+      startClientY: event.clientY,
+      startLeft: rect.left,
+      startTop: rect.top,
+    };
+    this.modalEl.classList.add('is-dragging-config-modal');
+
+    try {
+      event.currentTarget.setPointerCapture(event.pointerId);
+    } catch (_error) {
+      // Pointer Capture 不可用时，仍可在标题区域内完成基础拖动。
+    }
+  }
+
+  /*
+   * 作用：
+   * 处理配置弹框拖动中的位置更新。
+   */
+  handleModalDragMove(event) {
+    const state = this.dragState;
+    if (!state || event.pointerId !== state.pointerId) return;
+
+    event.preventDefault();
+    event.stopPropagation();
+
+    const nextLeft = state.startLeft + event.clientX - state.startClientX;
+    const nextTop = state.startTop + event.clientY - state.startClientY;
+    const { left, top } = this.clampModalPosition(nextLeft, nextTop);
+    this.modalEl.style.left = `${Math.round(left)}px`;
+    this.modalEl.style.top = `${Math.round(top)}px`;
+  }
+
+  /*
+   * 作用：
+   * 结束配置弹框拖动。
+   */
+  finishModalDrag(event) {
+    const state = this.dragState;
+    if (!state || event.pointerId !== state.pointerId) return;
+
+    event.preventDefault();
+    event.stopPropagation();
+
+    try {
+      event.currentTarget.releasePointerCapture(event.pointerId);
+    } catch (_error) {
+      // 没有捕获到指针时释放会失败，这里安全忽略。
+    }
+
+    this.dragState = null;
+    this.modalEl.classList.remove('is-dragging-config-modal');
+  }
+
+  /*
+   * 作用：
+   * 限制配置弹框拖动后仍停留在窗口可视区域内。
+   */
+  clampModalPosition(left, top) {
+    const gap = 12;
+    const rect = this.modalEl.getBoundingClientRect();
+    const maxLeft = Math.max(gap, window.innerWidth - rect.width - gap);
+    const maxTop = Math.max(gap, window.innerHeight - rect.height - gap);
+    return {
+      left: clamp(left, gap, maxLeft),
+      top: clamp(top, gap, maxTop),
+    };
   }
 
   /*
