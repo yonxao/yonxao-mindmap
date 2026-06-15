@@ -518,7 +518,10 @@ function parseYamlScalar(value) {
   if (/^-?\d+(\.\d+)?$/.test(value)) return Number(value);
 
   const quoted = value.match(/^(['"])(.*)\1$/);
-  if (quoted) return quoted[2].replace(/\\"/g, '"').replace(/\\'/g, "'");
+  if (quoted) {
+    if (quoted[1] === "'") return quoted[2].replace(/''/g, "'");
+    return quoted[2].replace(/\\"/g, '"').replace(/\\'/g, "'");
+  }
 
   return value;
 }
@@ -533,7 +536,7 @@ function stringifyYamlScalar(value) {
   // YAML 中冒号后面的 # 会被当成注释开头。
   // 因此 hex 颜色这类包含 # 的字符串必须加引号，否则 defaultColor: #66ed0c 会被读成空值。
   if (/^[a-zA-Z0-9_./-]+$/.test(text)) return text;
-  return `"${text.replace(/\\/g, '\\\\').replace(/"/g, '\\"')}"`;
+  return `'${text.replace(/'/g, "''")}'`;
 }
 
 /*
@@ -545,6 +548,10 @@ function stripYamlComment(line) {
 
   for (let index = 0; index < line.length; index += 1) {
     const char = line[index];
+    if (char === "'" && quote === "'" && line[index + 1] === "'") {
+      index += 1;
+      continue;
+    }
     if ((char === '"' || char === "'") && line[index - 1] !== '\\') {
       quote = quote === char ? '' : quote || char;
     }

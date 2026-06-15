@@ -144,6 +144,8 @@ const BASE_LOCALE_MESSAGES = Object.freeze({
     'topicEditor.fontWeight': 'Font weight',
     'topicEditor.lineHeight': 'Line height',
     'topicEditor.fontCustomPlaceholder': '"LXGW WenKai", sans-serif',
+    'topicEditor.fontFamily.invalid':
+      'Please enter a valid CSS font-family list, for example: "SimSun", "Songti SC", serif',
     'topicEditor.editTextAria': 'Edit topic text',
     'topicEditor.save': 'Save',
     'topicEditor.addSubtopic': 'Add subtopic',
@@ -381,6 +383,8 @@ const BASE_LOCALE_MESSAGES = Object.freeze({
     'topicEditor.fontWeight': '字重',
     'topicEditor.lineHeight': '行高',
     'topicEditor.fontCustomPlaceholder': '"霞鹜文楷", "思源黑体", sans-serif',
+    'topicEditor.fontFamily.invalid':
+      '请输入合法的 CSS font-family 列表，例如："SimSun", "Songti SC", serif',
     'topicEditor.editTextAria': '编辑主题文本',
     'topicEditor.save': '保存',
     'topicEditor.addSubtopic': '新增子主题',
@@ -615,6 +619,8 @@ const BASE_LOCALE_MESSAGES = Object.freeze({
     'topicEditor.fontWeight': '字重',
     'topicEditor.lineHeight': '行高',
     'topicEditor.fontCustomPlaceholder': '"霞鶩文楷", "思源黑體", sans-serif',
+    'topicEditor.fontFamily.invalid':
+      '請輸入合法的 CSS font-family 清單，例如："SimSun", "Songti SC", serif',
     'topicEditor.editTextAria': '編輯主題文字',
     'topicEditor.save': '儲存',
     'topicEditor.addSubtopic': '新增子主題',
@@ -1788,6 +1794,9 @@ function createAdditionalLocale(text) {
     'topicEditor.fontWeight': text.fontWeight || 'Font weight',
     'topicEditor.lineHeight': text.lineHeight || 'Line height',
     'topicEditor.fontCustomPlaceholder': text.fontCustomPlaceholder || '"LXGW WenKai", sans-serif',
+    'topicEditor.fontFamily.invalid':
+      text.fontFamilyInvalid ||
+      'Please enter a valid CSS font-family list, for example: "SimSun", "Songti SC", serif',
     'topicEditor.save': text.save,
     'topicEditor.addSubtopic': text.addSubtopic,
     'topicEditor.delete': text.delete,

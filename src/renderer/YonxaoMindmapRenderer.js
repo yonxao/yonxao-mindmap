@@ -62,7 +62,9 @@ import { ConfigModal } from '../ui/ConfigModal.js';
 import {
   CUSTOM_FONT_VALUE,
   getLocalizedFontFamilyGroups,
+  isValidFontFamilyInput,
   isPresetFontValue,
+  normalizeFontFamilyInput,
 } from '../ui/fontOptions.js';
 import { connectorColor, topicColor, transparentColor } from '../utils/color.js';
 import { createLabeledField } from '../utils/dom.js';
@@ -1831,18 +1833,26 @@ export class YonxaoMindmapRenderer extends Component {
     this.registerDomEvent(select, 'change', () => {
       if (select.value === CUSTOM_FONT_VALUE) {
         customInput.hidden = false;
-        valueInput.value = customInput.value.trim();
+        valueInput.value = normalizeFontFamilyInput(customInput.value);
         customInput.focus();
         return;
       }
 
       customInput.hidden = true;
       customInput.value = '';
+      customInput.setCustomValidity('');
       valueInput.value = select.value;
     });
 
     this.registerDomEvent(customInput, 'input', () => {
-      valueInput.value = customInput.value.trim();
+      const nextValue = normalizeFontFamilyInput(customInput.value);
+      if (!isValidFontFamilyInput(nextValue)) {
+        customInput.setCustomValidity(this.t('topicEditor.fontFamily.invalid'));
+        return;
+      }
+
+      customInput.setCustomValidity('');
+      valueInput.value = nextValue;
     });
 
     return field;
@@ -1886,6 +1896,7 @@ export class YonxaoMindmapRenderer extends Component {
       select.value = '';
       customInput.value = '';
       customInput.hidden = true;
+      customInput.setCustomValidity('');
       return;
     }
 
@@ -1893,12 +1904,16 @@ export class YonxaoMindmapRenderer extends Component {
       select.value = fontFamily;
       customInput.value = '';
       customInput.hidden = true;
+      customInput.setCustomValidity('');
       return;
     }
 
     select.value = CUSTOM_FONT_VALUE;
     customInput.value = fontFamily;
     customInput.hidden = false;
+    customInput.setCustomValidity(
+      isValidFontFamilyInput(fontFamily) ? '' : this.t('topicEditor.fontFamily.invalid')
+    );
   }
 
   /*
@@ -2615,6 +2630,12 @@ export class YonxaoMindmapRenderer extends Component {
     const text = this.topicEditorFields.text.value.replace(/\s*\n+\s*/g, ' ').trim();
     if (!text) {
       new Notice(this.t('notice.topicTextRequired'));
+      return false;
+    }
+
+    const customFontInput = this.topicEditorFields.fontFamilyField?._customInput;
+    if (customFontInput && !customFontInput.hidden && !customFontInput.checkValidity()) {
+      customFontInput.reportValidity();
       return false;
     }
 

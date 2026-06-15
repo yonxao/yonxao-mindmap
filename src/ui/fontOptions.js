@@ -84,6 +84,13 @@ export const FONT_FAMILY_OPTIONS = Object.freeze(
   FONT_FAMILY_GROUPS.flatMap((group) => group.options)
 );
 
+const FONT_FAMILY_ITEM_PATTERN =
+  '(?:var\\(\\s*--[a-zA-Z0-9_-]+\\s*\\)|"(?:[^"\\\\]|\\\\.)+"|\'(?:[^\'\\\\]|\\\\.)+\'|[\\p{L}\\p{N}_-]+(?:\\s+[\\p{L}\\p{N}_-]+)*)';
+const FONT_FAMILY_LIST_PATTERN = new RegExp(
+  `^\\s*${FONT_FAMILY_ITEM_PATTERN}(?:\\s*,\\s*${FONT_FAMILY_ITEM_PATTERN})*\\s*$`,
+  'u'
+);
+
 /*
  * 作用：
  * 根据当前语言生成字体下拉框选项。
@@ -158,4 +165,28 @@ export function getLocalizedFontFamilyGroups(t) {
  */
 export function isPresetFontValue(value) {
   return FONT_FAMILY_OPTIONS.some(([optionValue]) => optionValue === value);
+}
+
+/*
+ * 作用：
+ * 规范化用户输入的 CSS font-family 字符串。
+ */
+export function normalizeFontFamilyInput(value) {
+  return String(value || '').trim();
+}
+
+/*
+ * 作用：
+ * 校验用户输入是否像一个合法的 CSS font-family 列表。
+ *
+ * 支持：
+ * - 双引号/单引号包裹的字体名
+ * - 未加引号的字体名与通用字体族
+ * - var(--font-*) 这类 Obsidian CSS 变量
+ * - 逗号分隔的字体回退列表
+ */
+export function isValidFontFamilyInput(value) {
+  const text = normalizeFontFamilyInput(value);
+  if (!text) return true;
+  return FONT_FAMILY_LIST_PATTERN.test(text);
 }

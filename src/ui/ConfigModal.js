@@ -40,7 +40,9 @@ import { createTranslator } from '../i18n/messages.js';
 import {
   CUSTOM_FONT_VALUE,
   getLocalizedFontFamilyGroups,
+  isValidFontFamilyInput,
   isPresetFontValue,
+  normalizeFontFamilyInput,
 } from './fontOptions.js';
 import { clamp } from '../utils/math.js';
 
@@ -754,24 +756,42 @@ export class ConfigModal extends Modal {
       typeof rawValue === 'string' || typeof rawValue === 'number' ? String(rawValue) : '';
     this.syncFontSelect(select, input.value);
 
+    const validateAndStore = () => {
+      const nextValue = normalizeFontFamilyInput(input.value);
+      if (!isValidFontFamilyInput(nextValue)) {
+        input.setCustomValidity(this.t('topicEditor.fontFamily.invalid'));
+        this.updateStatus(this.t('topicEditor.fontFamily.invalid'), true);
+        return false;
+      }
+
+      input.setCustomValidity('');
+      setConfigValue(this.draftConfig, path, nextValue);
+      this.syncFontSelect(select, nextValue);
+      this.updateStatus('');
+      return true;
+    };
+    if (!isValidFontFamilyInput(input.value)) {
+      input.setCustomValidity(this.t('topicEditor.fontFamily.invalid'));
+    }
+
     select.addEventListener('change', () => {
       if (select.value === CUSTOM_FONT_VALUE) {
         if (isPresetFontValue(input.value)) {
           input.value = '';
           deleteConfigValue(this.draftConfig, path);
+          input.setCustomValidity('');
         }
         input.focus();
         return;
       }
 
       input.value = select.value;
+      input.setCustomValidity('');
       setConfigValue(this.draftConfig, path, input.value);
     });
 
     input.addEventListener('input', () => {
-      const nextValue = input.value.trim();
-      setConfigValue(this.draftConfig, path, nextValue);
-      this.syncFontSelect(select, nextValue);
+      validateAndStore();
     });
 
     return { select, input };
@@ -905,6 +925,15 @@ export class ConfigModal extends Modal {
    * 应用配置草稿。
    */
   async applyDraft(closeAfterApply) {
+    const invalidField = this.contentEl.querySelector(
+      'input:invalid, textarea:invalid, select:invalid'
+    );
+    if (invalidField) {
+      invalidField.focus();
+      this.updateStatus(invalidField.validationMessage, true);
+      return;
+    }
+
     if (this.activeTab === 'advanced' && this.advancedInputEl) {
       this.draftConfig = parseDraftConfigText(this.advancedInputEl.value);
     }
