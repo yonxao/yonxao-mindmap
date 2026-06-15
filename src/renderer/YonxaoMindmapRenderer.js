@@ -82,6 +82,25 @@ const TOPIC_EDITOR_COLOR_SWATCHES = Object.freeze([
   '#64748b',
 ]);
 
+const DOCUMENT_CONFIG_DEFAULT_PRUNE_PATHS = Object.freeze([
+  ['canvas', 'height'],
+  ['source', 'height'],
+  ['source', 'enableTabIndent'],
+  ['toolbar', 'corner'],
+  ['toolbar', 'placement'],
+  ['interaction', 'wheelZoom'],
+  ['theme'],
+  ['layout'],
+  ['connector', 'style'],
+  ['branch', 'expansion'],
+  ['topic', 'defaultColor'],
+  ['topic', 'maxWidth'],
+  ['font', 'family'],
+  ['font', 'size'],
+  ['font', 'weight'],
+  ['font', 'lineHeight'],
+]);
+
 export class YonxaoMindmapRenderer extends Component {
   static viewModeMemory = new Map();
 
@@ -2849,7 +2868,108 @@ export class YonxaoMindmapRenderer extends Component {
     let next = deleteMindConfigPath(config || {}, ['view', 'mode']);
     next = deleteMindConfigPath(next, ['toolbar', 'x']);
     next = deleteMindConfigPath(next, ['toolbar', 'y']);
+    next = this.pruneDocumentConfigDefaults(next);
     return next;
+  }
+
+  /*
+   * 作用：
+   * 删除与当前全局默认配置一致的文档配置项，让代码块配置区只保存真正的覆盖项。
+   *
+   * 关键点：
+   * 全局配置面板不走 renderer.documentConfigForSave()，所以这里不会清理插件级默认配置本身。
+   */
+  pruneDocumentConfigDefaults(config) {
+    const globalDefaultConfig = this.plugin?.getGlobalDefaultConfig?.() || {};
+    const normalizedGlobal = normalizeMindConfig(globalDefaultConfig);
+    const normalizedDocument = normalizeMindConfig(this.buildEffectiveRawConfig(config));
+    let next = config || {};
+
+    for (const path of this.documentConfigDefaultPrunePaths(next)) {
+      const currentValue = this.normalizedConfigValueForPath(normalizedDocument, path);
+      const defaultValue = this.normalizedDefaultValueForPath(normalizedGlobal, path);
+      if (this.areConfigValuesEqual(currentValue, defaultValue)) {
+        next = deleteMindConfigPath(next, path);
+      }
+    }
+
+    return next;
+  }
+
+  /*
+   * 作用：
+   * 返回需要按全局默认值清理的配置路径；层级字体按文档当前已有层级动态补充。
+   */
+  documentConfigDefaultPrunePaths(config) {
+    const paths = [...DOCUMENT_CONFIG_DEFAULT_PRUNE_PATHS];
+    const levels = config?.font?.levels;
+
+    if (this.isPlainConfigObject(levels)) {
+      for (const level of Object.keys(levels)) {
+        paths.push(
+          ['font', 'levels', level, 'family'],
+          ['font', 'levels', level, 'size'],
+          ['font', 'levels', level, 'weight'],
+          ['font', 'levels', level, 'lineHeight']
+        );
+      }
+    }
+
+    return paths;
+  }
+
+  /*
+   * 作用：
+   * 读取规范化后的配置路径值；层级字体没有覆盖时回退到全局字体值。
+   */
+  normalizedConfigValueForPath(config, path) {
+    if (path[0] === 'font' && path[1] === 'levels' && path.length === 4) {
+      const [, , level, key] = path;
+      const levelConfig = config.font?.levels?.[level];
+      if (this.isPlainConfigObject(levelConfig) && levelConfig[key] !== undefined) {
+        return levelConfig[key];
+      }
+      return config.font?.[key];
+    }
+
+    return this.configValueAtPath(config, path);
+  }
+
+  /*
+   * 作用：
+   * 读取全局默认配置路径值；层级字体没有默认覆盖时回退到全局字体值。
+   */
+  normalizedDefaultValueForPath(config, path) {
+    return this.normalizedConfigValueForPath(config, path);
+  }
+
+  /*
+   * 作用：
+   * 按路径读取对象值。
+   */
+  configValueAtPath(config, path) {
+    let current = config;
+    for (const key of path) {
+      if (!current || typeof current !== 'object') return undefined;
+      current = current[key];
+    }
+    return current;
+  }
+
+  /*
+   * 作用：
+   * 判断两个配置值是否一致。
+   */
+  areConfigValuesEqual(left, right) {
+    return JSON.stringify(left) === JSON.stringify(right);
+  }
+
+  /*
+   * 作用：
+   * 判断配置片段是否为普通对象。
+   */
+  isPlainConfigObject(value) {
+    return Boolean(value) && typeof value === 'object' && !Array.isArray(value);
   }
 
   /*
