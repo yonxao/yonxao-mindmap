@@ -233,6 +233,18 @@ function horizontalBlockTopicX(blockLeft, blockWidth, topic, branchExpansion) {
 
 /*
  * 作用：
+ * 计算水平下挂子树的横向占位。
+ *
+ * 关键点：
+ * 下挂展开的目标是节省宽度，子主题横向位置应从父主题中心线继续偏移，
+ * 而不是从父主题右边框之后再偏移。
+ */
+function horizontalHangingSubtreeWidth(box, subtopicWidth) {
+  return Math.max(box.width, box.width / 2 + HANGING_LEVEL_GAP + subtopicWidth);
+}
+
+/*
+ * 作用：
  * 时间轴详情区在下挂展开时需要更保守的同级间距。
  *
  * 原因：
@@ -980,7 +992,7 @@ export function orgSubtreeWidth(topic, collapsedIds, branchExpansion = 'side') {
       (max, subtopic) => Math.max(max, orgSubtreeWidth(subtopic, collapsedIds, branchExpansion)),
       0
     );
-    return Math.max(box.width, box.width / 2 + HANGING_LEVEL_GAP + hangingWidth);
+    return horizontalHangingSubtreeWidth(box, hangingWidth);
   }
 
   const subtopicWidth = orgSubtopicsWidth(subtopics, collapsedIds, branchExpansion);
@@ -1096,8 +1108,16 @@ export function placeOrgRightDescendants(parent, collapsedIds, branchExpansion =
     subtopicBox.side = 'org-right';
     subtopicBox.branchExpansion = 'hanging';
     subtopicBox.x =
-      parentBox.x + parentBox.width / 2 + ORG_RIGHT_DESCENDANT_LEVEL_GAP + subtopicBox.width / 2;
-    subtopicBox.y = y + subtopicBox.height / 2;
+      branchExpansion === 'hanging'
+        ? parentBox.x + HANGING_LEVEL_GAP + subtopicBox.width / 2
+        : parentBox.x +
+          parentBox.width / 2 +
+          ORG_RIGHT_DESCENDANT_LEVEL_GAP +
+          subtopicBox.width / 2;
+    subtopicBox.y =
+      branchExpansion === 'hanging'
+        ? verticalBlockTopicY(y, height, subtopic, branchExpansion)
+        : y + subtopicBox.height / 2;
 
     placeOrgRightDescendants(subtopic, collapsedIds, branchExpansion);
     y += height + ORG_RIGHT_DESCENDANT_SIBLING_GAP;
@@ -1150,6 +1170,10 @@ export function orgRightSubtreeWidth(topic, collapsedIds, branchExpansion = 'sid
     (max, subtopic) => Math.max(max, orgRightSubtreeWidth(subtopic, collapsedIds, branchExpansion)),
     0
   );
+
+  if (branchExpansion === 'hanging') {
+    return horizontalHangingSubtreeWidth(box, subtopicWidth);
+  }
 
   return Math.max(box.width, box.width + ORG_RIGHT_DESCENDANT_LEVEL_GAP + subtopicWidth);
 }
@@ -1338,8 +1362,7 @@ export function placeTimelineHangingDetails(parent, branchSide, collapsedIds, br
     subtopicBox.side = isTopBranch ? 'timeline-detail-top' : 'timeline-detail-bottom';
     subtopicBox.branchExpansion = 'hanging';
     subtopicBox.timelineBranchSide = branchSide;
-    subtopicBox.x =
-      parentBox.x + parentBox.width / 2 + TIMELINE_DETAIL_LEVEL_GAP + subtopicBox.width / 2;
+    subtopicBox.x = parentBox.x + HANGING_LEVEL_GAP + subtopicBox.width / 2;
     subtopicBox.y = verticalBlockTopicY(blockTopY, height, subtopic, branchExpansion);
 
     placeTimelineDetails(subtopic, branchSide, collapsedIds, branchExpansion);
@@ -1395,6 +1418,10 @@ export function timelinePointWidth(topic, collapsedIds, branchExpansion = 'side'
     (max, subtopic) => Math.max(max, timelinePointWidth(subtopic, collapsedIds, branchExpansion)),
     0
   );
+
+  if (shouldUseHangingExpansion(topic, branchExpansion)) {
+    return horizontalHangingSubtreeWidth(box, subtopicWidth);
+  }
 
   return Math.max(box.width, box.width / 2 + TIMELINE_DETAIL_LEVEL_GAP + subtopicWidth);
 }
