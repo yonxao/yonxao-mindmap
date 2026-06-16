@@ -24,7 +24,11 @@ import {
   ICON_SIZE,
   ICON_GAP,
 } from '../constants.js';
-import { normalizeMindConfig, resolveTopicFont } from '../config/mindConfig.js';
+import {
+  normalizeMindConfig,
+  resolveTopicFont,
+  resolveTopicMaxWidth,
+} from '../config/mindConfig.js';
 import { normalizeIcon } from '../icons/renderIcon.js';
 import { clamp } from '../utils/math.js';
 import { visualUnits, wrapTopicText } from '../utils/text.js';
@@ -276,7 +280,7 @@ export function measureTopic(topic, config) {
   const normalizedConfig = normalizeMindConfig(config);
   const font = resolveTopicFont(topic, normalizedConfig);
   const icon = normalizeIcon(topic.attributes.icon);
-  const maxWidth = normalizedConfig.topic.maxWidth || TOPIC_MAX_WIDTH;
+  const maxWidth = resolveTopicMaxWidth(topic, normalizedConfig) || TOPIC_MAX_WIDTH;
   const iconWidth = icon ? ICON_SIZE + ICON_GAP : 0;
   const usableTextWidth = Math.max(48, maxWidth - TOPIC_PADDING_X * 2 - iconWidth);
   const averageUnitWidth = Math.max(5, font.size * 0.54);

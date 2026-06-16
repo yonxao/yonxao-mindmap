@@ -41,6 +41,8 @@ export const FONT_WEIGHT_MIN = 100;
 export const FONT_WEIGHT_MAX = 900;
 export const FONT_LINE_HEIGHT_MIN = 12;
 export const FONT_LINE_HEIGHT_MAX = 160;
+export const TOPIC_MAX_WIDTH_MIN = 120;
+export const TOPIC_MAX_WIDTH_MAX = 800;
 export const TOOLBAR_CORNERS = Object.freeze([
   'top-left',
   'top-right',
@@ -214,7 +216,8 @@ export function normalizeMindConfig(rawConfig) {
       ...topic,
       defaultColor: normalizeText(topic.defaultColor),
       maxWidth:
-        normalizeOptionalNumber(topic.maxWidth, 120, 800) || DEFAULT_MIND_CONFIG.topic.maxWidth,
+        normalizeOptionalNumber(topic.maxWidth, TOPIC_MAX_WIDTH_MIN, TOPIC_MAX_WIDTH_MAX) ||
+        DEFAULT_MIND_CONFIG.topic.maxWidth,
     },
     source: {
       ...source,
@@ -304,6 +307,26 @@ export function resolveTopicFont(topic, config) {
       levelFont.lineHeight ||
       safeConfig.font.lineHeight,
   };
+}
+
+/*
+ * 作用：
+ * 计算单个主题最终使用的最大宽度。
+ *
+ * 优先级：
+ * 主题属性 maxWidth > topic.maxWidth 全局/配置区配置 > 默认值。
+ */
+export function resolveTopicMaxWidth(topic, config) {
+  const safeConfig = normalizeMindConfig(config);
+  return (
+    normalizeOptionalNumber(
+      topic?.attributes?.maxWidth,
+      TOPIC_MAX_WIDTH_MIN,
+      TOPIC_MAX_WIDTH_MAX
+    ) ||
+    safeConfig.topic.maxWidth ||
+    DEFAULT_MIND_CONFIG.topic.maxWidth
+  );
 }
 
 /*

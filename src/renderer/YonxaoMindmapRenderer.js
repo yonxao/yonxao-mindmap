@@ -33,6 +33,8 @@ import {
   FONT_SIZE_MIN,
   FONT_WEIGHT_MAX,
   FONT_WEIGHT_MIN,
+  TOPIC_MAX_WIDTH_MAX,
+  TOPIC_MAX_WIDTH_MIN,
   TOOLBAR_CORNERS,
   TOOLBAR_PLACEMENTS,
   hasMeaningfulConfig,
@@ -70,6 +72,7 @@ import { connectorColor, topicColor, transparentColor } from '../utils/color.js'
 import { createLabeledField } from '../utils/dom.js';
 import { clamp } from '../utils/math.js';
 import { svg } from '../utils/svg.js';
+import { normalizeTopicTextForStorage } from '../utils/text.js';
 
 const TOPIC_EDITOR_COLOR_SWATCHES = Object.freeze([
   '#ef4444',
@@ -1589,6 +1592,12 @@ export class YonxaoMindmapRenderer extends Component {
       step: 1,
       placeholder: '22',
     });
+    const maxWidthInput = this.createTopicEditorNumberInput({
+      min: TOPIC_MAX_WIDTH_MIN,
+      max: TOPIC_MAX_WIDTH_MAX,
+      step: 1,
+      placeholder: '240',
+    });
 
     const actions = document.createElement('div');
     actions.className = 'yonxao-mindmap-topic-editor-actions';
@@ -1619,6 +1628,9 @@ export class YonxaoMindmapRenderer extends Component {
     this.topicEditorEl.appendChild(
       createLabeledField(this.t('topicEditor.lineHeight'), lineHeightInput)
     );
+    this.topicEditorEl.appendChild(
+      createLabeledField(this.t('topicEditor.maxWidth'), maxWidthInput)
+    );
     this.topicEditorEl.appendChild(actions);
     document.body.appendChild(this.topicEditorEl);
 
@@ -1633,6 +1645,7 @@ export class YonxaoMindmapRenderer extends Component {
       fontSize: fontSizeInput,
       fontWeight: fontWeightInput,
       lineHeight: lineHeightInput,
+      maxWidth: maxWidthInput,
     };
 
     for (const eventName of [
@@ -2158,6 +2171,7 @@ export class YonxaoMindmapRenderer extends Component {
     this.topicEditorFields.fontSize.value = topic.attributes.fontSize || '';
     this.topicEditorFields.fontWeight.value = topic.attributes.fontWeight || '';
     this.topicEditorFields.lineHeight.value = topic.attributes.lineHeight || '';
+    this.topicEditorFields.maxWidth.value = topic.attributes.maxWidth || '';
     this.topicEditorEl.hidden = false;
     this.positionTopicEditor(topic);
     this.topicEditorFields.text.focus();
@@ -2570,7 +2584,7 @@ export class YonxaoMindmapRenderer extends Component {
     const topic = this.topicById.get(this.inlineEditingTopicId);
     if (!inputEl || !topic) return false;
 
-    const nextText = inputEl.value.trim();
+    const nextText = normalizeTopicTextForStorage(inputEl.value);
     if (!nextText) {
       new Notice(this.t('notice.topicTextRequired'));
       inputEl.focus();
@@ -2619,7 +2633,7 @@ export class YonxaoMindmapRenderer extends Component {
 
   /*
    * 作用：
-   * 保存主题编辑面板中的文本、颜色、图标和布局。
+   * 保存主题编辑面板中的文本、颜色、图标、字体和最大宽度。
    */
   async saveTopicEditor() {
     if (!this.canEditMindMap()) return false;
@@ -2627,10 +2641,22 @@ export class YonxaoMindmapRenderer extends Component {
     const topic = this.topicById.get(this.editingTopicId);
     if (!topic || !this.topicEditorFields) return false;
 
-    const text = this.topicEditorFields.text.value.replace(/\s*\n+\s*/g, ' ').trim();
+    const text = normalizeTopicTextForStorage(this.topicEditorFields.text.value);
     if (!text) {
       new Notice(this.t('notice.topicTextRequired'));
       return false;
+    }
+
+    for (const field of [
+      this.topicEditorFields.fontSize,
+      this.topicEditorFields.fontWeight,
+      this.topicEditorFields.lineHeight,
+      this.topicEditorFields.maxWidth,
+    ]) {
+      if (field.value && !field.checkValidity()) {
+        field.reportValidity();
+        return false;
+      }
     }
 
     const customFontInput = this.topicEditorFields.fontFamilyField?._customInput;
@@ -2658,6 +2684,7 @@ export class YonxaoMindmapRenderer extends Component {
       'lineHeight',
       this.topicEditorFields.lineHeight.value
     );
+    setOptionalTopicAttribute(topic.attributes, 'maxWidth', this.topicEditorFields.maxWidth.value);
     setOptionalTopicAttribute(topic.attributes, 'layout', '');
 
     const saved = await this.saveTreeToSourceAndFile('主题已保存。');

@@ -143,6 +143,7 @@ const BASE_LOCALE_MESSAGES = Object.freeze({
     'topicEditor.fontSize': 'Font size',
     'topicEditor.fontWeight': 'Font weight',
     'topicEditor.lineHeight': 'Line height',
+    'topicEditor.maxWidth': 'Max width',
     'topicEditor.fontCustomPlaceholder': '"LXGW WenKai", sans-serif',
     'topicEditor.fontFamily.invalid':
       'Please enter a valid CSS font-family list, for example: "SimSun", "Songti SC", serif',
@@ -382,6 +383,7 @@ const BASE_LOCALE_MESSAGES = Object.freeze({
     'topicEditor.fontSize': '字号',
     'topicEditor.fontWeight': '字重',
     'topicEditor.lineHeight': '行高',
+    'topicEditor.maxWidth': '最大宽度',
     'topicEditor.fontCustomPlaceholder': '"霞鹜文楷", "思源黑体", sans-serif',
     'topicEditor.fontFamily.invalid':
       '请输入合法的 CSS font-family 列表，例如："SimSun", "Songti SC", serif',
@@ -618,6 +620,7 @@ const BASE_LOCALE_MESSAGES = Object.freeze({
     'topicEditor.fontSize': '字號',
     'topicEditor.fontWeight': '字重',
     'topicEditor.lineHeight': '行高',
+    'topicEditor.maxWidth': '最大寬度',
     'topicEditor.fontCustomPlaceholder': '"霞鶩文楷", "思源黑體", sans-serif',
     'topicEditor.fontFamily.invalid':
       '請輸入合法的 CSS font-family 清單，例如："SimSun", "Songti SC", serif',
@@ -1793,6 +1796,7 @@ function createAdditionalLocale(text) {
     'topicEditor.fontSize': text.topicFontSize || 'Font size',
     'topicEditor.fontWeight': text.fontWeight || 'Font weight',
     'topicEditor.lineHeight': text.lineHeight || 'Line height',
+    'topicEditor.maxWidth': text.maxWidth || 'Max width',
     'topicEditor.fontCustomPlaceholder': text.fontCustomPlaceholder || '"LXGW WenKai", sans-serif',
     'topicEditor.fontFamily.invalid':
       text.fontFamilyInvalid ||

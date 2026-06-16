@@ -66,9 +66,17 @@ export function serializeTopic(topic, depth) {
  */
 export function serializeTopicAttributes(attributes) {
   const topicAttributes = attributes || {};
-  // 为了输出稳定、易读，常用属性固定顺序：color -> icon -> font*。
+  // 为了输出稳定、易读，常用属性固定顺序：color -> icon -> maxWidth -> font*。
   // 如果后续扩展了其它属性，也会继续保留下来，避免导图编辑时误删用户写的自定义字段。
-  const orderedKeys = ['color', 'icon', 'fontFamily', 'fontSize', 'fontWeight', 'lineHeight'];
+  const orderedKeys = [
+    'color',
+    'icon',
+    'maxWidth',
+    'fontFamily',
+    'fontSize',
+    'fontWeight',
+    'lineHeight',
+  ];
   const keys = [
     ...orderedKeys.filter((key) => topicAttributes[key]),
     ...Object.keys(topicAttributes)

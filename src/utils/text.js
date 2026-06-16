@@ -16,7 +16,7 @@
  * 把主题标题拆成适合 SVG 渲染的多行文本。
  *
  * 实现逻辑：
- * 英文优先按单词拆，中文或无空格文本按字符拆，并限制最多 4 行。
+ * 英文优先按单词拆，中文或无空格文本按字符切分。
  */
 export function wrapTopicText(text, maxUnits) {
   const normalized = String(text).replace(/\s+/g, ' ').trim();
@@ -46,7 +46,17 @@ export function wrapTopicText(text, maxUnits) {
   }
 
   if (line) lines.push(line);
-  return lines.slice(0, 4);
+  return lines;
+}
+
+/*
+ * 作用：
+ * 把编辑器里的多行输入归一成 yxmm 主题级别标记可安全保存的一行文本。
+ */
+export function normalizeTopicTextForStorage(text) {
+  return String(text || '')
+    .replace(/\s*\r?\n+\s*/g, ' ')
+    .trim();
 }
 
 /*
