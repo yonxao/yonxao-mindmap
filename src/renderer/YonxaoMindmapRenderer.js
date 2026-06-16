@@ -2994,14 +2994,15 @@ export class YonxaoMindmapRenderer extends Component {
 
   /*
    * 作用：
-   * 返回需要按全局默认值清理的配置路径；层级字体按文档当前已有层级动态补充。
+   * 返回需要按全局默认值清理的配置路径；层级字体和层级主题宽度按文档当前已有层级动态补充。
    */
   documentConfigDefaultPrunePaths(config) {
     const paths = [...DOCUMENT_CONFIG_DEFAULT_PRUNE_PATHS];
-    const levels = config?.font?.levels;
+    const fontLevels = config?.font?.levels;
+    const topicLevels = config?.topic?.levels;
 
-    if (this.isPlainConfigObject(levels)) {
-      for (const level of Object.keys(levels)) {
+    if (this.isPlainConfigObject(fontLevels)) {
+      for (const level of Object.keys(fontLevels)) {
         paths.push(
           ['font', 'levels', level, 'family'],
           ['font', 'levels', level, 'size'],
@@ -3011,12 +3012,18 @@ export class YonxaoMindmapRenderer extends Component {
       }
     }
 
+    if (this.isPlainConfigObject(topicLevels)) {
+      for (const level of Object.keys(topicLevels)) {
+        paths.push(['topic', 'levels', level, 'maxWidth']);
+      }
+    }
+
     return paths;
   }
 
   /*
    * 作用：
-   * 读取规范化后的配置路径值；层级字体没有覆盖时回退到全局字体值。
+   * 读取规范化后的配置路径值；层级覆盖没有设置时回退到对应全局值。
    */
   normalizedConfigValueForPath(config, path) {
     if (path[0] === 'font' && path[1] === 'levels' && path.length === 4) {
@@ -3028,12 +3035,21 @@ export class YonxaoMindmapRenderer extends Component {
       return config.font?.[key];
     }
 
+    if (path[0] === 'topic' && path[1] === 'levels' && path.length === 4) {
+      const [, , level, key] = path;
+      const levelConfig = config.topic?.levels?.[level];
+      if (this.isPlainConfigObject(levelConfig) && levelConfig[key] !== undefined) {
+        return levelConfig[key];
+      }
+      return config.topic?.[key];
+    }
+
     return this.configValueAtPath(config, path);
   }
 
   /*
    * 作用：
-   * 读取全局默认配置路径值；层级字体没有默认覆盖时回退到全局字体值。
+   * 读取全局默认配置路径值；层级覆盖没有默认值时回退到对应全局值。
    */
   normalizedDefaultValueForPath(config, path) {
     return this.normalizedConfigValueForPath(config, path);

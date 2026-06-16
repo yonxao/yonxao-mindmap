@@ -3,11 +3,10 @@
  * 这里定义可视化配置弹框，让用户不用手写 YAML 也能调整 yxmm 配置区。
  *
  * 主要功能：
- * - 基础：幕布高度、源码高度、工具栏位置。
+ * - 基础：幕布高度、源码高度、工具栏位置和交互开关。
  * - 主题：主题名、默认主题颜色。
- * - 结构：布局类型、主题最大宽度。
+ * - 布局：布局类型、连线、子主题展开和主题最大宽度。
  * - 字体：全局字体与 1/2/3 级标题字体。
- * - 源码：Tab 调整主题级别开关。
  * - 高级：直接编辑配置 YAML。
  *
  * 调用链：
@@ -32,6 +31,8 @@ import {
   FONT_SIZE_MIN,
   FONT_WEIGHT_MAX,
   FONT_WEIGHT_MIN,
+  TOPIC_MAX_WIDTH_MAX,
+  TOPIC_MAX_WIDTH_MIN,
   TOOLBAR_CORNERS,
   TOOLBAR_PLACEMENTS,
   normalizeMindConfig,
@@ -283,6 +284,7 @@ export class ConfigModal extends Modal {
     if (!this.formEl) return;
 
     this.formEl.empty();
+    this.formEl.classList.toggle('is-advanced', this.activeTab === 'advanced');
     const normalized = normalizeMindConfig(this.draftConfig);
 
     if (this.activeTab === 'basic') {
@@ -293,8 +295,6 @@ export class ConfigModal extends Modal {
       this.renderLayoutTab(normalized);
     } else if (this.activeTab === 'font') {
       this.renderFontTab(normalized);
-    } else if (this.activeTab === 'source') {
-      this.renderSourceTab(normalized);
     } else {
       this.renderAdvancedTab();
     }
@@ -355,6 +355,15 @@ export class ConfigModal extends Modal {
       normalized.toolbar.placement,
       this.toolbarPlacementOptions()
     );
+    this.createSection(this.t('configModal.basic.featureSection'));
+    this.createToggleField(
+      this.t('configModal.basic.tabIndent'),
+      ['source', 'enableTabIndent'],
+      normalized.source.enableTabIndent,
+      {
+        help: this.t('configModal.basic.tabIndent.help'),
+      }
+    );
     this.createToggleField(
       this.t('configModal.basic.wheelZoom'),
       ['interaction', 'wheelZoom'],
@@ -364,10 +373,6 @@ export class ConfigModal extends Modal {
         help: this.t('configModal.basic.wheelZoom.help'),
       }
     );
-    this.createInlineResetButton(this.t('configModal.basic.resetToolbar'), [
-      ['toolbar', 'corner'],
-      ['toolbar', 'placement'],
-    ]);
   }
 
   /*
@@ -407,7 +412,7 @@ export class ConfigModal extends Modal {
 
   /*
    * 作用：
-   * 结构配置：布局类型和主题宽度。
+   * 布局配置：布局类型、连线、子主题展开和主题宽度。
    */
   renderLayoutTab(normalized) {
     this.createSection(this.t('configModal.layout.section'));
@@ -421,17 +426,6 @@ export class ConfigModal extends Modal {
       // 布局类型会影响后续字段是否可编辑，因此切换布局后立刻重绘结构页，避免保留已经不适用的线型控件。
       this.render();
     });
-
-    this.createNumberField(
-      this.t('configModal.layout.topicMaxWidth'),
-      ['topic', 'maxWidth'],
-      normalized.topic.maxWidth,
-      {
-        min: 120,
-        max: 800,
-        step: 10,
-      }
-    );
 
     if (this.isConnectorStyleConfigurable(normalized.layout)) {
       const connectorSelect = this.createSelectField(
@@ -454,10 +448,50 @@ export class ConfigModal extends Modal {
         normalized.branch.expansion,
         this.branchExpansionOptions()
       );
-      return;
+    } else {
+      this.createDisabledBranchExpansionField(normalized.layout, normalized.connector.style);
     }
 
-    this.createDisabledBranchExpansionField(normalized.layout, normalized.connector.style);
+    this.createTopicMaxWidthGroup(normalized);
+  }
+
+  /*
+   * 作用：
+   * 创建主题最大宽度配置组。
+   *
+   * 实现逻辑：
+   * 全局值写入 topic.maxWidth；一级到三级主题写入 topic.levels.N.maxWidth。
+   * 级别输入留空时不写配置，渲染时自然继承全局主题最大宽度。
+   */
+  createTopicMaxWidthGroup(normalized) {
+    this.createSection(this.t('configModal.layout.topicMaxWidthSection'));
+    const inputOptions = {
+      min: TOPIC_MAX_WIDTH_MIN,
+      max: TOPIC_MAX_WIDTH_MAX,
+      step: 10,
+    };
+
+    this.createNumberField(
+      this.t('configModal.layout.topicMaxWidthGlobal'),
+      ['topic', 'maxWidth'],
+      normalized.topic.maxWidth,
+      {
+        ...inputOptions,
+        help: this.t('configModal.layout.topicMaxWidth.help'),
+      }
+    );
+
+    for (const level of ['1', '2', '3']) {
+      this.createNumberField(
+        this.t(`configModal.layout.topicMaxWidthLevel${level}`),
+        ['topic', 'levels', level, 'maxWidth'],
+        '',
+        {
+          ...inputOptions,
+          placeholder: this.t('configModal.layout.topicMaxWidthInherit'),
+        }
+      );
+    }
   }
 
   /*
@@ -512,30 +546,6 @@ export class ConfigModal extends Modal {
     for (const level of ['1', '2', '3']) {
       this.createLevelFontGroup(level);
     }
-  }
-
-  /*
-   * 作用：
-   * 源码编辑配置。
-   */
-  renderSourceTab(normalized) {
-    this.createSection(this.t('configModal.source.section'));
-    this.createToggleField(
-      this.t('configModal.source.tabIndent'),
-      ['source', 'enableTabIndent'],
-      normalized.source.enableTabIndent
-    );
-    this.createNumberField(
-      this.t('configModal.source.height'),
-      ['source', 'height'],
-      normalized.source.height,
-      {
-        min: 96,
-        max: 1800,
-        step: 10,
-        placeholder: this.t('configModal.basic.placeholder.auto'),
-      }
-    );
   }
 
   /*
@@ -859,10 +869,14 @@ export class ConfigModal extends Modal {
    * 创建开关配置项。
    */
   createToggleField(label, path, value, options = {}) {
-    const fieldEl = this.createField(label, undefined, options.help);
-    const input = fieldEl.createEl('input');
+    const fieldEl = this.createField(label);
+    fieldEl.parentElement?.classList.add('is-toggle');
+    const switchEl = fieldEl.createEl('label', { cls: 'yonxao-mindmap-config-switch' });
+    const input = switchEl.createEl('input');
     input.type = 'checkbox';
     input.checked = Boolean(getConfigValue(this.draftConfig, path, value));
+    const trackEl = switchEl.createSpan({ cls: 'yonxao-mindmap-config-switch-track' });
+    trackEl.createSpan({ cls: 'yonxao-mindmap-config-switch-thumb' });
     input.addEventListener('change', () => {
       if (options.omitWhenFalse && !input.checked) {
         deleteConfigValue(this.draftConfig, path);
@@ -870,6 +884,9 @@ export class ConfigModal extends Modal {
         setConfigValue(this.draftConfig, path, input.checked);
       }
     });
+    if (options.help) {
+      fieldEl.createDiv({ cls: 'yonxao-mindmap-config-help', text: options.help });
+    }
   }
 
   /*
@@ -885,24 +902,6 @@ export class ConfigModal extends Modal {
       controlEl.createDiv({ cls: 'yonxao-mindmap-config-help', text: help });
     }
     return controlEl;
-  }
-
-  /*
-   * 作用：
-   * 创建批量清除按钮。
-   */
-  createInlineResetButton(label, paths) {
-    const button = this.formEl.createEl('button', {
-      text: label,
-      cls: 'yonxao-mindmap-config-secondary-button',
-    });
-    button.type = 'button';
-    button.addEventListener('click', () => {
-      for (const path of paths) {
-        deleteConfigValue(this.draftConfig, path);
-      }
-      this.render();
-    });
   }
 
   /*
@@ -966,7 +965,6 @@ export class ConfigModal extends Modal {
       theme: this.t('configModal.tabs.theme'),
       layout: this.t('configModal.tabs.layout'),
       font: this.t('configModal.tabs.font'),
-      source: this.t('configModal.tabs.source'),
       advanced: this.t('configModal.tabs.advanced'),
     }[tab];
   }
@@ -981,7 +979,6 @@ export class ConfigModal extends Modal {
       ['theme', this.t('configModal.tabs.theme')],
       ['layout', this.t('configModal.tabs.layout')],
       ['font', this.t('configModal.tabs.font')],
-      ['source', this.t('configModal.tabs.source')],
       ['advanced', this.t('configModal.tabs.advanced')],
     ];
   }

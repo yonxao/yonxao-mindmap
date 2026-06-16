@@ -174,7 +174,7 @@ const BASE_LOCALE_MESSAGES = Object.freeze({
     'configModal.globalTitle': 'Global Default Config',
     'configModal.tabs.basic': 'Basic',
     'configModal.tabs.theme': 'Theme',
-    'configModal.tabs.layout': 'Structure',
+    'configModal.tabs.layout': 'Layout',
     'configModal.tabs.font': 'Font',
     'configModal.tabs.source': 'Source',
     'configModal.tabs.advanced': 'Advanced',
@@ -202,10 +202,13 @@ const BASE_LOCALE_MESSAGES = Object.freeze({
     'configModal.toolbarPlacement.outside': 'Outside',
     'configModal.basic.placeholder.auto': 'Auto',
     'configModal.basic.placeholder.default': 'Default',
-    'configModal.basic.wheelZoom': 'Enable mouse wheel zoom',
+    'configModal.basic.featureSection': 'Features',
+    'configModal.basic.wheelZoom': 'Mouse wheel zoom',
     'configModal.basic.wheelZoom.help':
-      'When disabled, the wheel keeps scrolling the Obsidian page. When enabled, the wheel zooms the current map and writes interaction.wheelZoom: true.',
-    'configModal.basic.resetToolbar': 'Reset toolbar position',
+      'When disabled, the wheel keeps scrolling the Obsidian page. When enabled, the wheel zooms the current map.',
+    'configModal.basic.tabIndent': 'Tab key changes topic level',
+    'configModal.basic.tabIndent.help':
+      'When enabled, Tab and Shift+Tab in source mode adjust the current line topic level.',
 
     'configModal.theme.section': 'Theme',
     'configModal.theme.scheme': 'Theme scheme',
@@ -215,9 +218,17 @@ const BASE_LOCALE_MESSAGES = Object.freeze({
     'configModal.theme.overrideWarning':
       'The current theme assigns colors by branch. Setting a default topic color hides those branch colors.',
 
-    'configModal.layout.section': 'Structure',
+    'configModal.layout.section': 'Layout',
     'configModal.layout.type': 'Layout type',
     'configModal.layout.topicMaxWidth': 'Topic max width',
+    'configModal.layout.topicMaxWidthSection': 'Topic max width',
+    'configModal.layout.topicMaxWidth.help':
+      'Range: 120-800 px. Level-specific values inherit Global when left empty.',
+    'configModal.layout.topicMaxWidthGlobal': 'Global',
+    'configModal.layout.topicMaxWidthLevel1': 'Level 1 topic',
+    'configModal.layout.topicMaxWidthLevel2': 'Level 2 topic',
+    'configModal.layout.topicMaxWidthLevel3': 'Level 3 topic',
+    'configModal.layout.topicMaxWidthInherit': 'Inherit global',
     'configModal.layout.connectorStyle': 'Connector style',
     'configModal.layout.connectorStyle.fixedHelp':
       'Only mind map layouts can choose connector style. Other layouts use a fixed elbow line to preserve their structure.',
@@ -245,7 +256,7 @@ const BASE_LOCALE_MESSAGES = Object.freeze({
     'configModal.font.clearLevel': 'Clear this level',
 
     'configModal.source.section': 'Source mode',
-    'configModal.source.tabIndent': 'Tab changes topic level',
+    'configModal.source.tabIndent': 'Tab key changes topic level',
     'configModal.source.height': 'Source height',
 
     'configModal.advanced.section': 'Advanced config',
@@ -414,7 +425,7 @@ const BASE_LOCALE_MESSAGES = Object.freeze({
     'configModal.globalTitle': '全局默认配置',
     'configModal.tabs.basic': '基础',
     'configModal.tabs.theme': '主题',
-    'configModal.tabs.layout': '结构',
+    'configModal.tabs.layout': '布局',
     'configModal.tabs.font': '字体',
     'configModal.tabs.source': '源码',
     'configModal.tabs.advanced': '高级',
@@ -440,10 +451,13 @@ const BASE_LOCALE_MESSAGES = Object.freeze({
     'configModal.toolbarPlacement.outside': '外侧',
     'configModal.basic.placeholder.auto': '自动',
     'configModal.basic.placeholder.default': '默认',
-    'configModal.basic.wheelZoom': '启用鼠标滚轮缩放',
+    'configModal.basic.featureSection': '功能',
+    'configModal.basic.wheelZoom': '鼠标滚轮缩放',
     'configModal.basic.wheelZoom.help':
-      '关闭时滚轮会继续滚动 Obsidian 页面；开启后滚轮会缩放当前导图并写入 interaction.wheelZoom: true。',
-    'configModal.basic.resetToolbar': '重置工具栏位置',
+      '关闭时滚轮会继续滚动 Obsidian 页面；开启后滚轮会缩放当前导图。',
+    'configModal.basic.tabIndent': 'Tab 键调整主题级别',
+    'configModal.basic.tabIndent.help':
+      '开启后，源码模式中按 Tab / Shift+Tab 会调整当前行的主题级别。',
 
     'configModal.theme.section': '主题',
     'configModal.theme.scheme': '主题方案',
@@ -453,9 +467,16 @@ const BASE_LOCALE_MESSAGES = Object.freeze({
     'configModal.theme.overrideWarning':
       '当前主题会按分支自动配色；填写默认主题颜色后，主题的彩虹分支色将不会显示。',
 
-    'configModal.layout.section': '结构',
+    'configModal.layout.section': '布局',
     'configModal.layout.type': '布局类型',
     'configModal.layout.topicMaxWidth': '主题最大宽度',
+    'configModal.layout.topicMaxWidthSection': '主题最大宽度',
+    'configModal.layout.topicMaxWidth.help': '范围：120-800 px。一级、二级、三级留空时继承全局。',
+    'configModal.layout.topicMaxWidthGlobal': '全局',
+    'configModal.layout.topicMaxWidthLevel1': '一级主题',
+    'configModal.layout.topicMaxWidthLevel2': '二级主题',
+    'configModal.layout.topicMaxWidthLevel3': '三级主题',
+    'configModal.layout.topicMaxWidthInherit': '继承全局',
     'configModal.layout.connectorStyle': '连线线型',
     'configModal.layout.connectorStyle.fixedHelp':
       '只有思维导图布局可以选择连线线型；其他布局为了保持结构语义，统一使用固定折线。',
@@ -482,7 +503,7 @@ const BASE_LOCALE_MESSAGES = Object.freeze({
     'configModal.font.clearLevel': '清除本层',
 
     'configModal.source.section': '源码模式',
-    'configModal.source.tabIndent': 'Tab 调整主题级别',
+    'configModal.source.tabIndent': 'Tab 键调整主题级别',
     'configModal.source.height': '源码高度',
 
     'configModal.advanced.section': '高级配置',
@@ -651,7 +672,7 @@ const BASE_LOCALE_MESSAGES = Object.freeze({
     'configModal.globalTitle': '全域預設配置',
     'configModal.tabs.basic': '基礎',
     'configModal.tabs.theme': '主題',
-    'configModal.tabs.layout': '結構',
+    'configModal.tabs.layout': '佈局',
     'configModal.tabs.font': '字型',
     'configModal.tabs.source': '原始碼',
     'configModal.tabs.advanced': '進階',
@@ -677,10 +698,13 @@ const BASE_LOCALE_MESSAGES = Object.freeze({
     'configModal.toolbarPlacement.outside': '外側',
     'configModal.basic.placeholder.auto': '自動',
     'configModal.basic.placeholder.default': '預設',
-    'configModal.basic.wheelZoom': '啟用滑鼠滾輪縮放',
+    'configModal.basic.featureSection': '功能',
+    'configModal.basic.wheelZoom': '滑鼠滾輪縮放',
     'configModal.basic.wheelZoom.help':
-      '關閉時滾輪會繼續捲動 Obsidian 頁面；開啟後滾輪會縮放目前導圖並寫入 interaction.wheelZoom: true。',
-    'configModal.basic.resetToolbar': '重設工具列位置',
+      '關閉時滾輪會繼續捲動 Obsidian 頁面；開啟後滾輪會縮放目前導圖。',
+    'configModal.basic.tabIndent': 'Tab 鍵調整主題級別',
+    'configModal.basic.tabIndent.help':
+      '開啟後，原始碼模式中按 Tab / Shift+Tab 會調整目前行的主題級別。',
 
     'configModal.theme.section': '主題',
     'configModal.theme.scheme': '主題方案',
@@ -690,9 +714,16 @@ const BASE_LOCALE_MESSAGES = Object.freeze({
     'configModal.theme.overrideWarning':
       '目前主題會按分支自動配色；填寫預設主題顏色後，彩虹分支色將不會顯示。',
 
-    'configModal.layout.section': '結構',
+    'configModal.layout.section': '佈局',
     'configModal.layout.type': '佈局類型',
     'configModal.layout.topicMaxWidth': '主題最大寬度',
+    'configModal.layout.topicMaxWidthSection': '主題最大寬度',
+    'configModal.layout.topicMaxWidth.help': '範圍：120-800 px。一級、二級、三級留空時繼承全域。',
+    'configModal.layout.topicMaxWidthGlobal': '全域',
+    'configModal.layout.topicMaxWidthLevel1': '一級主題',
+    'configModal.layout.topicMaxWidthLevel2': '二級主題',
+    'configModal.layout.topicMaxWidthLevel3': '三級主題',
+    'configModal.layout.topicMaxWidthInherit': '繼承全域',
     'configModal.layout.connectorStyle': '連線線型',
     'configModal.layout.connectorStyle.fixedHelp':
       '只有心智圖佈局可以選擇連線線型；其他佈局為了保持結構語義，統一使用固定折線。',
@@ -719,7 +750,7 @@ const BASE_LOCALE_MESSAGES = Object.freeze({
     'configModal.font.clearLevel': '清除此層',
 
     'configModal.source.section': '原始碼模式',
-    'configModal.source.tabIndent': 'Tab 調整主題級別',
+    'configModal.source.tabIndent': 'Tab 鍵調整主題級別',
     'configModal.source.height': '原始碼高度',
     'configModal.advanced.section': '進階配置',
 
@@ -1746,7 +1777,7 @@ function createAdditionalLocale(text) {
     'configModal.globalTitle': text.globalDefaultConfig,
     'configModal.tabs.basic': text.basic,
     'configModal.tabs.theme': text.theme,
-    'configModal.tabs.layout': text.structure,
+    'configModal.tabs.layout': text.layout,
     'configModal.tabs.font': text.font,
     'configModal.tabs.source': text.source,
     'configModal.tabs.advanced': text.advanced,
@@ -1765,12 +1796,25 @@ function createAdditionalLocale(text) {
     'configModal.toolbarPlacement.outside': text.toolbarOutside || 'Outside',
     'configModal.basic.placeholder.auto': text.auto,
     'configModal.basic.placeholder.default': text.defaultValue,
-    'configModal.basic.wheelZoom': text.wheelZoomLabel,
-    'configModal.basic.resetToolbar': text.resetToolbar,
+    'configModal.basic.featureSection': text.features || 'Features',
+    'configModal.basic.wheelZoom': text.wheelZoom,
+    'configModal.basic.tabIndent': text.tabIndent || 'Tab key changes topic level',
+    'configModal.basic.tabIndent.help':
+      text.tabIndentHelp ||
+      'When enabled, Tab and Shift+Tab in source mode adjust the current line topic level.',
     'configModal.theme.scheme': text.themeScheme,
     'configModal.theme.defaultTopicColor': text.defaultTopicColor,
     'configModal.layout.type': text.layoutType,
     'configModal.layout.topicMaxWidth': text.topicMaxWidth,
+    'configModal.layout.topicMaxWidthSection': text.topicMaxWidth,
+    'configModal.layout.topicMaxWidth.help':
+      text.topicMaxWidthHelp ||
+      'Range: 120-800 px. Level-specific values inherit Global when left empty.',
+    'configModal.layout.topicMaxWidthGlobal': text.global || 'Global',
+    'configModal.layout.topicMaxWidthLevel1': text.level1Topic || 'Level 1 topic',
+    'configModal.layout.topicMaxWidthLevel2': text.level2Topic || 'Level 2 topic',
+    'configModal.layout.topicMaxWidthLevel3': text.level3Topic || 'Level 3 topic',
+    'configModal.layout.topicMaxWidthInherit': text.inheritGlobal || 'Inherit global',
     'configModal.layout.connectorStyle': text.connectorStyle,
     'configModal.layout.branchExpansion': text.branchExpansion || 'Subtopic expansion',
     'configModal.layout.branchExpansion.elbowOnlyHelp':

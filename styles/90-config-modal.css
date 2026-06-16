@@ -11,11 +11,14 @@
  */
 
 /*
- * 弹框宿主只控制宽度，不直接写死高度。
- * 内容区内部滚动，避免配置项变多时把 Obsidian 整个弹窗撑出屏幕。
+ * 弹框宿主控制稳定宽高，避免不同 tab 内容量不同导致外框跳动。
+ * 尺寸使用 clamp/vh，桌面端保持舒适工作区，小屏自动收缩并让表单主体滚动。
  */
 .yonxao-mindmap-config-modal-host {
-  width: min(760px, calc(100vw - 48px));
+  width: clamp(720px, 72vw, 820px);
+  max-width: calc(100vw - 48px);
+  height: clamp(560px, 74vh, 720px);
+  max-height: calc(100vh - 48px);
 }
 
 /*
@@ -26,6 +29,8 @@
   display: flex;
   flex-direction: column;
   gap: 12px;
+  height: 100%;
+  min-height: 0;
 }
 
 /*
@@ -83,10 +88,19 @@
  */
 .yonxao-mindmap-config-body {
   display: grid;
+  flex: 1 1 auto;
   gap: 10px;
-  max-height: min(62vh, 640px);
+  align-content: start;
+  grid-auto-rows: max-content;
+  min-height: 0;
   padding-right: 4px;
   overflow: auto;
+}
+
+.yonxao-mindmap-config-body.is-advanced {
+  display: flex;
+  flex-direction: column;
+  align-content: initial;
 }
 
 /*
@@ -117,6 +131,14 @@
   grid-template-columns: 156px minmax(0, 1fr);
   gap: 8px;
   align-items: center;
+}
+
+.yonxao-mindmap-config-field.is-toggle {
+  align-items: start;
+}
+
+.yonxao-mindmap-config-field.is-toggle > label {
+  padding-top: 2px;
 }
 
 .yonxao-mindmap-config-field > label {
@@ -177,6 +199,68 @@
 }
 
 /*
+ * 布尔配置使用开关，而不是原生 checkbox。
+ */
+.yonxao-mindmap-config-switch {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  width: fit-content;
+  min-height: 24px;
+  cursor: pointer;
+}
+
+.yonxao-mindmap-config-switch input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: 0;
+  opacity: 0;
+}
+
+.yonxao-mindmap-config-switch-track {
+  position: relative;
+  width: 38px;
+  height: 22px;
+  border: 1px solid var(--background-modifier-border);
+  border-radius: 999px;
+  background: var(--background-modifier-border);
+  transition:
+    background 120ms ease,
+    border-color 120ms ease;
+}
+
+.yonxao-mindmap-config-switch-thumb {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--background-primary);
+  box-shadow: 0 1px 3px rgb(0 0 0 / 0.24);
+  transition: transform 120ms ease;
+}
+
+.yonxao-mindmap-config-switch input:checked + .yonxao-mindmap-config-switch-track {
+  border-color: var(--interactive-accent);
+  background: var(--interactive-accent);
+}
+
+.yonxao-mindmap-config-switch
+  input:checked
+  + .yonxao-mindmap-config-switch-track
+  .yonxao-mindmap-config-switch-thumb {
+  transform: translateX(16px);
+}
+
+.yonxao-mindmap-config-switch input:focus-visible + .yonxao-mindmap-config-switch-track {
+  box-shadow:
+    0 0 0 2px var(--background-primary),
+    0 0 0 4px var(--interactive-accent);
+}
+
+/*
  * 按层级字体覆盖是一组重复字段。
  * 使用轻背景和边框，表示它是一个局部配置块。
  */
@@ -202,8 +286,7 @@
 /*
  * 小按钮只用于“清除本层”这类低频动作。
  */
-.yonxao-mindmap-config-small-button,
-.yonxao-mindmap-config-secondary-button {
+.yonxao-mindmap-config-small-button {
   width: fit-content;
 }
 
@@ -215,6 +298,12 @@
   resize: vertical;
   font-family: var(--font-monospace);
   line-height: 1.55;
+}
+
+.yonxao-mindmap-config-body.is-advanced .yonxao-mindmap-config-yaml {
+  flex: 1 1 auto;
+  height: auto;
+  min-height: 0;
 }
 
 /*
@@ -247,6 +336,9 @@
 @media (max-width: 640px) {
   .yonxao-mindmap-config-modal-host {
     width: calc(100vw - 24px);
+    max-width: calc(100vw - 24px);
+    height: calc(100vh - 24px);
+    max-height: calc(100vh - 24px);
   }
 
   .yonxao-mindmap-config-field {

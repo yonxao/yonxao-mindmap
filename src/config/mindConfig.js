@@ -12,6 +12,11 @@
  *   levels:
  *     1:
  *       size: 16
+ * topic:
+ *   maxWidth: 240
+ *   levels:
+ *     1:
+ *       maxWidth: 320
  * ---
  * # 中心主题
  * ```
@@ -94,6 +99,7 @@ export const DEFAULT_MIND_CONFIG = Object.freeze({
   topic: Object.freeze({
     defaultColor: '',
     maxWidth: TOPIC_MAX_WIDTH,
+    levels: Object.freeze({}),
   }),
   source: Object.freeze({
     enableTabIndent: true,
@@ -212,13 +218,7 @@ export function normalizeMindConfig(rawConfig) {
       expansion: normalizeBranchExpansion(branch.expansion) || DEFAULT_MIND_CONFIG.branch.expansion,
     },
     font: normalizeFontConfig(font),
-    topic: {
-      ...topic,
-      defaultColor: normalizeText(topic.defaultColor),
-      maxWidth:
-        normalizeOptionalNumber(topic.maxWidth, TOPIC_MAX_WIDTH_MIN, TOPIC_MAX_WIDTH_MAX) ||
-        DEFAULT_MIND_CONFIG.topic.maxWidth,
-    },
+    topic: normalizeTopicConfig(topic),
     source: {
       ...source,
       enableTabIndent:
@@ -227,6 +227,35 @@ export function normalizeMindConfig(rawConfig) {
           : DEFAULT_MIND_CONFIG.source.enableTabIndent,
       height: normalizeOptionalNumber(source.height, CANVAS_MIN_HEIGHT, CANVAS_MAX_HEIGHT),
     },
+  };
+}
+
+/*
+ * 作用：
+ * 解析 topic 配置，并清洗 levels 下的按主题级别最大宽度覆盖。
+ */
+export function normalizeTopicConfig(rawTopic) {
+  const topic = isPlainObject(rawTopic) ? rawTopic : {};
+  const levels = isPlainObject(topic.levels) ? topic.levels : {};
+  const normalizedLevels = {};
+
+  for (const [level, value] of Object.entries(levels)) {
+    if (!isPlainObject(value)) continue;
+    const maxWidth = normalizeOptionalNumber(
+      value.maxWidth,
+      TOPIC_MAX_WIDTH_MIN,
+      TOPIC_MAX_WIDTH_MAX
+    );
+    if (maxWidth) normalizedLevels[level] = { maxWidth };
+  }
+
+  return {
+    ...topic,
+    defaultColor: normalizeText(topic.defaultColor),
+    maxWidth:
+      normalizeOptionalNumber(topic.maxWidth, TOPIC_MAX_WIDTH_MIN, TOPIC_MAX_WIDTH_MAX) ||
+      DEFAULT_MIND_CONFIG.topic.maxWidth,
+    levels: normalizedLevels,
   };
 }
 
@@ -314,16 +343,19 @@ export function resolveTopicFont(topic, config) {
  * 计算单个主题最终使用的最大宽度。
  *
  * 优先级：
- * 主题属性 maxWidth > topic.maxWidth 全局/配置区配置 > 默认值。
+ * 主题属性 maxWidth > topic.levels[层级].maxWidth > topic.maxWidth 全局/配置区配置 > 默认值。
  */
 export function resolveTopicMaxWidth(topic, config) {
   const safeConfig = normalizeMindConfig(config);
+  const levelKey = String(topic?.level || 1);
+  const levelTopic = safeConfig.topic.levels[levelKey] || {};
   return (
     normalizeOptionalNumber(
       topic?.attributes?.maxWidth,
       TOPIC_MAX_WIDTH_MIN,
       TOPIC_MAX_WIDTH_MAX
     ) ||
+    levelTopic.maxWidth ||
     safeConfig.topic.maxWidth ||
     DEFAULT_MIND_CONFIG.topic.maxWidth
   );
@@ -482,8 +514,8 @@ export function stringifySimpleYaml(value, depth = 0, path = []) {
  * 让配置区输出保持稳定顺序。
  *
  * 关键点：
- * font 下先输出全局字体字段，再输出 levels；每个 level 内也按 family/size/weight/lineHeight 排序。
- * 这样配置区读起来像“先全局、再局部覆盖”，不会出现 levels 插在 size 和 weight 中间的情况。
+ * font/topic 下先输出全局字段，再输出 levels；每个 level 内也按固定字段排序。
+ * 这样配置区读起来像“先全局、再局部覆盖”，不会出现 levels 插在全局字段中间的情况。
  */
 function orderedConfigEntries(value, path) {
   const entries = Object.entries(value);
@@ -529,6 +561,8 @@ function configKeyOrder(path) {
   if (/^font\.levels\.[^.]+$/.test(keyPath)) {
     return ['family', 'size', 'weight', 'lineHeight'];
   }
+  if (keyPath === 'topic') return ['defaultColor', 'maxWidth', 'levels'];
+  if (/^topic\.levels\.[^.]+$/.test(keyPath)) return ['maxWidth'];
   return [];
 }
 
