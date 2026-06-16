@@ -17,6 +17,7 @@
  */
 
 import { FALLBACK_LANGUAGE, normalizeLanguage } from '../i18n/messages.js';
+import { canonicalizeMindConfig } from './mindConfig.js';
 
 export const DEFAULT_PLUGIN_SETTINGS = Object.freeze({
   language: FALLBACK_LANGUAGE,
@@ -36,18 +37,9 @@ export function normalizePluginSettings(rawSettings, defaultLanguage = FALLBACK_
   return {
     language: normalizeLanguage(settings.language, defaultLanguage),
     defaultConfig: isPlainObject(settings.defaultConfig)
-      ? clonePlainObject(settings.defaultConfig)
+      ? canonicalizeMindConfig(settings.defaultConfig)
       : {},
   };
-}
-
-/*
- * 作用：
- * 深拷贝插件设置中的普通对象，避免设置页、渲染器和保存流程共享同一个引用。
- */
-function clonePlainObject(value) {
-  if (!isPlainObject(value)) return {};
-  return JSON.parse(JSON.stringify(value));
 }
 
 /*

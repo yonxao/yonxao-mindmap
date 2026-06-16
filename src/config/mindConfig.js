@@ -5,18 +5,16 @@
  * 配置区长什么样：
  * ```yxmm
  * ---
- * canvas:
- *   height: 420
+ * basic:
+ *   canvasHeight: 420
  * font:
  *   size: 14
- *   levels:
- *     1:
- *       size: 16
- * topic:
- *   maxWidth: 240
- *   levels:
- *     1:
- *       maxWidth: 320
+ *   level1:
+ *     size: 16
+ * layout:
+ *   topicMaxWidth:
+ *     global: 240
+ *     level1: 320
  * ---
  * # 中心主题
  * ```
@@ -161,7 +159,7 @@ export function splitMindSourceConfig(source) {
 
   return {
     hasConfig: true,
-    rawConfig: parseSimpleYaml(configLines),
+    rawConfig: canonicalizeMindConfig(parseSimpleYaml(configLines)),
     body: bodyLines.join('\n').trimStart(),
   };
 }
@@ -174,21 +172,87 @@ export function splitMindSourceConfig(source) {
  * 这里会做数字、布尔值、枚举值的清洗，避免非法配置直接进入布局和 SVG 计算。
  */
 export function normalizeMindConfig(rawConfig) {
-  const raw = isPlainObject(rawConfig) ? rawConfig : {};
+  if (isRuntimeMindConfig(rawConfig)) {
+    return normalizeRuntimeMindConfig(rawConfig);
+  }
+
+  const raw = canonicalizeMindConfig(rawConfig);
+  const basic = isPlainObject(raw.basic) ? raw.basic : {};
+  const theme = isPlainObject(raw.theme) ? raw.theme : {};
+  const layout = isPlainObject(raw.layout) ? raw.layout : {};
   const font = isPlainObject(raw.font) ? raw.font : {};
-  const layout = raw.layout;
-  const connector = isPlainObject(raw.connector) ? raw.connector : {};
-  const branch = isPlainObject(raw.branch) ? raw.branch : {};
-  const topic = isPlainObject(raw.topic) ? raw.topic : {};
-  const canvas = isPlainObject(raw.canvas) ? raw.canvas : {};
-  const toolbar = isPlainObject(raw.toolbar) ? raw.toolbar : {};
-  const interaction = isPlainObject(raw.interaction) ? raw.interaction : {};
+  const toolbar = isPlainObject(basic.toolbar) ? basic.toolbar : {};
   const view = isPlainObject(raw.view) ? raw.view : {};
-  const source = isPlainObject(raw.source) ? raw.source : {};
 
   return {
     canvas: {
-      ...canvas,
+      height: normalizeOptionalNumber(basic.canvasHeight, CANVAS_MIN_HEIGHT, CANVAS_MAX_HEIGHT),
+    },
+    toolbar: {
+      corner: normalizeToolbarCorner(toolbar.corner) || DEFAULT_MIND_CONFIG.toolbar.corner,
+      placement:
+        normalizeToolbarPlacement(toolbar.placement) || DEFAULT_MIND_CONFIG.toolbar.placement,
+    },
+    interaction: {
+      wheelZoom:
+        typeof basic.wheelZoom === 'boolean'
+          ? basic.wheelZoom
+          : DEFAULT_MIND_CONFIG.interaction.wheelZoom,
+    },
+    view: {
+      ...view,
+      mode: normalizeViewMode(view.mode) || DEFAULT_MIND_CONFIG.view.mode,
+    },
+    theme: normalizeMindThemeName(theme.scheme),
+    layout: normalizeLayoutType(layout.type) || DEFAULT_MIND_CONFIG.layout,
+    connector: {
+      style: normalizeConnectorStyle(layout.connectorStyle) || DEFAULT_MIND_CONFIG.connector.style,
+    },
+    branch: {
+      expansion:
+        normalizeBranchExpansion(layout.branchExpansion) || DEFAULT_MIND_CONFIG.branch.expansion,
+    },
+    font: normalizeFontConfig(font),
+    topic: normalizeTopicConfig(theme, layout),
+    source: {
+      enableTabIndent:
+        typeof basic.tabIndent === 'boolean'
+          ? basic.tabIndent
+          : DEFAULT_MIND_CONFIG.source.enableTabIndent,
+      height: normalizeOptionalNumber(basic.sourceHeight, CANVAS_MIN_HEIGHT, CANVAS_MAX_HEIGHT),
+    },
+  };
+}
+
+/*
+ * 作用：
+ * 判断传入对象是否已经是渲染器使用的运行时规范结构。
+ *
+ * 关键点：
+ * 这不是旧 YAML 配置兼容；layoutTree()/resolveTopicFont() 会把 this.config 再传回来，
+ * normalizeMindConfig() 必须保持幂等，否则布局类型会被清空回默认值。
+ */
+function isRuntimeMindConfig(config) {
+  return (
+    isPlainObject(config) && (typeof config.layout === 'string' || typeof config.theme === 'string')
+  );
+}
+
+/*
+ * 作用：
+ * 清洗已经规范化过的运行时配置，保证二次 normalize 不改变语义。
+ */
+function normalizeRuntimeMindConfig(config) {
+  const canvas = isPlainObject(config.canvas) ? config.canvas : {};
+  const toolbar = isPlainObject(config.toolbar) ? config.toolbar : {};
+  const interaction = isPlainObject(config.interaction) ? config.interaction : {};
+  const view = isPlainObject(config.view) ? config.view : {};
+  const connector = isPlainObject(config.connector) ? config.connector : {};
+  const branch = isPlainObject(config.branch) ? config.branch : {};
+  const source = isPlainObject(config.source) ? config.source : {};
+
+  return {
+    canvas: {
       height: normalizeOptionalNumber(canvas.height, CANVAS_MIN_HEIGHT, CANVAS_MAX_HEIGHT),
     },
     toolbar: {
@@ -197,7 +261,6 @@ export function normalizeMindConfig(rawConfig) {
         normalizeToolbarPlacement(toolbar.placement) || DEFAULT_MIND_CONFIG.toolbar.placement,
     },
     interaction: {
-      ...interaction,
       wheelZoom:
         typeof interaction.wheelZoom === 'boolean'
           ? interaction.wheelZoom
@@ -207,20 +270,17 @@ export function normalizeMindConfig(rawConfig) {
       ...view,
       mode: normalizeViewMode(view.mode) || DEFAULT_MIND_CONFIG.view.mode,
     },
-    theme: normalizeMindThemeName(raw.theme),
-    layout: normalizeLayoutType(layout) || DEFAULT_MIND_CONFIG.layout,
+    theme: normalizeMindThemeName(config.theme),
+    layout: normalizeLayoutType(config.layout) || DEFAULT_MIND_CONFIG.layout,
     connector: {
-      ...connector,
       style: normalizeConnectorStyle(connector.style) || DEFAULT_MIND_CONFIG.connector.style,
     },
     branch: {
-      ...branch,
       expansion: normalizeBranchExpansion(branch.expansion) || DEFAULT_MIND_CONFIG.branch.expansion,
     },
-    font: normalizeFontConfig(font),
-    topic: normalizeTopicConfig(topic),
+    font: normalizeFontConfig(config.font),
+    topic: normalizeRuntimeTopicConfig(config.topic),
     source: {
-      ...source,
       enableTabIndent:
         typeof source.enableTabIndent === 'boolean'
           ? source.enableTabIndent
@@ -232,17 +292,17 @@ export function normalizeMindConfig(rawConfig) {
 
 /*
  * 作用：
- * 解析 topic 配置，并清洗 levels 下的按主题级别最大宽度覆盖。
+ * 清洗运行时 topic 配置；这个结构来自 normalizeTopicConfig() 的输出，不是 YAML 字段。
  */
-export function normalizeTopicConfig(rawTopic) {
+function normalizeRuntimeTopicConfig(rawTopic) {
   const topic = isPlainObject(rawTopic) ? rawTopic : {};
   const levels = isPlainObject(topic.levels) ? topic.levels : {};
   const normalizedLevels = {};
 
-  for (const [level, value] of Object.entries(levels)) {
-    if (!isPlainObject(value)) continue;
+  for (const level of ['1', '2', '3']) {
+    const levelConfig = isPlainObject(levels[level]) ? levels[level] : {};
     const maxWidth = normalizeOptionalNumber(
-      value.maxWidth,
+      levelConfig.maxWidth,
       TOPIC_MAX_WIDTH_MIN,
       TOPIC_MAX_WIDTH_MAX
     );
@@ -250,10 +310,85 @@ export function normalizeTopicConfig(rawTopic) {
   }
 
   return {
-    ...topic,
     defaultColor: normalizeText(topic.defaultColor),
     maxWidth:
       normalizeOptionalNumber(topic.maxWidth, TOPIC_MAX_WIDTH_MIN, TOPIC_MAX_WIDTH_MAX) ||
+      DEFAULT_MIND_CONFIG.topic.maxWidth,
+    levels: normalizedLevels,
+  };
+}
+
+/*
+ * 作用：
+ * 将配置对象清理为当前配置区结构。
+ *
+ * 关键点：
+ * 插件尚未发布，不保留旧实验字段兼容逻辑；这里只接受当前字段。
+ */
+export function canonicalizeMindConfig(rawConfig) {
+  const raw = isPlainObject(rawConfig) ? rawConfig : {};
+  const next = {};
+
+  const basic = isPlainObject(raw.basic) ? raw.basic : {};
+  setConfigValueIfPresent(next, ['basic', 'canvasHeight'], basic.canvasHeight);
+  setConfigValueIfPresent(next, ['basic', 'sourceHeight'], basic.sourceHeight);
+  const basicToolbar = isPlainObject(basic.toolbar) ? basic.toolbar : {};
+  setConfigValueIfPresent(next, ['basic', 'toolbar', 'corner'], basicToolbar.corner);
+  setConfigValueIfPresent(next, ['basic', 'toolbar', 'placement'], basicToolbar.placement);
+  setConfigValueIfPresent(next, ['basic', 'tabIndent'], basic.tabIndent);
+  setConfigValueIfPresent(next, ['basic', 'wheelZoom'], basic.wheelZoom);
+
+  const theme = isPlainObject(raw.theme) ? raw.theme : {};
+  setConfigValueIfPresent(next, ['theme', 'scheme'], theme.scheme);
+  setConfigValueIfPresent(next, ['theme', 'defaultTopicColor'], theme.defaultTopicColor);
+
+  const layout = isPlainObject(raw.layout) ? raw.layout : {};
+  const topicMaxWidth = isPlainObject(layout.topicMaxWidth) ? layout.topicMaxWidth : {};
+  setConfigValueIfPresent(next, ['layout', 'type'], layout.type);
+  setConfigValueIfPresent(next, ['layout', 'connectorStyle'], layout.connectorStyle);
+  setConfigValueIfPresent(next, ['layout', 'branchExpansion'], layout.branchExpansion);
+  setConfigValueIfPresent(next, ['layout', 'topicMaxWidth', 'global'], topicMaxWidth.global);
+  for (const levelKey of ['level1', 'level2', 'level3']) {
+    setConfigValueIfPresent(next, ['layout', 'topicMaxWidth', levelKey], topicMaxWidth[levelKey]);
+  }
+
+  const font = isPlainObject(raw.font) ? raw.font : {};
+  for (const key of ['family', 'size', 'weight', 'lineHeight']) {
+    setConfigValueIfPresent(next, ['font', key], font[key]);
+  }
+  for (const levelKey of ['level1', 'level2', 'level3']) {
+    const levelConfig = isPlainObject(font[levelKey]) ? font[levelKey] : {};
+    for (const fontKey of ['family', 'size', 'weight', 'lineHeight']) {
+      setConfigValueIfPresent(next, ['font', levelKey, fontKey], levelConfig[fontKey]);
+    }
+  }
+
+  return next;
+}
+
+/*
+ * 作用：
+ * 解析主题相关配置，并清洗按主题级别最大宽度覆盖。
+ */
+export function normalizeTopicConfig(rawTheme, rawLayout) {
+  const theme = isPlainObject(rawTheme) ? rawTheme : {};
+  const layout = isPlainObject(rawLayout) ? rawLayout : {};
+  const topicMaxWidth = isPlainObject(layout.topicMaxWidth) ? layout.topicMaxWidth : {};
+  const normalizedLevels = {};
+
+  for (const level of ['1', '2', '3']) {
+    const maxWidth = normalizeOptionalNumber(
+      topicMaxWidth[`level${level}`],
+      TOPIC_MAX_WIDTH_MIN,
+      TOPIC_MAX_WIDTH_MAX
+    );
+    if (maxWidth) normalizedLevels[level] = { maxWidth };
+  }
+
+  return {
+    defaultColor: normalizeText(theme.defaultTopicColor),
+    maxWidth:
+      normalizeOptionalNumber(topicMaxWidth.global, TOPIC_MAX_WIDTH_MIN, TOPIC_MAX_WIDTH_MAX) ||
       DEFAULT_MIND_CONFIG.topic.maxWidth,
     levels: normalizedLevels,
   };
@@ -265,12 +400,12 @@ export function normalizeTopicConfig(rawTopic) {
  */
 export function normalizeFontConfig(rawFont) {
   const font = isPlainObject(rawFont) ? rawFont : {};
-  const levels = isPlainObject(font.levels) ? font.levels : {};
   const normalizedLevels = {};
 
-  for (const [level, value] of Object.entries(levels)) {
-    if (!isPlainObject(value)) continue;
-    normalizedLevels[level] = normalizePartialFont(value);
+  for (const level of ['1', '2', '3']) {
+    const levelKey = `level${level}`;
+    if (!isPlainObject(font[levelKey])) continue;
+    normalizedLevels[level] = normalizePartialFont(font[levelKey]);
   }
 
   return {
@@ -417,7 +552,7 @@ export function deleteMindConfigPath(rawConfig, path) {
  * 把配置对象和正文重新拼成完整 yxmm 源码。
  */
 export function serializeMindSource(rawConfig, body, forceConfig) {
-  const config = clonePlainObject(rawConfig);
+  const config = canonicalizeMindConfig(rawConfig);
   const bodyText = String(body || '').trim();
   const shouldWriteConfig = forceConfig || hasMeaningfulConfig(config);
 
@@ -540,29 +675,23 @@ function orderedConfigEntries(value, path) {
 function configKeyOrder(path) {
   const keyPath = path.join('.');
   if (keyPath === '') {
-    return [
-      'canvas',
-      'source',
-      'toolbar',
-      'interaction',
-      'theme',
-      'layout',
-      'connector',
-      'branch',
-      'topic',
-      'font',
-    ];
+    return ['basic', 'theme', 'layout', 'font'];
   }
-  if (keyPath === 'connector') return ['style'];
-  if (keyPath === 'branch') return ['expansion'];
-  if (keyPath === 'toolbar') return ['corner', 'placement'];
-  if (keyPath === 'interaction') return ['wheelZoom'];
-  if (keyPath === 'font') return ['family', 'size', 'weight', 'lineHeight', 'levels'];
-  if (/^font\.levels\.[^.]+$/.test(keyPath)) {
+  if (keyPath === 'basic') {
+    return ['canvasHeight', 'sourceHeight', 'toolbar', 'tabIndent', 'wheelZoom'];
+  }
+  if (keyPath === 'basic.toolbar') return ['corner', 'placement'];
+  if (keyPath === 'theme') return ['scheme', 'defaultTopicColor'];
+  if (keyPath === 'layout') {
+    return ['type', 'connectorStyle', 'branchExpansion', 'topicMaxWidth'];
+  }
+  if (keyPath === 'layout.topicMaxWidth') return ['global', 'level1', 'level2', 'level3'];
+  if (keyPath === 'font') {
+    return ['family', 'size', 'weight', 'lineHeight', 'level1', 'level2', 'level3'];
+  }
+  if (/^font\.level[123]$/.test(keyPath)) {
     return ['family', 'size', 'weight', 'lineHeight'];
   }
-  if (keyPath === 'topic') return ['defaultColor', 'maxWidth', 'levels'];
-  if (/^topic\.levels\.[^.]+$/.test(keyPath)) return ['maxWidth'];
   return [];
 }
 
@@ -627,6 +756,24 @@ function stripYamlComment(line) {
 function clonePlainObject(value) {
   if (!isPlainObject(value)) return {};
   return JSON.parse(JSON.stringify(value));
+}
+
+/*
+ * 作用：
+ * 写入可选配置值；空值不写，从而保持配置区简洁。
+ */
+function setConfigValueIfPresent(config, path, value) {
+  if (value === undefined || value === null || value === '') return config;
+
+  let current = config;
+  for (let index = 0; index < path.length - 1; index += 1) {
+    const key = path[index];
+    if (!isPlainObject(current[key])) current[key] = {};
+    current = current[key];
+  }
+
+  current[path[path.length - 1]] = value;
+  return config;
 }
 
 /*

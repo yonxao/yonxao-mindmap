@@ -136,8 +136,10 @@ package license 字段：
 
 ```markdown
 ---
-layout: mindmap-right
-theme: rainbow
+theme:
+  scheme: rainbow
+layout:
+  type: mindmap-right
 ---
 
 # 中心主题
@@ -149,10 +151,12 @@ theme: rainbow
 
 ```markdown
 ---
-canvas:
-  height: 420
-layout: mindmap-right
-theme: rainbow
+basic:
+  canvasHeight: 420
+theme:
+  scheme: rainbow
+layout:
+  type: mindmap-right
 font:
   size: 14
 ---
@@ -215,26 +219,28 @@ src/config/mindConfig.js
 
 核心配置项：
 
-- `canvas.height`：导图幕布高度。
-- `source.height`：源码模式高度，和导图幕布高度分开保存。
-- `toolbar.corner` / `toolbar.placement`：悬浮工具栏吸附位置，角落可选四角，位置可选内侧或外侧。
-- `interaction.wheelZoom`：是否启用鼠标滚轮缩放，默认关闭。
+- `basic.canvasHeight`：导图幕布高度。
+- `basic.sourceHeight`：源码模式高度，和导图幕布高度分开保存。
+- `basic.toolbar.corner` / `basic.toolbar.placement`：悬浮工具栏吸附位置，角落可选四角，位置可选内侧或外侧。
+- `basic.tabIndent`：源码模式中是否启用 Tab 调整主题级别，默认开启。
+- `basic.wheelZoom`：是否启用鼠标滚轮缩放，默认关闭。
 - `view.mode`：当前代码块视图模式，通常为 `map` 或 `source`。
-- `theme`：主题色系。
-- `layout`：布局类型。
-- `connector.style`：连线线型，仅思维导图组布局可配置。
+- `theme.scheme`：主题色系。
+- `theme.defaultTopicColor`：默认主题颜色。
+- `layout.type`：布局类型。
+- `layout.connectorStyle`：连线线型，仅思维导图组布局可配置。
+- `layout.branchExpansion`：普通主题的子主题展开方式。
+- `layout.topicMaxWidth`：主题最大宽度，包含 `global`、`level1`、`level2`、`level3`。
 - `font.family` / `font.size` / `font.weight` / `font.lineHeight`：全局主题字体配置。
-- `font.levels`：按主题级别覆盖字体。
-- `topic.defaultColor`：默认主题颜色。
-- `topic.maxWidth`：主题最大宽度。
-- `source.enableTabIndent`：源码模式中是否启用 Tab 调整主题级别。
+- `font.level1` / `font.level2` / `font.level3`：按主题级别覆盖字体。
 
 ## 布局类型
 
-布局类型直接使用标量配置：
+布局类型放在 `layout.type`：
 
 ```yaml
-layout: mindmap-right
+layout:
+  type: mindmap-right
 ```
 
 不要恢复成旧式：
@@ -282,7 +288,7 @@ layout:
 
 ## 连线线型规则
 
-`connector.style` 可选值：
+`layout.connectorStyle` 可选值：
 
 - `curve`：曲线，技术上是三次贝塞尔曲线。
 - `straight`：直线。
@@ -292,7 +298,7 @@ layout:
 
 - 只有思维导图组布局允许用户设置连线线型。
 - 非思维导图布局为了保持结构语义，配置界面禁止设置线型，UI 上固定显示折线。
-- 树形图、组织结构图、时间轴、鱼骨图等布局内部通常有专用的主干、支线或骨架绘制逻辑，不应简单套用 `connector.style`。
+- 树形图、组织结构图、时间轴、鱼骨图等布局内部通常有专用的主干、支线或骨架绘制逻辑，不应简单套用 `layout.connectorStyle`。
 - 如果以后要给某个非思维导图布局开放线型，需要单独设计该布局的语义和视觉规则。
 
 ## 主题和配色规则
@@ -317,7 +323,7 @@ src/theme/mindThemes.js
 颜色优先级：
 
 ```text
-主题属性 color > topic.defaultColor > 主题自动配色
+主题属性 color > theme.defaultTopicColor > 主题自动配色
 ```
 
 已确认规则：
@@ -325,7 +331,7 @@ src/theme/mindThemes.js
 - 中心主题颜色应和分支颜色区分开。
 - 主题属性 `color` 只修改当前主题的颜色，不应改变它与父主题之间的连线颜色。
 - 彩虹类主题按一级分支自动分配颜色。
-- `topic.defaultColor` 会覆盖主题自动配色，但主题属性 `color` 仍然优先。
+- `theme.defaultTopicColor` 会覆盖主题自动配色，但主题属性 `color` 仍然优先。
 - 配置区中的十六进制颜色建议加引号，例如 `defaultColor: '#66ed0c'`。
 
 ## 字体规则
@@ -340,17 +346,16 @@ font:
   size: 14
   weight: 560
   lineHeight: 22
-  levels:
-    1:
-      size: 28
-      weight: 700
-      lineHeight: 38
+  level1:
+    size: 28
+    weight: 700
+    lineHeight: 38
 ```
 
 优先级：
 
 ```text
-主题属性 > font.levels[当前主题级别] > 全局 font 配置 > 插件默认值
+主题属性 > font.levelN > 全局 font 配置 > 插件默认值
 ```
 
 字号、字重、行高有范围限制，范围定义在 `src/config/mindConfig.js`。
@@ -695,7 +700,7 @@ npm run dev:obsidian
 
 ### 2. 配置 UI 和实际渲染逻辑不一致
 
-比如 `connector.style` 只有思维导图布局可配置。改 UI 时要确认渲染器实际是否使用该配置。
+比如 `layout.connectorStyle` 只有思维导图布局可配置。改 UI 时要确认渲染器实际是否使用该配置。
 
 ### 3. README 术语被误改
 

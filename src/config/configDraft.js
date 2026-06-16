@@ -23,7 +23,7 @@ export function cloneConfig(config) {
 
 /*
  * 作用：
- * 按路径读取嵌套配置值，例如 ['font', 'levels', '1', 'size']。
+ * 按路径读取嵌套配置值，例如 ['font', 'level1', 'size']。
  */
 export function getConfigValue(config, path, fallback = '') {
   let current = config;

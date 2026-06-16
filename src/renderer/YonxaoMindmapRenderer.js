@@ -26,6 +26,7 @@ import {
   ICON_SIZE,
 } from '../constants.js';
 import {
+  canonicalizeMindConfig,
   deleteMindConfigPath,
   FONT_LINE_HEIGHT_MAX,
   FONT_LINE_HEIGHT_MIN,
@@ -88,18 +89,18 @@ const TOPIC_EDITOR_COLOR_SWATCHES = Object.freeze([
 ]);
 
 const DOCUMENT_CONFIG_DEFAULT_PRUNE_PATHS = Object.freeze([
-  ['canvas', 'height'],
-  ['source', 'height'],
-  ['source', 'enableTabIndent'],
-  ['toolbar', 'corner'],
-  ['toolbar', 'placement'],
-  ['interaction', 'wheelZoom'],
-  ['theme'],
-  ['layout'],
-  ['connector', 'style'],
-  ['branch', 'expansion'],
-  ['topic', 'defaultColor'],
-  ['topic', 'maxWidth'],
+  ['basic', 'canvasHeight'],
+  ['basic', 'sourceHeight'],
+  ['basic', 'tabIndent'],
+  ['basic', 'toolbar', 'corner'],
+  ['basic', 'toolbar', 'placement'],
+  ['basic', 'wheelZoom'],
+  ['theme', 'scheme'],
+  ['theme', 'defaultTopicColor'],
+  ['layout', 'type'],
+  ['layout', 'connectorStyle'],
+  ['layout', 'branchExpansion'],
+  ['layout', 'topicMaxWidth', 'global'],
   ['font', 'family'],
   ['font', 'size'],
   ['font', 'weight'],
@@ -273,7 +274,7 @@ export class YonxaoMindmapRenderer extends Component {
    */
   parseAndApplyDocument(source) {
     const document = parseMindDocument(source);
-    this.rawConfig = document.rawConfig || {};
+    this.rawConfig = canonicalizeMindConfig(document.rawConfig || {});
     this.refreshNormalizedConfig();
     this.hasConfigBlock = document.hasConfig;
     return document.root;
@@ -780,8 +781,12 @@ export class YonxaoMindmapRenderer extends Component {
     const snap = this.nearestToolbarSnap();
     if (!snap) return;
 
-    this.rawConfig = setMindConfigPath(this.rawConfig, ['toolbar', 'corner'], snap.corner);
-    this.rawConfig = setMindConfigPath(this.rawConfig, ['toolbar', 'placement'], snap.placement);
+    this.rawConfig = setMindConfigPath(this.rawConfig, ['basic', 'toolbar', 'corner'], snap.corner);
+    this.rawConfig = setMindConfigPath(
+      this.rawConfig,
+      ['basic', 'toolbar', 'placement'],
+      snap.placement
+    );
     this.rawConfig = deleteMindConfigPath(this.rawConfig, ['toolbar', 'x']);
     this.rawConfig = deleteMindConfigPath(this.rawConfig, ['toolbar', 'y']);
     this.rememberViewModeConfig();
@@ -1010,7 +1015,7 @@ export class YonxaoMindmapRenderer extends Component {
 
     this.root = nextRoot;
     this.source = nextSource;
-    this.rawConfig = rawConfig;
+    this.rawConfig = canonicalizeMindConfig(rawConfig);
     this.refreshNormalizedConfig();
     this.hasConfigBlock = shouldWriteConfig;
     this.syncSourceInput();
@@ -1335,7 +1340,7 @@ export class YonxaoMindmapRenderer extends Component {
       const height = Math.round(this.containerEl.getBoundingClientRect().height);
       this.rawConfig = setMindConfigPath(
         this.rawConfig,
-        this.isSourceMode ? ['source', 'height'] : ['canvas', 'height'],
+        this.isSourceMode ? ['basic', 'sourceHeight'] : ['basic', 'canvasHeight'],
         height
       );
       this.rememberViewModeConfig();
@@ -1366,7 +1371,7 @@ export class YonxaoMindmapRenderer extends Component {
     this.containerEl.style.height = '';
     this.rawConfig = deleteMindConfigPath(
       this.rawConfig,
-      this.isSourceMode ? ['source', 'height'] : ['canvas', 'height']
+      this.isSourceMode ? ['basic', 'sourceHeight'] : ['basic', 'canvasHeight']
     );
     this.rememberViewModeConfig();
     Promise.resolve(this.saveRuntimeConfigToFile()).catch((error) => {
@@ -1527,7 +1532,7 @@ export class YonxaoMindmapRenderer extends Component {
 
     this.source = nextSource;
     this.root = nextDocument.root;
-    this.rawConfig = nextDocument.rawConfig || {};
+    this.rawConfig = canonicalizeMindConfig(nextDocument.rawConfig || {});
     this.refreshNormalizedConfig();
     this.hasConfigBlock = nextDocument.hasConfig;
     this.rememberViewModeConfig();
@@ -2942,16 +2947,10 @@ export class YonxaoMindmapRenderer extends Component {
    * 源码 textarea 里的用户配置是基础；拖动工具栏和高度调整是本次交互产生的新值。
    */
   mergeRuntimeConfig(baseConfig, runtimeConfig) {
-    const next = JSON.parse(JSON.stringify(baseConfig || {}));
-
-    for (const key of ['canvas', 'toolbar', 'source']) {
-      if (!runtimeConfig || !runtimeConfig[key]) continue;
-      next[key] = {
-        ...(next[key] || {}),
-        ...runtimeConfig[key],
-      };
-    }
-
+    const next = mergeMindConfigObjects(
+      canonicalizeMindConfig(baseConfig),
+      canonicalizeMindConfig(runtimeConfig)
+    );
     delete next.view;
     return next;
   }
@@ -2961,7 +2960,8 @@ export class YonxaoMindmapRenderer extends Component {
    * 生成写回 Markdown 的配置对象，移除只属于当前会话或旧实验配置的字段。
    */
   documentConfigForSave(config) {
-    let next = deleteMindConfigPath(config || {}, ['view', 'mode']);
+    let next = canonicalizeMindConfig(config || {});
+    next = deleteMindConfigPath(next, ['view', 'mode']);
     next = deleteMindConfigPath(next, ['toolbar', 'x']);
     next = deleteMindConfigPath(next, ['toolbar', 'y']);
     next = this.pruneDocumentConfigDefaults(next);
@@ -2998,23 +2998,26 @@ export class YonxaoMindmapRenderer extends Component {
    */
   documentConfigDefaultPrunePaths(config) {
     const paths = [...DOCUMENT_CONFIG_DEFAULT_PRUNE_PATHS];
-    const fontLevels = config?.font?.levels;
-    const topicLevels = config?.topic?.levels;
+    const font = config?.font;
+    const topicMaxWidth = config?.layout?.topicMaxWidth;
 
-    if (this.isPlainConfigObject(fontLevels)) {
-      for (const level of Object.keys(fontLevels)) {
+    if (this.isPlainConfigObject(font)) {
+      for (const levelKey of ['level1', 'level2', 'level3']) {
+        if (!this.isPlainConfigObject(font[levelKey])) continue;
         paths.push(
-          ['font', 'levels', level, 'family'],
-          ['font', 'levels', level, 'size'],
-          ['font', 'levels', level, 'weight'],
-          ['font', 'levels', level, 'lineHeight']
+          ['font', levelKey, 'family'],
+          ['font', levelKey, 'size'],
+          ['font', levelKey, 'weight'],
+          ['font', levelKey, 'lineHeight']
         );
       }
     }
 
-    if (this.isPlainConfigObject(topicLevels)) {
-      for (const level of Object.keys(topicLevels)) {
-        paths.push(['topic', 'levels', level, 'maxWidth']);
+    if (this.isPlainConfigObject(topicMaxWidth)) {
+      for (const levelKey of ['level1', 'level2', 'level3']) {
+        if (topicMaxWidth[levelKey] !== undefined) {
+          paths.push(['layout', 'topicMaxWidth', levelKey]);
+        }
       }
     }
 
@@ -3026,8 +3029,9 @@ export class YonxaoMindmapRenderer extends Component {
    * 读取规范化后的配置路径值；层级覆盖没有设置时回退到对应全局值。
    */
   normalizedConfigValueForPath(config, path) {
-    if (path[0] === 'font' && path[1] === 'levels' && path.length === 4) {
-      const [, , level, key] = path;
+    if (path[0] === 'font' && /^level[123]$/.test(path[1]) && path.length === 3) {
+      const level = path[1].replace('level', '');
+      const key = path[2];
       const levelConfig = config.font?.levels?.[level];
       if (this.isPlainConfigObject(levelConfig) && levelConfig[key] !== undefined) {
         return levelConfig[key];
@@ -3035,14 +3039,31 @@ export class YonxaoMindmapRenderer extends Component {
       return config.font?.[key];
     }
 
-    if (path[0] === 'topic' && path[1] === 'levels' && path.length === 4) {
-      const [, , level, key] = path;
+    if (path[0] === 'layout' && path[1] === 'topicMaxWidth' && /^level[123]$/.test(path[2])) {
+      const level = path[2].replace('level', '');
       const levelConfig = config.topic?.levels?.[level];
-      if (this.isPlainConfigObject(levelConfig) && levelConfig[key] !== undefined) {
-        return levelConfig[key];
+      if (this.isPlainConfigObject(levelConfig) && levelConfig.maxWidth !== undefined) {
+        return levelConfig.maxWidth;
       }
-      return config.topic?.[key];
+      return config.topic?.maxWidth;
     }
+
+    const normalizedPathMap = {
+      'basic.canvasHeight': ['canvas', 'height'],
+      'basic.sourceHeight': ['source', 'height'],
+      'basic.tabIndent': ['source', 'enableTabIndent'],
+      'basic.toolbar.corner': ['toolbar', 'corner'],
+      'basic.toolbar.placement': ['toolbar', 'placement'],
+      'basic.wheelZoom': ['interaction', 'wheelZoom'],
+      'theme.scheme': ['theme'],
+      'theme.defaultTopicColor': ['topic', 'defaultColor'],
+      'layout.type': ['layout'],
+      'layout.connectorStyle': ['connector', 'style'],
+      'layout.branchExpansion': ['branch', 'expansion'],
+      'layout.topicMaxWidth.global': ['topic', 'maxWidth'],
+    };
+    const mappedPath = normalizedPathMap[path.join('.')];
+    if (mappedPath) return this.configValueAtPath(config, mappedPath);
 
     return this.configValueAtPath(config, path);
   }
@@ -3096,7 +3117,10 @@ export class YonxaoMindmapRenderer extends Component {
    */
   buildEffectiveRawConfig(documentConfig = this.rawConfig) {
     const globalDefaultConfig = this.plugin?.getGlobalDefaultConfig?.() || {};
-    return mergeMindConfigObjects(globalDefaultConfig, documentConfig || {});
+    return mergeMindConfigObjects(
+      canonicalizeMindConfig(globalDefaultConfig),
+      canonicalizeMindConfig(documentConfig || {})
+    );
   }
 
   /*
@@ -5890,7 +5914,7 @@ export class YonxaoMindmapRenderer extends Component {
         return;
       }
 
-      this.rawConfig = setMindConfigPath(this.rawConfig, ['canvas', 'height'], nextHeight);
+      this.rawConfig = setMindConfigPath(this.rawConfig, ['basic', 'canvasHeight'], nextHeight);
       this.refreshNormalizedConfig();
     }
 

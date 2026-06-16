@@ -35,6 +35,7 @@ import {
   TOPIC_MAX_WIDTH_MIN,
   TOOLBAR_CORNERS,
   TOOLBAR_PLACEMENTS,
+  canonicalizeMindConfig,
   normalizeMindConfig,
 } from '../config/mindConfig.js';
 import { createTranslator } from '../i18n/messages.js';
@@ -100,8 +101,8 @@ export class ConfigModal extends Modal {
     super(app);
     this.t = options.t || createTranslator('en');
     this.title = options.title || this.t('configModal.title');
-    this.initialConfig = cloneConfig(options.rawConfig);
-    this.draftConfig = cloneConfig(options.rawConfig);
+    this.initialConfig = cloneConfig(canonicalizeMindConfig(options.rawConfig));
+    this.draftConfig = cloneConfig(canonicalizeMindConfig(options.rawConfig));
     this.onApply = options.onApply;
     this.activeTab = 'basic';
     this.formEl = null;
@@ -321,7 +322,7 @@ export class ConfigModal extends Modal {
     this.createSection(this.t('configModal.basic.section'));
     this.createNumberField(
       this.t('configModal.basic.canvasHeight'),
-      ['canvas', 'height'],
+      ['basic', 'canvasHeight'],
       normalized.canvas.height,
       {
         min: 96,
@@ -333,7 +334,7 @@ export class ConfigModal extends Modal {
     );
     this.createNumberField(
       this.t('configModal.basic.sourceHeight'),
-      ['source', 'height'],
+      ['basic', 'sourceHeight'],
       normalized.source.height,
       {
         min: 96,
@@ -345,20 +346,20 @@ export class ConfigModal extends Modal {
     );
     this.createSelectField(
       this.t('configModal.basic.toolbarCorner'),
-      ['toolbar', 'corner'],
+      ['basic', 'toolbar', 'corner'],
       normalized.toolbar.corner,
       this.toolbarCornerOptions()
     );
     this.createSelectField(
       this.t('configModal.basic.toolbarPlacement'),
-      ['toolbar', 'placement'],
+      ['basic', 'toolbar', 'placement'],
       normalized.toolbar.placement,
       this.toolbarPlacementOptions()
     );
     this.createSection(this.t('configModal.basic.featureSection'));
     this.createToggleField(
       this.t('configModal.basic.tabIndent'),
-      ['source', 'enableTabIndent'],
+      ['basic', 'tabIndent'],
       normalized.source.enableTabIndent,
       {
         help: this.t('configModal.basic.tabIndent.help'),
@@ -366,10 +367,9 @@ export class ConfigModal extends Modal {
     );
     this.createToggleField(
       this.t('configModal.basic.wheelZoom'),
-      ['interaction', 'wheelZoom'],
+      ['basic', 'wheelZoom'],
       normalized.interaction.wheelZoom,
       {
-        omitWhenFalse: true,
         help: this.t('configModal.basic.wheelZoom.help'),
       }
     );
@@ -383,13 +383,13 @@ export class ConfigModal extends Modal {
     this.createSection(this.t('configModal.theme.section'));
     const themeField = this.createSelectTextField(
       this.t('configModal.theme.scheme'),
-      ['theme'],
+      ['theme', 'scheme'],
       normalized.theme,
       this.themeOptions()
     );
     const colorField = this.createColorTextField(
       this.t('configModal.theme.defaultTopicColor'),
-      ['topic', 'defaultColor'],
+      ['theme', 'defaultTopicColor'],
       normalized.topic.defaultColor,
       this.t('configModal.theme.defaultTopicColor.help')
     );
@@ -418,7 +418,7 @@ export class ConfigModal extends Modal {
     this.createSection(this.t('configModal.layout.section'));
     const layoutSelect = this.createSelectField(
       this.t('configModal.layout.type'),
-      ['layout'],
+      ['layout', 'type'],
       normalized.layout,
       this.layoutOptionGroups()
     );
@@ -430,7 +430,7 @@ export class ConfigModal extends Modal {
     if (this.isConnectorStyleConfigurable(normalized.layout)) {
       const connectorSelect = this.createSelectField(
         this.t('configModal.layout.connectorStyle'),
-        ['connector', 'style'],
+        ['layout', 'connectorStyle'],
         normalized.connector.style,
         this.connectorOptions()
       );
@@ -444,7 +444,7 @@ export class ConfigModal extends Modal {
     if (this.isBranchExpansionConfigurable(normalized.layout, normalized.connector.style)) {
       this.createSelectField(
         this.t('configModal.layout.branchExpansion'),
-        ['branch', 'expansion'],
+        ['layout', 'branchExpansion'],
         normalized.branch.expansion,
         this.branchExpansionOptions()
       );
@@ -460,7 +460,7 @@ export class ConfigModal extends Modal {
    * 创建主题最大宽度配置组。
    *
    * 实现逻辑：
-   * 全局值写入 topic.maxWidth；一级到三级主题写入 topic.levels.N.maxWidth。
+   * 全局值写入 layout.topicMaxWidth.global；一级到三级主题写入 level1/level2/level3。
    * 级别输入留空时不写配置，渲染时自然继承全局主题最大宽度。
    */
   createTopicMaxWidthGroup(normalized) {
@@ -473,7 +473,7 @@ export class ConfigModal extends Modal {
 
     this.createNumberField(
       this.t('configModal.layout.topicMaxWidthGlobal'),
-      ['topic', 'maxWidth'],
+      ['layout', 'topicMaxWidth', 'global'],
       normalized.topic.maxWidth,
       {
         ...inputOptions,
@@ -482,9 +482,10 @@ export class ConfigModal extends Modal {
     );
 
     for (const level of ['1', '2', '3']) {
+      const levelKey = `level${level}`;
       this.createNumberField(
         this.t(`configModal.layout.topicMaxWidthLevel${level}`),
-        ['topic', 'levels', level, 'maxWidth'],
+        ['layout', 'topicMaxWidth', levelKey],
         '',
         {
           ...inputOptions,
@@ -561,7 +562,7 @@ export class ConfigModal extends Modal {
     this.advancedInputEl.value = stringifyDraftConfig(this.draftConfig);
     this.advancedInputEl.addEventListener('input', () => {
       try {
-        this.draftConfig = parseDraftConfigText(this.advancedInputEl.value);
+        this.draftConfig = canonicalizeMindConfig(parseDraftConfigText(this.advancedInputEl.value));
         this.updateStatus(this.t('configModal.status.valid'));
       } catch (error) {
         this.updateStatus(
@@ -577,6 +578,7 @@ export class ConfigModal extends Modal {
    * 创建层级字体配置组。
    */
   createLevelFontGroup(level) {
+    const levelKey = `level${level}`;
     const groupEl = this.formEl.createDiv({ cls: 'yonxao-mindmap-config-level' });
     const titleEl = groupEl.createDiv({ cls: 'yonxao-mindmap-config-level-title' });
     titleEl.setText(this.t('configModal.font.levelTitle', { marks: '#'.repeat(Number(level)) }));
@@ -586,30 +588,25 @@ export class ConfigModal extends Modal {
     });
     clearButton.type = 'button';
     clearButton.addEventListener('click', () => {
-      deleteConfigValue(this.draftConfig, ['font', 'levels', level]);
+      deleteConfigValue(this.draftConfig, ['font', levelKey]);
       this.render();
     });
 
-    this.createNumberField(this.t('configModal.font.size'), ['font', 'levels', level, 'size'], '', {
+    this.createNumberField(this.t('configModal.font.size'), ['font', levelKey, 'size'], '', {
       min: FONT_SIZE_MIN,
       max: FONT_SIZE_MAX,
       step: 1,
       parentEl: groupEl,
     });
-    this.createNumberField(
-      this.t('configModal.font.weight'),
-      ['font', 'levels', level, 'weight'],
-      '',
-      {
-        min: FONT_WEIGHT_MIN,
-        max: FONT_WEIGHT_MAX,
-        step: 10,
-        parentEl: groupEl,
-      }
-    );
+    this.createNumberField(this.t('configModal.font.weight'), ['font', levelKey, 'weight'], '', {
+      min: FONT_WEIGHT_MIN,
+      max: FONT_WEIGHT_MAX,
+      step: 10,
+      parentEl: groupEl,
+    });
     this.createNumberField(
       this.t('configModal.font.lineHeight'),
-      ['font', 'levels', level, 'lineHeight'],
+      ['font', levelKey, 'lineHeight'],
       '',
       {
         min: FONT_LINE_HEIGHT_MIN,
@@ -620,7 +617,7 @@ export class ConfigModal extends Modal {
     );
     this.createFontFamilyField(
       this.t('configModal.font.family'),
-      ['font', 'levels', level, 'family'],
+      ['font', levelKey, 'family'],
       '',
       {
         parentEl: groupEl,
@@ -934,9 +931,10 @@ export class ConfigModal extends Modal {
     }
 
     if (this.activeTab === 'advanced' && this.advancedInputEl) {
-      this.draftConfig = parseDraftConfigText(this.advancedInputEl.value);
+      this.draftConfig = canonicalizeMindConfig(parseDraftConfigText(this.advancedInputEl.value));
     }
 
+    this.draftConfig = canonicalizeMindConfig(this.draftConfig);
     const saved = await this.onApply(cloneConfig(this.draftConfig));
     if (!saved) return;
 
@@ -1149,8 +1147,8 @@ export class ConfigModal extends Modal {
    * 判断是否需要提示“默认主题颜色会覆盖彩虹主题自动配色”。
    */
   shouldWarnDefaultColorOverridesTheme() {
-    const theme = String(getConfigValue(this.draftConfig, ['theme'], '') || '').trim();
-    const defaultColor = getConfigValue(this.draftConfig, ['topic', 'defaultColor'], '');
+    const theme = String(getConfigValue(this.draftConfig, ['theme', 'scheme'], '') || '').trim();
+    const defaultColor = getConfigValue(this.draftConfig, ['theme', 'defaultTopicColor'], '');
     const hasDefaultColor =
       typeof defaultColor === 'string'
         ? defaultColor.trim() !== ''

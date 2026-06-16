@@ -14,6 +14,7 @@
 import { Notice, PluginSettingTab, Setting } from 'obsidian';
 
 import {
+  canonicalizeMindConfig,
   deleteMindConfigPath,
   hasMeaningfulConfig,
   normalizeMindConfig,
@@ -132,7 +133,7 @@ export class YonxaoMindmapSettingTab extends PluginSettingTab {
    * 其余字段保持原样，让用户可以用高级 YAML 自己填写插件支持的配置项。
    */
   sanitizeGlobalDefaultConfig(config) {
-    return deleteMindConfigPath(config || {}, ['view', 'mode']);
+    return deleteMindConfigPath(canonicalizeMindConfig(config || {}), ['view', 'mode']);
   }
 
   /*
