@@ -19,10 +19,21 @@
  * 英文优先按单词拆，中文或无空格文本按字符切分。
  */
 export function wrapTopicText(text, maxUnits) {
-  const normalized = String(text).replace(/\s+/g, ' ').trim();
-  if (!normalized) return ['Untitled'];
+  const hardLines = normalizeHardLines(text);
+  if (!hardLines.length) return ['Untitled'];
 
-  // 英文优先按单词换行；没有空格的中文文本则按字符切分。
+  return hardLines.flatMap((line) => wrapSingleTopicLine(line, maxUnits));
+}
+
+/*
+ * 作用：
+ * 把单个硬换行段拆成视觉宽度合适的多行。
+ */
+function wrapSingleTopicLine(text, maxUnits) {
+  const normalized = normalizeHorizontalWhitespace(text);
+  if (!normalized) return [];
+
+  // 英文优先按单词自动折行；中文或无空格文本则按字符切分。
   const words = normalized.includes(' ') ? normalized.split(' ') : Array.from(normalized);
   const lines = [];
   let line = '';
@@ -58,8 +69,19 @@ export function wrapTopicText(text, maxUnits) {
  * 这里使用偏保守的字体宽度估算，避免宋体、粗体、大字号时文字溢出主题框。
  */
 export function wrapTopicTextByWidth(text, maxWidth, font) {
-  const normalized = String(text).replace(/\s+/g, ' ').trim();
-  if (!normalized) return ['Untitled'];
+  const hardLines = normalizeHardLines(text);
+  if (!hardLines.length) return ['Untitled'];
+
+  return hardLines.flatMap((line) => wrapSingleTopicLineByWidth(line, maxWidth, font));
+}
+
+/*
+ * 作用：
+ * 按像素宽度拆分单个硬换行段。
+ */
+function wrapSingleTopicLineByWidth(text, maxWidth, font) {
+  const normalized = normalizeHorizontalWhitespace(text);
+  if (!normalized) return [];
 
   const words = normalized.includes(' ') ? normalized.split(' ') : Array.from(normalized);
   const lines = [];
@@ -89,11 +111,36 @@ export function wrapTopicTextByWidth(text, maxWidth, font) {
 
 /*
  * 作用：
- * 把编辑器里的多行输入归一成 yxmm 主题级别标记可安全保存的一行文本。
+ * 只把真实换行作为硬换行；空格、两个空格或 Tab 都只算行内空白。
+ */
+function normalizeHardLines(text) {
+  return String(text || '')
+    .replace(/\r\n/g, '\n')
+    .split('\n')
+    .map((line) => normalizeHorizontalWhitespace(line))
+    .filter(Boolean);
+}
+
+/*
+ * 作用：
+ * 归一化行内空白，但不把空白当成换行语义。
+ */
+function normalizeHorizontalWhitespace(text) {
+  return String(text || '')
+    .replace(/[^\S\r\n]+/g, ' ')
+    .trim();
+}
+
+/*
+ * 作用：
+ * 把编辑器里的主题文本归一成 yxmm 正文区可安全保存的文本。
  */
 export function normalizeTopicTextForStorage(text) {
   return String(text || '')
-    .replace(/\s*\r?\n+\s*/g, ' ')
+    .replace(/\r\n/g, '\n')
+    .split('\n')
+    .map((line) => line.trim())
+    .join('\n')
     .trim();
 }
 

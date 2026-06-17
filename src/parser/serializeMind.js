@@ -52,9 +52,12 @@ export function serializeMindDocument(root, rawConfig, forceConfig) {
 export function serializeTopic(topic, depth) {
   const topicLevelMarker = '#'.repeat(depth + 1);
   const topicAttributes = serializeTopicAttributes(topic.attributes);
-  const currentLine = `${topicLevelMarker} ${topic.text}${topicAttributes}`;
+  const textLines = String(topic.text || '').split(/\r?\n/);
+  const firstTextLine = textLines.shift() || '';
+  const currentLine = `${topicLevelMarker} ${firstTextLine}${topicAttributes}`;
+  const continuationLines = textLines.map((line) => line.trimEnd());
   const subtopicLines = topic.subtopics.map((subtopic) => serializeTopic(subtopic, depth + 1));
-  return [currentLine, ...subtopicLines].join('\n');
+  return [currentLine, ...continuationLines, ...subtopicLines].join('\n');
 }
 
 /*

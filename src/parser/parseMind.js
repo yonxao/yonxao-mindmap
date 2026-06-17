@@ -61,18 +61,25 @@ export function parseMindDocument(source) {
 export function parseTopicMind(lines) {
   const roots = [];
   const stack = [];
+  let currentTopic = null;
 
   // 主题级别标记语法解析：
   // # 是中心主题，## 是二级主题，### 是三级主题。
   // 这里不限制 # 的数量，因为内容在代码块里，属于 yxmm 自己的 DSL；
-  // 这样深层级也不用依赖空格缩进，源码里始终只有一套清晰的层级规则。
+  // 这样深层级也不用依赖空格缩进。非 # 开头的普通文本行会并入最近一个主题，
+  // 用来表达多行主题内容，让正文区长文本更容易阅读。
   for (let lineIndex = 0; lineIndex < lines.length; lineIndex += 1) {
     const rawLine = lines[lineIndex];
     if (!rawLine.trim()) continue;
 
     const topicLine = matchTopicLevelLine(rawLine.trim());
     if (!topicLine) {
-      throw new Error(`第 ${lineIndex + 1} 行不是 主题级别标记，请使用 #、##、### 表示主题层级。`);
+      if (!currentTopic) {
+        throw new Error(`第 ${lineIndex + 1} 行不是主题内容行，请先使用 #、##、### 创建主题。`);
+      }
+
+      currentTopic.text = `${currentTopic.text}\n${rawLine.trim()}`;
+      continue;
     }
 
     const level = topicLine.level;
@@ -93,6 +100,7 @@ export function parseTopicMind(lines) {
     }
 
     stack.push({ level, topic });
+    currentTopic = topic;
   }
 
   return buildRootFromRoots(roots);
