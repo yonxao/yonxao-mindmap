@@ -108,6 +108,8 @@ const DOCUMENT_CONFIG_DEFAULT_PRUNE_PATHS = Object.freeze([
   ['font', 'lineHeight'],
 ]);
 
+let sourceViewIdCounter = 0;
+
 export class YonxaoMindmapRenderer extends Component {
   static viewModeMemory = new Map();
 
@@ -136,6 +138,11 @@ export class YonxaoMindmapRenderer extends Component {
     this.sourceEl = null;
     this.heightResizeHandleEl = null;
     this.sourceInputEl = null;
+    this.sourceConfigInputEl = null;
+    this.sourceTabButtons = null;
+    this.sourceActiveTab = 'body';
+    sourceViewIdCounter += 1;
+    this.sourceViewIdPrefix = `yonxao-mindmap-source-${sourceViewIdCounter}`;
     this.sourceStatusEl = null;
     this.topicEditorEl = null;
     this.topicEditorFields = null;
@@ -1014,7 +1021,7 @@ export class YonxaoMindmapRenderer extends Component {
       let document;
 
       try {
-        document = parseMindDocument(this.sourceInputEl.value);
+        document = parseMindDocument(this.composeSourceFromSourceInputs());
       } catch (error) {
         new Notice(`yonxao-mindmap: 源码解析失败，暂未保存配置：${error.message || String(error)}`);
         this.updateSourceStatus('源码解析失败，请修正后再保存配置。');
@@ -1324,43 +1331,97 @@ export class YonxaoMindmapRenderer extends Component {
    * textarea 负责真实编辑；保存状态栏提示源码是否已同步回 Markdown。
    */
   createSourceView() {
-    // 源码模式从只读 <pre><code> 改成可编辑的 textarea。
-    // textarea 的优点是实现简单、浏览器兼容性好，并且不会把用户输入当作 HTML 解析。
     this.sourceEl = document.createElement('div');
     this.sourceEl.className = 'yonxao-mindmap-source';
+
+    const tabListEl = document.createElement('div');
+    tabListEl.className = 'yonxao-mindmap-source-tabs';
+    tabListEl.setAttribute('role', 'tablist');
+
+    this.sourceTabButtons = {
+      config: this.createSourceTabButton('config', this.t('source.tab.config')),
+      body: this.createSourceTabButton('body', this.t('source.tab.body')),
+    };
+    tabListEl.appendChild(this.sourceTabButtons.config);
+    tabListEl.appendChild(this.sourceTabButtons.body);
 
     const editorEl = document.createElement('div');
     editorEl.className = 'yonxao-mindmap-source-editor';
 
+    this.sourceConfigInputEl = document.createElement('textarea');
+    this.sourceConfigInputEl.className =
+      'yonxao-mindmap-source-input yonxao-mindmap-source-config-input';
+    this.sourceConfigInputEl.spellcheck = false;
+    this.sourceConfigInputEl.wrap = 'off';
+    this.sourceConfigInputEl.id = `${this.sourceViewIdPrefix}-config`;
+    this.sourceConfigInputEl.setAttribute('aria-label', this.t('source.tab.config'));
+    this.sourceConfigInputEl.setAttribute('role', 'tabpanel');
+
     this.sourceInputEl = document.createElement('textarea');
-    this.sourceInputEl.className = 'yonxao-mindmap-source-input';
+    this.sourceInputEl.className = 'yonxao-mindmap-source-input yonxao-mindmap-source-body-input';
     this.sourceInputEl.spellcheck = false;
     this.sourceInputEl.wrap = 'off';
-    this.sourceInputEl.value = this.source;
+    this.sourceInputEl.id = `${this.sourceViewIdPrefix}-body`;
+    this.sourceInputEl.setAttribute('aria-label', this.t('source.tab.body'));
+    this.sourceInputEl.setAttribute('role', 'tabpanel');
+
+    this.syncSourceInput();
     this.sourceLineCount = this.sourceInputLineCount();
-    this.sourceInputEl.setAttribute('aria-label', 'yxmm source');
 
     this.sourceStatusEl = document.createElement('div');
     this.sourceStatusEl.className = 'yonxao-mindmap-source-status';
     this.sourceStatusEl.textContent = this.t('source.status.editable');
 
+    editorEl.appendChild(this.sourceConfigInputEl);
     editorEl.appendChild(this.sourceInputEl);
+    this.sourceEl.appendChild(tabListEl);
     this.sourceEl.appendChild(editorEl);
     this.sourceEl.appendChild(this.sourceStatusEl);
     this.containerEl.appendChild(this.sourceEl);
 
-    this.registerDomEvent(this.sourceInputEl, 'input', () => {
-      this.sourceDirty = this.sourceInputEl.value !== this.source;
+    this.installSourceInputEvents(this.sourceConfigInputEl, 'config');
+    this.installSourceInputEvents(this.sourceInputEl, 'body');
+    this.setSourceActiveTab('body', { focus: false });
+  }
+
+  /*
+   * 作用：
+   * 创建源码模式的“配置区 / 正文区”标签按钮。
+   */
+  createSourceTabButton(tab, label) {
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.className = 'yonxao-mindmap-source-tab';
+    button.textContent = label;
+    button.setAttribute('role', 'tab');
+    button.setAttribute('aria-controls', `${this.sourceViewIdPrefix}-${tab}`);
+    this.registerDomEvent(button, 'click', (event) => {
+      event.preventDefault();
+      event.stopPropagation();
+      this.setSourceActiveTab(tab, { focus: true });
+    });
+    return button;
+  }
+
+  /*
+   * 作用：
+   * 注册源码模式 textarea 的输入和保存快捷键。
+   */
+  installSourceInputEvents(inputEl, tab) {
+    this.registerDomEvent(inputEl, 'input', () => {
+      this.sourceDirty = this.composeSourceFromSourceInputs() !== this.source;
       this.updateSourceStatus();
-      this.scheduleSourceModeHeightIfLineCountChanged();
+      if (tab === this.sourceActiveTab) {
+        this.scheduleSourceModeHeightIfLineCountChanged();
+      }
     });
 
-    this.registerDomEvent(this.sourceInputEl, 'keydown', (event) => {
-      if (event.key === 'Tab') {
+    this.registerDomEvent(inputEl, 'keydown', (event) => {
+      if (tab === 'body' && event.key === 'Tab') {
         if (!this.config.source.enableTabIndent) return;
         event.preventDefault();
         applyTopicLevelKey(this.sourceInputEl, event.shiftKey);
-        this.sourceDirty = this.sourceInputEl.value !== this.source;
+        this.sourceDirty = this.composeSourceFromSourceInputs() !== this.source;
         this.updateSourceStatus();
         this.scheduleSourceModeHeightIfLineCountChanged();
         return;
@@ -1374,6 +1435,32 @@ export class YonxaoMindmapRenderer extends Component {
         });
       }
     });
+  }
+
+  /*
+   * 作用：
+   * 切换源码模式中当前显示的编辑页。
+   */
+  setSourceActiveTab(tab, options = {}) {
+    const nextTab = tab === 'config' ? 'config' : 'body';
+    this.sourceActiveTab = nextTab;
+
+    for (const [key, button] of Object.entries(this.sourceTabButtons || {})) {
+      const isActive = key === nextTab;
+      button.classList.toggle('is-active', isActive);
+      button.setAttribute('aria-selected', String(isActive));
+      button.tabIndex = isActive ? 0 : -1;
+    }
+
+    this.sourceConfigInputEl?.classList.toggle('is-active', nextTab === 'config');
+    this.sourceInputEl?.classList.toggle('is-active', nextTab === 'body');
+    this.sourceLineCount = this.sourceInputLineCount();
+    this.scheduleSourceModeHeight();
+
+    if (options.focus) {
+      const inputEl = this.activeSourceInputEl();
+      inputEl?.focus();
+    }
   }
 
   /*
@@ -1529,10 +1616,70 @@ export class YonxaoMindmapRenderer extends Component {
    */
   syncSourceInput() {
     if (!this.sourceInputEl) return;
-    this.sourceInputEl.value = this.source;
+    const sections = this.splitSourceForEditor(this.source);
+    if (this.sourceConfigInputEl) {
+      this.sourceConfigInputEl.value = sections.config;
+    }
+    this.sourceInputEl.value = sections.body;
     this.sourceLineCount = this.sourceInputLineCount();
     this.sourceDirty = false;
     this.updateSourceStatus();
+  }
+
+  /*
+   * 作用：
+   * 把完整 yxmm 源码拆成配置区和正文区，供源码模式双标签显示。
+   */
+  splitSourceForEditor(source) {
+    const text = String(source || '');
+    const lines = text.split(/\r?\n/);
+    const firstContentIndex = lines.findIndex((line) => line.trim() !== '');
+
+    if (firstContentIndex === -1 || lines[firstContentIndex].trim() !== '---') {
+      return {
+        config: '',
+        body: text,
+      };
+    }
+
+    const endIndex = lines.findIndex(
+      (line, index) => index > firstContentIndex && line.trim() === '---'
+    );
+    if (endIndex === -1) {
+      return {
+        config: '',
+        body: text,
+      };
+    }
+
+    return {
+      config: lines.slice(firstContentIndex + 1, endIndex).join('\n'),
+      body: [...lines.slice(0, firstContentIndex), ...lines.slice(endIndex + 1)]
+        .join('\n')
+        .trimStart(),
+    };
+  }
+
+  /*
+   * 作用：
+   * 把源码模式两个编辑区重新组合成完整 yxmm 源码。
+   */
+  composeSourceFromSourceInputs() {
+    const configText = String(this.sourceConfigInputEl?.value || '').trim();
+    const bodyText = String(this.sourceInputEl?.value || '').trim();
+    if (!configText) return bodyText;
+
+    return ['---', configText, '---', '', bodyText].join('\n').trimEnd();
+  }
+
+  /*
+   * 作用：
+   * 返回源码模式当前可见的 textarea。
+   */
+  activeSourceInputEl() {
+    return this.sourceActiveTab === 'config' && this.sourceConfigInputEl
+      ? this.sourceConfigInputEl
+      : this.sourceInputEl;
   }
 
   /*
@@ -1593,7 +1740,8 @@ export class YonxaoMindmapRenderer extends Component {
    * 这个高度只是源码模式临时视图高度，不会写入 canvas.height。
    */
   applySourceModeHeight() {
-    if (!this.isSourceMode || !this.containerEl || !this.sourceEl || !this.sourceInputEl) {
+    const activeInputEl = this.activeSourceInputEl();
+    if (!this.isSourceMode || !this.containerEl || !this.sourceEl || !activeInputEl) {
       return;
     }
 
@@ -1607,7 +1755,7 @@ export class YonxaoMindmapRenderer extends Component {
     this.manualSourceHeight = false;
 
     const sourceStyle = window.getComputedStyle(this.sourceEl);
-    const inputStyle = window.getComputedStyle(this.sourceInputEl);
+    const inputStyle = window.getComputedStyle(activeInputEl);
     const sourcePadding =
       parseFloat(sourceStyle.paddingTop || '0') + parseFloat(sourceStyle.paddingBottom || '0');
     const sourceGap = parseFloat(sourceStyle.gap || '0');
@@ -1634,8 +1782,9 @@ export class YonxaoMindmapRenderer extends Component {
    * 统计源码 textarea 的行数。
    */
   sourceInputLineCount() {
-    if (!this.sourceInputEl) return 1;
-    return Math.max(1, this.sourceInputEl.value.split(/\r?\n/).length);
+    const inputEl = this.activeSourceInputEl();
+    if (!inputEl) return 1;
+    return Math.max(1, inputEl.value.split(/\r?\n/).length);
   }
 
   /*
@@ -1648,7 +1797,7 @@ export class YonxaoMindmapRenderer extends Component {
   async saveFromSourceView() {
     if (!this.sourceInputEl) return false;
 
-    const nextSource = this.sourceInputEl.value;
+    const nextSource = this.composeSourceFromSourceInputs();
     let nextDocument;
 
     // 保存源码前先解析一次。这样用户写错标题层级或属性时，文件不会被插件写成不可渲染状态。
@@ -3059,7 +3208,7 @@ export class YonxaoMindmapRenderer extends Component {
   buildRuntimeDocumentForSave() {
     if (this.isSourceMode && this.sourceInputEl) {
       try {
-        const document = parseMindDocument(this.sourceInputEl.value);
+        const document = parseMindDocument(this.composeSourceFromSourceInputs());
         return {
           root: document.root,
           body: document.body,

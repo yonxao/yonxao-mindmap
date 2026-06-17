@@ -36,14 +36,52 @@
 
 /*
  * 作用：
+ * 源码模式的配置区/正文区标签栏。
+ */
+.yonxao-mindmap-source-tabs {
+  display: flex;
+  flex: 0 0 auto;
+  gap: 6px;
+  align-items: center;
+}
+
+/*
+ * 作用：
+ * 源码模式标签按钮。
+ */
+.yonxao-mindmap-source-tab {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 28px;
+  padding: 4px 12px;
+  color: var(--text-muted);
+  border: 0;
+  border-radius: 6px;
+  background: var(--background-modifier-hover);
+  font-size: var(--font-small);
+  line-height: 1.4;
+  cursor: pointer;
+}
+
+/*
+ * 作用：
+ * 当前源码标签页。
+ */
+.yonxao-mindmap-source-tab.is-active {
+  color: var(--text-on-accent);
+  background: var(--interactive-accent);
+}
+
+/*
+ * 作用：
  * 源码 textarea，承担 yxmm 文本编辑。
  *
  * 关键点：
  * white-space: pre 与 wrap=off 配合，保持 主题级别标记源码的原始排版。
  */
 .yonxao-mindmap-source-input {
-  position: relative;
-  z-index: 1;
+  display: none;
   width: 100%;
   height: 100%;
   min-height: 0;
@@ -60,6 +98,14 @@
   line-height: 1.55;
   tab-size: 4;
   white-space: pre;
+}
+
+/*
+ * 作用：
+ * 只显示当前标签页对应的 textarea。
+ */
+.yonxao-mindmap-source-input.is-active {
+  display: block;
 }
 
 /*
