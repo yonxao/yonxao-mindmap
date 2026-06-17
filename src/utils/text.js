@@ -16,7 +16,7 @@
  * 把主题标题拆成适合 SVG 渲染的多行文本。
  *
  * 实现逻辑：
- * 英文优先按单词拆，中文或无空格文本按字符切分。
+ * 英文优先按单词拆，中文和中英文混排按字符切分。
  */
 export function wrapTopicText(text, maxUnits) {
   const hardLines = normalizeHardLines(text);
@@ -33,17 +33,18 @@ function wrapSingleTopicLine(text, maxUnits) {
   const normalized = normalizeHorizontalWhitespace(text);
   if (!normalized) return [];
 
-  // 英文优先按单词自动折行；中文或无空格文本则按字符切分。
-  const words = normalized.includes(' ') ? normalized.split(' ') : Array.from(normalized);
+  // 英文优先按单词自动折行；中文或中英文混排时，空格只作为普通行内字符。
+  const wrapByWords = shouldWrapByWords(normalized);
+  const words = wrapByWords ? normalized.split(' ') : Array.from(normalized);
   const lines = [];
   let line = '';
 
   for (const word of words) {
-    const separator = normalized.includes(' ') && line ? ' ' : '';
+    const separator = wrapByWords && line ? ' ' : '';
     const next = line ? `${line}${separator}${word}` : word;
 
     if (line && visualUnits(next) > maxUnits) {
-      lines.push(line);
+      pushWrappedLine(lines, line);
       line = word;
     } else {
       line = next;
@@ -51,12 +52,12 @@ function wrapSingleTopicLine(text, maxUnits) {
 
     while (visualUnits(line) > maxUnits) {
       const split = splitByUnits(line, maxUnits);
-      lines.push(split.head);
-      line = split.tail;
+      pushWrappedLine(lines, split.head);
+      line = trimLineStart(split.tail);
     }
   }
 
-  if (line) lines.push(line);
+  pushWrappedLine(lines, line);
   return lines;
 }
 
@@ -83,16 +84,17 @@ function wrapSingleTopicLineByWidth(text, maxWidth, font) {
   const normalized = normalizeHorizontalWhitespace(text);
   if (!normalized) return [];
 
-  const words = normalized.includes(' ') ? normalized.split(' ') : Array.from(normalized);
+  const wrapByWords = shouldWrapByWords(normalized);
+  const words = wrapByWords ? normalized.split(' ') : Array.from(normalized);
   const lines = [];
   let line = '';
 
   for (const word of words) {
-    const separator = normalized.includes(' ') && line ? ' ' : '';
+    const separator = wrapByWords && line ? ' ' : '';
     const next = line ? `${line}${separator}${word}` : word;
 
     if (line && estimateTopicTextWidth(next, font) > maxWidth) {
-      lines.push(line);
+      pushWrappedLine(lines, line);
       line = word;
     } else {
       line = next;
@@ -100,12 +102,12 @@ function wrapSingleTopicLineByWidth(text, maxWidth, font) {
 
     while (estimateTopicTextWidth(line, font) > maxWidth) {
       const split = splitByEstimatedWidth(line, maxWidth, font);
-      lines.push(split.head);
-      line = split.tail;
+      pushWrappedLine(lines, split.head);
+      line = trimLineStart(split.tail);
     }
   }
 
-  if (line) lines.push(line);
+  pushWrappedLine(lines, line);
   return lines;
 }
 
@@ -129,6 +131,31 @@ function normalizeHorizontalWhitespace(text) {
   return String(text || '')
     .replace(/[^\S\r\n]+/g, ' ')
     .trim();
+}
+
+/*
+ * 作用：
+ * 只有纯英文/拉丁文本才按单词折行；中文文本里的空格不能提前截断一整行。
+ */
+function shouldWrapByWords(text) {
+  return text.includes(' ') && !hasCjkOrFullWidth(text);
+}
+
+function hasCjkOrFullWidth(text) {
+  return /[\u2e80-\u9fff\uff00-\uffef]/.test(text);
+}
+
+function pushWrappedLine(lines, line) {
+  const normalized = trimLineEnd(line);
+  if (normalized) lines.push(normalized);
+}
+
+function trimLineStart(text) {
+  return String(text || '').replace(/^[^\S\r\n]+/, '');
+}
+
+function trimLineEnd(text) {
+  return String(text || '').replace(/[^\S\r\n]+$/, '');
 }
 
 /*
