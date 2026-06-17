@@ -53,6 +53,7 @@ export const TOOLBAR_CORNERS = Object.freeze([
   'bottom-right',
 ]);
 export const TOOLBAR_PLACEMENTS = Object.freeze(['inside', 'outside']);
+export const VIEW_FIT_MODES = Object.freeze(['original', 'fit']);
 
 export const DEFAULT_FONT_FAMILY =
   "'Sarasa Mono SC', 'Noto Sans Mono CJK SC', 'Source Han Mono SC', 'Cascadia Mono', 'JetBrains Mono', 'Liberation Mono', monospace";
@@ -78,6 +79,7 @@ export const DEFAULT_MIND_CONFIG = Object.freeze({
   }),
   view: Object.freeze({
     mode: 'map',
+    fit: 'fit',
   }),
   theme: DEFAULT_THEME_NAME,
   layout: 'mindmap-right',
@@ -202,6 +204,7 @@ export function normalizeMindConfig(rawConfig) {
     view: {
       ...view,
       mode: normalizeViewMode(view.mode) || DEFAULT_MIND_CONFIG.view.mode,
+      fit: normalizeViewFit(basic.viewFit) || DEFAULT_MIND_CONFIG.view.fit,
     },
     theme: normalizeMindThemeName(theme.scheme),
     layout: normalizeLayoutType(layout.type) || DEFAULT_MIND_CONFIG.layout,
@@ -269,6 +272,7 @@ function normalizeRuntimeMindConfig(config) {
     view: {
       ...view,
       mode: normalizeViewMode(view.mode) || DEFAULT_MIND_CONFIG.view.mode,
+      fit: normalizeViewFit(view.fit) || DEFAULT_MIND_CONFIG.view.fit,
     },
     theme: normalizeMindThemeName(config.theme),
     layout: normalizeLayoutType(config.layout) || DEFAULT_MIND_CONFIG.layout,
@@ -335,6 +339,7 @@ export function canonicalizeMindConfig(rawConfig) {
   const basicToolbar = isPlainObject(basic.toolbar) ? basic.toolbar : {};
   setConfigValueIfPresent(next, ['basic', 'toolbar', 'corner'], basicToolbar.corner);
   setConfigValueIfPresent(next, ['basic', 'toolbar', 'placement'], basicToolbar.placement);
+  setConfigValueIfPresent(next, ['basic', 'viewFit'], basic.viewFit);
   setConfigValueIfPresent(next, ['basic', 'tabIndent'], basic.tabIndent);
   setConfigValueIfPresent(next, ['basic', 'wheelZoom'], basic.wheelZoom);
 
@@ -678,7 +683,7 @@ function configKeyOrder(path) {
     return ['basic', 'theme', 'layout', 'font'];
   }
   if (keyPath === 'basic') {
-    return ['canvasHeight', 'sourceHeight', 'toolbar', 'tabIndent', 'wheelZoom'];
+    return ['canvasHeight', 'sourceHeight', 'toolbar', 'viewFit', 'tabIndent', 'wheelZoom'];
   }
   if (keyPath === 'basic.toolbar') return ['corner', 'placement'];
   if (keyPath === 'theme') return ['scheme', 'defaultTopicColor'];
@@ -916,4 +921,13 @@ function normalizeViewMode(value) {
   const text = normalizeText(value).toLowerCase();
   if (text === 'map' || text === 'source') return text;
   return '';
+}
+
+/*
+ * 作用：
+ * 规范化打开导图时的视图适配方式。
+ */
+function normalizeViewFit(value) {
+  const text = normalizeText(value).toLowerCase();
+  return VIEW_FIT_MODES.includes(text) ? text : '';
 }

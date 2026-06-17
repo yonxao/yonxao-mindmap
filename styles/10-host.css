@@ -46,3 +46,27 @@
   background: var(--background-primary);
   overflow: hidden;
 }
+
+/*
+ * 作用：
+ * 浏览器全屏查看时，让当前导图成为完整工作区。
+ */
+.yonxao-mindmap-host.is-fullscreen,
+.yonxao-mindmap-host:fullscreen {
+  width: 100vw;
+  height: 100vh;
+  box-sizing: border-box;
+  padding: 16px;
+  background: var(--background-primary);
+  overflow: hidden;
+}
+
+/*
+ * 作用：
+ * 全屏状态下幕布填满可用空间，高度不再受普通阅读区限制。
+ */
+.yonxao-mindmap-host.is-fullscreen .yonxao-mindmap-container,
+.yonxao-mindmap-host:fullscreen .yonxao-mindmap-container {
+  height: calc(100vh - 32px) !important;
+  max-height: none;
+}

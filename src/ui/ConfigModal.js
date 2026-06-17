@@ -35,6 +35,7 @@ import {
   TOPIC_MAX_WIDTH_MIN,
   TOOLBAR_CORNERS,
   TOOLBAR_PLACEMENTS,
+  VIEW_FIT_MODES,
   canonicalizeMindConfig,
   mergeMindConfigObjects,
   normalizeMindConfig,
@@ -344,6 +345,15 @@ export class ConfigModal extends Modal {
         step: 10,
         placeholder: this.t('configModal.basic.placeholder.auto'),
         help: this.t('configModal.basic.canvasHeight.help'),
+      }
+    );
+    this.createSelectField(
+      this.t('configModal.basic.viewFit'),
+      ['basic', 'viewFit'],
+      normalized.view.fit,
+      this.viewFitOptions(),
+      {
+        help: this.t('configModal.basic.viewFit.help'),
       }
     );
     this.createNumberField(
@@ -691,8 +701,8 @@ export class ConfigModal extends Modal {
    * 作用：
    * 创建下拉选择框。
    */
-  createSelectField(label, path, value, options) {
-    const fieldEl = this.createField(label);
+  createSelectField(label, path, value, options, fieldOptions = {}) {
+    const fieldEl = this.createField(label, fieldOptions.parentEl, fieldOptions.help);
     this.applyInheritedValueStyle(fieldEl, path);
     const select = fieldEl.createEl('select');
     for (const optionConfig of options) {
@@ -1069,6 +1079,14 @@ export class ConfigModal extends Modal {
       ['pastel-rainbow', this.t('configModal.theme.pastelRainbow')],
       ['neon-rainbow', this.t('configModal.theme.neonRainbow')],
     ];
+  }
+
+  /*
+   * 作用：
+   * 返回打开导图时的视图适配选项。
+   */
+  viewFitOptions() {
+    return VIEW_FIT_MODES.map((mode) => [mode, this.t(`configModal.viewFit.${mode}`)]);
   }
 
   /*

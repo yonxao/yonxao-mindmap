@@ -222,6 +222,7 @@ src/config/mindConfig.js
 - `basic.canvasHeight`：导图幕布高度。
 - `basic.sourceHeight`：源码模式高度，和导图幕布高度分开保存。
 - `basic.toolbar.corner` / `basic.toolbar.placement`：悬浮工具栏吸附位置，角落可选四角，位置可选内侧或外侧。
+- `basic.viewFit`：打开导图时的视图适配方式，可选 `original`、`fit`，默认 `fit`。
 - `basic.tabIndent`：源码模式中是否启用 Tab 调整主题级别，默认开启。
 - `basic.wheelZoom`：是否启用鼠标滚轮缩放，默认关闭。
 - `view.mode`：当前代码块视图模式，通常为 `map` 或 `source`。

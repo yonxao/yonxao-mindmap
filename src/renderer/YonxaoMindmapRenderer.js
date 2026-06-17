@@ -94,6 +94,7 @@ const DOCUMENT_CONFIG_DEFAULT_PRUNE_PATHS = Object.freeze([
   ['basic', 'tabIndent'],
   ['basic', 'toolbar', 'corner'],
   ['basic', 'toolbar', 'placement'],
+  ['basic', 'viewFit'],
   ['basic', 'wheelZoom'],
   ['theme', 'scheme'],
   ['theme', 'defaultTopicColor'],
@@ -164,6 +165,8 @@ export class YonxaoMindmapRenderer extends Component {
     this.sourceDirty = false;
     this.editingTopicId = null;
     this.toggleViewButton = null;
+    this.viewFitButton = null;
+    this.fullscreenButton = null;
     this.mapActionButtons = [];
     this.suppressNextTopicClick = false;
     this.pendingFitFrame = null;
@@ -173,6 +176,8 @@ export class YonxaoMindmapRenderer extends Component {
     this.lastObservedContainerWidth = 0;
     this.sourceLineCount = 1;
     this.fitRetryCount = 0;
+    this.currentViewFitMode = null;
+    this.isFullscreen = false;
   }
 
   /*
@@ -182,6 +187,8 @@ export class YonxaoMindmapRenderer extends Component {
   onunload() {
     this.closeTopicEditor();
     this.closeInlineTextEditor(false);
+    this.hostEl?.classList.remove('is-fullscreen');
+    this.restoreToolbarToBody();
     if (this.topicEditorEl) {
       this.topicEditorEl.remove();
     }
@@ -488,9 +495,20 @@ export class YonxaoMindmapRenderer extends Component {
       this.openConfigModal();
     });
 
-    this.mapActionButtons.push(
-      this.createToolbarButton(toolbar, this.t('toolbar.fitView'), 'maximize', () => this.fitView())
+    this.viewFitButton = this.createToolbarButton(
+      toolbar,
+      this.t('toolbar.fitView'),
+      'maximize',
+      () => this.toggleViewFitMode()
     );
+    this.mapActionButtons.push(this.viewFitButton);
+    this.fullscreenButton = this.createToolbarButton(
+      toolbar,
+      this.t('toolbar.enterFullscreen'),
+      'maximize-2',
+      () => this.toggleFullscreen()
+    );
+    this.mapActionButtons.push(this.fullscreenButton);
     this.mapActionButtons.push(
       this.createToolbarButton(toolbar, this.t('toolbar.zoomIn'), 'zoom-in', () =>
         this.zoomAtCenter(0.82)
@@ -509,6 +527,10 @@ export class YonxaoMindmapRenderer extends Component {
     );
 
     this.updateToggleViewButton();
+    this.updateFullscreenButton();
+    if (typeof document !== 'undefined') {
+      this.registerDomEvent(document, 'fullscreenchange', () => this.handleFullscreenChange());
+    }
   }
 
   /*
@@ -1149,6 +1171,122 @@ export class YonxaoMindmapRenderer extends Component {
         ? this.t('toolbar.mapFallback')
         : this.t('toolbar.sourceFallback');
     }
+  }
+
+  /*
+   * 作用：
+   * 更新“适配视图 / 原始大小”切换按钮。
+   */
+  updateViewFitButton() {
+    if (!this.viewFitButton) return;
+
+    const isFit = this.currentViewFitMode === 'fit';
+    const label = isFit ? this.t('toolbar.originalSize') : this.t('toolbar.fitView');
+    const icon = isFit ? 'minimize' : 'maximize';
+    this.viewFitButton.setAttribute('aria-label', label);
+    this.viewFitButton.setAttribute('aria-pressed', String(isFit));
+    this.viewFitButton.textContent = '';
+
+    try {
+      setIcon(this.viewFitButton, icon);
+    } catch (_error) {
+      this.viewFitButton.textContent = label;
+    }
+  }
+
+  /*
+   * 作用：
+   * 根据当前全屏状态更新工具栏全屏按钮。
+   */
+  updateFullscreenButton() {
+    if (!this.fullscreenButton) return;
+
+    const label = this.isFullscreen
+      ? this.t('toolbar.exitFullscreen')
+      : this.t('toolbar.enterFullscreen');
+    const icon = this.isFullscreen ? 'minimize-2' : 'maximize-2';
+    this.fullscreenButton.setAttribute('aria-label', label);
+    this.fullscreenButton.setAttribute('aria-pressed', String(this.isFullscreen));
+    this.fullscreenButton.textContent = '';
+
+    try {
+      setIcon(this.fullscreenButton, icon);
+    } catch (_error) {
+      this.fullscreenButton.textContent = label;
+    }
+  }
+
+  /*
+   * 作用：
+   * 切换当前导图宿主的浏览器全屏状态。
+   */
+  async toggleFullscreen() {
+    if (!this.hostEl || typeof document === 'undefined') return;
+
+    if (document.fullscreenElement === this.hostEl) {
+      if (typeof document.exitFullscreen === 'function') {
+        await document.exitFullscreen();
+      }
+      return;
+    }
+
+    if (typeof this.hostEl.requestFullscreen !== 'function') {
+      new Notice('yonxao-mindmap: 当前环境不支持全屏查看。');
+      return;
+    }
+
+    this.moveToolbarIntoFullscreenHost();
+    this.hostEl.classList.add('is-fullscreen');
+    try {
+      await this.hostEl.requestFullscreen();
+    } catch (error) {
+      this.hostEl.classList.remove('is-fullscreen');
+      this.restoreToolbarToBody();
+      throw error;
+    }
+  }
+
+  /*
+   * 作用：
+   * 浏览器全屏状态变化后同步 DOM 状态和视图尺寸。
+   */
+  handleFullscreenChange() {
+    if (typeof document === 'undefined') return;
+
+    this.isFullscreen = document.fullscreenElement === this.hostEl;
+    this.hostEl?.classList.toggle('is-fullscreen', this.isFullscreen);
+
+    if (this.isFullscreen) {
+      this.moveToolbarIntoFullscreenHost();
+      this.showToolbar();
+    } else {
+      this.restoreToolbarToBody();
+    }
+
+    this.updateFullscreenButton();
+    this.scheduleFitView();
+    this.scheduleApplyToolbarPosition();
+  }
+
+  /*
+   * 作用：
+   * 全屏某个导图宿主时，body 下的工具栏不会显示；因此临时把它移入宿主。
+   */
+  moveToolbarIntoFullscreenHost() {
+    if (!this.toolbarEl || !this.hostEl || this.toolbarEl.parentElement === this.hostEl) return;
+
+    this.hostEl.appendChild(this.toolbarEl);
+  }
+
+  /*
+   * 作用：
+   * 退出全屏后恢复工具栏的 body 级浮层定位。
+   */
+  restoreToolbarToBody() {
+    if (!this.toolbarEl || typeof document === 'undefined') return;
+    if (this.toolbarEl.parentElement === document.body) return;
+
+    document.body.appendChild(this.toolbarEl);
   }
 
   /*
@@ -3055,6 +3193,7 @@ export class YonxaoMindmapRenderer extends Component {
       'basic.tabIndent': ['source', 'enableTabIndent'],
       'basic.toolbar.corner': ['toolbar', 'corner'],
       'basic.toolbar.placement': ['toolbar', 'placement'],
+      'basic.viewFit': ['view', 'fit'],
       'basic.wheelZoom': ['interaction', 'wheelZoom'],
       'theme.scheme': ['theme'],
       'theme.defaultTopicColor': ['topic', 'defaultColor'],
@@ -3332,7 +3471,7 @@ export class YonxaoMindmapRenderer extends Component {
     this.mapEl.appendChild(topicLayer);
 
     if (fitAfterRender || !this.viewBox) {
-      this.fitView(layout.bounds, options);
+      this.applyConfiguredViewFit(layout.bounds, options);
     }
 
     this.didInitialMapRender = true;
@@ -5856,7 +5995,169 @@ export class YonxaoMindmapRenderer extends Component {
 
   /*
    * 作用：
-   * 根据布局边界计算并应用适配视图的视口。
+   * 根据配置决定首次渲染时使用原始大小还是适配视图。
+   */
+  applyConfiguredViewFit(bounds, options = {}) {
+    if (this.config.view.fit === 'fit') {
+      this.fitView(bounds, options);
+      return;
+    }
+
+    this.showOriginalSizeView(bounds, options);
+  }
+
+  /*
+   * 作用：
+   * 工具栏按钮在适配视图和原始大小之间临时切换，不写入配置。
+   */
+  toggleViewFitMode() {
+    if (this.currentViewFitMode === 'fit') {
+      this.showOriginalSizeView(null, { preserveCanvasHeight: true });
+      return;
+    }
+
+    this.fitView();
+  }
+
+  /*
+   * 作用：
+   * 用原始大小显示导图，不为了塞进幕布而缩放整张 SVG。
+   */
+  showOriginalSizeView(bounds, options = {}) {
+    if (this.isSourceMode) {
+      this.scheduleSourceModeHeight();
+      return;
+    }
+
+    const currentBounds = bounds || layoutTree(this.root, this.collapsedIds, this.config).bounds;
+    if (!options.preserveCanvasHeight) {
+      this.updateOriginalSizeContainerHeight(currentBounds, options);
+    }
+
+    const rect = this.containerEl?.getBoundingClientRect();
+    if (!rect?.width || !rect?.height) {
+      if (this.fitRetryCount < 5) {
+        this.fitRetryCount += 1;
+        this.scheduleFitView();
+      }
+      return;
+    }
+    this.fitRetryCount = 0;
+
+    const focus = this.getRootFocusPoint(currentBounds);
+
+    this.viewBox = this.getOriginalSizeViewBox(currentBounds, rect, focus.x, focus.y);
+    this.currentViewFitMode = 'original';
+    this.applyViewBox();
+    this.updateViewFitButton();
+    this.scheduleApplyToolbarPosition();
+  }
+
+  /*
+   * 作用：
+   * 获取当前导图的视图焦点，优先使用中心主题位置。
+   */
+  getRootFocusPoint(bounds) {
+    const rootBox = this.root?._layout;
+    if (rootBox) {
+      return {
+        x: rootBox.x + rootBox.width / 2,
+        y: rootBox.y + rootBox.height / 2,
+      };
+    }
+
+    return {
+      x: (bounds.minX + bounds.maxX) / 2,
+      y: (bounds.minY + bounds.maxY) / 2,
+    };
+  }
+
+  /*
+   * 作用：
+   * 原始大小模式下不缩放文字，同时根据内容分布把中心主题放在更合适的视窗位置。
+   */
+  getOriginalSizeViewBox(bounds, rect, focusX, focusY) {
+    const width = rect.width;
+    const height = rect.height;
+    const minX = bounds.minX - VIEWBOX_MARGIN_X;
+    const maxX = bounds.maxX + VIEWBOX_MARGIN_X;
+    const minY = bounds.minY - VIEWBOX_MARGIN_Y;
+    const maxY = bounds.maxY + VIEWBOX_MARGIN_Y;
+    const leftSpan = Math.max(0, focusX - minX);
+    const rightSpan = Math.max(0, maxX - focusX);
+    const topSpan = Math.max(0, focusY - minY);
+    const bottomSpan = Math.max(0, maxY - focusY);
+
+    return {
+      x: this.getOriginalSizeAxisStart(
+        minX,
+        maxX,
+        width,
+        focusX,
+        this.getOriginalSizeFocusRatio(leftSpan, rightSpan)
+      ),
+      y: this.getOriginalSizeAxisStart(
+        minY,
+        maxY,
+        height,
+        focusY,
+        this.getOriginalSizeFocusRatio(topSpan, bottomSpan)
+      ),
+      width,
+      height,
+    };
+  }
+
+  /*
+   * 作用：
+   * 计算原始大小模式下某个轴的 viewBox 起点。
+   */
+  getOriginalSizeAxisStart(min, max, viewportSize, focus, focusRatio) {
+    const contentSize = max - min;
+    if (contentSize <= viewportSize) {
+      return min - (viewportSize - contentSize) / 2;
+    }
+
+    return clamp(focus - viewportSize * focusRatio, min, max - viewportSize);
+  }
+
+  /*
+   * 作用：
+   * 内容明显偏向一侧时，让中心主题偏向反方向，给内容更多可见空间。
+   */
+  getOriginalSizeFocusRatio(negativeSpan, positiveSpan) {
+    if (positiveSpan > negativeSpan * 1.25) return 0.32;
+    if (negativeSpan > positiveSpan * 1.25) return 0.68;
+    return 0.5;
+  }
+
+  /*
+   * 作用：
+   * 原始大小模式下根据导图实际高度调整幕布高度，但不通过改变 viewBox 来缩放文字。
+   */
+  updateOriginalSizeContainerHeight(bounds, options = {}) {
+    if (!this.containerEl || !bounds) return;
+
+    const contentHeight = bounds.maxY - bounds.minY + VIEWBOX_MARGIN_Y * 2;
+    const minHeight = TOPIC_MIN_HEIGHT + VIEWBOX_MARGIN_Y * 2;
+    const maxHeight = this.getAutoCanvasMaxHeight();
+    const nextHeight = clamp(contentHeight, minHeight, maxHeight);
+
+    if (this.manualCanvasHeight) {
+      const rect = this.containerEl.getBoundingClientRect();
+      const currentHeight = rect.height || Number.parseFloat(this.containerEl.style.height) || 0;
+      if (!options.growManualHeight || currentHeight >= nextHeight) return;
+
+      this.rawConfig = setMindConfigPath(this.rawConfig, ['basic', 'canvasHeight'], nextHeight);
+      this.refreshNormalizedConfig();
+    }
+
+    this.containerEl.style.height = `${Math.round(nextHeight)}px`;
+  }
+
+  /*
+   * 作用：
+   * 根据布局边界计算并应用适配视图的视口，适配视图始终完整展示整张导图。
    */
   fitView(bounds, options = {}) {
     if (this.isSourceMode) {
@@ -5865,31 +6166,49 @@ export class YonxaoMindmapRenderer extends Component {
     }
 
     const currentBounds = bounds || layoutTree(this.root, this.collapsedIds, this.config).bounds;
-    const width = Math.max(240, currentBounds.maxX - currentBounds.minX + VIEWBOX_MARGIN_X * 2);
-    const height = Math.max(
-      TOPIC_MIN_HEIGHT + VIEWBOX_MARGIN_Y * 2,
-      currentBounds.maxY - currentBounds.minY + VIEWBOX_MARGIN_Y * 2
-    );
+    const minX = currentBounds.minX - VIEWBOX_MARGIN_X;
+    const maxX = currentBounds.maxX + VIEWBOX_MARGIN_X;
+    const minY = currentBounds.minY - VIEWBOX_MARGIN_Y;
+    const maxY = currentBounds.maxY + VIEWBOX_MARGIN_Y;
+    const width = Math.max(240, maxX - minX);
+    const height = Math.max(TOPIC_MIN_HEIGHT + VIEWBOX_MARGIN_Y * 2, maxY - minY);
 
     this.viewBox = {
-      x: currentBounds.minX - VIEWBOX_MARGIN_X,
-      y: currentBounds.minY - VIEWBOX_MARGIN_Y,
+      x: minX,
+      y: minY,
       width,
       height,
     };
-    this.updateContainerHeight(width, height, options);
+    this.updateFitCanvasHeight(width, height, options);
+    this.currentViewFitMode = 'fit';
     this.applyViewBox();
+    this.updateViewFitButton();
+    this.scheduleApplyToolbarPosition();
   }
 
   /*
    * 作用：
-   * 根据 视口宽高比自动设置容器高度。
+   * 计算自动幕布高度的上限。
+   */
+  getAutoCanvasMaxHeight() {
+    const viewportHeight = typeof window === 'undefined' ? 800 : window.innerHeight;
+    if (this.isFullscreen) {
+      return Math.max(220, viewportHeight - 32);
+    }
+
+    return Math.min(560, Math.max(220, viewportHeight * 0.7));
+  }
+
+  /*
+   * 作用：
+   * 适配视图下按完整导图宽高比计算自动幕布高度。
    *
    * 实现逻辑：
-   * 如果用户手动拖过高度，普通重绘会完全尊重手动高度，哪怕它小于自动计算高度。
+   * 自动高度不再套普通阅读区上限，否则整图会为了塞进有限高度而被压小。
+   * 如果用户手动拖过高度，普通重绘会完全尊重手动高度。
    * 只有从源码切回导图这类明确传入 growManualHeight 的场景，才会在高度不够时自动增高。
    */
-  updateContainerHeight(viewBoxWidth, viewBoxHeight, options = {}) {
+  updateFitCanvasHeight(viewBoxWidth, viewBoxHeight, options = {}) {
     if (!this.containerEl || !viewBoxWidth || !viewBoxHeight) return;
 
     const rect = this.containerEl.getBoundingClientRect();
@@ -5902,37 +6221,55 @@ export class YonxaoMindmapRenderer extends Component {
     }
     this.fitRetryCount = 0;
 
-    const desiredHeight = Math.ceil((rect.width * viewBoxHeight) / viewBoxWidth);
     const minHeight = TOPIC_MIN_HEIGHT + VIEWBOX_MARGIN_Y * 2;
-    const viewportHeight = typeof window === 'undefined' ? 800 : window.innerHeight;
-    const maxHeight = Math.min(560, Math.max(220, viewportHeight * 0.7));
-    const nextHeight = clamp(desiredHeight, minHeight, maxHeight);
+    if (this.isFullscreen) {
+      return;
+    }
+
+    const desiredHeight = Math.ceil((rect.width * viewBoxHeight) / viewBoxWidth);
+    const nextHeight = Math.max(minHeight, desiredHeight);
 
     if (this.manualCanvasHeight) {
       const currentHeight = rect.height || Number.parseFloat(this.containerEl.style.height) || 0;
       if (!options.growManualHeight || currentHeight >= nextHeight) {
-        this.scheduleApplyToolbarPosition();
         return;
       }
 
-      this.rawConfig = setMindConfigPath(this.rawConfig, ['basic', 'canvasHeight'], nextHeight);
+      this.rawConfig = setMindConfigPath(
+        this.rawConfig,
+        ['basic', 'canvasHeight'],
+        Math.min(CANVAS_MAX_HEIGHT, nextHeight)
+      );
       this.refreshNormalizedConfig();
     }
 
     this.containerEl.style.height = `${nextHeight}px`;
-    this.scheduleApplyToolbarPosition();
   }
 
   /*
    * 作用：
-   * 延迟执行 fitView，等待 DOM 完成布局后再读取容器尺寸。
+   * 延迟重算当前视图，等待 DOM 完成布局后再读取容器尺寸。
    */
   scheduleFitView() {
     if (this.pendingFitFrame) return;
 
+    const refresh = () => {
+      if (this.currentViewFitMode === 'original') {
+        this.showOriginalSizeView(null, { preserveCanvasHeight: true });
+        return;
+      }
+
+      if (this.currentViewFitMode === 'fit') {
+        this.fitView();
+        return;
+      }
+
+      this.applyConfiguredViewFit();
+    };
+
     const run = () => {
       this.pendingFitFrame = null;
-      this.fitView();
+      refresh();
     };
 
     if (typeof window !== 'undefined' && typeof window.requestAnimationFrame === 'function') {
@@ -5940,7 +6277,7 @@ export class YonxaoMindmapRenderer extends Component {
         run();
         this.scheduleApplyToolbarPosition();
         window.setTimeout(() => {
-          this.fitView();
+          refresh();
           this.scheduleApplyToolbarPosition();
         }, 80);
       });

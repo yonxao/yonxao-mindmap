@@ -108,6 +108,9 @@ const BASE_LOCALE_MESSAGES = Object.freeze({
     'toolbar.mapFallback': 'Map',
     'toolbar.config': 'Config',
     'toolbar.fitView': 'Fit view',
+    'toolbar.originalSize': 'Original size',
+    'toolbar.enterFullscreen': 'Fullscreen',
+    'toolbar.exitFullscreen': 'Exit fullscreen',
     'toolbar.zoomIn': 'Zoom in',
     'toolbar.zoomOut': 'Zoom out',
     'toolbar.resetCollapse': 'Reset collapse state',
@@ -189,6 +192,9 @@ const BASE_LOCALE_MESSAGES = Object.freeze({
     'configModal.basic.canvasHeight': 'Map height',
     'configModal.basic.canvasHeight.help':
       'Leave empty for automatic height. Dragging the bottom canvas handle also writes this value.',
+    'configModal.basic.viewFit': 'View fit',
+    'configModal.basic.viewFit.help':
+      'Controls the initial zoom when the map opens. Original size keeps text visually stable; fit view tries to show the whole map.',
     'configModal.basic.sourceHeight': 'Source height',
     'configModal.basic.sourceHeight.help':
       'Source mode has an independent height and does not affect map height.',
@@ -209,6 +215,8 @@ const BASE_LOCALE_MESSAGES = Object.freeze({
     'configModal.basic.tabIndent': 'Tab key changes topic level',
     'configModal.basic.tabIndent.help':
       'When enabled, Tab and Shift+Tab in source mode adjust the current line topic level.',
+    'configModal.viewFit.original': 'Original size',
+    'configModal.viewFit.fit': 'Fit view',
 
     'configModal.theme.section': 'Theme',
     'configModal.theme.scheme': 'Theme scheme',
@@ -361,6 +369,9 @@ const BASE_LOCALE_MESSAGES = Object.freeze({
     'toolbar.mapFallback': '图',
     'toolbar.config': '配置',
     'toolbar.fitView': '适配视图',
+    'toolbar.originalSize': '原始大小',
+    'toolbar.enterFullscreen': '全屏查看',
+    'toolbar.exitFullscreen': '退出全屏',
     'toolbar.zoomIn': '放大',
     'toolbar.zoomOut': '缩小',
     'toolbar.resetCollapse': '重置折叠状态',
@@ -439,6 +450,9 @@ const BASE_LOCALE_MESSAGES = Object.freeze({
     'configModal.basic.section': '基础配置',
     'configModal.basic.canvasHeight': '导图高度',
     'configModal.basic.canvasHeight.help': '留空表示自动高度。拖动幕布底部也会写入这个值。',
+    'configModal.basic.viewFit': '视图适配',
+    'configModal.basic.viewFit.help':
+      '控制打开导图时的初始缩放方式。原始大小保持字号稳定；适配视图会尽量显示完整导图。',
     'configModal.basic.sourceHeight': '源码高度',
     'configModal.basic.sourceHeight.help': '源码模式独立高度，不影响导图高度。',
     'configModal.basic.toolbarCorner': '工具栏角落',
@@ -458,6 +472,8 @@ const BASE_LOCALE_MESSAGES = Object.freeze({
     'configModal.basic.tabIndent': 'Tab 键调整主题级别',
     'configModal.basic.tabIndent.help':
       '开启后，源码模式中按 Tab / Shift+Tab 会调整当前行的主题级别。',
+    'configModal.viewFit.original': '原始大小',
+    'configModal.viewFit.fit': '适配视图',
 
     'configModal.theme.section': '主题',
     'configModal.theme.scheme': '主题方案',
@@ -608,6 +624,9 @@ const BASE_LOCALE_MESSAGES = Object.freeze({
     'toolbar.mapFallback': '圖',
     'toolbar.config': '配置',
     'toolbar.fitView': '適配視圖',
+    'toolbar.originalSize': '原始大小',
+    'toolbar.enterFullscreen': '全螢幕查看',
+    'toolbar.exitFullscreen': '退出全螢幕',
     'toolbar.zoomIn': '放大',
     'toolbar.zoomOut': '縮小',
     'toolbar.resetCollapse': '重設折疊狀態',
@@ -686,6 +705,9 @@ const BASE_LOCALE_MESSAGES = Object.freeze({
     'configModal.basic.section': '基礎配置',
     'configModal.basic.canvasHeight': '導圖高度',
     'configModal.basic.canvasHeight.help': '留空表示自動高度。拖動幕布底部也會寫入這個值。',
+    'configModal.basic.viewFit': '視圖適配',
+    'configModal.basic.viewFit.help':
+      '控制開啟導圖時的初始縮放方式。原始大小保持字號穩定；適配視圖會盡量顯示完整導圖。',
     'configModal.basic.sourceHeight': '原始碼高度',
     'configModal.basic.sourceHeight.help': '原始碼模式有獨立高度，不影響導圖高度。',
     'configModal.basic.toolbarCorner': '工具列角落',
@@ -705,6 +727,8 @@ const BASE_LOCALE_MESSAGES = Object.freeze({
     'configModal.basic.tabIndent': 'Tab 鍵調整主題級別',
     'configModal.basic.tabIndent.help':
       '開啟後，原始碼模式中按 Tab / Shift+Tab 會調整目前行的主題級別。',
+    'configModal.viewFit.original': '原始大小',
+    'configModal.viewFit.fit': '適配視圖',
 
     'configModal.theme.section': '主題',
     'configModal.theme.scheme': '主題方案',
@@ -1769,6 +1793,9 @@ function createAdditionalLocale(text) {
     'toolbar.showMap': text.showMap,
     'toolbar.config': text.config,
     'toolbar.fitView': text.fitView,
+    'toolbar.originalSize': text.originalSize || 'Original size',
+    'toolbar.enterFullscreen': text.fullscreen || 'Fullscreen',
+    'toolbar.exitFullscreen': text.exitFullscreen || 'Exit fullscreen',
     'toolbar.zoomIn': text.zoomIn,
     'toolbar.zoomOut': text.zoomOut,
     'toolbar.resetCollapse': text.resetCollapse,
@@ -1796,6 +1823,12 @@ function createAdditionalLocale(text) {
     'configModal.toolbarPlacement.outside': text.toolbarOutside || 'Outside',
     'configModal.basic.placeholder.auto': text.auto,
     'configModal.basic.placeholder.default': text.defaultValue,
+    'configModal.basic.viewFit': text.viewFit || 'View fit',
+    'configModal.basic.viewFit.help':
+      text.viewFitHelp ||
+      'Controls the initial zoom when the map opens. Original size keeps text visually stable; fit view tries to show the whole map.',
+    'configModal.viewFit.original': text.originalSize || 'Original size',
+    'configModal.viewFit.fit': text.fitView || 'Fit view',
     'configModal.basic.featureSection': text.features || 'Features',
     'configModal.basic.wheelZoom': text.wheelZoom,
     'configModal.basic.tabIndent': text.tabIndent || 'Tab key changes topic level',
