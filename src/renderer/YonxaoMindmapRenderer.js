@@ -966,6 +966,7 @@ export class YonxaoMindmapRenderer extends Component {
   openConfigModal() {
     const modal = new ConfigModal(this.plugin.app, {
       t: this.t.bind(this),
+      baseConfig: this.plugin?.getGlobalDefaultConfig?.() || {},
       rawConfig: this.documentConfigForSave(this.rawConfig),
       onApply: async (nextConfig) => this.applyConfigFromModal(nextConfig),
     });

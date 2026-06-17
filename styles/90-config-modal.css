@@ -146,6 +146,10 @@
   font-size: var(--font-ui-small);
 }
 
+.yonxao-mindmap-config-field.is-inherited-value > label {
+  color: var(--text-muted);
+}
+
 /*
  * 控件列负责承载输入框、下拉框和字段帮助文本。
  * 单独包一层可以保证帮助文本不会打乱外层 label/input 两列布局。
@@ -186,6 +190,24 @@
 .yonxao-mindmap-config-field select,
 .yonxao-mindmap-config-yaml {
   width: 100%;
+}
+
+.yonxao-mindmap-config-control.is-inherited-value input:not([type='color']),
+.yonxao-mindmap-config-control.is-inherited-value select {
+  color: var(--text-muted);
+  border-style: dashed;
+  background-color: var(--background-secondary);
+}
+
+.yonxao-mindmap-config-control.is-inherited-value input[type='color'] {
+  opacity: 0.72;
+}
+
+.yonxao-mindmap-config-control.is-inherited-value input:focus,
+.yonxao-mindmap-config-control.is-inherited-value select:focus {
+  color: var(--text-normal);
+  border-style: solid;
+  background-color: var(--background-primary);
 }
 
 /*
@@ -258,6 +280,11 @@
   box-shadow:
     0 0 0 2px var(--background-primary),
     0 0 0 4px var(--interactive-accent);
+}
+
+.yonxao-mindmap-config-control.is-inherited-value .yonxao-mindmap-config-switch-track {
+  border-style: dashed;
+  opacity: 0.78;
 }
 
 /*

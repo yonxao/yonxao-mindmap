@@ -36,6 +36,7 @@ import {
   TOOLBAR_CORNERS,
   TOOLBAR_PLACEMENTS,
   canonicalizeMindConfig,
+  mergeMindConfigObjects,
   normalizeMindConfig,
 } from '../config/mindConfig.js';
 import { createTranslator } from '../i18n/messages.js';
@@ -101,6 +102,7 @@ export class ConfigModal extends Modal {
     super(app);
     this.t = options.t || createTranslator('en');
     this.title = options.title || this.t('configModal.title');
+    this.baseConfig = cloneConfig(canonicalizeMindConfig(options.baseConfig));
     this.initialConfig = cloneConfig(canonicalizeMindConfig(options.rawConfig));
     this.draftConfig = cloneConfig(canonicalizeMindConfig(options.rawConfig));
     this.onApply = options.onApply;
@@ -286,7 +288,7 @@ export class ConfigModal extends Modal {
 
     this.formEl.empty();
     this.formEl.classList.toggle('is-advanced', this.activeTab === 'advanced');
-    const normalized = normalizeMindConfig(this.draftConfig);
+    const normalized = normalizeMindConfig(this.effectiveDraftConfig());
 
     if (this.activeTab === 'basic') {
       this.renderBasicTab(normalized);
@@ -302,6 +304,18 @@ export class ConfigModal extends Modal {
 
     this.updateTabs();
     this.updateStatus('');
+  }
+
+  /*
+   * 作用：
+   * 计算弹框当前实际展示的配置。
+   *
+   * 关键点：
+   * 文档配置弹框需要用插件全局默认配置回填显示值；但保存时仍只提交 draftConfig，
+   * 避免把全局默认配置无意义地写入当前代码块。
+   */
+  effectiveDraftConfig() {
+    return mergeMindConfigObjects(this.baseConfig, this.draftConfig);
   }
 
   /*
@@ -483,10 +497,11 @@ export class ConfigModal extends Modal {
 
     for (const level of ['1', '2', '3']) {
       const levelKey = `level${level}`;
+      const levelTopic = normalized.topic.levels[level] || {};
       this.createNumberField(
         this.t(`configModal.layout.topicMaxWidthLevel${level}`),
         ['layout', 'topicMaxWidth', levelKey],
-        '',
+        levelTopic.maxWidth || '',
         {
           ...inputOptions,
           placeholder: this.t('configModal.layout.topicMaxWidthInherit'),
@@ -545,7 +560,7 @@ export class ConfigModal extends Modal {
 
     this.createSection(this.t('configModal.font.levelSection'));
     for (const level of ['1', '2', '3']) {
-      this.createLevelFontGroup(level);
+      this.createLevelFontGroup(level, normalized);
     }
   }
 
@@ -577,8 +592,9 @@ export class ConfigModal extends Modal {
    * 作用：
    * 创建层级字体配置组。
    */
-  createLevelFontGroup(level) {
+  createLevelFontGroup(level, normalized) {
     const levelKey = `level${level}`;
+    const levelFont = normalized.font.levels[level] || {};
     const groupEl = this.formEl.createDiv({ cls: 'yonxao-mindmap-config-level' });
     const titleEl = groupEl.createDiv({ cls: 'yonxao-mindmap-config-level-title' });
     titleEl.setText(this.t('configModal.font.levelTitle', { marks: '#'.repeat(Number(level)) }));
@@ -592,22 +608,32 @@ export class ConfigModal extends Modal {
       this.render();
     });
 
-    this.createNumberField(this.t('configModal.font.size'), ['font', levelKey, 'size'], '', {
-      min: FONT_SIZE_MIN,
-      max: FONT_SIZE_MAX,
-      step: 1,
-      parentEl: groupEl,
-    });
-    this.createNumberField(this.t('configModal.font.weight'), ['font', levelKey, 'weight'], '', {
-      min: FONT_WEIGHT_MIN,
-      max: FONT_WEIGHT_MAX,
-      step: 10,
-      parentEl: groupEl,
-    });
+    this.createNumberField(
+      this.t('configModal.font.size'),
+      ['font', levelKey, 'size'],
+      levelFont.size || '',
+      {
+        min: FONT_SIZE_MIN,
+        max: FONT_SIZE_MAX,
+        step: 1,
+        parentEl: groupEl,
+      }
+    );
+    this.createNumberField(
+      this.t('configModal.font.weight'),
+      ['font', levelKey, 'weight'],
+      levelFont.weight || '',
+      {
+        min: FONT_WEIGHT_MIN,
+        max: FONT_WEIGHT_MAX,
+        step: 10,
+        parentEl: groupEl,
+      }
+    );
     this.createNumberField(
       this.t('configModal.font.lineHeight'),
       ['font', levelKey, 'lineHeight'],
-      '',
+      levelFont.lineHeight || '',
       {
         min: FONT_LINE_HEIGHT_MIN,
         max: FONT_LINE_HEIGHT_MAX,
@@ -618,7 +644,7 @@ export class ConfigModal extends Modal {
     this.createFontFamilyField(
       this.t('configModal.font.family'),
       ['font', levelKey, 'family'],
-      '',
+      levelFont.family || '',
       {
         parentEl: groupEl,
       }
@@ -647,6 +673,7 @@ export class ConfigModal extends Modal {
    */
   createNumberField(label, path, normalizedValue, options = {}) {
     const fieldEl = this.createField(label, options.parentEl, options.help);
+    this.applyInheritedValueStyle(fieldEl, path);
     const input = fieldEl.createEl('input');
     input.type = 'number';
     input.min = String(options.min ?? '');
@@ -656,6 +683,7 @@ export class ConfigModal extends Modal {
     input.value = String(getConfigValue(this.draftConfig, path, normalizedValue ?? '') ?? '');
     input.addEventListener('input', () => {
       setConfigValue(this.draftConfig, path, numberFromInput(input.value));
+      this.syncInheritedValueStyle(fieldEl, path);
     });
   }
 
@@ -665,6 +693,7 @@ export class ConfigModal extends Modal {
    */
   createSelectField(label, path, value, options) {
     const fieldEl = this.createField(label);
+    this.applyInheritedValueStyle(fieldEl, path);
     const select = fieldEl.createEl('select');
     for (const optionConfig of options) {
       if (Array.isArray(optionConfig)) {
@@ -684,6 +713,7 @@ export class ConfigModal extends Modal {
     select.value = String(getConfigValue(this.draftConfig, path, value));
     select.addEventListener('change', () => {
       setConfigValue(this.draftConfig, path, select.value);
+      this.syncInheritedValueStyle(fieldEl, path);
     });
     return select;
   }
@@ -715,6 +745,7 @@ export class ConfigModal extends Modal {
    */
   createSelectTextField(label, path, value, options, fieldOptions = {}) {
     const fieldEl = this.createField(label, fieldOptions.parentEl);
+    this.applyInheritedValueStyle(fieldEl, path);
     const rowEl = fieldEl.createDiv({ cls: 'yonxao-mindmap-config-combo' });
     const select = rowEl.createEl('select');
     const input = rowEl.createEl('input');
@@ -730,12 +761,14 @@ export class ConfigModal extends Modal {
     select.addEventListener('change', () => {
       input.value = select.value;
       setConfigValue(this.draftConfig, path, input.value);
+      this.syncInheritedValueStyle(fieldEl, path);
     });
     input.addEventListener('input', () => {
       setConfigValue(this.draftConfig, path, input.value.trim());
       select.value = options.some(([optionValue]) => optionValue === input.value)
         ? input.value
         : '';
+      this.syncInheritedValueStyle(fieldEl, path);
     });
     return { select, input };
   }
@@ -750,6 +783,7 @@ export class ConfigModal extends Modal {
    */
   createFontFamilyField(label, path, value, fieldOptions = {}) {
     const fieldEl = this.createField(label, fieldOptions.parentEl, fieldOptions.help);
+    this.applyInheritedValueStyle(fieldEl, path);
     const rowEl = fieldEl.createDiv({ cls: 'yonxao-mindmap-config-combo' });
     const select = rowEl.createEl('select');
     const input = rowEl.createEl('input');
@@ -787,6 +821,7 @@ export class ConfigModal extends Modal {
           input.value = '';
           deleteConfigValue(this.draftConfig, path);
           input.setCustomValidity('');
+          this.syncInheritedValueStyle(fieldEl, path);
         }
         input.focus();
         return;
@@ -795,10 +830,11 @@ export class ConfigModal extends Modal {
       input.value = select.value;
       input.setCustomValidity('');
       setConfigValue(this.draftConfig, path, input.value);
+      this.syncInheritedValueStyle(fieldEl, path);
     });
 
     input.addEventListener('input', () => {
-      validateAndStore();
+      if (validateAndStore()) this.syncInheritedValueStyle(fieldEl, path);
     });
 
     return { select, input };
@@ -839,6 +875,7 @@ export class ConfigModal extends Modal {
    */
   createColorTextField(label, path, value, help) {
     const fieldEl = this.createField(label, undefined, help);
+    this.applyInheritedValueStyle(fieldEl, path);
     const rowEl = fieldEl.createDiv({ cls: 'yonxao-mindmap-config-combo' });
     const colorInput = rowEl.createEl('input');
     const textInput = rowEl.createEl('input');
@@ -854,9 +891,11 @@ export class ConfigModal extends Modal {
     colorInput.addEventListener('input', () => {
       textInput.value = colorInput.value;
       setConfigValue(this.draftConfig, path, colorInput.value);
+      this.syncInheritedValueStyle(fieldEl, path);
     });
     textInput.addEventListener('input', () => {
       setConfigValue(this.draftConfig, path, textInput.value.trim());
+      this.syncInheritedValueStyle(fieldEl, path);
     });
     return { colorInput, textInput };
   }
@@ -867,6 +906,7 @@ export class ConfigModal extends Modal {
    */
   createToggleField(label, path, value, options = {}) {
     const fieldEl = this.createField(label);
+    this.applyInheritedValueStyle(fieldEl, path);
     fieldEl.parentElement?.classList.add('is-toggle');
     const switchEl = fieldEl.createEl('label', { cls: 'yonxao-mindmap-config-switch' });
     const input = switchEl.createEl('input');
@@ -880,6 +920,7 @@ export class ConfigModal extends Modal {
       } else {
         setConfigValue(this.draftConfig, path, input.checked);
       }
+      this.syncInheritedValueStyle(fieldEl, path);
     });
     if (options.help) {
       fieldEl.createDiv({ cls: 'yonxao-mindmap-config-help', text: options.help });
@@ -899,6 +940,38 @@ export class ConfigModal extends Modal {
       controlEl.createDiv({ cls: 'yonxao-mindmap-config-help', text: help });
     }
     return controlEl;
+  }
+
+  /*
+   * 作用：
+   * 判断某个配置路径是否由当前草稿显式提供。
+   */
+  hasDraftConfigPath(path) {
+    let current = this.draftConfig;
+    for (const key of path) {
+      if (!current || typeof current !== 'object') return false;
+      if (!Object.prototype.hasOwnProperty.call(current, key)) return false;
+      current = current[key];
+    }
+    return true;
+  }
+
+  /*
+   * 作用：
+   * 给“从全局默认或内置默认回填”的控件添加轻量默认值样式。
+   */
+  applyInheritedValueStyle(controlEl, path) {
+    this.syncInheritedValueStyle(controlEl, path);
+  }
+
+  /*
+   * 作用：
+   * 根据当前草稿是否显式包含路径，同步默认值/自定义值视觉状态。
+   */
+  syncInheritedValueStyle(controlEl, path) {
+    const isInherited = !this.hasDraftConfigPath(path);
+    controlEl.classList.toggle('is-inherited-value', isInherited);
+    controlEl.parentElement?.classList.toggle('is-inherited-value', isInherited);
   }
 
   /*
@@ -1147,8 +1220,9 @@ export class ConfigModal extends Modal {
    * 判断是否需要提示“默认主题颜色会覆盖彩虹主题自动配色”。
    */
   shouldWarnDefaultColorOverridesTheme() {
-    const theme = String(getConfigValue(this.draftConfig, ['theme', 'scheme'], '') || '').trim();
-    const defaultColor = getConfigValue(this.draftConfig, ['theme', 'defaultTopicColor'], '');
+    const normalized = normalizeMindConfig(this.effectiveDraftConfig());
+    const theme = String(normalized.theme || '').trim();
+    const defaultColor = normalized.topic.defaultColor;
     const hasDefaultColor =
       typeof defaultColor === 'string'
         ? defaultColor.trim() !== ''
