@@ -2916,12 +2916,13 @@ export class YonxaoMindmapRenderer extends Component {
       return;
     }
 
-    if (this.inlineTextEditorEl) {
-      this.inlineTextEditorEl.remove();
-    }
+    const editorEl = this.inlineTextEditorEl;
     this.inlineTextEditorEl = null;
     this.inlineTextEditorInput = null;
     this.inlineEditingTopicId = null;
+    if (editorEl?.parentNode) {
+      editorEl.parentNode.removeChild(editorEl);
+    }
   }
 
   /*
