@@ -31,7 +31,7 @@ import {
 } from '../config/mindConfig.js';
 import { normalizeIcon } from '../icons/renderIcon.js';
 import { clamp } from '../utils/math.js';
-import { visualUnits, wrapTopicText } from '../utils/text.js';
+import { estimateTopicTextWidth, wrapTopicTextByWidth } from '../utils/text.js';
 
 export const LAYOUT_TYPES = Object.freeze([
   'mindmap-right',
@@ -283,11 +283,10 @@ export function measureTopic(topic, config) {
   const maxWidth = resolveTopicMaxWidth(topic, normalizedConfig) || TOPIC_MAX_WIDTH;
   const iconWidth = icon ? ICON_SIZE + ICON_GAP : 0;
   const usableTextWidth = Math.max(48, maxWidth - TOPIC_PADDING_X * 2 - iconWidth);
-  const averageUnitWidth = Math.max(5, font.size * 0.54);
-  const maxUnits = clamp(Math.floor(usableTextWidth / averageUnitWidth), icon ? 10 : 12, 48);
-  const lines = wrapTopicText(topic.text || 'Untitled', maxUnits);
-  const longest = lines.reduce((max, line) => Math.max(max, visualUnits(line)), 0);
-  const textWidth = Math.ceil(longest * averageUnitWidth);
+  const lines = wrapTopicTextByWidth(topic.text || 'Untitled', usableTextWidth, font);
+  const textWidth = Math.ceil(
+    lines.reduce((max, line) => Math.max(max, estimateTopicTextWidth(line, font)), 0)
+  );
   const width = clamp(textWidth + TOPIC_PADDING_X * 2 + iconWidth, TOPIC_MIN_WIDTH, maxWidth);
   const height = Math.max(TOPIC_MIN_HEIGHT, lines.length * font.lineHeight + TOPIC_PADDING_Y * 2);
 
