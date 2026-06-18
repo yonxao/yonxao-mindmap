@@ -2922,12 +2922,9 @@ export class YonxaoMindmapRenderer extends Component {
     inputEl.spellcheck = false;
     inputEl.setAttribute('aria-label', this.t('topicEditor.editTextAria'));
 
-    // 字体使用当前主题布局计算出的配置，让弹出编辑框和主题文本保持相近观感。
+    // 编辑框使用固定 UI 字号，不跟随主题字号缩放；大字号主题直接继承会让浮层过大、阅读别扭。
     if (box && box.font) {
       inputEl.style.fontFamily = box.font.family;
-      inputEl.style.fontSize = `${box.font.size}px`;
-      inputEl.style.fontWeight = String(box.font.weight);
-      inputEl.style.lineHeight = `${box.font.lineHeight}px`;
     }
 
     for (const eventName of [
@@ -2987,7 +2984,7 @@ export class YonxaoMindmapRenderer extends Component {
     if (!this.inlineTextEditorEl) return;
 
     const gap = 12;
-    const lineHeight = box?.font?.lineHeight || 20;
+    const lineHeight = 22;
     const lineCount = Math.max(
       3,
       box?.lines?.length || String(topic?.text || '').split(/\r?\n/).length || 1
@@ -5827,6 +5824,12 @@ export class YonxaoMindmapRenderer extends Component {
     this.addTopicContextMenuItem(menu, this.t('contextMenu.copyTopicText'), 'copy', () =>
       this.copyTopicText(topic)
     );
+    this.addTopicContextMenuItem(menu, this.t('contextMenu.copySubtreeBody'), 'git-branch', () =>
+      this.copyPlainSubtree(topic)
+    );
+    this.addTopicContextMenuItem(menu, this.t('contextMenu.copyIndentedSubtree'), 'list-tree', () =>
+      this.copyIndentedSubtree(topic)
+    );
     menu.addSeparator();
 
     this.addTopicContextMenuItem(menu, this.t('contextMenu.addSubtopic'), 'plus', () =>
@@ -5920,6 +5923,31 @@ export class YonxaoMindmapRenderer extends Component {
    */
   async copyIndentedBody() {
     const body = this.plainBodyToIndentedText(this.serializePlainBody());
+    await navigator.clipboard.writeText(body);
+    new Notice(this.t('notice.bodyCopied'));
+    return true;
+  }
+
+  /*
+   * 作用：
+   * 复制当前主题及所有子主题，输出为不带属性的主题级别正文。
+   */
+  async copyPlainSubtree(topic) {
+    if (!topic) return false;
+
+    await navigator.clipboard.writeText(this.serializePlainTopic(topic, 0));
+    new Notice(this.t('notice.bodyCopied'));
+    return true;
+  }
+
+  /*
+   * 作用：
+   * 复制当前主题及所有子主题，输出为缩进正文。
+   */
+  async copyIndentedSubtree(topic) {
+    if (!topic) return false;
+
+    const body = this.plainBodyToIndentedText(this.serializePlainTopic(topic, 0));
     await navigator.clipboard.writeText(body);
     new Notice(this.t('notice.bodyCopied'));
     return true;
