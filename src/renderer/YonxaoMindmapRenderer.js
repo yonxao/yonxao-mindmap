@@ -23,7 +23,6 @@ import {
   TOPIC_MIN_HEIGHT,
   TOPIC_PADDING_X,
   LEVEL_GAP,
-  ICON_SIZE,
 } from '../constants.js';
 import {
   canonicalizeMindConfig,
@@ -5057,7 +5056,9 @@ export class YonxaoMindmapRenderer extends Component {
     );
 
     if (box.icon) {
-      group.appendChild(renderIcon(box.icon, TOPIC_PADDING_X, (box.height - ICON_SIZE) / 2, color));
+      group.appendChild(
+        renderIcon(box.icon, TOPIC_PADDING_X, (box.height - box.iconSize) / 2, color, box.iconSize)
+      );
     }
 
     const textEl = svg('text', {

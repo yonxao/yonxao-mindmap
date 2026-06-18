@@ -21,7 +21,6 @@ import {
   TOPIC_MIN_WIDTH,
   TOPIC_MAX_WIDTH,
   TOPIC_MIN_HEIGHT,
-  ICON_SIZE,
   ICON_GAP,
 } from '../constants.js';
 import {
@@ -29,7 +28,7 @@ import {
   resolveTopicFont,
   resolveTopicMaxWidth,
 } from '../config/mindConfig.js';
-import { normalizeIcon } from '../icons/renderIcon.js';
+import { normalizeIcon, resolveTopicIconSize } from '../icons/renderIcon.js';
 import { clamp } from '../utils/math.js';
 import { estimateTopicTextWidth, wrapTopicTextByWidth } from '../utils/text.js';
 
@@ -281,7 +280,9 @@ export function measureTopic(topic, config) {
   const font = resolveTopicFont(topic, normalizedConfig);
   const icon = normalizeIcon(topic.attributes.icon);
   const maxWidth = resolveTopicMaxWidth(topic, normalizedConfig) || TOPIC_MAX_WIDTH;
-  const iconWidth = icon ? ICON_SIZE + ICON_GAP : 0;
+  const iconSize = icon ? resolveTopicIconSize(font) : 0;
+  const iconGap = icon ? Math.round(clamp(iconSize * 0.35, ICON_GAP, 16)) : 0;
+  const iconWidth = icon ? iconSize + iconGap : 0;
   const usableTextWidth = Math.max(48, maxWidth - TOPIC_PADDING_X * 2 - iconWidth);
   const lines = wrapTopicTextByWidth(topic.text || 'Untitled', usableTextWidth, font);
   const textWidth = Math.ceil(
@@ -295,6 +296,7 @@ export function measureTopic(topic, config) {
     height,
     lines,
     icon,
+    iconSize,
     font,
     textX: TOPIC_PADDING_X + iconWidth,
     textY: (height - (lines.length - 1) * font.lineHeight) / 2 + font.size * 0.36,
