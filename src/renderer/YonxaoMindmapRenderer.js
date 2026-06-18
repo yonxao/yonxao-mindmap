@@ -1310,6 +1310,7 @@ export class YonxaoMindmapRenderer extends Component {
       class: 'yonxao-mindmap-svg',
       role: 'img',
       'aria-label': 'Mind map',
+      tabindex: '0',
     });
     this.mapEl = svg('g', { class: 'yonxao-mindmap-map' });
     this.svgEl.appendChild(this.mapEl);
@@ -5741,11 +5742,16 @@ export class YonxaoMindmapRenderer extends Component {
    * 菜单使用 Obsidian 原生 Menu，能自动适配不同主题和平台。
    */
   handleTopicContextMenu(event) {
-    if (!this.canEditMindMap()) return;
-
     const target = event.target;
     const topicEl = target && target.closest ? target.closest('.yonxao-mindmap-topic') : null;
-    if (!topicEl) return;
+    if (!topicEl) {
+      event.preventDefault();
+      event.stopPropagation();
+      this.openMapContextMenu(event);
+      return;
+    }
+
+    if (!this.canEditMindMap()) return;
 
     const id = topicEl.getAttribute('data-topic-id');
     const topic = this.topicById.get(id);
@@ -5754,6 +5760,43 @@ export class YonxaoMindmapRenderer extends Component {
     event.preventDefault();
     event.stopPropagation();
     this.openTopicContextMenu(event, topic);
+  }
+
+  /*
+   * 作用：
+   * 在导图空白处打开全局操作菜单。
+   */
+  openMapContextMenu(event) {
+    const menu = new Menu();
+
+    this.addTopicContextMenuItem(menu, this.t('contextMenu.copyBody'), 'copy', () =>
+      this.copyPlainBody()
+    );
+    this.addTopicContextMenuItem(menu, this.t('contextMenu.copyIndentedBody'), 'list-tree', () =>
+      this.copyIndentedBody()
+    );
+    this.addTopicContextMenuItem(menu, this.t('contextMenu.copySource'), 'file-code', () =>
+      this.copyFullSource()
+    );
+    this.addTopicContextMenuItem(menu, this.t('contextMenu.copyConfig'), 'settings', () =>
+      this.copyConfigSource()
+    );
+    menu.addSeparator();
+
+    this.addTopicContextMenuItem(menu, this.t('contextMenu.exportPng'), 'download', () =>
+      this.exportMapPng()
+    );
+    this.addTopicContextMenuItem(menu, this.t('contextMenu.copyPng'), 'image', () =>
+      this.copyMapPng()
+    );
+    menu.addSeparator();
+
+    this.addTopicContextMenuItem(menu, this.t('toolbar.fitView'), 'scan', () => this.fitView());
+    this.addTopicContextMenuItem(menu, this.t('toolbar.originalSize'), 'maximize', () =>
+      this.showOriginalSizeView(null, { preserveCanvasHeight: true })
+    );
+
+    menu.showAtMouseEvent(event);
   }
 
   /*
@@ -5858,6 +5901,348 @@ export class YonxaoMindmapRenderer extends Component {
     await navigator.clipboard.writeText(topic.text || '');
     new Notice(this.t('notice.topicCopied'));
     return true;
+  }
+
+  /*
+   * 作用：
+   * 复制不带主题属性的正文区 Markdown。
+   */
+  async copyPlainBody() {
+    const body = this.serializePlainBody();
+    await navigator.clipboard.writeText(body);
+    new Notice(this.t('notice.bodyCopied'));
+    return true;
+  }
+
+  /*
+   * 作用：
+   * 复制把 # 主题级别替换成缩进后的正文。
+   */
+  async copyIndentedBody() {
+    const body = this.plainBodyToIndentedText(this.serializePlainBody());
+    await navigator.clipboard.writeText(body);
+    new Notice(this.t('notice.bodyCopied'));
+    return true;
+  }
+
+  /*
+   * 作用：
+   * 复制当前完整 yxmm 源码，包含配置区和主题属性。
+   */
+  async copyFullSource() {
+    await navigator.clipboard.writeText(this.source || '');
+    new Notice(this.t('notice.sourceCopied'));
+    return true;
+  }
+
+  /*
+   * 作用：
+   * 复制当前 yxmm 配置区源码。
+   */
+  async copyConfigSource() {
+    const sections = this.splitSourceForEditor(this.source || '');
+    await navigator.clipboard.writeText(sections.config || '');
+    new Notice(this.t('notice.configCopied'));
+    return true;
+  }
+
+  /*
+   * 作用：
+   * 导出完整导图为 PNG 文件。
+   */
+  async exportMapPng() {
+    const blob = await this.renderMapPngBlob();
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `${this.exportFileBaseName()}.png`;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    URL.revokeObjectURL(url);
+    new Notice(this.t('notice.imageExported'));
+    return true;
+  }
+
+  /*
+   * 作用：
+   * 把完整导图 PNG 写入系统剪贴板。
+   */
+  async copyMapPng() {
+    const blob = await this.renderMapPngBlob();
+    if (await this.writeImageBlobToElectronClipboard(blob)) {
+      new Notice(this.t('notice.imageCopied'));
+      return true;
+    }
+
+    if (!navigator.clipboard?.write || typeof ClipboardItem === 'undefined') {
+      new Notice(this.t('notice.imageClipboardUnsupported'));
+      return false;
+    }
+
+    try {
+      await this.focusForClipboardWrite();
+      await navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })]);
+    } catch (error) {
+      if (
+        String(error?.message || error)
+          .toLowerCase()
+          .includes('document is not focused')
+      ) {
+        new Notice(this.t('notice.imageClipboardFocusRequired'));
+        return false;
+      }
+      throw error;
+    }
+    new Notice(this.t('notice.imageCopied'));
+    return true;
+  }
+
+  /*
+   * 作用：
+   * Obsidian 桌面端优先使用 Electron 剪贴板，避免浏览器 Clipboard API 的焦点限制。
+   */
+  async writeImageBlobToElectronClipboard(blob) {
+    const electron = this.electronClipboardModule();
+    if (!electron?.clipboard || !electron?.nativeImage) return false;
+
+    const buffer = await blob.arrayBuffer();
+    const image = electron.nativeImage.createFromBuffer(Buffer.from(buffer));
+    if (image.isEmpty && image.isEmpty()) return false;
+
+    electron.clipboard.writeImage(image);
+    return true;
+  }
+
+  electronClipboardModule() {
+    const runtimeRequire =
+      typeof globalThis.require === 'function'
+        ? globalThis.require
+        : typeof window?.require === 'function'
+          ? window.require
+          : null;
+    if (!runtimeRequire) return null;
+
+    try {
+      return runtimeRequire('electron');
+    } catch (_error) {
+      return null;
+    }
+  }
+
+  async focusForClipboardWrite() {
+    window.focus();
+    this.svgEl?.focus?.();
+    await new Promise((resolve) => window.requestAnimationFrame(resolve));
+    await new Promise((resolve) => window.setTimeout(resolve, 0));
+  }
+
+  /*
+   * 作用：
+   * 从当前主题树生成不带属性的正文区 Markdown。
+   */
+  serializePlainBody() {
+    if (!this.root) return '';
+    const topics = this.root._virtual ? this.root.subtopics : [this.root];
+    return topics
+      .map((topic) => this.serializePlainTopic(topic, 0))
+      .join('\n')
+      .trim();
+  }
+
+  serializePlainTopic(topic, depth) {
+    const topicLevelMarker = '#'.repeat(depth + 1);
+    const textLines = String(topic.text || '').split(/\r?\n/);
+    const firstTextLine = textLines.shift() || '';
+    const currentLine = `${topicLevelMarker} ${firstTextLine}`;
+    const continuationLines = textLines.map((line) => line.trimEnd());
+    const subtopicLines = topic.subtopics.map((subtopic) =>
+      this.serializePlainTopic(subtopic, depth + 1)
+    );
+    return [currentLine, ...continuationLines, ...subtopicLines].join('\n');
+  }
+
+  plainBodyToIndentedText(body) {
+    let currentLevel = 1;
+    return String(body || '')
+      .split(/\r?\n/)
+      .map((line) => {
+        const match = line.match(/^(#{1,6})\s+(.*)$/);
+        if (match) {
+          currentLevel = match[1].length;
+          return `${'  '.repeat(currentLevel - 1)}${match[2]}`;
+        }
+
+        if (!line.trim()) return '';
+        return `${'  '.repeat(Math.max(0, currentLevel - 1))}${line}`;
+      })
+      .join('\n')
+      .trim();
+  }
+
+  /*
+   * 作用：
+   * 把当前完整导图渲染成 PNG Blob，供导出和复制图片复用。
+   */
+  async renderMapPngBlob() {
+    const exportSvg = this.createExportSvgElement();
+    const svgText = new XMLSerializer().serializeToString(exportSvg);
+    const svgBlob = new Blob([svgText], { type: 'image/svg+xml;charset=utf-8' });
+    const url = URL.createObjectURL(svgBlob);
+
+    try {
+      const image = new Image();
+      image.decoding = 'async';
+      const loaded = new Promise((resolve, reject) => {
+        image.onload = resolve;
+        image.onerror = () => reject(new Error('导图图片生成失败。'));
+      });
+      image.src = url;
+      await loaded;
+
+      const width = Number(exportSvg.getAttribute('width')) || image.width;
+      const height = Number(exportSvg.getAttribute('height')) || image.height;
+      const scale = this.exportPixelScale(width, height);
+      const canvas = document.createElement('canvas');
+      canvas.width = Math.max(1, Math.round(width * scale));
+      canvas.height = Math.max(1, Math.round(height * scale));
+      const context = canvas.getContext('2d');
+      if (!context) throw new Error('PNG 导出失败。');
+      context.drawImage(image, 0, 0, canvas.width, canvas.height);
+
+      return await new Promise((resolve, reject) => {
+        canvas.toBlob((blob) => {
+          if (blob) {
+            resolve(blob);
+          } else {
+            reject(new Error('PNG 导出失败。'));
+          }
+        }, 'image/png');
+      });
+    } finally {
+      URL.revokeObjectURL(url);
+    }
+  }
+
+  /*
+   * 作用：
+   * 克隆当前导图 SVG，并整理成适合独立导出的 SVG。
+   */
+  createExportSvgElement() {
+    if (!this.mapEl || !this.root) {
+      throw new Error('当前没有可导出的导图。');
+    }
+
+    const bounds = layoutTree(this.root, this.collapsedIds, this.config).bounds;
+    const viewBox = {
+      x: bounds.minX - VIEWBOX_MARGIN_X,
+      y: bounds.minY - VIEWBOX_MARGIN_Y,
+      width: bounds.maxX - bounds.minX + VIEWBOX_MARGIN_X * 2,
+      height: bounds.maxY - bounds.minY + VIEWBOX_MARGIN_Y * 2,
+    };
+    const exportSvg = svg('svg', {
+      xmlns: 'http://www.w3.org/2000/svg',
+      width: Math.ceil(viewBox.width),
+      height: Math.ceil(viewBox.height),
+      viewBox: `${viewBox.x} ${viewBox.y} ${viewBox.width} ${viewBox.height}`,
+    });
+
+    exportSvg.appendChild(this.createExportSvgStyle());
+    exportSvg.appendChild(
+      svg('rect', {
+        x: viewBox.x,
+        y: viewBox.y,
+        width: viewBox.width,
+        height: viewBox.height,
+        fill: this.resolveCssColor('--background-primary', '#ffffff'),
+      })
+    );
+
+    const mapClone = this.mapEl.cloneNode(true);
+    this.cleanupExportMapClone(mapClone);
+    this.inlineExportSvgColors(mapClone);
+    exportSvg.appendChild(mapClone);
+    return exportSvg;
+  }
+
+  createExportSvgStyle() {
+    const styleEl = svg('style');
+    styleEl.textContent = `
+      .yonxao-mindmap-connector{fill:none;stroke-width:2.2;stroke-linecap:round;opacity:.62}
+      .yonxao-mindmap-topic-card{stroke-width:1.4}
+      .yonxao-mindmap-topic-tree-table .yonxao-mindmap-topic-card{stroke-width:1.5}
+      .yonxao-mindmap-topic-tree-table-root .yonxao-mindmap-topic-card{stroke-width:2}
+      .yonxao-mindmap-topic-text{letter-spacing:0;dominant-baseline:auto;user-select:none}
+      .yonxao-mindmap-topic-icon path{fill:none;stroke-linecap:round;stroke-linejoin:round;stroke-width:2}
+    `;
+    return styleEl;
+  }
+
+  cleanupExportMapClone(mapClone) {
+    const selectors = [
+      '.yonxao-mindmap-toggle',
+      '.yonxao-mindmap-topic-edit',
+      '.yonxao-mindmap-topic-sibling-actions',
+      '.yonxao-mindmap-topic-subtopic-add',
+      '.yonxao-mindmap-drop-indicator',
+      'title',
+    ];
+    for (const element of mapClone.querySelectorAll(selectors.join(','))) {
+      element.remove();
+    }
+  }
+
+  inlineExportSvgColors(mapClone) {
+    const textColor = this.resolveCssColor('--text-normal', '#1f2328');
+    const borderColor = this.resolveCssColor('--background-modifier-border', '#d0d7de');
+    const backgroundColor = this.resolveCssColor('--background-primary', '#ffffff');
+
+    for (const textEl of mapClone.querySelectorAll('.yonxao-mindmap-topic-text')) {
+      textEl.setAttribute('fill', textColor);
+    }
+    for (const cardEl of mapClone.querySelectorAll('.yonxao-mindmap-topic-card')) {
+      this.replaceSvgVarAttribute(cardEl, 'fill', backgroundColor);
+      this.replaceSvgVarAttribute(cardEl, 'stroke', borderColor);
+    }
+    for (const pathEl of mapClone.querySelectorAll('.yonxao-mindmap-connector')) {
+      this.replaceSvgVarAttribute(pathEl, 'stroke', textColor);
+      if (!pathEl.getAttribute('stroke')) pathEl.setAttribute('stroke', textColor);
+    }
+    for (const iconEl of mapClone.querySelectorAll('.yonxao-mindmap-topic-icon *')) {
+      this.replaceSvgVarAttribute(iconEl, 'stroke', textColor);
+      this.replaceSvgVarAttribute(iconEl, 'fill', backgroundColor, { replaceMissing: false });
+    }
+  }
+
+  replaceSvgVarAttribute(element, attribute, fallback, options = {}) {
+    const value = element.getAttribute(attribute);
+    if (
+      (options.replaceMissing !== false && !value) ||
+      value?.includes('var(') ||
+      value === 'currentColor'
+    ) {
+      element.setAttribute(attribute, fallback);
+    }
+  }
+
+  resolveCssColor(variableName, fallback) {
+    if (!this.hostEl || typeof window === 'undefined') return fallback;
+    const value = window.getComputedStyle(this.hostEl).getPropertyValue(variableName).trim();
+    return value || fallback;
+  }
+
+  exportPixelScale(width, height) {
+    const maxCanvasSide = 8192;
+    const deviceScale =
+      typeof window === 'undefined' ? 1 : Math.min(window.devicePixelRatio || 1, 2);
+    return Math.max(0.25, Math.min(deviceScale, maxCanvasSide / width, maxCanvasSide / height));
+  }
+
+  exportFileBaseName() {
+    const rootText = String(this.root?._virtual ? 'yonxao-mindmap' : this.root?.text || 'mindmap')
+      .split(/\r?\n/)[0]
+      .trim();
+    return (rootText || 'mindmap').replace(/[\\/:*?"<>|]+/g, '-').slice(0, 80);
   }
 
   /*
