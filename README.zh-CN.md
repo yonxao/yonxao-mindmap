@@ -28,9 +28,9 @@ layout:
   topicMaxWidth:
     global: 240
 font:
-  size: 14
-  weight: 560
-  lineHeight: 18
+  size: 16
+  weight: 400
+  lineHeight: 20
   level1:
     size: 16
     weight: 700

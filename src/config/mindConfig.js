@@ -8,7 +8,7 @@
  * basic:
  *   canvasHeight: 420
  * font:
- *   size: 14
+ *   size: 16
  *   level1:
  *     size: 16
  * layout:
@@ -29,12 +29,7 @@
  * 保存时则走 mergeMindConfig()/serializeMindSource()，把配置区和正文重新拼回代码块。
  */
 
-import {
-  CANVAS_MAX_HEIGHT,
-  CANVAS_MIN_HEIGHT,
-  LINE_HEIGHT,
-  TOPIC_MAX_WIDTH,
-} from '../constants.js';
+import { CANVAS_MAX_HEIGHT, CANVAS_MIN_HEIGHT, TOPIC_MAX_WIDTH } from '../constants.js';
 import { DEFAULT_THEME_NAME, normalizeMindThemeName } from '../theme/mindThemes.js';
 import { clamp } from '../utils/math.js';
 
@@ -91,9 +86,9 @@ export const DEFAULT_MIND_CONFIG = Object.freeze({
   }),
   font: Object.freeze({
     family: DEFAULT_FONT_FAMILY,
-    size: 14,
-    weight: 560,
-    lineHeight: LINE_HEIGHT,
+    size: 16,
+    weight: 400,
+    lineHeight: 20,
     levels: Object.freeze({}),
   }),
   topic: Object.freeze({

@@ -158,7 +158,7 @@ theme:
 layout:
   type: mindmap-right
 font:
-  size: 14
+  size: 16
 ---
 ```
 
@@ -348,9 +348,9 @@ src/theme/mindThemes.js
 ```yaml
 font:
   family: "'Sarasa Mono SC', monospace"
-  size: 14
-  weight: 560
-  lineHeight: 22
+  size: 16
+  weight: 400
+  lineHeight: 20
   level1:
     size: 28
     weight: 700

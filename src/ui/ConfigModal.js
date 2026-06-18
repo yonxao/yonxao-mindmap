@@ -695,6 +695,7 @@ export class ConfigModal extends Modal {
       setConfigValue(this.draftConfig, path, numberFromInput(input.value));
       this.syncInheritedValueStyle(fieldEl, path);
     });
+    this.appendFieldHelp(fieldEl);
   }
 
   /*
@@ -725,6 +726,7 @@ export class ConfigModal extends Modal {
       setConfigValue(this.draftConfig, path, select.value);
       this.syncInheritedValueStyle(fieldEl, path);
     });
+    this.appendFieldHelp(fieldEl);
     return select;
   }
 
@@ -742,11 +744,13 @@ export class ConfigModal extends Modal {
       undefined,
       this.t('configModal.layout.connectorStyle.fixedHelp')
     );
+    fieldEl.parentElement?.classList.add('is-disabled-value');
     const select = fieldEl.createEl('select');
     const option = select.createEl('option', { text: this.t('configModal.connector.elbow') });
     option.value = 'elbow';
     select.value = 'elbow';
     select.disabled = true;
+    this.appendFieldHelp(fieldEl);
   }
 
   /*
@@ -780,6 +784,7 @@ export class ConfigModal extends Modal {
         : '';
       this.syncInheritedValueStyle(fieldEl, path);
     });
+    this.appendFieldHelp(fieldEl);
     return { select, input };
   }
 
@@ -847,6 +852,7 @@ export class ConfigModal extends Modal {
       if (validateAndStore()) this.syncInheritedValueStyle(fieldEl, path);
     });
 
+    this.appendFieldHelp(fieldEl);
     return { select, input };
   }
 
@@ -907,6 +913,7 @@ export class ConfigModal extends Modal {
       setConfigValue(this.draftConfig, path, textInput.value.trim());
       this.syncInheritedValueStyle(fieldEl, path);
     });
+    this.appendFieldHelp(fieldEl);
     return { colorInput, textInput };
   }
 
@@ -915,7 +922,7 @@ export class ConfigModal extends Modal {
    * 创建开关配置项。
    */
   createToggleField(label, path, value, options = {}) {
-    const fieldEl = this.createField(label);
+    const fieldEl = this.createField(label, undefined, options.help);
     this.applyInheritedValueStyle(fieldEl, path);
     fieldEl.parentElement?.classList.add('is-toggle');
     const switchEl = fieldEl.createEl('label', { cls: 'yonxao-mindmap-config-switch' });
@@ -932,9 +939,7 @@ export class ConfigModal extends Modal {
       }
       this.syncInheritedValueStyle(fieldEl, path);
     });
-    if (options.help) {
-      fieldEl.createDiv({ cls: 'yonxao-mindmap-config-help', text: options.help });
-    }
+    this.appendFieldHelp(fieldEl);
   }
 
   /*
@@ -946,10 +951,19 @@ export class ConfigModal extends Modal {
     const labelEl = fieldEl.createEl('label');
     labelEl.setText(label);
     const controlEl = fieldEl.createDiv({ cls: 'yonxao-mindmap-config-control' });
-    if (help) {
-      controlEl.createDiv({ cls: 'yonxao-mindmap-config-help', text: help });
-    }
+    controlEl._yonxaoMindmapHelp = help || '';
     return controlEl;
+  }
+
+  /*
+   * 作用：
+   * 把字段说明固定追加到控件之后，保持“名称 / 配置值”先对齐，说明再跟在配置值下方。
+   */
+  appendFieldHelp(controlEl) {
+    const help = controlEl?._yonxaoMindmapHelp;
+    if (!help) return;
+    controlEl.createDiv({ cls: 'yonxao-mindmap-config-help', text: help });
+    controlEl._yonxaoMindmapHelp = '';
   }
 
   /*
@@ -1226,11 +1240,13 @@ export class ConfigModal extends Modal {
         ? this.t('configModal.layout.branchExpansion.unsupportedHelp')
         : this.t('configModal.layout.branchExpansion.elbowOnlyHelp');
     const fieldEl = this.createField(this.t('configModal.layout.branchExpansion'), undefined, help);
+    fieldEl.parentElement?.classList.add('is-disabled-value');
     const select = fieldEl.createEl('select');
     const option = select.createEl('option', { text: this.t('configModal.branchExpansion.side') });
     option.value = 'side';
     select.value = 'side';
     select.disabled = true;
+    this.appendFieldHelp(fieldEl);
   }
 
   /*
