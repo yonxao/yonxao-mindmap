@@ -25,6 +25,7 @@ import {
   stringifyDraftConfig,
 } from '../config/configDraft.js';
 import {
+  DEFAULT_FONT_FAMILY,
   FONT_LINE_HEIGHT_MAX,
   FONT_LINE_HEIGHT_MIN,
   FONT_SIZE_MAX,
@@ -45,7 +46,6 @@ import {
   CUSTOM_FONT_VALUE,
   getLocalizedFontFamilyGroups,
   isValidFontFamilyInput,
-  isPresetFontValue,
   normalizeFontFamilyInput,
 } from './fontOptions.js';
 import { clamp } from '../utils/math.js';
@@ -526,15 +526,24 @@ export class ConfigModal extends Modal {
    */
   renderFontTab(normalized) {
     this.createSection(this.t('configModal.font.globalSection'));
-    this.createFontFamilyField(
+    const globalFontFamilyField = this.createFontFamilyField(
       this.t('configModal.font.family'),
       ['font', 'family'],
       normalized.font.family,
       {
         help: this.t('configModal.font.family.help'),
+        allowInherit: false,
       }
     );
-    this.createNumberField(
+    /* 强制回填全局字体 */
+    if (globalFontFamilyField && normalized.font.family) {
+      this.syncConfigFontField(
+        globalFontFamilyField.select,
+        globalFontFamilyField.input,
+        normalized.font.family
+      );
+    }
+    const globalSizeInput = this.createNumberField(
       this.t('configModal.font.size'),
       ['font', 'size'],
       normalized.font.size,
@@ -545,7 +554,7 @@ export class ConfigModal extends Modal {
         help: this.t('configModal.font.size.help'),
       }
     );
-    this.createNumberField(
+    const globalWeightInput = this.createNumberField(
       this.t('configModal.font.weight'),
       ['font', 'weight'],
       normalized.font.weight,
@@ -556,7 +565,7 @@ export class ConfigModal extends Modal {
         help: this.t('configModal.font.weight.help'),
       }
     );
-    this.createNumberField(
+    const globalLineHeightInput = this.createNumberField(
       this.t('configModal.font.lineHeight'),
       ['font', 'lineHeight'],
       normalized.font.lineHeight,
@@ -569,8 +578,25 @@ export class ConfigModal extends Modal {
     );
 
     this.createSection(this.t('configModal.font.levelSection'));
+    const levelFontGroups = [];
     for (const level of ['1', '2', '3']) {
-      this.createLevelFontGroup(level, normalized);
+      levelFontGroups.push(this.createLevelFontGroup(level, normalized));
+    }
+    this.installLevelFontInheritanceSync(
+      {
+        family: globalFontFamilyField,
+        size: globalSizeInput,
+        weight: globalWeightInput,
+        lineHeight: globalLineHeightInput,
+      },
+      levelFontGroups
+    );
+    /* 初始渲染：继承全局字体的层级输入框填充全局输入框的值 */
+    for (const group of levelFontGroups) {
+      const field = group.fields.family;
+      if (field && !this.hasDraftConfigPath(['font', group.levelKey, 'family'])) {
+        field.input.value = globalFontFamilyField.input.value;
+      }
     }
   }
 
@@ -618,10 +644,10 @@ export class ConfigModal extends Modal {
       this.render();
     });
 
-    this.createNumberField(
+    const sizeInput = this.createNumberField(
       this.t('configModal.font.size'),
       ['font', levelKey, 'size'],
-      levelFont.size || '',
+      levelFont.size || this.inheritedLevelFontValue(normalized, 'size'),
       {
         min: FONT_SIZE_MIN,
         max: FONT_SIZE_MAX,
@@ -629,10 +655,10 @@ export class ConfigModal extends Modal {
         parentEl: groupEl,
       }
     );
-    this.createNumberField(
+    const weightInput = this.createNumberField(
       this.t('configModal.font.weight'),
       ['font', levelKey, 'weight'],
-      levelFont.weight || '',
+      levelFont.weight || this.inheritedLevelFontValue(normalized, 'weight'),
       {
         min: FONT_WEIGHT_MIN,
         max: FONT_WEIGHT_MAX,
@@ -640,10 +666,10 @@ export class ConfigModal extends Modal {
         parentEl: groupEl,
       }
     );
-    this.createNumberField(
+    const lineHeightInput = this.createNumberField(
       this.t('configModal.font.lineHeight'),
       ['font', levelKey, 'lineHeight'],
-      levelFont.lineHeight || '',
+      levelFont.lineHeight || this.inheritedLevelFontValue(normalized, 'lineHeight'),
       {
         min: FONT_LINE_HEIGHT_MIN,
         max: FONT_LINE_HEIGHT_MAX,
@@ -651,14 +677,100 @@ export class ConfigModal extends Modal {
         parentEl: groupEl,
       }
     );
-    this.createFontFamilyField(
+    const familyField = this.createFontFamilyField(
       this.t('configModal.font.family'),
       ['font', levelKey, 'family'],
-      levelFont.family || '',
+      levelFont.family || this.inheritedLevelFontValue(normalized, 'family'),
       {
         parentEl: groupEl,
+        allowInherit: true,
       }
     );
+
+    return {
+      levelKey,
+      fields: {
+        family: familyField,
+        size: sizeInput,
+        weight: weightInput,
+        lineHeight: lineHeightInput,
+      },
+    };
+  }
+
+  inheritedLevelFontValue(normalized, key) {
+    return normalized.font[key] || '';
+  }
+
+  /*
+   * 作用：
+   * 全局字体字段变化后，实时刷新仍处于“继承全局字体”状态的层级字段。
+   *
+   * 关键点：
+   * 这里只更新没有显式写入 font.level1/2/3 的字段；已经自定义过的层级覆盖不联动。
+   */
+  installLevelFontInheritanceSync(globalFields, levelFontGroups) {
+    const sync = () => {
+      this.syncLevelFontInheritedFields(levelFontGroups);
+    };
+    const controls = [
+      globalFields.family?.select,
+      globalFields.family?.input,
+      globalFields.size,
+      globalFields.weight,
+      globalFields.lineHeight,
+    ].filter(Boolean);
+
+    for (const control of controls) {
+      control.addEventListener('input', sync);
+      control.addEventListener('change', sync);
+    }
+  }
+
+  syncLevelFontInheritedFields(levelFontGroups) {
+    const normalized = normalizeMindConfig(this.effectiveDraftConfig());
+    for (const group of levelFontGroups) {
+      this.syncInheritedFontFamilyField(
+        group.fields.family,
+        ['font', group.levelKey, 'family'],
+        normalized.font.family
+      );
+      this.syncInheritedNumberInput(
+        group.fields.size,
+        ['font', group.levelKey, 'size'],
+        normalized.font.size
+      );
+      this.syncInheritedNumberInput(
+        group.fields.weight,
+        ['font', group.levelKey, 'weight'],
+        normalized.font.weight
+      );
+      this.syncInheritedNumberInput(
+        group.fields.lineHeight,
+        ['font', group.levelKey, 'lineHeight'],
+        normalized.font.lineHeight
+      );
+    }
+  }
+
+  syncInheritedFontFamilyField(field, path, value) {
+    if (!field || this.hasDraftConfigPath(path)) return;
+
+    const nextValue =
+      typeof value === 'string' || typeof value === 'number'
+        ? normalizeFontFamilyInput(String(value))
+        : '';
+    field.setInheritedValue?.(nextValue);
+    this.syncConfigFontField(field.select, field.input, '');
+    if (nextValue) field.input.value = nextValue;
+    this.syncInheritedValueStyle(field.controlEl, path);
+  }
+
+  syncInheritedNumberInput(input, path, value) {
+    if (!input || this.hasDraftConfigPath(path)) return;
+
+    input.value = value === null || value === undefined ? '' : String(value);
+    this.syncInheritedValueStyle(input._yonxaoMindmapControlEl, path);
   }
 
   /*
@@ -695,7 +807,9 @@ export class ConfigModal extends Modal {
       setConfigValue(this.draftConfig, path, numberFromInput(input.value));
       this.syncInheritedValueStyle(fieldEl, path);
     });
+    input._yonxaoMindmapControlEl = fieldEl;
     this.appendFieldHelp(fieldEl);
+    return input;
   }
 
   /*
@@ -794,7 +908,8 @@ export class ConfigModal extends Modal {
    *
    * 实现逻辑：
    * 下拉框提供常用字体预设；右侧输入框允许用户直接填写 CSS font-family。
-   * 选择“继承上级字体”会删除当前路径配置，选择“自定义”则等待用户在输入框填写具体字体。
+   * 允许继承时，选择“继承全局字体”会删除当前路径配置；
+   * 选择“自定义”则等待用户在输入框填写具体字体。
    */
   createFontFamilyField(label, path, value, fieldOptions = {}) {
     const fieldEl = this.createField(label, fieldOptions.parentEl, fieldOptions.help);
@@ -803,17 +918,41 @@ export class ConfigModal extends Modal {
     const select = rowEl.createEl('select');
     const input = rowEl.createEl('input');
     input.type = 'text';
-    input.placeholder = '"LXGW WenKai", "Source Han Sans SC", sans-serif';
+    input.placeholder = '';
 
-    this.appendFontOptions(select);
-
-    const rawValue = getConfigValue(this.draftConfig, path, value);
-    input.value =
-      typeof rawValue === 'string' || typeof rawValue === 'number' ? String(rawValue) : '';
-    this.syncFontSelect(select, input.value);
+    const explicitValue = getConfigValue(this.draftConfig, path, undefined);
+    let inheritedValue =
+      typeof value === 'string' || typeof value === 'number'
+        ? normalizeFontFamilyInput(String(value))
+        : '';
+    const allowInherit = fieldOptions.allowInherit !== false;
+    if (!allowInherit && !inheritedValue && path.join('.') === 'font.family') {
+      inheritedValue = DEFAULT_FONT_FAMILY;
+    }
+    this.appendFontOptions(select, { includeInherit: allowInherit });
+    const hasExplicitValue = this.hasDraftConfigPath(path);
+    const currentValue =
+      typeof explicitValue === 'string' || typeof explicitValue === 'number'
+        ? normalizeFontFamilyInput(String(explicitValue))
+        : inheritedValue;
+    this.syncConfigFontField(select, input, hasExplicitValue || !allowInherit ? currentValue : '');
 
     const validateAndStore = () => {
       const nextValue = normalizeFontFamilyInput(input.value);
+      if (!nextValue) {
+        input.setCustomValidity('');
+        if (allowInherit) {
+          deleteConfigValue(this.draftConfig, path);
+          select.value = '';
+          input.value = inheritedValue;
+        } else {
+          deleteConfigValue(this.draftConfig, path);
+          this.syncConfigFontField(select, input, inheritedValue);
+        }
+        this.updateStatus('');
+        return true;
+      }
+
       if (!isValidFontFamilyInput(nextValue)) {
         input.setCustomValidity(this.t('topicEditor.fontFamily.invalid'));
         this.updateStatus(this.t('topicEditor.fontFamily.invalid'), true);
@@ -822,66 +961,125 @@ export class ConfigModal extends Modal {
 
       input.setCustomValidity('');
       setConfigValue(this.draftConfig, path, nextValue);
-      this.syncFontSelect(select, nextValue);
+      this.syncConfigFontField(select, input, nextValue);
       this.updateStatus('');
       return true;
     };
-    if (!isValidFontFamilyInput(input.value)) {
+    if (input.value && !isValidFontFamilyInput(input.value)) {
       input.setCustomValidity(this.t('topicEditor.fontFamily.invalid'));
     }
 
     select.addEventListener('change', () => {
       if (select.value === CUSTOM_FONT_VALUE) {
-        if (isPresetFontValue(input.value)) {
+        input.setCustomValidity('');
+        input.value = '';
+        input.focus();
+        this.syncInheritedValueStyle(fieldEl, path);
+        return;
+      }
+
+      if (!select.value) {
+        if (!allowInherit) {
+          input.setCustomValidity('');
           input.value = '';
           deleteConfigValue(this.draftConfig, path);
-          input.setCustomValidity('');
+          this.syncConfigFontField(select, input, inheritedValue);
           this.syncInheritedValueStyle(fieldEl, path);
+          return;
         }
-        input.focus();
+
+        deleteConfigValue(this.draftConfig, path);
+        input.setCustomValidity('');
+        input.value = inheritedValue;
+        select.value = '';
+        this.syncInheritedValueStyle(fieldEl, path);
         return;
       }
 
       input.value = select.value;
       input.setCustomValidity('');
-      setConfigValue(this.draftConfig, path, input.value);
+      setConfigValue(this.draftConfig, path, select.value);
       this.syncInheritedValueStyle(fieldEl, path);
     });
 
     input.addEventListener('input', () => {
+      if (normalizeFontFamilyInput(input.value)) select.value = CUSTOM_FONT_VALUE;
       if (validateAndStore()) this.syncInheritedValueStyle(fieldEl, path);
     });
 
+    select._yonxaoMindmapControlEl = fieldEl;
+    input._yonxaoMindmapControlEl = fieldEl;
     this.appendFieldHelp(fieldEl);
-    return { select, input };
+    return {
+      select,
+      input,
+      controlEl: fieldEl,
+      setInheritedValue(nextValue) {
+        inheritedValue =
+          typeof nextValue === 'string' || typeof nextValue === 'number'
+            ? normalizeFontFamilyInput(String(nextValue))
+            : '';
+      },
+    };
   }
 
   /*
    * 作用：
-   * 根据输入框里的字体值同步下拉框选中项。
+   * 同步配置面板中的字体下拉框。
+   *
+   * 这里故意和主题编辑面板 setTopicEditorFontFamilyValue() 保持同一套判断：
+   * - 空值选“继承”
+   * - 命中预设则直接 select.value = fontFamily
+   * - 否则选“自定义”
    */
-  syncFontSelect(select, value) {
+  syncConfigFontField(select, input, value) {
     if (!value) {
       select.value = '';
+      input.value = '';
       return;
     }
 
-    select.value = isPresetFontValue(value) ? value : CUSTOM_FONT_VALUE;
+    const fontFamily = normalizeFontFamilyInput(value);
+    const presetIndex = this.findConfigFontPresetIndex(select, fontFamily);
+    if (presetIndex >= 0) {
+      select.selectedIndex = presetIndex;
+      select.value = select.options[presetIndex].value;
+      input.value = fontFamily;
+      return;
+    }
+
+    select.value = CUSTOM_FONT_VALUE;
+    input.value = fontFamily;
+  }
+
+  findConfigFontPresetIndex(select, value) {
+    const normalizedValue = normalizeFontFamilyInput(value);
+    const options = Array.from(select.options);
+    for (let index = 0; index < options.length; index += 1) {
+      const option = options[index];
+      if (option.value === CUSTOM_FONT_VALUE) continue;
+      if (normalizeFontFamilyInput(option.value) === normalizedValue) return index;
+    }
+    return -1;
   }
 
   /*
    * 作用：
    * 把字体预设按类型渲染成 optgroup。
    */
-  appendFontOptions(select) {
-    for (const group of getLocalizedFontFamilyGroups(this.t)) {
-      const groupEl = select.createEl('optgroup');
+  appendFontOptions(select, options = {}) {
+    for (const group of getLocalizedFontFamilyGroups(this.t, options)) {
+      const groupEl = document.createElement('optgroup');
       groupEl.label = group.group;
 
       for (const [optionValue, optionLabel] of group.options) {
-        const option = groupEl.createEl('option', { text: optionLabel });
+        const option = document.createElement('option');
         option.value = optionValue;
+        option.textContent = optionLabel;
+        groupEl.appendChild(option);
       }
+
+      select.appendChild(groupEl);
     }
   }
 

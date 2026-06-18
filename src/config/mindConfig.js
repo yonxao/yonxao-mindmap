@@ -20,7 +20,7 @@
  * ```
  *
  * 设计思路：
- * - “配置区”只保存全局默认值，例如幕布高度、工具栏位置、字体和主题默认样式。
+ * - “配置区”只保存图级默认值，例如幕布高度、工具栏位置、字体和主题默认样式。
  * - “正文区”只保存 主题级别标记主题，例如 #、##、###。
  * - 标题后的主题属性 [color=...]、[fontSize=...] 仍然保留，用来覆盖全局配置。
  *
@@ -50,8 +50,7 @@ export const TOOLBAR_CORNERS = Object.freeze([
 export const TOOLBAR_PLACEMENTS = Object.freeze(['inside', 'outside']);
 export const VIEW_FIT_MODES = Object.freeze(['original', 'fit']);
 
-export const DEFAULT_FONT_FAMILY =
-  "'Sarasa Mono SC', 'Noto Sans Mono CJK SC', 'Source Han Mono SC', 'Cascadia Mono', 'JetBrains Mono', 'Liberation Mono', monospace";
+export const DEFAULT_FONT_FAMILY = 'var(--font-text)';
 
 /*
  * 作用：
@@ -112,7 +111,7 @@ export const DEFAULT_MIND_CONFIG = Object.freeze({
  * - 渲染时需要先读全局默认配置，再用文档配置覆盖它。
  *
  * 实现逻辑：
- * 这里只递归合并普通对象，例如 font.levels、toolbar、canvas。
+ * 这里只递归合并普通对象，例如 font.level1、basic.toolbar、layout.topicMaxWidth。
  * 标量值、数组和值为 null 的字段都直接使用覆盖配置，避免深层字段被错误拼接。
  */
 export function mergeMindConfigObjects(baseConfig, overrideConfig) {
@@ -448,7 +447,7 @@ export function normalizePartialFont(rawFont) {
  * 计算某个主题最终使用的字体。
  *
  * 优先级：
- * 主题属性 > font.levels[层级] > font 全局配置 > 默认值。
+ * 主题属性 > font.level1/level2/level3 > font 全局配置 > 默认值。
  */
 export function resolveTopicFont(topic, config) {
   const safeConfig = normalizeMindConfig(config);
@@ -649,8 +648,8 @@ export function stringifySimpleYaml(value, depth = 0, path = []) {
  * 让配置区输出保持稳定顺序。
  *
  * 关键点：
- * font/topic 下先输出全局字段，再输出 levels；每个 level 内也按固定字段排序。
- * 这样配置区读起来像“先全局、再局部覆盖”，不会出现 levels 插在全局字段中间的情况。
+ * font/topic 下先输出全局字段，再输出 level1/2/3；每个 level 内也按固定字段排序。
+ * 这样配置区读起来像“先全局、再局部覆盖”，不会出现 level 配置插在全局字段中间的情况。
  */
 function orderedConfigEntries(value, path) {
   const entries = Object.entries(value);
@@ -722,7 +721,7 @@ function stringifyYamlScalar(value) {
   // YAML 中冒号后面的 # 会被当成注释开头。
   // 因此 hex 颜色这类包含 # 的字符串必须加引号，否则 defaultColor: #66ed0c 会被读成空值。
   if (/^[a-zA-Z0-9_./-]+$/.test(text)) return text;
-  return `'${text.replace(/'/g, "''")}'`;
+  return `"${text.replace(/\\/g, '\\\\').replace(/"/g, '\\"')}"`;
 }
 
 /*

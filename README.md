@@ -270,7 +270,7 @@ The visual config modal provides grouped font presets plus a custom font-family 
 
 - Presets are grouped by inheritance/custom values, Obsidian fonts, common Chinese fonts, system fonts, and monospace fonts.
 - Common Chinese presets include Hei, Song, Kai, FangSong, Microsoft YaHei, PingFang SC, Source Han Sans, Source Han Serif, and LXGW WenKai.
-- Select `自定义` to type a CSS font-family value, for example `"LXGW WenKai", "Source Han Sans SC", sans-serif`.
+- Select `自定义` to type a CSS font-family value, for example `'LXGW WenKai', 'Source Han Sans SC', sans-serif`.
 - Browser environments cannot reliably list every installed system font, so the plugin uses curated candidates and normal CSS fallback behavior.
 
 ## Built-in icons

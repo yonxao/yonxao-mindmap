@@ -347,7 +347,7 @@ src/theme/mindThemes.js
 
 ```yaml
 font:
-  family: "'Sarasa Mono SC', monospace"
+  family: var(--font-text)
   size: 16
   weight: 400
   lineHeight: 20

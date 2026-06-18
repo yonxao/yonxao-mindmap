@@ -231,6 +231,14 @@
   gap: 8px;
 }
 
+.yonxao-mindmap-config-combo > select {
+  min-width: 132px;
+}
+
+.yonxao-mindmap-config-combo > input {
+  min-width: 0;
+}
+
 /*
  * 布尔配置使用开关，而不是原生 checkbox。
  */

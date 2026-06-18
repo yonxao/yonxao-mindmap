@@ -19,14 +19,14 @@ export const CUSTOM_FONT_VALUE = '__custom_font__';
  * 字段说明：
  * - group: 下拉框 optgroup 标题。
  * - options: 该组下的选项。
- * - value: 实际写入配置区的 CSS font-family 字符串；空字符串表示删除配置并继承上级。
+ * - value: 实际写入配置区的 CSS font-family 字符串；空字符串表示删除配置并继承全局字体。
  * - label: 配置弹框里的显示文本。
  */
 export const FONT_FAMILY_GROUPS = Object.freeze([
   {
     group: '继承与自定义',
     options: Object.freeze([
-      ['', '继承上级字体'],
+      ['', '继承全局字体'],
       [CUSTOM_FONT_VALUE, '自定义'],
     ]),
   },
@@ -42,20 +42,20 @@ export const FONT_FAMILY_GROUPS = Object.freeze([
     group: '中文常用',
     options: Object.freeze([
       [
-        '"Microsoft YaHei", "PingFang SC", "Source Han Sans SC", "Noto Sans CJK SC", sans-serif',
+        "'Microsoft YaHei', 'PingFang SC', 'Source Han Sans SC', 'Noto Sans CJK SC', sans-serif",
         '中文黑体',
       ],
       [
-        '"SimSun", "Songti SC", "STSong", "Source Han Serif SC", "Noto Serif CJK SC", serif',
+        "'SimSun', 'Songti SC', 'STSong', 'Source Han Serif SC', 'Noto Serif CJK SC', serif",
         '中文宋体',
       ],
-      ['"KaiTi", "Kaiti SC", "STKaiti", "LXGW WenKai", cursive', '中文楷体'],
-      ['"FangSong", "STFangsong", serif', '中文仿宋'],
-      ['"Microsoft YaHei", "微软雅黑", sans-serif', '微软雅黑'],
-      ['"PingFang SC", "苹方", sans-serif', '苹方'],
-      ['"Source Han Sans SC", "Noto Sans CJK SC", sans-serif', '思源黑体'],
-      ['"Source Han Serif SC", "Noto Serif CJK SC", serif', '思源宋体'],
-      ['"LXGW WenKai", "霞鹜文楷", cursive', '霞鹜文楷'],
+      ["'KaiTi', 'Kaiti SC', 'STKaiti', 'LXGW WenKai', cursive", '中文楷体'],
+      ["'FangSong', 'STFangsong', serif", '中文仿宋'],
+      ["'Microsoft YaHei', '微软雅黑', sans-serif", '微软雅黑'],
+      ["'PingFang SC', '苹方', sans-serif", '苹方'],
+      ["'Source Han Sans SC', 'Noto Sans CJK SC', sans-serif", '思源黑体'],
+      ["'Source Han Serif SC', 'Noto Serif CJK SC', serif", '思源宋体'],
+      ["'LXGW WenKai', '霞鹜文楷', cursive", '霞鹜文楷'],
     ]),
   },
   {
@@ -73,9 +73,9 @@ export const FONT_FAMILY_GROUPS = Object.freeze([
         "'Sarasa Mono SC', 'Noto Sans Mono CJK SC', 'Source Han Mono SC', 'Cascadia Mono', 'JetBrains Mono', 'Liberation Mono', monospace",
         '中文等宽字体栈',
       ],
-      ['"Sarasa Mono SC", "更纱黑体 Mono", monospace', '更纱黑体 Mono'],
-      ['"JetBrains Mono", monospace', 'JetBrains Mono'],
-      ['"Cascadia Mono", monospace', 'Cascadia Mono'],
+      ["'Sarasa Mono SC', '更纱黑体 Mono', monospace", '更纱黑体 Mono'],
+      ["'JetBrains Mono', monospace", 'JetBrains Mono'],
+      ["'Cascadia Mono', monospace", 'Cascadia Mono'],
     ]),
   },
 ]);
@@ -99,8 +99,9 @@ const FONT_FAMILY_LIST_PATTERN = new RegExp(
  * FONT_FAMILY_GROUPS 保留为稳定的默认中文结构，方便旧调用方和测试读取；
  * 配置弹框实际显示时走这个函数，按当前插件语言替换 group 和 label。
  */
-export function getLocalizedFontFamilyGroups(t) {
-  return [
+export function getLocalizedFontFamilyGroups(t, options = {}) {
+  const includeInherit = options.includeInherit !== false;
+  const groups = [
     {
       group: t('font.group.inherit'),
       options: [
@@ -120,20 +121,20 @@ export function getLocalizedFontFamilyGroups(t) {
       group: t('font.group.chinese'),
       options: [
         [
-          '"Microsoft YaHei", "PingFang SC", "Source Han Sans SC", "Noto Sans CJK SC", sans-serif',
+          "'Microsoft YaHei', 'PingFang SC', 'Source Han Sans SC', 'Noto Sans CJK SC', sans-serif",
           t('font.chinese.sans'),
         ],
         [
-          '"SimSun", "Songti SC", "STSong", "Source Han Serif SC", "Noto Serif CJK SC", serif',
+          "'SimSun', 'Songti SC', 'STSong', 'Source Han Serif SC', 'Noto Serif CJK SC', serif",
           t('font.chinese.serif'),
         ],
-        ['"KaiTi", "Kaiti SC", "STKaiti", "LXGW WenKai", cursive', t('font.chinese.kaiti')],
-        ['"FangSong", "STFangsong", serif', t('font.chinese.fangsong')],
-        ['"Microsoft YaHei", "微软雅黑", sans-serif', t('font.chinese.microsoftYaHei')],
-        ['"PingFang SC", "苹方", sans-serif', t('font.chinese.pingFang')],
-        ['"Source Han Sans SC", "Noto Sans CJK SC", sans-serif', t('font.chinese.sourceHanSans')],
-        ['"Source Han Serif SC", "Noto Serif CJK SC", serif', t('font.chinese.sourceHanSerif')],
-        ['"LXGW WenKai", "霞鹜文楷", cursive', t('font.chinese.lxgwWenkai')],
+        ["'KaiTi', 'Kaiti SC', 'STKaiti', 'LXGW WenKai', cursive", t('font.chinese.kaiti')],
+        ["'FangSong', 'STFangsong', serif", t('font.chinese.fangsong')],
+        ["'Microsoft YaHei', '微软雅黑', sans-serif", t('font.chinese.microsoftYaHei')],
+        ["'PingFang SC', '苹方', sans-serif", t('font.chinese.pingFang')],
+        ["'Source Han Sans SC', 'Noto Sans CJK SC', sans-serif", t('font.chinese.sourceHanSans')],
+        ["'Source Han Serif SC', 'Noto Serif CJK SC', serif", t('font.chinese.sourceHanSerif')],
+        ["'LXGW WenKai', '霞鹜文楷', cursive", t('font.chinese.lxgwWenkai')],
       ],
     },
     {
@@ -151,12 +152,22 @@ export function getLocalizedFontFamilyGroups(t) {
           "'Sarasa Mono SC', 'Noto Sans Mono CJK SC', 'Source Han Mono SC', 'Cascadia Mono', 'JetBrains Mono', 'Liberation Mono', monospace",
           t('font.monospace.cjkStack'),
         ],
-        ['"Sarasa Mono SC", "更纱黑体 Mono", monospace', t('font.monospace.sarasa')],
-        ['"JetBrains Mono", monospace', t('font.monospace.jetbrains')],
-        ['"Cascadia Mono", monospace', t('font.monospace.cascadia')],
+        ["'Sarasa Mono SC', '更纱黑体 Mono', monospace", t('font.monospace.sarasa')],
+        ["'JetBrains Mono', monospace", t('font.monospace.jetbrains')],
+        ["'Cascadia Mono', monospace", t('font.monospace.cascadia')],
       ],
     },
   ];
+
+  return includeInherit
+    ? groups
+    : groups
+        .map((group) =>
+          group.group === t('font.group.inherit')
+            ? { group: t('font.custom'), options: group.options.filter(([value]) => value !== '') }
+            : group
+        )
+        .filter((group) => group.options.length > 0);
 }
 
 /*
@@ -164,7 +175,10 @@ export function getLocalizedFontFamilyGroups(t) {
  * 判断某个字体值是否来自预设。
  */
 export function isPresetFontValue(value) {
-  return FONT_FAMILY_OPTIONS.some(([optionValue]) => optionValue === value);
+  const normalizedValue = normalizeFontFamilyInput(value);
+  return FONT_FAMILY_OPTIONS.some(
+    ([optionValue]) => normalizeFontFamilyInput(optionValue) === normalizedValue
+  );
 }
 
 /*
@@ -172,7 +186,12 @@ export function isPresetFontValue(value) {
  * 规范化用户输入的 CSS font-family 字符串。
  */
 export function normalizeFontFamilyInput(value) {
-  return String(value || '').trim();
+  return String(value || '')
+    .trim()
+    .replace(/"((?:[^"\\]|\\.)*)"/g, (_match, fontName) => {
+      const normalizedName = fontName.replace(/\\"/g, '"').replace(/\\'/g, "'");
+      return `'${normalizedName.replace(/'/g, "\\'")}'`;
+    });
 }
 
 /*
