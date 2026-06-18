@@ -244,17 +244,23 @@ export function estimateTopicTextWidth(text, font = {}) {
   const fontSize = Number(font.size) || 14;
   const weight = Number(font.weight) || 400;
   const weightFactor = weight >= 800 ? 1.08 : weight >= 650 ? 1.05 : 1;
-  let width = 0;
+  let cjkWidth = 0;
+  let otherWidth = 0;
 
   for (const char of Array.from(String(text))) {
-    width += estimateTopicCharWidth(char, fontSize);
+    if (/[\u2e80-\u9fff\uff00-\uffef]/.test(char)) {
+      cjkWidth += estimateTopicCharWidth(char, fontSize);
+    } else {
+      otherWidth += estimateTopicCharWidth(char, fontSize);
+    }
   }
 
-  return width * weightFactor;
+  // CJK 字符宽度不随字重变化（加粗不增宽），只有拉丁/数字等才受字重影响
+  return cjkWidth + otherWidth * weightFactor;
 }
 
 function estimateTopicCharWidth(char, fontSize) {
-  if (/[\u2e80-\u9fff\uff00-\uffef]/.test(char)) return fontSize * 1.12;
+  if (/[\u2e80-\u9fff\uff00-\uffef]/.test(char)) return fontSize * 1.0;
   if (/\s/.test(char)) return fontSize * 0.36;
   if (/[mwMW@#%&]/.test(char)) return fontSize * 0.86;
   if (/[A-Z0-9]/.test(char)) return fontSize * 0.68;
