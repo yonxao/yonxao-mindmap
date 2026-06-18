@@ -139,6 +139,9 @@ export class YonxaoMindmapRenderer extends Component {
     this.heightResizeHandleEl = null;
     this.sourceInputEl = null;
     this.sourceConfigInputEl = null;
+    this.sourceBodyEditorEl = null;
+    this.sourceBodyHighlightEl = null;
+    this.sourceBodyLineNumbersEl = null;
     this.sourceTabButtons = null;
     this.sourceActiveTab = 'body';
     sourceViewIdCounter += 1;
@@ -1365,6 +1368,26 @@ export class YonxaoMindmapRenderer extends Component {
     this.sourceInputEl.setAttribute('aria-label', this.t('source.tab.body'));
     this.sourceInputEl.setAttribute('role', 'tabpanel');
 
+    this.sourceBodyEditorEl = document.createElement('div');
+    this.sourceBodyEditorEl.className = 'yonxao-mindmap-source-code-editor';
+    this.sourceBodyEditorEl.setAttribute('role', 'presentation');
+
+    const sourceBodyHighlightViewportEl = document.createElement('div');
+    sourceBodyHighlightViewportEl.className = 'yonxao-mindmap-source-highlight-viewport';
+    this.sourceBodyHighlightEl = document.createElement('div');
+    this.sourceBodyHighlightEl.className = 'yonxao-mindmap-source-highlight';
+    sourceBodyHighlightViewportEl.appendChild(this.sourceBodyHighlightEl);
+
+    const sourceBodyLineNumberViewportEl = document.createElement('div');
+    sourceBodyLineNumberViewportEl.className = 'yonxao-mindmap-source-line-number-viewport';
+    this.sourceBodyLineNumbersEl = document.createElement('div');
+    this.sourceBodyLineNumbersEl.className = 'yonxao-mindmap-source-line-numbers';
+    sourceBodyLineNumberViewportEl.appendChild(this.sourceBodyLineNumbersEl);
+
+    this.sourceBodyEditorEl.appendChild(sourceBodyHighlightViewportEl);
+    this.sourceBodyEditorEl.appendChild(sourceBodyLineNumberViewportEl);
+    this.sourceBodyEditorEl.appendChild(this.sourceInputEl);
+
     this.syncSourceInput();
     this.sourceLineCount = this.sourceInputLineCount();
 
@@ -1373,7 +1396,7 @@ export class YonxaoMindmapRenderer extends Component {
     this.sourceStatusEl.textContent = this.t('source.status.editable');
 
     editorEl.appendChild(this.sourceConfigInputEl);
-    editorEl.appendChild(this.sourceInputEl);
+    editorEl.appendChild(this.sourceBodyEditorEl);
     this.sourceEl.appendChild(tabListEl);
     this.sourceEl.appendChild(editorEl);
     this.sourceEl.appendChild(this.sourceStatusEl);
@@ -1411,6 +1434,7 @@ export class YonxaoMindmapRenderer extends Component {
     this.registerDomEvent(inputEl, 'input', () => {
       this.sourceDirty = this.composeSourceFromSourceInputs() !== this.source;
       this.updateSourceStatus();
+      if (tab === 'body') this.updateSourceBodyEditor();
       if (tab === this.sourceActiveTab) {
         this.scheduleSourceModeHeightIfLineCountChanged();
       }
@@ -1423,6 +1447,7 @@ export class YonxaoMindmapRenderer extends Component {
         applyTopicLevelKey(this.sourceInputEl, event.shiftKey);
         this.sourceDirty = this.composeSourceFromSourceInputs() !== this.source;
         this.updateSourceStatus();
+        this.updateSourceBodyEditor();
         this.scheduleSourceModeHeightIfLineCountChanged();
         return;
       }
@@ -1435,6 +1460,13 @@ export class YonxaoMindmapRenderer extends Component {
         });
       }
     });
+
+    if (tab === 'body') {
+      this.registerDomEvent(inputEl, 'scroll', () => this.syncSourceBodyEditorScroll());
+      this.registerDomEvent(inputEl, 'click', () => this.updateSourceBodyEditorActiveLine());
+      this.registerDomEvent(inputEl, 'keyup', () => this.updateSourceBodyEditorActiveLine());
+      this.registerDomEvent(inputEl, 'select', () => this.updateSourceBodyEditorActiveLine());
+    }
   }
 
   /*
@@ -1454,7 +1486,9 @@ export class YonxaoMindmapRenderer extends Component {
 
     this.sourceConfigInputEl?.classList.toggle('is-active', nextTab === 'config');
     this.sourceInputEl?.classList.toggle('is-active', nextTab === 'body');
+    this.sourceBodyEditorEl?.classList.toggle('is-active', nextTab === 'body');
     this.sourceLineCount = this.sourceInputLineCount();
+    this.updateSourceBodyEditor();
     this.scheduleSourceModeHeight();
 
     if (options.focus) {
@@ -1623,7 +1657,125 @@ export class YonxaoMindmapRenderer extends Component {
     this.sourceInputEl.value = sections.body;
     this.sourceLineCount = this.sourceInputLineCount();
     this.sourceDirty = false;
+    this.updateSourceBodyEditor();
     this.updateSourceStatus();
+  }
+
+  /*
+   * 作用：
+   * 重建正文区 CodeMirror 风格高亮层和行号层。
+   *
+   * 设计取舍：
+   * 真实编辑仍由 textarea 完成；高亮层只按当前文本生成不可交互的视觉结构。
+   */
+  updateSourceBodyEditor() {
+    if (!this.sourceInputEl || !this.sourceBodyHighlightEl || !this.sourceBodyLineNumbersEl) {
+      return;
+    }
+
+    const lines = this.sourceInputEl.value.split(/\r?\n/);
+    const activeLineIndex = this.sourceInputCursorLineIndex();
+    const highlightFragment = document.createDocumentFragment();
+    const lineNumberFragment = document.createDocumentFragment();
+
+    lines.forEach((line, index) => {
+      const isActive = index === activeLineIndex;
+
+      const lineEl = document.createElement('div');
+      lineEl.className = 'yonxao-mindmap-source-highlight-line';
+      if (isActive) lineEl.classList.add('is-active-line');
+      this.appendSourceBodyHighlightedLine(lineEl, line);
+      highlightFragment.appendChild(lineEl);
+
+      const lineNumberEl = document.createElement('div');
+      lineNumberEl.className = 'yonxao-mindmap-source-line-number';
+      if (isActive) lineNumberEl.classList.add('is-active-line');
+      lineNumberEl.textContent = String(index + 1);
+      lineNumberFragment.appendChild(lineNumberEl);
+    });
+
+    this.sourceBodyHighlightEl.replaceChildren(highlightFragment);
+    this.sourceBodyLineNumbersEl.replaceChildren(lineNumberFragment);
+    this.syncSourceBodyEditorScroll();
+  }
+
+  /*
+   * 作用：
+   * 只更新当前行状态，不改变源码文本。
+   */
+  updateSourceBodyEditorActiveLine() {
+    if (!this.sourceBodyHighlightEl || !this.sourceBodyLineNumbersEl) return;
+    const activeLineIndex = this.sourceInputCursorLineIndex();
+    const highlightLines = Array.from(this.sourceBodyHighlightEl.children);
+    const lineNumbers = Array.from(this.sourceBodyLineNumbersEl.children);
+
+    highlightLines.forEach((lineEl, index) => {
+      lineEl.classList.toggle('is-active-line', index === activeLineIndex);
+    });
+    lineNumbers.forEach((lineEl, index) => {
+      lineEl.classList.toggle('is-active-line', index === activeLineIndex);
+    });
+  }
+
+  /*
+   * 作用：
+   * textarea 负责滚动，高亮层和行号层跟随它的滚动偏移。
+   */
+  syncSourceBodyEditorScroll() {
+    if (!this.sourceInputEl || !this.sourceBodyHighlightEl || !this.sourceBodyLineNumbersEl) {
+      return;
+    }
+
+    this.sourceBodyHighlightEl.style.transform = `translate(${-this.sourceInputEl.scrollLeft}px, ${-this.sourceInputEl.scrollTop}px)`;
+    this.sourceBodyLineNumbersEl.style.transform = `translateY(${-this.sourceInputEl.scrollTop}px)`;
+  }
+
+  /*
+   * 作用：
+   * 给正文区一行源码加轻量语法高亮。
+   */
+  appendSourceBodyHighlightedLine(lineEl, line) {
+    const sourceLine = String(line);
+    if (!sourceLine) {
+      lineEl.appendChild(document.createTextNode('\u200b'));
+      return;
+    }
+
+    const topicMatch = sourceLine.match(/^(\s*)(#{1,6})(\s+)(.*)$/);
+    if (!topicMatch) {
+      lineEl.classList.add(sourceLine.trim() ? 'is-continuation' : 'is-blank');
+      lineEl.appendChild(document.createTextNode(sourceLine || '\u200b'));
+      return;
+    }
+
+    const [, indent, marker, gap, rest] = topicMatch;
+    lineEl.classList.add('is-topic-line', `is-level-${marker.length}`);
+    lineEl.appendChild(document.createTextNode(indent));
+    this.appendSourceToken(lineEl, marker, 'yonxao-mindmap-source-token-marker');
+    lineEl.appendChild(document.createTextNode(gap));
+
+    const attributeMatch = rest.match(/^(.*?)(\s+\[[^\]]+\])$/);
+    if (!attributeMatch) {
+      this.appendSourceToken(lineEl, rest || '\u200b', 'yonxao-mindmap-source-token-topic');
+      return;
+    }
+
+    this.appendSourceToken(lineEl, attributeMatch[1], 'yonxao-mindmap-source-token-topic');
+    this.appendSourceToken(lineEl, attributeMatch[2], 'yonxao-mindmap-source-token-attribute');
+  }
+
+  appendSourceToken(parentEl, text, className) {
+    const spanEl = document.createElement('span');
+    spanEl.className = className;
+    spanEl.textContent = text;
+    parentEl.appendChild(spanEl);
+  }
+
+  sourceInputCursorLineIndex() {
+    if (!this.sourceInputEl) return 0;
+    return (
+      this.sourceInputEl.value.slice(0, this.sourceInputEl.selectionStart).split(/\r?\n/).length - 1
+    );
   }
 
   /*
