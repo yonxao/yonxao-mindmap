@@ -59,7 +59,7 @@
   z-index: 1000;
   left: 12px;
   top: 12px;
-  width: min(300px, calc(100vw - 24px));
+  width: min(320px, calc(100vw - 24px));
   max-height: calc(100vh - 24px);
   box-sizing: border-box;
   overflow: auto;
@@ -95,12 +95,20 @@
  */
 .yonxao-mindmap-topic-editor-field {
   display: grid;
-  grid-template-columns: 48px minmax(0, 1fr);
+  grid-template-columns: 58px minmax(0, 1fr);
   align-items: start;
   gap: 8px;
   margin-bottom: 8px;
-  color: var(--text-muted);
+  color: var(--text-normal);
   font-size: var(--font-ui-smaller);
+}
+
+.yonxao-mindmap-topic-editor-field > span:first-child {
+  padding-top: 7px;
+}
+
+.yonxao-mindmap-topic-editor-field.is-inherited-value > span:first-child {
+  color: var(--text-muted);
 }
 
 /*
@@ -126,6 +134,22 @@
  */
 .yonxao-mindmap-topic-editor-input:focus {
   border-color: var(--interactive-accent);
+}
+
+.yonxao-mindmap-topic-editor-field.is-inherited-value
+  .yonxao-mindmap-topic-editor-input:not(:focus) {
+  color: var(--text-muted);
+  border-style: dashed;
+  background: var(--background-secondary);
+}
+
+.yonxao-mindmap-topic-editor-field.is-inherited-value .yonxao-mindmap-topic-editor-icon-button {
+  color: var(--text-muted);
+  border-style: dashed;
+}
+
+.yonxao-mindmap-topic-editor-field.is-inherited-value .yonxao-mindmap-topic-editor-color-picker {
+  opacity: 0.72;
 }
 
 /*

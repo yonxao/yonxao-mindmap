@@ -22,5 +22,6 @@ export function createLabeledField(labelText, fieldEl) {
 
   label.appendChild(span);
   label.appendChild(fieldEl);
+  fieldEl._fieldWrapper = label;
   return label;
 }
