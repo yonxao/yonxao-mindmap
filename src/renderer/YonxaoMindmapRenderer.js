@@ -5115,6 +5115,14 @@ export class YonxaoMindmapRenderer extends Component {
     }
 
     if (connectorStyle === 'elbow') {
+      if (Math.abs(startY - endY) < 0.5) {
+        return ['M', startX, startY, 'H', endX].join(' ');
+      }
+
+      if (Math.abs(startX - endX) < 0.5) {
+        return ['M', startX, startY, 'V', endY].join(' ');
+      }
+
       if (axis === 'y') {
         const midY = startY + (endY - startY) / 2;
         return ['M', startX, startY, 'V', midY, 'H', endX, 'V', endY].join(' ');
