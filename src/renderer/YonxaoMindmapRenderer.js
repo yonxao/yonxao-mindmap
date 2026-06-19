@@ -4835,9 +4835,10 @@ export class YonxaoMindmapRenderer extends Component {
     if (subtopicBox.branchExpansion === 'hanging') {
       if (side === 'top' || side === 'bottom') {
         const direction = side === 'top' ? -1 : 1;
+        const horizontalDirection = subtopicBox.x < parentBox.x ? -1 : 1;
         return {
           kind: 'hanging-vertical',
-          startX: parentBox.x + parentBox.width / 2,
+          startX: parentBox.x + horizontalDirection * (parentBox.width / 2),
           startY: parentBox.y,
           endX: subtopicBox.x,
           endY: subtopicBox.y - direction * (subtopicBox.height / 2),
@@ -5595,7 +5596,7 @@ export class YonxaoMindmapRenderer extends Component {
   topicOutletSide(box) {
     const side = String(box.side || '');
     if (box.childBranchExpansion === 'hanging-horizontal') return 'bottom';
-    if (box.childBranchExpansion === 'hanging-vertical') return 'right';
+    if (box.childBranchExpansion === 'hanging-vertical') return side === 'top' ? 'left' : 'right';
     if (side === 'left' || side === 'right' || side === 'top' || side === 'bottom') return side;
     if (this.isFishboneTopicBox(box) || side === 'root') {
       const mode = this.config.layout;
