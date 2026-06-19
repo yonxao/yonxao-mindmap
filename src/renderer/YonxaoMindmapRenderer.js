@@ -3316,34 +3316,7 @@ export class YonxaoMindmapRenderer extends Component {
 
   /*
    * 作用：
-   * 在当前编辑主题下新增一个子主题并保存。
-   */
-  async addSubtopicFromTopicEditor() {
-    if (!this.canEditMindMap()) return false;
-
-    const topic = this.topicById.get(this.editingTopicId);
-    if (!topic) return false;
-
-    // 新增子主题时只改树结构，不直接拼字符串。统一走 serializeMind，可以避免标题层级出错。
-    const subtopic = createMindTopic('新主题', {}, [], 0, (topic.level || 1) + 1);
-    topic.subtopics.push(subtopic);
-    this.collapsedIds.delete(topic.id);
-    assignIds(this.root, '0');
-
-    const saved = await this.saveTreeToSourceAndFile(this.t('notice.subtopicAdded'));
-    if (saved) {
-      this.openTopicEditor(subtopic);
-    }
-    return saved;
-  }
-
-  /*
-   * 作用：
    * 从右键菜单新增子主题。
-   *
-   * 和编辑面板新增子主题的区别：
-   * 右键菜单不依赖当前打开的编辑面板，而是直接使用菜单命中的主题。
-   * 保存成功后立即进入内联改名，让用户可以顺手把“新主题”改成真实内容。
    */
   async addSubtopicFromContextMenu(topic) {
     if (!this.canEditMindMap()) return false;
@@ -3354,11 +3327,7 @@ export class YonxaoMindmapRenderer extends Component {
     this.collapsedIds.delete(topic.id);
     assignIds(this.root, '0');
 
-    const saved = await this.saveTreeToSourceAndFile(this.t('notice.subtopicAdded'));
-    if (saved) {
-      this.openInlineTextEditor(subtopic);
-    }
-    return saved;
+    return this.saveTreeToSourceAndFile(this.t('notice.subtopicAdded'));
   }
 
   /*
@@ -3367,7 +3336,7 @@ export class YonxaoMindmapRenderer extends Component {
    *
    * 实现逻辑：
    * 兄弟主题需要插入到父主题 subtopics 数组的相邻位置，所以具体插入由
-   * topicTreeActions.insertSiblingTopic 负责；渲染器只负责创建主题、保存和进入改名。
+   * topicTreeActions.insertSiblingTopic 负责；渲染器只负责创建主题和保存。
    */
   async addSiblingFromContextMenu(topic, position) {
     if (!this.canEditMindMap()) return false;
@@ -3381,11 +3350,7 @@ export class YonxaoMindmapRenderer extends Component {
     }
 
     assignIds(this.root, '0');
-    const saved = await this.saveTreeToSourceAndFile(this.t('notice.siblingTopicAdded'));
-    if (saved) {
-      this.openInlineTextEditor(sibling);
-    }
-    return saved;
+    return this.saveTreeToSourceAndFile(this.t('notice.siblingTopicAdded'));
   }
 
   /*
