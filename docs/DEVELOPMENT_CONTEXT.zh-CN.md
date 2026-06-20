@@ -218,11 +218,13 @@ font:
 
 ### 9.1 主要配置项
 
-运行时默认配置定义在：
+运行时默认值、配置范围和可选值集合定义在：
 
 ```text
-src/config/mindConfig.js
+src/config/defaultMindConfig.js
 ```
+
+配置区解析、规范化、保存清理仍在 `src/config/mindConfig.js`。配置弹框需要展示选项时，也应优先复用 `src/config/defaultMindConfig.js` 中的值集合，再在 UI 层映射为本地化文案。
 
 核心配置项：
 
@@ -397,7 +399,7 @@ font:
 主题属性 > font.levelN > 全局 font 配置 > 插件默认值
 ```
 
-字号、字重、行高有范围限制，范围定义在 `src/config/mindConfig.js`。
+字号、字重、行高有范围限制，范围定义在 `src/config/defaultMindConfig.js`。
 
 配置弹框中字体需要提供预设和自定义输入，字体列表按类型分组。
 
@@ -815,7 +817,7 @@ sed -n '1,220p' package.json
 
 处理具体需求时再按需阅读相关源码：
 
-- 配置问题：`src/config/mindConfig.js`、`src/ui/ConfigModal.js`、`src/ui/YonxaoMindmapSettingTab.js`。
+- 配置问题：`src/config/defaultMindConfig.js`、`src/config/mindConfig.js`、`src/ui/ConfigModal.js`、`src/ui/YonxaoMindmapSettingTab.js`。
 - 布局问题：`src/layout/layoutTree.js`。
 - 渲染问题：`src/renderer/YonxaoMindmapRenderer.js`。
 - 解析/保存问题：`src/parser/parseMind.js`、`src/parser/serializeMind.js`、`src/model/topicTreeActions.js`。

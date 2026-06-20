@@ -29,81 +29,63 @@
  * 保存时则走 mergeMindConfig()/serializeMindSource()，把配置区和正文重新拼回代码块。
  */
 
-import { CANVAS_MAX_HEIGHT, CANVAS_MIN_HEIGHT, TOPIC_MAX_WIDTH } from '../constants.js';
-import { DEFAULT_THEME_NAME, normalizeMindThemeName } from '../theme/mindThemes.js';
+import { normalizeMindThemeName } from '../theme/mindThemes.js';
 import { clamp } from '../utils/math.js';
+import {
+  BRANCH_EXPANSION_UNSUPPORTED_LAYOUTS,
+  BRANCH_EXPANSIONS,
+  CANVAS_MAX_HEIGHT,
+  CANVAS_MIN_HEIGHT,
+  CONNECTOR_STYLE_CONFIGURABLE_LAYOUTS,
+  CONNECTOR_STYLES,
+  DEFAULT_FONT_FAMILY,
+  DEFAULT_MIND_CONFIG,
+  FIT_VIEW_MAX_SCALE_MAX,
+  FIT_VIEW_MAX_SCALE_MIN,
+  FONT_LINE_HEIGHT_MAX,
+  FONT_LINE_HEIGHT_MIN,
+  FONT_SIZE_MAX,
+  FONT_SIZE_MIN,
+  FONT_WEIGHT_MAX,
+  FONT_WEIGHT_MIN,
+  LAYOUT_OPTION_GROUPS,
+  LAYOUT_TYPES,
+  THEME_SCHEMES,
+  TOOLBAR_CORNERS,
+  TOOLBAR_PLACEMENTS,
+  TOPIC_MAX_WIDTH_MAX,
+  TOPIC_MAX_WIDTH_MIN,
+  VIEW_FIT_MODES,
+  VIEW_MODES,
+} from './defaultMindConfig.js';
 
-export const FONT_SIZE_MIN = 9;
-export const FONT_SIZE_MAX = 96;
-export const FONT_WEIGHT_MIN = 100;
-export const FONT_WEIGHT_MAX = 900;
-export const FONT_LINE_HEIGHT_MIN = 12;
-export const FONT_LINE_HEIGHT_MAX = 160;
-export const TOPIC_MAX_WIDTH_MIN = 120;
-export const TOPIC_MAX_WIDTH_MAX = 800;
-export const TOOLBAR_CORNERS = Object.freeze([
-  'top-left',
-  'top-right',
-  'bottom-left',
-  'bottom-right',
-]);
-export const TOOLBAR_PLACEMENTS = Object.freeze(['inside', 'outside']);
-export const VIEW_FIT_MODES = Object.freeze(['original', 'fit']);
-export const FIT_VIEW_MAX_SCALE_MIN = 1;
-export const FIT_VIEW_MAX_SCALE_MAX = 6;
-
-export const DEFAULT_FONT_FAMILY = 'var(--font-text)';
-
-/*
- * 作用：
- * 插件运行时使用的完整默认配置。
- *
- * 关键点：
- * 这个对象不是直接写回源码的模板，而是运行时兜底值。
- * 用户源码里没有写某个配置时，渲染器读取这里的默认值；保存时只写用户已有或插件主动记录的配置。
- */
-export const DEFAULT_MIND_CONFIG = Object.freeze({
-  canvas: Object.freeze({
-    height: null,
-  }),
-  toolbar: Object.freeze({
-    corner: 'top-right',
-    placement: 'outside',
-  }),
-  interaction: Object.freeze({
-    wheelZoom: false,
-  }),
-  view: Object.freeze({
-    mode: 'map',
-    fit: 'fit',
-    fitNoUpscale: true,
-    fitMaxScale: 1.5,
-  }),
-  theme: DEFAULT_THEME_NAME,
-  layout: 'mindmap-right',
-  connector: Object.freeze({
-    style: 'curve',
-  }),
-  branch: Object.freeze({
-    expansion: 'side',
-  }),
-  font: Object.freeze({
-    family: DEFAULT_FONT_FAMILY,
-    size: 16,
-    weight: 400,
-    lineHeight: 20,
-    levels: Object.freeze({}),
-  }),
-  topic: Object.freeze({
-    defaultColor: '',
-    maxWidth: TOPIC_MAX_WIDTH,
-    levels: Object.freeze({}),
-  }),
-  source: Object.freeze({
-    enableTabIndent: true,
-    height: null,
-  }),
-});
+export {
+  BRANCH_EXPANSION_UNSUPPORTED_LAYOUTS,
+  BRANCH_EXPANSIONS,
+  CANVAS_MAX_HEIGHT,
+  CANVAS_MIN_HEIGHT,
+  CONNECTOR_STYLE_CONFIGURABLE_LAYOUTS,
+  CONNECTOR_STYLES,
+  DEFAULT_FONT_FAMILY,
+  DEFAULT_MIND_CONFIG,
+  FIT_VIEW_MAX_SCALE_MAX,
+  FIT_VIEW_MAX_SCALE_MIN,
+  FONT_LINE_HEIGHT_MAX,
+  FONT_LINE_HEIGHT_MIN,
+  FONT_SIZE_MAX,
+  FONT_SIZE_MIN,
+  FONT_WEIGHT_MAX,
+  FONT_WEIGHT_MIN,
+  LAYOUT_OPTION_GROUPS,
+  LAYOUT_TYPES,
+  THEME_SCHEMES,
+  TOOLBAR_CORNERS,
+  TOOLBAR_PLACEMENTS,
+  TOPIC_MAX_WIDTH_MAX,
+  TOPIC_MAX_WIDTH_MIN,
+  VIEW_FIT_MODES,
+  VIEW_MODES,
+};
 
 /*
  * 作用：
@@ -417,17 +399,10 @@ function pruneInactiveBranchExpansionConfig(config) {
 
   const layoutType = normalizeLayoutType(layout.type) || DEFAULT_MIND_CONFIG.layout;
   const connectorStyle = normalizeConnectorStyle(layout.connectorStyle);
-  const isUnsupportedLayout =
-    layoutType === 'radial' || layoutType === 'tree-table' || layoutType === 'tree-table-stepped';
-  const isMindMapLayout =
-    layoutType === 'mindmap-right' ||
-    layoutType === 'mindmap-left' ||
-    layoutType === 'mindmap-bidirectional' ||
-    layoutType === 'mindmap-down' ||
-    layoutType === 'mindmap-up' ||
-    layoutType === 'mindmap-vertical';
+  const isUnsupportedLayout = BRANCH_EXPANSION_UNSUPPORTED_LAYOUTS.includes(layoutType);
+  const isConnectorConfigurableLayout = CONNECTOR_STYLE_CONFIGURABLE_LAYOUTS.includes(layoutType);
 
-  if (isUnsupportedLayout || (isMindMapLayout && connectorStyle !== 'elbow')) {
+  if (isUnsupportedLayout || (isConnectorConfigurableLayout && connectorStyle !== 'elbow')) {
     return deleteMindConfigPath(config, ['layout', 'branchExpansion']);
   }
 
@@ -944,31 +919,7 @@ function normalizeOptionalNumber(value, min, max) {
  */
 function normalizeLayoutType(value) {
   const text = normalizeText(value).toLowerCase();
-  if (
-    [
-      'mindmap-right',
-      'mindmap-left',
-      'mindmap-bidirectional',
-      'mindmap-down',
-      'mindmap-up',
-      'mindmap-vertical',
-      'tree-right',
-      'tree-left',
-      'tree',
-      'org',
-      'org-right',
-      'timeline-up',
-      'timeline-down',
-      'timeline',
-      'radial',
-      'fishbone-left',
-      'fishbone-right',
-      'tree-table',
-      'tree-table-stepped',
-    ].includes(text)
-  ) {
-    return text;
-  }
+  if (LAYOUT_TYPES.includes(text)) return text;
   return '';
 }
 
@@ -978,8 +929,7 @@ function normalizeLayoutType(value) {
  */
 function normalizeConnectorStyle(value) {
   const text = normalizeText(value).toLowerCase();
-  if (text === 'curve' || text === 'straight' || text === 'elbow') return text;
-  return '';
+  return CONNECTOR_STYLES.includes(text) ? text : '';
 }
 
 /*
@@ -988,8 +938,7 @@ function normalizeConnectorStyle(value) {
  */
 export function normalizeBranchExpansion(value) {
   const text = normalizeText(value).toLowerCase();
-  if (text === 'side' || text === 'hanging') return text;
-  return '';
+  return BRANCH_EXPANSIONS.includes(text) ? text : '';
 }
 
 /*
@@ -1016,8 +965,7 @@ export function normalizeToolbarPlacement(value) {
  */
 function normalizeViewMode(value) {
   const text = normalizeText(value).toLowerCase();
-  if (text === 'map' || text === 'source') return text;
-  return '';
+  return VIEW_MODES.includes(text) ? text : '';
 }
 
 /*

@@ -25,6 +25,12 @@ import {
   stringifyDraftConfig,
 } from '../config/configDraft.js';
 import {
+  BRANCH_EXPANSION_UNSUPPORTED_LAYOUTS,
+  BRANCH_EXPANSIONS,
+  CANVAS_MAX_HEIGHT,
+  CANVAS_MIN_HEIGHT,
+  CONNECTOR_STYLE_CONFIGURABLE_LAYOUTS,
+  CONNECTOR_STYLES,
   DEFAULT_FONT_FAMILY,
   FIT_VIEW_MAX_SCALE_MAX,
   FIT_VIEW_MAX_SCALE_MIN,
@@ -34,6 +40,8 @@ import {
   FONT_SIZE_MIN,
   FONT_WEIGHT_MAX,
   FONT_WEIGHT_MIN,
+  LAYOUT_OPTION_GROUPS,
+  THEME_SCHEMES,
   TOPIC_MAX_WIDTH_MAX,
   TOPIC_MAX_WIDTH_MIN,
   TOOLBAR_CORNERS,
@@ -55,28 +63,12 @@ import { clamp } from '../utils/math.js';
 
 const RAINBOW_THEME_NAMES = new Set(['rainbow', 'pastel-rainbow', 'neon-rainbow']);
 
-// 只有传统思维导图布局支持用户选择曲线、直线、折线；其他布局都有更强的结构语义，连接线固定走各自的折线绘制逻辑。
-const CONNECTOR_STYLE_CONFIGURABLE_LAYOUTS = new Set([
-  'mindmap-right',
-  'mindmap-left',
-  'mindmap-bidirectional',
-  'mindmap-up',
-  'mindmap-down',
-  'mindmap-vertical',
-]);
-
-const BRANCH_EXPANSION_UNSUPPORTED_LAYOUTS = new Set([
-  'radial',
-  'tree-table',
-  'tree-table-stepped',
-]);
-
 /*
  * 作用：
  * 对外提供“当前布局是否允许设置连线线型”的统一判断。
  */
 export function isConnectorStyleConfigurableLayout(layout) {
-  return CONNECTOR_STYLE_CONFIGURABLE_LAYOUTS.has(String(layout || ''));
+  return CONNECTOR_STYLE_CONFIGURABLE_LAYOUTS.includes(String(layout || ''));
 }
 
 /*
@@ -84,7 +76,7 @@ export function isConnectorStyleConfigurableLayout(layout) {
  * 判断当前布局是否支持普通主题的子主题展开方式。
  */
 export function isBranchExpansionSupportedLayout(layout) {
-  return !BRANCH_EXPANSION_UNSUPPORTED_LAYOUTS.has(String(layout || ''));
+  return !BRANCH_EXPANSION_UNSUPPORTED_LAYOUTS.includes(String(layout || ''));
 }
 
 /*
@@ -343,8 +335,8 @@ export class ConfigModal extends Modal {
       ['basic', 'canvasHeight'],
       normalized.canvas.height,
       {
-        min: 96,
-        max: 1800,
+        min: CANVAS_MIN_HEIGHT,
+        max: CANVAS_MAX_HEIGHT,
         step: 10,
         placeholder: this.t('configModal.basic.placeholder.auto'),
         help: this.t('configModal.basic.canvasHeight.help'),
@@ -400,8 +392,8 @@ export class ConfigModal extends Modal {
       ['basic', 'sourceHeight'],
       normalized.source.height,
       {
-        min: 96,
-        max: 1800,
+        min: CANVAS_MIN_HEIGHT,
+        max: CANVAS_MAX_HEIGHT,
         step: 10,
         placeholder: this.t('configModal.basic.placeholder.auto'),
         help: this.t('configModal.basic.sourceHeight.help'),
@@ -1356,16 +1348,17 @@ export class ConfigModal extends Modal {
    * 返回主题色系下拉框选项。
    */
   themeOptions() {
-    return [
-      ['default', this.t('configModal.theme.default')],
-      ['ocean', this.t('configModal.theme.ocean')],
-      ['forest', this.t('configModal.theme.forest')],
-      ['sunset', this.t('configModal.theme.sunset')],
-      ['mono', this.t('configModal.theme.mono')],
-      ['rainbow', this.t('configModal.theme.rainbow')],
-      ['pastel-rainbow', this.t('configModal.theme.pastelRainbow')],
-      ['neon-rainbow', this.t('configModal.theme.neonRainbow')],
-    ];
+    const labels = {
+      default: this.t('configModal.theme.default'),
+      ocean: this.t('configModal.theme.ocean'),
+      forest: this.t('configModal.theme.forest'),
+      sunset: this.t('configModal.theme.sunset'),
+      mono: this.t('configModal.theme.mono'),
+      rainbow: this.t('configModal.theme.rainbow'),
+      'pastel-rainbow': this.t('configModal.theme.pastelRainbow'),
+      'neon-rainbow': this.t('configModal.theme.neonRainbow'),
+    };
+    return THEME_SCHEMES.map((value) => [value, labels[value]]);
   }
 
   /*
@@ -1381,60 +1374,40 @@ export class ConfigModal extends Modal {
    * 返回布局类型分组下拉框选项。
    */
   layoutOptionGroups() {
-    return [
-      {
-        group: this.t('configModal.layout.group.mindmap'),
-        options: [
-          ['mindmap-right', this.t('configModal.layout.mindmapRight')],
-          ['mindmap-left', this.t('configModal.layout.mindmapLeft')],
-          ['mindmap-bidirectional', this.t('configModal.layout.mindmapBidirectional')],
-          ['mindmap-up', this.t('configModal.layout.mindmapUp')],
-          ['mindmap-down', this.t('configModal.layout.mindmapDown')],
-          ['mindmap-vertical', this.t('configModal.layout.mindmapVertical')],
-        ],
-      },
-      {
-        group: this.t('configModal.layout.group.tree'),
-        options: [
-          ['tree', this.t('configModal.layout.tree')],
-          ['tree-right', this.t('configModal.layout.treeRight')],
-          ['tree-left', this.t('configModal.layout.treeLeft')],
-        ],
-      },
-      {
-        group: this.t('configModal.layout.group.org'),
-        options: [
-          ['org', this.t('configModal.layout.org')],
-          ['org-right', this.t('configModal.layout.orgRight')],
-        ],
-      },
-      {
-        group: this.t('configModal.layout.group.timeline'),
-        options: [
-          ['timeline', this.t('configModal.layout.timeline')],
-          ['timeline-up', this.t('configModal.layout.timelineUp')],
-          ['timeline-down', this.t('configModal.layout.timelineDown')],
-        ],
-      },
-      {
-        group: this.t('configModal.layout.group.radial'),
-        options: [['radial', this.t('configModal.layout.radial')]],
-      },
-      {
-        group: this.t('configModal.layout.group.fishbone'),
-        options: [
-          ['fishbone-left', this.t('configModal.layout.fishboneLeft')],
-          ['fishbone-right', this.t('configModal.layout.fishboneRight')],
-        ],
-      },
-      {
-        group: this.t('configModal.layout.group.treeTable'),
-        options: [
-          ['tree-table', this.t('configModal.layout.treeTable')],
-          ['tree-table-stepped', this.t('configModal.layout.treeTableStepped')],
-        ],
-      },
-    ];
+    const groupLabels = {
+      mindmap: this.t('configModal.layout.group.mindmap'),
+      tree: this.t('configModal.layout.group.tree'),
+      org: this.t('configModal.layout.group.org'),
+      timeline: this.t('configModal.layout.group.timeline'),
+      radial: this.t('configModal.layout.group.radial'),
+      fishbone: this.t('configModal.layout.group.fishbone'),
+      treeTable: this.t('configModal.layout.group.treeTable'),
+    };
+    const optionLabels = {
+      'mindmap-right': this.t('configModal.layout.mindmapRight'),
+      'mindmap-left': this.t('configModal.layout.mindmapLeft'),
+      'mindmap-bidirectional': this.t('configModal.layout.mindmapBidirectional'),
+      'mindmap-up': this.t('configModal.layout.mindmapUp'),
+      'mindmap-down': this.t('configModal.layout.mindmapDown'),
+      'mindmap-vertical': this.t('configModal.layout.mindmapVertical'),
+      tree: this.t('configModal.layout.tree'),
+      'tree-right': this.t('configModal.layout.treeRight'),
+      'tree-left': this.t('configModal.layout.treeLeft'),
+      org: this.t('configModal.layout.org'),
+      'org-right': this.t('configModal.layout.orgRight'),
+      timeline: this.t('configModal.layout.timeline'),
+      'timeline-up': this.t('configModal.layout.timelineUp'),
+      'timeline-down': this.t('configModal.layout.timelineDown'),
+      radial: this.t('configModal.layout.radial'),
+      'fishbone-left': this.t('configModal.layout.fishboneLeft'),
+      'fishbone-right': this.t('configModal.layout.fishboneRight'),
+      'tree-table': this.t('configModal.layout.treeTable'),
+      'tree-table-stepped': this.t('configModal.layout.treeTableStepped'),
+    };
+    return LAYOUT_OPTION_GROUPS.map((group) => ({
+      group: groupLabels[group.group],
+      options: group.options.map((value) => [value, optionLabels[value]]),
+    }));
   }
 
   /*
@@ -1442,11 +1415,12 @@ export class ConfigModal extends Modal {
    * 返回连线线型下拉框选项。
    */
   connectorOptions() {
-    return [
-      ['curve', this.t('configModal.connector.curve')],
-      ['straight', this.t('configModal.connector.straight')],
-      ['elbow', this.t('configModal.connector.elbow')],
-    ];
+    const labels = {
+      curve: this.t('configModal.connector.curve'),
+      straight: this.t('configModal.connector.straight'),
+      elbow: this.t('configModal.connector.elbow'),
+    };
+    return CONNECTOR_STYLES.map((value) => [value, labels[value]]);
   }
 
   /*
@@ -1454,10 +1428,11 @@ export class ConfigModal extends Modal {
    * 返回子主题展开方式下拉框选项。
    */
   branchExpansionOptions() {
-    return [
-      ['side', this.t('configModal.branchExpansion.side')],
-      ['hanging', this.t('configModal.branchExpansion.hanging')],
-    ];
+    const labels = {
+      side: this.t('configModal.branchExpansion.side'),
+      hanging: this.t('configModal.branchExpansion.hanging'),
+    };
+    return BRANCH_EXPANSIONS.map((value) => [value, labels[value]]);
   }
 
   /*
