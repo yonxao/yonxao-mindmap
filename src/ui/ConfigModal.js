@@ -13,7 +13,7 @@
  * YonxaoMindmapRenderer.createToolbar() -> openConfigModal() -> ConfigModal.onOpen()
  */
 
-import { Modal, Notice } from 'obsidian';
+import { Modal, Notice, setIcon } from 'obsidian';
 
 import {
   cloneConfig,
@@ -106,6 +106,8 @@ export class ConfigModal extends Modal {
     this.formEl = null;
     this.advancedInputEl = null;
     this.statusEl = null;
+    this.applyButton = null;
+    this.saveAndCloseButton = null;
     this.cancelButton = null;
     this.dragState = null;
   }
@@ -122,6 +124,7 @@ export class ConfigModal extends Modal {
 
     const headerEl = contentEl.createDiv({ cls: 'yonxao-mindmap-config-header' });
     headerEl.createEl('h2', { text: this.title });
+    this.createConfigInfoPopover(headerEl);
     this.installModalDrag(headerEl);
 
     const tabsEl = contentEl.createDiv({ cls: 'yonxao-mindmap-config-tabs' });
@@ -148,12 +151,20 @@ export class ConfigModal extends Modal {
     this.statusEl = contentEl.createDiv({ cls: 'yonxao-mindmap-config-status' });
 
     const actionsEl = contentEl.createDiv({ cls: 'yonxao-mindmap-config-actions' });
-    this.createActionButton(actionsEl, this.t('configModal.actions.apply'), async () => {
-      await this.applyDraft(false);
-    });
-    this.createActionButton(actionsEl, this.t('configModal.actions.saveAndClose'), async () => {
-      await this.applyDraft(true);
-    });
+    this.applyButton = this.createActionButton(
+      actionsEl,
+      this.t('configModal.actions.apply'),
+      async () => {
+        await this.applyDraft(false);
+      }
+    );
+    this.saveAndCloseButton = this.createActionButton(
+      actionsEl,
+      this.t('configModal.actions.saveAndClose'),
+      async () => {
+        await this.applyDraft(true);
+      }
+    );
     this.cancelButton = this.createActionButton(
       actionsEl,
       this.t('configModal.actions.cancel'),
@@ -178,6 +189,51 @@ export class ConfigModal extends Modal {
     this.modalEl.style.margin = '';
     this.modalEl.style.transform = '';
     this.contentEl.empty();
+  }
+
+  /*
+   * 作用：
+   * 在标题旁创建配置说明入口。
+   *
+   * 交互：
+   * - 鼠标悬浮和键盘聚焦时自动显示。
+   * - 点击图标时固定展开/收起，方便阅读较长说明。
+   */
+  createConfigInfoPopover(headerEl) {
+    const wrapperEl = headerEl.createDiv({ cls: 'yonxao-mindmap-config-info' });
+    const buttonEl = wrapperEl.createEl('button', {
+      cls: 'yonxao-mindmap-config-info-button',
+      attr: {
+        'aria-label': this.t('configModal.info.label'),
+        'aria-expanded': 'false',
+      },
+    });
+    buttonEl.type = 'button';
+    const popoverEl = wrapperEl.createDiv({
+      cls: 'yonxao-mindmap-config-info-popover',
+      text: this.t('configModal.info.tooltip'),
+      attr: {
+        role: 'tooltip',
+      },
+    });
+    const popoverId = `yonxao-mindmap-config-info-${Date.now().toString(36)}`;
+    popoverEl.id = popoverId;
+    buttonEl.setAttribute('aria-describedby', popoverId);
+    setIcon(buttonEl, 'info');
+
+    buttonEl.addEventListener('pointerdown', (event) => {
+      event.stopPropagation();
+    });
+    buttonEl.addEventListener('click', (event) => {
+      event.preventDefault();
+      event.stopPropagation();
+      const isOpen = wrapperEl.classList.toggle('is-open');
+      buttonEl.setAttribute('aria-expanded', String(isOpen));
+    });
+    buttonEl.addEventListener('blur', () => {
+      wrapperEl.classList.remove('is-open');
+      buttonEl.setAttribute('aria-expanded', 'false');
+    });
   }
 
   /*
@@ -1315,10 +1371,11 @@ export class ConfigModal extends Modal {
    */
   updateActionButtons() {
     if (!this.cancelButton) return;
+    const isApplied = this.isDraftApplied();
+    if (this.applyButton) this.applyButton.disabled = isApplied;
+    if (this.saveAndCloseButton) this.saveAndCloseButton.disabled = isApplied;
     this.cancelButton.setText(
-      this.isDraftApplied()
-        ? this.t('configModal.actions.close')
-        : this.t('configModal.actions.cancel')
+      isApplied ? this.t('configModal.actions.close') : this.t('configModal.actions.cancel')
     );
   }
 

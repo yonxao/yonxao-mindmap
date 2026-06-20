@@ -194,6 +194,9 @@ const BASE_LOCALE_MESSAGES = Object.freeze({
 
     'configModal.title': 'Mind Map Config',
     'configModal.globalTitle': 'Global Default Config',
+    'configModal.info.label': 'Config rules',
+    'configModal.info.tooltip':
+      'Config priority:\nTopic attributes > Code block config > Plugin global default config > Plugin built-in defaults\n\nColor priority:\nTopic attribute color > Default topic color > Theme scheme\n\nSave cleanup logic:\nWhen a config value is the same as the effective default value from the plugin global default config or plugin built-in defaults, it is removed to keep the config concise.',
     'configModal.tabs.basic': 'Basic',
     'configModal.tabs.theme': 'Theme',
     'configModal.tabs.layout': 'Layout',
@@ -477,6 +480,9 @@ const BASE_LOCALE_MESSAGES = Object.freeze({
 
     'configModal.title': '思维导图配置',
     'configModal.globalTitle': '全局默认配置',
+    'configModal.info.label': '配置规则说明',
+    'configModal.info.tooltip':
+      '配置生效优先级：\n主题属性 > 代码块配置区 > 插件全局默认配置 > 插件内置默认值\n\n颜色优先级：\n主题属性 color > 默认主题颜色 > 主题方案\n\n配置值保存逻辑：\n当配置值与默认值（插件全局默认配置或插件内置默认值中生效的值）相同，配置值会被消除以保持配置简洁。',
     'configModal.tabs.basic': '基础',
     'configModal.tabs.theme': '主题',
     'configModal.tabs.layout': '布局',
@@ -757,6 +763,9 @@ const BASE_LOCALE_MESSAGES = Object.freeze({
 
     'configModal.title': '心智圖配置',
     'configModal.globalTitle': '全域預設配置',
+    'configModal.info.label': '配置規則說明',
+    'configModal.info.tooltip':
+      '配置生效優先級：\n主題屬性 > 程式碼區塊配置區 > 外掛全域預設配置 > 外掛內建預設值\n\n顏色優先級：\n主題屬性 color > 預設主題顏色 > 主題方案\n\n配置值儲存邏輯：\n當配置值與預設值（外掛全域預設配置或外掛內建預設值中生效的值）相同，配置值會被消除以保持配置簡潔。',
     'configModal.tabs.basic': '基礎',
     'configModal.tabs.theme': '主題',
     'configModal.tabs.layout': '佈局',
@@ -1890,6 +1899,10 @@ function createAdditionalLocale(text) {
       'yonxao-mindmap: Please click the mind map first, then copy the image again.',
     'configModal.title': text.config,
     'configModal.globalTitle': text.globalDefaultConfig,
+    'configModal.info.label': text.configRules || 'Config rules',
+    'configModal.info.tooltip':
+      text.configRulesTooltip ||
+      'Config priority:\nTopic attributes > Code block config > Plugin global default config > Plugin built-in defaults\n\nColor priority:\nTopic attribute color > Default topic color > Theme scheme\n\nSave cleanup logic:\nWhen a config value is the same as the effective default value from the plugin global default config or plugin built-in defaults, it is removed to keep the config concise.',
     'configModal.tabs.basic': text.basic,
     'configModal.tabs.theme': text.theme,
     'configModal.tabs.layout': text.layout,

@@ -37,6 +37,10 @@
  * 标题区域保持克制，同时作为配置弹框拖拽手柄。
  */
 .yonxao-mindmap-config-header {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 8px;
   cursor: move;
   user-select: none;
   touch-action: none;
@@ -46,6 +50,63 @@
   margin: 0;
   font-size: var(--font-ui-large);
   font-weight: var(--font-semibold);
+}
+
+/*
+ * 标题旁的信息按钮用于解释配置优先级和保存清理规则。
+ * hover/focus 适合快速查看，点击则临时固定展开。
+ */
+.yonxao-mindmap-config-info {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+}
+
+.yonxao-mindmap-config-info-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  min-width: 26px;
+  padding: 0;
+  color: var(--text-muted);
+  cursor: pointer;
+  background: transparent;
+  border: 0;
+  box-shadow: none;
+}
+
+.yonxao-mindmap-config-info-button:hover,
+.yonxao-mindmap-config-info-button:focus-visible,
+.yonxao-mindmap-config-info.is-open .yonxao-mindmap-config-info-button {
+  color: var(--text-accent);
+  background: var(--background-modifier-hover);
+}
+
+.yonxao-mindmap-config-info-popover {
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 0;
+  z-index: 20;
+  display: none;
+  width: min(460px, calc(100vw - 72px));
+  padding: 12px 14px;
+  color: var(--text-normal);
+  font-size: var(--font-ui-small);
+  line-height: 1.6;
+  white-space: pre-line;
+  cursor: default;
+  user-select: text;
+  background: var(--background-primary);
+  border: 1px solid var(--background-modifier-border);
+  border-radius: 8px;
+  box-shadow: var(--shadow-s);
+}
+
+.yonxao-mindmap-config-info:hover .yonxao-mindmap-config-info-popover,
+.yonxao-mindmap-config-info.is-open .yonxao-mindmap-config-info-popover {
+  display: block;
 }
 
 .yonxao-mindmap-config-modal-host.is-dragging-config-modal {
