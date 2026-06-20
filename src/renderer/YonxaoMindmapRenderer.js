@@ -140,6 +140,32 @@ const TOPIC_CONTROL_AVOID_GAP = 7;
 const TOPIC_CONTROL_AVOID_OFFSET =
   TOPIC_TOGGLE_BUTTON_RADIUS + TOPIC_SIBLING_BUTTON_RADIUS + TOPIC_CONTROL_AVOID_GAP;
 
+/*
+ * 作用：
+ * 非全屏自动幕布高度的上限。没有手动配置 canvasHeight 时，适配视图和原始大小
+ * 都最多自动增长到这个高度，避免普通文档流里的导图一次占用过多页面空间。
+ */
+const AUTO_CANVAS_MAX_HEIGHT = 800;
+
+/*
+ * 作用：
+ * 无法读取浏览器窗口高度时使用的兜底视口高度，保证服务端检查或异常宿主环境下
+ * 自动高度计算仍然有稳定输入。
+ */
+const AUTO_CANVAS_FALLBACK_VIEWPORT_HEIGHT = 800;
+
+/*
+ * 作用：
+ * 自动幕布高度的下限。它高于主题最小高度，避免只有一个主题时幕布被压得太扁。
+ */
+const AUTO_CANVAS_MIN_HEIGHT = 220;
+
+/*
+ * 作用：
+ * 非全屏自动幕布高度最多占用当前窗口高度的比例，给 Obsidian 正文上下文留出空间。
+ */
+const AUTO_CANVAS_VIEWPORT_HEIGHT_RATIO = 0.75;
+
 let sourceViewIdCounter = 0;
 
 export class YonxaoMindmapRenderer extends Component {
@@ -6097,7 +6123,7 @@ export class YonxaoMindmapRenderer extends Component {
 
     this.addTopicContextMenuItem(menu, this.t('toolbar.fitView'), 'scan', () => this.fitView());
     this.addTopicContextMenuItem(menu, this.t('toolbar.originalSize'), 'maximize', () =>
-      this.showOriginalSizeView(null, { preserveCanvasHeight: true })
+      this.showOriginalSizeView()
     );
 
     menu.showAtMouseEvent(event);
@@ -7035,7 +7061,7 @@ export class YonxaoMindmapRenderer extends Component {
    */
   toggleViewFitMode() {
     if (this.currentViewFitMode === 'fit') {
-      this.showOriginalSizeView(null, { preserveCanvasHeight: true });
+      this.showOriginalSizeView();
       return;
     }
 
@@ -7214,12 +7240,16 @@ export class YonxaoMindmapRenderer extends Component {
    * 计算自动幕布高度的上限。
    */
   getAutoCanvasMaxHeight() {
-    const viewportHeight = typeof window === 'undefined' ? 800 : window.innerHeight;
+    const viewportHeight =
+      typeof window === 'undefined' ? AUTO_CANVAS_FALLBACK_VIEWPORT_HEIGHT : window.innerHeight;
     if (this.isFullscreen) {
-      return Math.max(220, viewportHeight - 32);
+      return Math.max(AUTO_CANVAS_MIN_HEIGHT, viewportHeight - 32);
     }
 
-    return Math.min(560, Math.max(220, viewportHeight * 0.7));
+    return Math.min(
+      AUTO_CANVAS_MAX_HEIGHT,
+      Math.max(AUTO_CANVAS_MIN_HEIGHT, viewportHeight * AUTO_CANVAS_VIEWPORT_HEIGHT_RATIO)
+    );
   }
 
   /*

@@ -39,7 +39,8 @@
 .yonxao-mindmap-container {
   position: relative;
   width: 100%;
-  height: min(560px, 64vh);
+  /* 默认幕布最多占 800px 或当前视口 75%，避免未计算前过高，同时给中型导图更多初始空间。 */
+  height: min(800px, 75vh);
   min-height: 96px;
   border: 1px solid var(--background-modifier-border);
   border-radius: 8px;
