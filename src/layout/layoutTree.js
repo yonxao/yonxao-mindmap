@@ -87,6 +87,7 @@ const RADIAL_COLLISION_MARGIN = 24;
 const RADIAL_COLLISION_ITERATIONS = 24;
 const HANGING_LEVEL_GAP = Math.round(LEVEL_GAP * 0.72);
 const HANGING_SIBLING_GAP = SIBLING_GAP;
+const VERTICAL_HANGING_EDGE_GAP = Math.max(24, Math.round(SIBLING_GAP * 1.35));
 const FISHBONE_PRIMARY_BONE_ANGLE = Math.PI * 0.32;
 const FISHBONE_PRIMARY_BONE_SLOPE = Math.tan(FISHBONE_PRIMARY_BONE_ANGLE);
 const FISHBONE_PRIMARY_BONE_MIN_EDGE_OFFSET = Math.round(TOPIC_MIN_HEIGHT * 2.4);
@@ -248,6 +249,21 @@ function horizontalHangingSubtreeWidth(box, subtopicWidth) {
 
 /*
  * 作用：
+ * 计算竖向下挂子主题组相对父主题中心线的起始偏移。
+ *
+ * 关键点：
+ * 向下布局的下挂子主题从父主题右侧展开，向上布局则从左侧展开。
+ * 当父主题很宽时，如果仍然只按固定 HANGING_LEVEL_GAP 偏移，第一个子主题中心点可能落进
+ * 父主题边缘内侧，导致父子连线穿过父主题自身。
+ */
+function verticalHangingStartOffset(box, firstSubtopicExtent, hangingDir) {
+  const firstInnerExtent =
+    hangingDir > 0 ? firstSubtopicExtent?.left || 0 : firstSubtopicExtent?.right || 0;
+  return Math.max(HANGING_LEVEL_GAP, box.width / 2 + VERTICAL_HANGING_EDGE_GAP - firstInnerExtent);
+}
+
+/*
+ * 作用：
  * 计算水平思维导图子树相对当前主题中心点的上下占位。
  *
  * 为什么不用单一 height：
@@ -353,9 +369,10 @@ function verticalSubtreeExtent(topic, side, collapsedIds, branchExpansion = 'sid
   if (shouldUseHangingExpansion(topic, branchExpansion)) {
     const subtopicWidth = horizontalExtentGroupWidth(subtopicExtents, HANGING_SIBLING_GAP);
     const dir = verticalHangingDirection(side);
+    const startOffset = verticalHangingStartOffset(box, subtopicExtents[0], dir);
     return normalizeHorizontalExtent({
-      left: dir < 0 ? ownLeft + HANGING_SIBLING_GAP + subtopicWidth : ownLeft,
-      right: dir > 0 ? ownRight + HANGING_SIBLING_GAP + subtopicWidth : ownRight,
+      left: dir < 0 ? Math.max(ownLeft, startOffset + subtopicWidth) : ownLeft,
+      right: dir > 0 ? Math.max(ownRight, startOffset + subtopicWidth) : ownRight,
     });
   }
 
@@ -755,7 +772,8 @@ export function placeVerticalHangingDescendants(parent, side, collapsedIds, bran
   const totalWidth = horizontalExtentGroupWidth(extents, HANGING_SIBLING_GAP);
   const dir = side === 'top' ? -1 : 1;
   const hangingDir = verticalHangingDirection(side);
-  let x = parentBox.x + hangingDir * (parentBox.width / 2 + HANGING_SIBLING_GAP);
+  const startOffset = verticalHangingStartOffset(parentBox, extents[0], hangingDir);
+  let x = parentBox.x + hangingDir * startOffset;
 
   for (let index = 0; index < subtopics.length; index += 1) {
     const subtopic = subtopics[index];
