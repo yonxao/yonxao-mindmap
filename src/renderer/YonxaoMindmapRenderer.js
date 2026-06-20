@@ -109,6 +109,37 @@ const DOCUMENT_CONFIG_DEFAULT_PRUNE_PATHS = Object.freeze([
   ['font', 'lineHeight'],
 ]);
 
+/*
+ * 作用：
+ * 折叠/展开圆点的视觉半径，同时用于计算和新增按钮的避让距离。
+ */
+const TOPIC_TOGGLE_BUTTON_RADIUS = 8;
+
+/*
+ * 作用：
+ * 新增兄弟主题小圆点的视觉半径，同时用于计算和折叠按钮的避让距离。
+ */
+const TOPIC_SIBLING_BUTTON_RADIUS = 7;
+
+/*
+ * 作用：
+ * 新增子主题小圆点的视觉半径。
+ */
+const TOPIC_SUBTOPIC_BUTTON_RADIUS = 8;
+
+/*
+ * 作用：
+ * 折叠按钮和新增兄弟主题按钮错位后的最小视觉间隙。
+ */
+const TOPIC_CONTROL_AVOID_GAP = 7;
+
+/*
+ * 作用：
+ * 当折叠按钮和新增兄弟主题按钮占用同一出口点时，沿主题边缘错开的距离。
+ */
+const TOPIC_CONTROL_AVOID_OFFSET =
+  TOPIC_TOGGLE_BUTTON_RADIUS + TOPIC_SIBLING_BUTTON_RADIUS + TOPIC_CONTROL_AVOID_GAP;
+
 let sourceViewIdCounter = 0;
 
 export class YonxaoMindmapRenderer extends Component {
@@ -5275,7 +5306,7 @@ export class YonxaoMindmapRenderer extends Component {
       svg('circle', {
         cx: 0,
         cy: 0,
-        r: 8,
+        r: TOPIC_TOGGLE_BUTTON_RADIUS,
       })
     );
     toggle.appendChild(
@@ -5480,10 +5511,39 @@ export class YonxaoMindmapRenderer extends Component {
         ];
 
     for (const position of positions) {
-      group.appendChild(this.renderSiblingButton(position));
+      group.appendChild(this.renderSiblingButton(this.adjustSiblingButtonPosition(box, position)));
     }
 
     return group;
+  }
+
+  /*
+   * 作用：
+   * 避开下挂展开时“新增兄弟主题”按钮和折叠/展开按钮重叠。
+   *
+   * 说明：
+   * 下挂展开会把折叠按钮放在子线出口；竖向布局的左右兄弟按钮、横向布局的上下兄弟按钮
+   * 都可能正好占用同一个点。这里只在坐标真正重合时沿边缘切线挪开一点，保留按钮语义。
+   */
+  adjustSiblingButtonPosition(box, position) {
+    if (!box.childBranchExpansion) return position;
+
+    const togglePoint = this.topicTogglePoint(box);
+    const overlapsToggle =
+      Math.abs(position.x - togglePoint.x) < 0.5 && Math.abs(position.y - togglePoint.y) < 0.5;
+    if (!overlapsToggle) return position;
+
+    if (togglePoint.side === 'left' || togglePoint.side === 'right') {
+      return {
+        ...position,
+        y: position.y + TOPIC_CONTROL_AVOID_OFFSET,
+      };
+    }
+
+    return {
+      ...position,
+      x: position.x + TOPIC_CONTROL_AVOID_OFFSET,
+    };
   }
 
   /*
@@ -5520,7 +5580,7 @@ export class YonxaoMindmapRenderer extends Component {
     const title = svg('title');
     title.textContent = position.label;
     button.appendChild(title);
-    button.appendChild(svg('circle', { cx: 0, cy: 0, r: 7 }));
+    button.appendChild(svg('circle', { cx: 0, cy: 0, r: TOPIC_SIBLING_BUTTON_RADIUS }));
     button.appendChild(svg('path', { d: 'M -3 0 H 3 M 0 -3 V 3' }));
 
     return button;
@@ -5546,7 +5606,7 @@ export class YonxaoMindmapRenderer extends Component {
     const title = svg('title');
     title.textContent = this.t('topicButton.addSubtopic');
     button.appendChild(title);
-    button.appendChild(svg('circle', { cx: 0, cy: 0, r: 8 }));
+    button.appendChild(svg('circle', { cx: 0, cy: 0, r: TOPIC_SUBTOPIC_BUTTON_RADIUS }));
     button.appendChild(svg('path', { d: 'M -3.5 0 H 3.5 M 0 -3.5 V 3.5' }));
 
     return button;
@@ -5810,6 +5870,13 @@ export class YonxaoMindmapRenderer extends Component {
 
     const canEdit = this.canEditMindMap();
 
+    if (target && target.closest && target.closest('.yonxao-mindmap-toggle')) {
+      event.preventDefault();
+      event.stopPropagation();
+      this.toggleTopicCollapse(topic);
+      return;
+    }
+
     if (
       canEdit &&
       target &&
@@ -5843,11 +5910,7 @@ export class YonxaoMindmapRenderer extends Component {
       return;
     }
 
-    if (target && target.closest && target.closest('.yonxao-mindmap-toggle')) {
-      event.preventDefault();
-      event.stopPropagation();
-      this.toggleTopicCollapse(topic);
-    }
+    return;
   }
 
   /*
