@@ -121,9 +121,9 @@ const TOPIC_TOGGLE_BUTTON_RADIUS = 8;
 
 /*
  * 作用：
- * 新增兄弟主题小圆点的视觉半径，同时用于计算和折叠按钮的避让距离。
+ * 新增兄弟主题小圆点的视觉半径，与折叠按钮和新增子主题按钮保持一致。
  */
-const TOPIC_SIBLING_BUTTON_RADIUS = 7;
+const TOPIC_SIBLING_BUTTON_RADIUS = 8;
 
 /*
  * 作用：

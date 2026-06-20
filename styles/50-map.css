@@ -159,23 +159,28 @@
 }
 
 /*
- * 作用：
  * 编辑按钮底板样式。
+ *
+ * 设计说明：
+ * 配色和折叠按钮、新增兄弟/子主题按钮保持一致：白底 + accent 描边。
  */
 .yonxao-mindmap-topic-edit rect {
   fill: var(--background-primary);
-  stroke: var(--background-modifier-border);
-  stroke-width: 1;
+  stroke: var(--interactive-accent);
+  stroke-width: 1.4;
 }
 
 /*
  * 作用：
  * 编辑按钮内部铅笔图标线条。
+ *
+ * 设计说明：
+ * 配色和加号按钮保持一致，使用 accent 强调。
  */
 .yonxao-mindmap-topic-edit path {
   fill: none;
-  stroke: var(--text-muted);
-  stroke-width: 1.5;
+  stroke: var(--interactive-accent);
+  stroke-width: 1.4;
   stroke-linecap: round;
   stroke-linejoin: round;
 }
@@ -277,13 +282,15 @@
 }
 
 /*
- * 作用：
  * 折叠/展开圆形按钮外观。
+ *
+ * 设计说明：
+ * 配色和编辑按钮、新增兄弟/子主题按钮保持一致：白底 + accent 描边。
  */
 .yonxao-mindmap-toggle {
   fill: var(--background-primary);
-  stroke: var(--background-modifier-border-hover);
-  stroke-width: 1.5;
+  stroke: var(--interactive-accent);
+  stroke-width: 1.4;
   cursor: pointer;
   pointer-events: auto;
 }
@@ -291,9 +298,12 @@
 /*
  * 作用：
  * 折叠/展开按钮里的横线和竖线。
+ *
+ * 设计说明：
+ * 配色和加号按钮保持一致，使用 accent 强调。
  */
 .yonxao-mindmap-toggle path {
-  stroke: var(--text-muted);
-  stroke-width: 1.6;
+  stroke: var(--interactive-accent);
+  stroke-width: 1.4;
   stroke-linecap: round;
 }
