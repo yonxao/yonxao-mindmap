@@ -17,8 +17,6 @@
 ---
 theme:
   scheme: ocean
-layout:
-  branchExpansion: hanging
 ---
 
 # 曲线连线
@@ -35,14 +33,10 @@ layout:
 
 ```yxmm
 ---
-basic:
-  viewFit: fit
 theme:
   scheme: forest
 layout:
-  type: mindmap-right
   connectorStyle: straight
-  branchExpansion: hanging
 ---
 
 # 直线连线
@@ -85,6 +79,7 @@ theme:
   scheme: neon-rainbow
 layout:
   connectorStyle: elbow
+  branchExpansion: hanging
 ---
 
 # 折线下挂
@@ -190,7 +185,6 @@ layout:
 ```yxmm
 ---
 basic:
-  canvasHeight: 490
   viewFit: original
 theme:
   scheme: forest
@@ -270,7 +264,6 @@ layout:
 ```yxmm
 ---
 basic:
-  canvasHeight: 430
   viewFit: original
 theme:
   scheme: pastel-rainbow
@@ -347,7 +340,6 @@ layout:
 ```yxmm
 ---
 basic:
-  canvasHeight: 460
   viewFit: original
 theme:
   scheme: sunset
@@ -425,9 +417,6 @@ layout:
 ---
 basic:
   viewFit: original
-  canvasHeight: 460
-theme:
-  scheme: grape
 layout:
   type: mindmap-up
   connectorStyle: elbow
@@ -563,6 +552,31 @@ font:
 #### 新主题2
 ### 新主题
 ## 新主题c
+```
+
+```yxmm
+---
+theme:
+  scheme: neon-rainbow
+layout:
+  type: mindmap-vertical
+  connectorStyle: elbow
+  branchExpansion: hanging
+  topicMaxWidth:
+    global: 260
+font:
+  lineHeight: 22
+---
+
+# 垂直长文本
+## 上侧多行主题 [maxWidth=360]
+第一行检查上侧长文本。
+第二行检查真实换行。
+### 这是一个很长的普通主题，用来检查垂直双向布局上侧折行
+## 下侧多行主题 [maxWidth=360]
+第一行检查下侧长文本。
+第二行检查真实换行。
+### 这是一个很长的普通主题，用来检查垂直双向布局下侧折行
 ```
 
 ## tree-right
