@@ -252,9 +252,9 @@ function horizontalHangingSubtreeWidth(box, subtopicWidth) {
  * 计算竖向下挂子主题组相对父主题中心线的起始偏移。
  *
  * 关键点：
- * 向下布局的下挂子主题从父主题右侧展开，向上布局则从左侧展开。
+ * 竖向布局的下挂子主题统一从父主题右侧展开。
  * 当父主题很宽时，如果仍然只按固定 HANGING_LEVEL_GAP 偏移，第一个子主题中心点可能落进
- * 父主题边缘内侧，导致父子连线穿过父主题自身。
+ * 父主题右边缘内侧，导致父子连线穿过父主题自身。
  */
 function verticalHangingStartOffset(box, firstSubtopicExtent, hangingDir) {
   const firstInnerExtent =
@@ -368,7 +368,7 @@ function verticalSubtreeExtent(topic, side, collapsedIds, branchExpansion = 'sid
 
   if (shouldUseHangingExpansion(topic, branchExpansion)) {
     const subtopicWidth = horizontalExtentGroupWidth(subtopicExtents, HANGING_SIBLING_GAP);
-    const dir = verticalHangingDirection(side);
+    const dir = verticalHangingDirection();
     const startOffset = verticalHangingStartOffset(box, subtopicExtents[0], dir);
     return normalizeHorizontalExtent({
       left: dir < 0 ? Math.max(ownLeft, startOffset + subtopicWidth) : ownLeft,
@@ -429,11 +429,10 @@ function directSubtopicGroupCenterXOffset(extents, gap) {
  * 决定竖向布局下挂子主题向左还是向右展开。
  *
  * 规则：
- * 下方分支向右，上方分支向左。垂直双向布局因此能自然分摊左右空间，
- * 不会让上下两侧的下挂内容都挤到同一边。
+ * 上向、下向和垂直双向思维导图的下挂内容都向右展开，保持阅读方向一致。
  */
-function verticalHangingDirection(side) {
-  return side === 'top' ? -1 : 1;
+function verticalHangingDirection() {
+  return 1;
 }
 
 /*
@@ -771,7 +770,7 @@ export function placeVerticalHangingDescendants(parent, side, collapsedIds, bran
   );
   const totalWidth = horizontalExtentGroupWidth(extents, HANGING_SIBLING_GAP);
   const dir = side === 'top' ? -1 : 1;
-  const hangingDir = verticalHangingDirection(side);
+  const hangingDir = verticalHangingDirection();
   const startOffset = verticalHangingStartOffset(parentBox, extents[0], hangingDir);
   let x = parentBox.x + hangingDir * startOffset;
 

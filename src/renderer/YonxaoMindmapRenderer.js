@@ -5747,7 +5747,7 @@ export class YonxaoMindmapRenderer extends Component {
   topicOutletSide(box) {
     const side = String(box.side || '');
     if (box.childBranchExpansion === 'hanging-horizontal') return 'bottom';
-    if (box.childBranchExpansion === 'hanging-vertical') return side === 'top' ? 'left' : 'right';
+    if (box.childBranchExpansion === 'hanging-vertical') return 'right';
     if (side === 'left' || side === 'right' || side === 'top' || side === 'bottom') return side;
     if (this.isFishboneTopicBox(box) || side === 'root') {
       const mode = this.config.layout;

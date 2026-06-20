@@ -15,13 +15,9 @@
 
 ```yxmm
 ---
-basic:
-  viewFit: fit
 theme:
   scheme: ocean
 layout:
-  type: mindmap-right
-  connectorStyle: curve
   branchExpansion: hanging
 ---
 
@@ -59,6 +55,28 @@ layout:
 ### 侧向内容
 ```
 
+### 折线连线与侧向展开
+
+```yxmm
+---
+theme:
+  scheme: neon-rainbow
+layout:
+  connectorStyle: elbow
+---
+
+# 折线下挂
+## 一级分支
+### 普通主题一
+#### 下挂主题一
+#### 下挂主题二
+### 普通主题二
+#### 下挂主题三
+#### 下挂主题四
+## 第二分支
+### 普通主题三
+```
+
 ### 折线连线与下挂展开
 
 ```yxmm
@@ -67,7 +85,6 @@ theme:
   scheme: neon-rainbow
 layout:
   connectorStyle: elbow
-  branchExpansion: hanging
 ---
 
 # 折线下挂
@@ -88,12 +105,8 @@ layout:
 
 ```yxmm
 ---
-basic:
-  viewFit: fit
 theme:
   scheme: ocean
-layout:
-  type: mindmap-right
 ---
 
 # 右向小图
@@ -107,11 +120,9 @@ layout:
 ---
 basic:
   viewFit: original
-  canvasHeight: 420
 theme:
   scheme: ocean
 layout:
-  type: mindmap-right
   connectorStyle: elbow
   branchExpansion: hanging
 ---
@@ -179,6 +190,7 @@ layout:
 ```yxmm
 ---
 basic:
+  canvasHeight: 490
   viewFit: original
 theme:
   scheme: forest
@@ -540,10 +552,17 @@ font:
 第一行检查下侧长文本。
 第二行检查真实换行。
 ### 这是一个很长的普通主题，用来检查垂直双向布局下侧折行
-## 新主题
-## 新主题
+## 新主题a
+## 新主题b
+### 新主题000
+### 新主题00
+### 新主题0
+#### 新主题
+#### 新主题1
+#### 新主题
+#### 新主题2
 ### 新主题
-### 新主题
+## 新主题c
 ```
 
 ## tree-right
