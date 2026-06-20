@@ -26,6 +26,7 @@ import {
 } from '../constants.js';
 import {
   canonicalizeMindConfig,
+  CONNECTOR_STYLE_CONFIGURABLE_LAYOUTS,
   deleteMindConfigPath,
   FONT_LINE_HEIGHT_MAX,
   FONT_LINE_HEIGHT_MIN,
@@ -3718,6 +3719,9 @@ export class YonxaoMindmapRenderer extends Component {
       const currentValue = this.normalizedConfigValueForPath(normalizedDocument, path);
       const defaultValue = this.normalizedDefaultValueForPath(normalizedGlobal, path);
       if (this.areConfigValuesEqual(currentValue, defaultValue)) {
+        if (this.shouldKeepDefaultConfigPath(next, path, normalizedDocument, normalizedGlobal)) {
+          continue;
+        }
         next = deleteMindConfigPath(next, path);
       }
     }
@@ -3755,6 +3759,88 @@ export class YonxaoMindmapRenderer extends Component {
     }
 
     return paths;
+  }
+
+  /*
+   * 作用：
+   * 某些父配置即使等于全局默认值，也必须保留。
+   *
+   * 例子：
+   * - basic.fitViewNoUpscale 依赖 basic.viewFit。
+   * - basic.fitViewMaxScale 依赖 basic.viewFit 和 basic.fitViewNoUpscale=false。
+   * - layout.branchExpansion 依赖 layout.type；传统思维导图还依赖 layout.connectorStyle=elbow。
+   *
+   * 如果父配置先被默认值清理删掉，后续 serializeMindSource() 的无效配置清理会误删这些子配置。
+   */
+  shouldKeepDefaultConfigPath(config, path, normalizedDocument, normalizedGlobal) {
+    const key = path.join('.');
+
+    if (key === 'basic.viewFit') {
+      return this.hasMeaningfulFitViewChild(config, normalizedDocument, normalizedGlobal);
+    }
+
+    if (key === 'basic.fitViewNoUpscale') {
+      return this.hasMeaningfulFitViewMaxScale(config, normalizedDocument, normalizedGlobal);
+    }
+
+    if (key === 'layout.type') {
+      return this.hasMeaningfulBranchExpansion(config, normalizedDocument, normalizedGlobal);
+    }
+
+    if (key === 'layout.connectorStyle') {
+      if (!CONNECTOR_STYLE_CONFIGURABLE_LAYOUTS.includes(normalizedDocument.layout)) return false;
+      return this.hasMeaningfulBranchExpansion(config, normalizedDocument, normalizedGlobal);
+    }
+
+    return false;
+  }
+
+  /*
+   * 作用：
+   * 判断适配视图是否还有非默认子配置，需要保留 basic.viewFit 作为语义父项。
+   */
+  hasMeaningfulFitViewChild(config, normalizedDocument, normalizedGlobal) {
+    const basic = this.isPlainConfigObject(config?.basic) ? config.basic : {};
+
+    if (
+      basic.fitViewNoUpscale !== undefined &&
+      !this.areConfigValuesEqual(
+        normalizedDocument.view?.fitNoUpscale,
+        normalizedGlobal.view?.fitNoUpscale
+      )
+    ) {
+      return true;
+    }
+
+    return this.hasMeaningfulFitViewMaxScale(config, normalizedDocument, normalizedGlobal);
+  }
+
+  /*
+   * 作用：
+   * 判断最大放大倍数是否是非默认配置，需要保留 basic.fitViewNoUpscale=false。
+   */
+  hasMeaningfulFitViewMaxScale(config, normalizedDocument, normalizedGlobal) {
+    const basic = this.isPlainConfigObject(config?.basic) ? config.basic : {};
+    if (basic.fitViewMaxScale === undefined) return false;
+
+    return !this.areConfigValuesEqual(
+      normalizedDocument.view?.fitMaxScale,
+      normalizedGlobal.view?.fitMaxScale
+    );
+  }
+
+  /*
+   * 作用：
+   * 判断子主题展开方式是否是非默认配置，需要保留布局/线型父项。
+   */
+  hasMeaningfulBranchExpansion(config, normalizedDocument, normalizedGlobal) {
+    const layout = this.isPlainConfigObject(config?.layout) ? config.layout : {};
+    if (layout.branchExpansion === undefined) return false;
+
+    return !this.areConfigValuesEqual(
+      normalizedDocument.branch?.expansion,
+      normalizedGlobal.branch?.expansion
+    );
   }
 
   /*

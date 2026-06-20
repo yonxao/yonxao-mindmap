@@ -106,6 +106,7 @@ export class ConfigModal extends Modal {
     this.formEl = null;
     this.advancedInputEl = null;
     this.statusEl = null;
+    this.cancelButton = null;
     this.dragState = null;
   }
 
@@ -138,6 +139,12 @@ export class ConfigModal extends Modal {
     }
 
     this.formEl = contentEl.createDiv({ cls: 'yonxao-mindmap-config-body' });
+    this.formEl.addEventListener('input', () => {
+      this.updateActionButtons();
+    });
+    this.formEl.addEventListener('change', () => {
+      this.updateActionButtons();
+    });
     this.statusEl = contentEl.createDiv({ cls: 'yonxao-mindmap-config-status' });
 
     const actionsEl = contentEl.createDiv({ cls: 'yonxao-mindmap-config-actions' });
@@ -147,9 +154,13 @@ export class ConfigModal extends Modal {
     this.createActionButton(actionsEl, this.t('configModal.actions.saveAndClose'), async () => {
       await this.applyDraft(true);
     });
-    this.createActionButton(actionsEl, this.t('configModal.actions.cancel'), () => {
-      this.close();
-    });
+    this.cancelButton = this.createActionButton(
+      actionsEl,
+      this.t('configModal.actions.cancel'),
+      () => {
+        this.close();
+      }
+    );
 
     this.render();
   }
@@ -299,6 +310,7 @@ export class ConfigModal extends Modal {
     }
 
     this.updateTabs();
+    this.updateActionButtons();
     this.updateStatus('');
   }
 
@@ -384,7 +396,12 @@ export class ConfigModal extends Modal {
     });
     fitMaxScaleInput.addEventListener('input', () => {
       setConfigValue(this.draftConfig, ['basic', 'viewFit'], 'fit');
+      setConfigValue(this.draftConfig, ['basic', 'fitViewNoUpscale'], false);
       this.syncInheritedValueStyle(viewFitSelect._yonxaoMindmapControlEl, ['basic', 'viewFit']);
+      this.syncInheritedValueStyle(fitNoUpscaleToggle._yonxaoMindmapControlEl, [
+        'basic',
+        'fitViewNoUpscale',
+      ]);
     });
     syncFitViewSubControls();
     this.createNumberField(
@@ -482,8 +499,9 @@ export class ConfigModal extends Modal {
       this.render();
     });
 
+    let connectorSelect = null;
     if (this.isConnectorStyleConfigurable(normalized.layout)) {
-      const connectorSelect = this.createSelectField(
+      connectorSelect = this.createSelectField(
         this.t('configModal.layout.connectorStyle'),
         ['layout', 'connectorStyle'],
         normalized.connector.style,
@@ -504,8 +522,14 @@ export class ConfigModal extends Modal {
         this.branchExpansionOptions()
       );
       branchExpansionSelect.addEventListener('change', () => {
+        setConfigValue(this.draftConfig, ['layout', 'type'], normalized.layout);
+        this.syncInheritedValueStyle(layoutSelect._yonxaoMindmapControlEl, ['layout', 'type']);
         if (!this.isConnectorStyleConfigurable(normalized.layout)) return;
         setConfigValue(this.draftConfig, ['layout', 'connectorStyle'], 'elbow');
+        this.syncInheritedValueStyle(connectorSelect._yonxaoMindmapControlEl, [
+          'layout',
+          'connectorStyle',
+        ]);
       });
     }
 
@@ -1262,6 +1286,44 @@ export class ConfigModal extends Modal {
 
   /*
    * 作用：
+   * 判断当前弹框内容是否已经和最近一次打开/应用后的配置一致。
+   */
+  isDraftApplied() {
+    if (this.activeTab === 'advanced' && this.advancedInputEl) {
+      const normalizedDraftText = stringifyDraftConfig(this.draftConfig);
+      if (this.advancedInputEl.value.trim() !== normalizedDraftText.trim()) return false;
+    }
+
+    return this.configSnapshot(this.draftConfig) === this.configSnapshot(this.initialConfig);
+  }
+
+  /*
+   * 作用：
+   * 生成稳定配置快照，用于判断草稿是否有未应用修改。
+   */
+  configSnapshot(config) {
+    return stringifyDraftConfig(canonicalizeMindConfig(config));
+  }
+
+  /*
+   * 作用：
+   * 根据是否存在未应用修改，刷新底部关闭按钮文案。
+   *
+   * 逻辑：
+   * - 有未应用修改时显示“取消”，表示放弃这些修改并关闭。
+   * - 已经应用/保存后显示“关闭”，避免误导成能撤销已应用内容。
+   */
+  updateActionButtons() {
+    if (!this.cancelButton) return;
+    this.cancelButton.setText(
+      this.isDraftApplied()
+        ? this.t('configModal.actions.close')
+        : this.t('configModal.actions.cancel')
+    );
+  }
+
+  /*
+   * 作用：
    * 创建底部操作按钮。
    */
   createActionButton(parentEl, label, onClick) {
@@ -1301,6 +1363,7 @@ export class ConfigModal extends Modal {
     if (this.activeTab === 'advanced' && this.advancedInputEl) {
       this.advancedInputEl.value = stringifyDraftConfig(this.draftConfig);
     }
+    this.updateActionButtons();
     this.updateStatus(this.t('configModal.status.saved'));
     if (closeAfterApply) this.close();
   }
