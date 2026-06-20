@@ -298,6 +298,43 @@
   gap: 8px;
 }
 
+/*
+ * 颜色预设色块容器。
+ */
+.yonxao-mindmap-config-color-swatches {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding-top: 4px;
+}
+
+/*
+ * 单个颜色预设色块按钮。
+ */
+.yonxao-mindmap-config-color-swatch {
+  width: 20px;
+  height: 20px;
+  border-radius: 6px;
+  border: 1px solid var(--background-modifier-border);
+  cursor: pointer;
+  transition:
+    transform 0.12s ease,
+    border-color 0.12s ease;
+  padding: 0;
+}
+
+.yonxao-mindmap-config-color-swatch:hover {
+  transform: scale(1.15);
+  border-color: var(--interactive-accent);
+}
+
+.yonxao-mindmap-config-color-swatch:focus-visible {
+  outline: none;
+  box-shadow:
+    0 0 0 2px var(--background-primary),
+    0 0 0 4px var(--interactive-accent);
+}
+
 .yonxao-mindmap-config-combo > select {
   min-width: 132px;
 }

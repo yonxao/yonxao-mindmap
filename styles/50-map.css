@@ -139,6 +139,21 @@
 }
 
 /*
+ * 按钮颜色变量说明：
+ *
+ * --yonxao-mindmap-button-color 用于控制所有主题按钮（编辑、折叠、新增）的描边和图标颜色。
+ *
+ * 颜色来源：
+ * - 全局模式（accent/neutral/custom）：由 Renderer 的 applyButtonColorMode() 在 SVG 根元素上设置
+ * - 节点色模式（topic）：由 Renderer 的 renderTopic() 在每个主题组上设置，值为该主题自身的颜色
+ *
+ * 颜色来源优先级：
+ * 1. 主题组局部变量（--yonxao-mindmap-button-color）：仅 topic 模式
+ * 2. SVG 根元素变量（--yonxao-mindmap-button-color）：accent/neutral/custom 模式
+ * 3. CSS 默认值（transparent）：回退到透明（由 SVG fill 属性决定）
+ */
+
+/*
  * 作用：
  * 主题编辑按钮，默认隐藏。
  * 按钮由 renderer 放在父线进入主题的位置，避免遮挡主题文字。
@@ -166,7 +181,7 @@
  */
 .yonxao-mindmap-topic-edit rect {
   fill: var(--background-primary);
-  stroke: var(--interactive-accent);
+  stroke: var(--yonxao-mindmap-button-color);
   stroke-width: 1.4;
 }
 
@@ -179,7 +194,7 @@
  */
 .yonxao-mindmap-topic-edit path {
   fill: none;
-  stroke: var(--interactive-accent);
+  stroke: var(--yonxao-mindmap-button-color);
   stroke-width: 1.4;
   stroke-linecap: round;
   stroke-linejoin: round;
@@ -241,7 +256,7 @@
 .yonxao-mindmap-topic-sibling-add circle,
 .yonxao-mindmap-topic-subtopic-add circle {
   fill: var(--background-primary);
-  stroke: var(--interactive-accent);
+  stroke: var(--yonxao-mindmap-button-color);
   stroke-width: 1.4;
 }
 
@@ -252,7 +267,7 @@
 .yonxao-mindmap-topic-sibling-add path,
 .yonxao-mindmap-topic-subtopic-add path {
   fill: none;
-  stroke: var(--interactive-accent);
+  stroke: var(--yonxao-mindmap-button-color);
   stroke-width: 1.4;
   stroke-linecap: round;
 }
@@ -289,7 +304,7 @@
  */
 .yonxao-mindmap-toggle {
   fill: var(--background-primary);
-  stroke: var(--interactive-accent);
+  stroke: var(--yonxao-mindmap-button-color);
   stroke-width: 1.4;
   cursor: pointer;
   pointer-events: auto;
@@ -303,7 +318,7 @@
  * 配色和加号按钮保持一致，使用 accent 强调。
  */
 .yonxao-mindmap-toggle path {
-  stroke: var(--interactive-accent);
+  stroke: var(--yonxao-mindmap-button-color);
   stroke-width: 1.4;
   stroke-linecap: round;
 }

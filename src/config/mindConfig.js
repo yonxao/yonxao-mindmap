@@ -34,6 +34,8 @@ import { clamp } from '../utils/math.js';
 import {
   BRANCH_EXPANSION_UNSUPPORTED_LAYOUTS,
   BRANCH_EXPANSIONS,
+  BUTTON_COLOR_MODES,
+  BUTTON_COLOR_PRESETS,
   CANVAS_MAX_HEIGHT,
   CANVAS_MIN_HEIGHT,
   CONNECTOR_STYLE_CONFIGURABLE_LAYOUTS,
@@ -62,6 +64,8 @@ import {
 export {
   BRANCH_EXPANSION_UNSUPPORTED_LAYOUTS,
   BRANCH_EXPANSIONS,
+  BUTTON_COLOR_MODES,
+  BUTTON_COLOR_PRESETS,
   CANVAS_MAX_HEIGHT,
   CANVAS_MIN_HEIGHT,
   CONNECTOR_STYLE_CONFIGURABLE_LAYOUTS,
@@ -207,6 +211,7 @@ export function normalizeMindConfig(rawConfig) {
     },
     font: normalizeFontConfig(font),
     topic: normalizeTopicConfig(theme, layout),
+    button: normalizeButtonConfig(theme),
     source: {
       enableTabIndent:
         typeof basic.tabIndent === 'boolean'
@@ -281,6 +286,7 @@ function normalizeRuntimeMindConfig(config) {
     },
     font: normalizeFontConfig(config.font),
     topic: normalizeRuntimeTopicConfig(config.topic),
+    button: normalizeRuntimeButtonConfig(config.button),
     source: {
       enableTabIndent:
         typeof source.enableTabIndent === 'boolean'
@@ -345,6 +351,8 @@ export function canonicalizeMindConfig(rawConfig) {
   const theme = isPlainObject(raw.theme) ? raw.theme : {};
   setConfigValueIfPresent(next, ['theme', 'scheme'], theme.scheme);
   setConfigValueIfPresent(next, ['theme', 'defaultTopicColor'], theme.defaultTopicColor);
+  setConfigValueIfPresent(next, ['theme', 'buttonColorMode'], theme.buttonColorMode);
+  setConfigValueIfPresent(next, ['theme', 'buttonColor'], theme.buttonColor);
 
   const layout = isPlainObject(raw.layout) ? raw.layout : {};
   const topicMaxWidth = isPlainObject(layout.topicMaxWidth) ? layout.topicMaxWidth : {};
@@ -459,6 +467,47 @@ export function normalizeTopicConfig(rawTheme, rawLayout) {
       normalizeOptionalNumber(topicMaxWidth.global, TOPIC_MAX_WIDTH_MIN, TOPIC_MAX_WIDTH_MAX) ||
       DEFAULT_MIND_CONFIG.topic.maxWidth,
     levels: normalizedLevels,
+  };
+}
+
+/*
+ * 作用：
+ * 解析 YAML 配置区中的按钮配色配置。
+ *
+ * 输入来源：
+ * - theme.buttonColorMode：配色模式，可选 inherit-accent/subtle/topic/custom
+ * - theme.buttonColor：自定义颜色值，仅在 buttonColorMode 为 custom 时使用
+ *
+ * 输出结构：
+ * - colorMode：规范化的配色模式，默认 inherit-accent
+ * - color：自定义颜色字符串，可能为空
+ */
+export function normalizeButtonConfig(rawTheme) {
+  const theme = isPlainObject(rawTheme) ? rawTheme : {};
+  const colorMode = normalizeText(theme.buttonColorMode).toLowerCase();
+  return {
+    colorMode: BUTTON_COLOR_MODES.includes(colorMode)
+      ? colorMode
+      : DEFAULT_MIND_CONFIG.button.colorMode,
+    color: normalizeText(theme.buttonColor),
+  };
+}
+
+/*
+ * 作用：
+ * 清洗运行时按钮配置，保证二次 normalize 不改变语义。
+ *
+ * 关键点：
+ * normalizeMindConfig() 会把 this.config 再传回来，必须保持幂等。
+ */
+export function normalizeRuntimeButtonConfig(rawButton) {
+  const button = isPlainObject(rawButton) ? rawButton : {};
+  const colorMode = normalizeText(button.colorMode).toLowerCase();
+  return {
+    colorMode: BUTTON_COLOR_MODES.includes(colorMode)
+      ? colorMode
+      : DEFAULT_MIND_CONFIG.button.colorMode,
+    color: normalizeText(button.color),
   };
 }
 
@@ -758,7 +807,7 @@ function configKeyOrder(path) {
     ];
   }
   if (keyPath === 'basic.toolbar') return ['corner', 'placement'];
-  if (keyPath === 'theme') return ['scheme', 'defaultTopicColor'];
+  if (keyPath === 'theme') return ['scheme', 'defaultTopicColor', 'buttonColorMode', 'buttonColor'];
   if (keyPath === 'layout') {
     return ['type', 'connectorStyle', 'branchExpansion', 'topicMaxWidth'];
   }

@@ -72,7 +72,7 @@ import {
   isPresetFontValue,
   normalizeFontFamilyInput,
 } from '../ui/fontOptions.js';
-import { connectorColor, topicColor, transparentColor } from '../utils/color.js';
+import { connectorColor, normalizeColor, topicColor, transparentColor } from '../utils/color.js';
 import { createLabeledField } from '../utils/dom.js';
 import { clamp } from '../utils/math.js';
 import { svg } from '../utils/svg.js';
@@ -4093,6 +4093,8 @@ export class YonxaoMindmapRenderer extends Component {
     this.topicById.clear();
     this.mapEl.textContent = '';
 
+    this.applyButtonColorMode();
+
     // 渲染分两步：先把树计算成带坐标的主题/连线，再把这些数据画成 SVG。
     // 这样解析、布局、绘制互相独立，后续要替换布局算法也更容易。
     const layout = layoutTree(this.root, this.collapsedIds, this.config);
@@ -4157,6 +4159,49 @@ export class YonxaoMindmapRenderer extends Component {
     }
 
     this.didInitialMapRender = true;
+  }
+
+  /*
+   * 作用：
+   * 根据配置的 colorMode 设置按钮颜色 CSS 变量。
+   *
+   * 实现逻辑：
+   * - inherit-accent：获取 Obsidian 强调色变量并解析为实际颜色值
+   * - subtle：获取中性色变量并解析为实际颜色值
+   * - topic：不设置全局变量，由 renderTopic() 在每个主题组上单独设置
+   * - custom：使用用户配置的自定义颜色
+   *
+   * 注意：
+   * 由于 CSS setProperty 无法直接设置 var() 引用，需要先获取变量的计算值。
+   * topic 模式下，每个主题使用自身颜色，所以不在此处设置全局变量。
+   */
+  applyButtonColorMode() {
+    const buttonConfig = this.config.button || {};
+    const colorMode = buttonConfig.colorMode || 'inherit-accent';
+
+    if (colorMode === 'topic') {
+      return;
+    }
+
+    let buttonColor;
+    switch (colorMode) {
+      case 'inherit-accent':
+      case 'subtle': {
+        const cssVarName = colorMode === 'inherit-accent' ? '--interactive-accent' : '--text-muted';
+        const computedValue = getComputedStyle(document.body).getPropertyValue(cssVarName).trim();
+        buttonColor = computedValue || '#3b82f6';
+        break;
+      }
+      case 'custom':
+        buttonColor = normalizeColor(buttonConfig.color) || '#3b82f6';
+        break;
+      default:
+        buttonColor = '#3b82f6';
+    }
+
+    if (this.svgEl) {
+      this.svgEl.style.setProperty('--yonxao-mindmap-button-color', buttonColor);
+    }
   }
 
   /*
@@ -5429,6 +5474,13 @@ export class YonxaoMindmapRenderer extends Component {
     });
 
     const color = topicColor(topic, this.config);
+
+    // 当按钮配色模式为 topic 时，设置该主题组的局部按钮颜色变量。
+    // 这样该主题下的所有按钮（编辑、折叠、新增）都会使用该主题自身的颜色。
+    if (this.config.button?.colorMode === 'topic') {
+      group.style.setProperty('--yonxao-mindmap-button-color', color || '#3b82f6');
+    }
+
     const fill = color
       ? transparentColor(color, themeTopicFillAlpha(this.config))
       : 'var(--background-primary)';

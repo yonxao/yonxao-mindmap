@@ -27,6 +27,8 @@ import {
 import {
   BRANCH_EXPANSION_UNSUPPORTED_LAYOUTS,
   BRANCH_EXPANSIONS,
+  BUTTON_COLOR_MODES,
+  BUTTON_COLOR_PRESETS,
   CANVAS_MAX_HEIGHT,
   CANVAS_MIN_HEIGHT,
   CONNECTOR_STYLE_CONFIGURABLE_LAYOUTS,
@@ -536,6 +538,31 @@ export class ConfigModal extends Modal {
       element.addEventListener('change', updateWarning);
     }
     updateWarning();
+
+    const buttonColorModeOptions = BUTTON_COLOR_MODES.map((mode) => [
+      mode,
+      this.t(`configModal.theme.buttonColor.${mode}`),
+    ]);
+    const buttonColorModeSelect = this.createSelectField(
+      this.t('configModal.theme.buttonColorMode'),
+      ['theme', 'buttonColorMode'],
+      normalized.button?.colorMode || 'inherit-accent',
+      buttonColorModeOptions,
+      { help: this.t('configModal.theme.buttonColorMode.help') }
+    );
+
+    const customColorField = this.createColorTextField(
+      this.t('configModal.theme.buttonColor'),
+      ['theme', 'buttonColor'],
+      normalized.button?.color || '',
+      this.t('configModal.theme.buttonColor.help')
+    );
+    const updateCustomColorVisibility = () => {
+      const isCustom = buttonColorModeSelect.value === 'custom';
+      customColorField.fieldEl.parentElement.style.display = isCustom ? '' : 'none';
+    };
+    buttonColorModeSelect.addEventListener('change', updateCustomColorVisibility);
+    updateCustomColorVisibility();
   }
 
   /*
@@ -1226,8 +1253,25 @@ export class ConfigModal extends Modal {
       setConfigValue(this.draftConfig, path, textInput.value.trim());
       this.syncInheritedValueStyle(fieldEl, path);
     });
+
+    const swatches = fieldEl.createDiv({ cls: 'yonxao-mindmap-config-color-swatches' });
+    for (const color of BUTTON_COLOR_PRESETS) {
+      const button = swatches.createEl('button', { type: 'button' });
+      button.className = 'yonxao-mindmap-config-color-swatch';
+      button.style.backgroundColor = color;
+      button.setAttribute('aria-label', color);
+      button.dataset.color = color;
+      button.addEventListener('click', (event) => {
+        event.preventDefault();
+        textInput.value = color;
+        colorInput.value = color;
+        setConfigValue(this.draftConfig, path, color);
+        this.syncInheritedValueStyle(fieldEl, path);
+      });
+    }
+
     this.appendFieldHelp(fieldEl);
-    return { colorInput, textInput };
+    return { colorInput, textInput, fieldEl };
   }
 
   /*

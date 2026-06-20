@@ -254,6 +254,15 @@ const BASE_LOCALE_MESSAGES = Object.freeze({
       'Leave empty to use the current theme auto colors. When filled, it overrides theme auto colors, while topic attribute color still has priority.',
     'configModal.theme.overrideWarning':
       'The current theme assigns colors by branch. Setting a default topic color hides those branch colors.',
+    'configModal.theme.buttonColorMode': 'Button color',
+    'configModal.theme.buttonColorMode.help': 'Color mode for toggle, edit, and add buttons.',
+    'configModal.theme.buttonColor.inherit-accent': 'Inherit Accent',
+    'configModal.theme.buttonColor.subtle': 'Subtle',
+    'configModal.theme.buttonColor.topic': 'Topic color',
+    'configModal.theme.buttonColor.custom': 'Custom',
+    'configModal.theme.buttonColor': 'Custom button color',
+    'configModal.theme.buttonColor.help':
+      'Custom color for buttons, only applies when mode is Custom.',
 
     'configModal.layout.section': 'Layout',
     'configModal.layout.type': 'Layout type',
@@ -538,6 +547,14 @@ const BASE_LOCALE_MESSAGES = Object.freeze({
       '留空则使用当前主题的自动配色。填写后会覆盖主题自动配色，但主题属性 color 仍然优先。',
     'configModal.theme.overrideWarning':
       '当前主题会按分支自动配色；填写默认主题颜色后，主题的彩虹分支色将不会显示。',
+    'configModal.theme.buttonColorMode': '按钮颜色',
+    'configModal.theme.buttonColorMode.help': '折叠、编辑和新增按钮的颜色模式。',
+    'configModal.theme.buttonColor.inherit-accent': '继承Obsidian强调色',
+    'configModal.theme.buttonColor.subtle': '低调色',
+    'configModal.theme.buttonColor.topic': '主题色',
+    'configModal.theme.buttonColor.custom': '自定义',
+    'configModal.theme.buttonColor': '自定义按钮颜色',
+    'configModal.theme.buttonColor.help': '按钮的自定义颜色，仅在模式为自定义时生效。',
 
     'configModal.layout.section': '布局',
     'configModal.layout.type': '布局类型',
@@ -821,6 +838,14 @@ const BASE_LOCALE_MESSAGES = Object.freeze({
       '留空則使用目前主題的自動配色。填寫後會覆蓋主題自動配色，但主題屬性 color 仍然優先。',
     'configModal.theme.overrideWarning':
       '目前主題會按分支自動配色；填寫預設主題顏色後，彩虹分支色將不會顯示。',
+    'configModal.theme.buttonColorMode': '按鈕顏色',
+    'configModal.theme.buttonColorMode.help': '折疊、編輯和新增按鈕的顏色模式。',
+    'configModal.theme.buttonColor.inherit-accent': '繼承Obsidian強調色',
+    'configModal.theme.buttonColor.subtle': '低調色',
+    'configModal.theme.buttonColor.topic': '主題色',
+    'configModal.theme.buttonColor.custom': '自訂',
+    'configModal.theme.buttonColor': '自訂按鈕顏色',
+    'configModal.theme.buttonColor.help': '按鈕的自訂顏色，僅在模式為自訂時生效。',
 
     'configModal.layout.section': '佈局',
     'configModal.layout.type': '佈局類型',

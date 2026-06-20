@@ -62,6 +62,23 @@ export const THEME_SCHEMES = Object.freeze([
   'neon-rainbow',
 ]);
 
+// 按钮配色模式可选值：inherit-accent 继承 Obsidian 强调色，subtle 为低调色，topic 为使用主题自身颜色，custom 为自定义颜色。
+export const BUTTON_COLOR_MODES = Object.freeze(['inherit-accent', 'subtle', 'topic', 'custom']);
+
+// 预定义的自定义按钮颜色选项，供配置面板使用。
+export const BUTTON_COLOR_PRESETS = Object.freeze([
+  '#ef4444',
+  '#f97316',
+  '#f59e0b',
+  '#22c55e',
+  '#14b8a6',
+  '#06b6d4',
+  '#3b82f6',
+  '#8b5cf6',
+  '#ec4899',
+  '#64748b',
+]);
+
 // 传统思维导图布局，可配置曲线/直线/折线连线。
 export const MINDMAP_LAYOUT_TYPES = Object.freeze([
   'mindmap-right',
@@ -197,6 +214,13 @@ export const DEFAULT_MIND_CONFIG = Object.freeze({
     maxWidth: TOPIC_MAX_WIDTH,
     // 默认没有任何层级主题宽度覆盖。
     levels: Object.freeze({}),
+  }),
+  // 按钮配置。
+  button: Object.freeze({
+    // 默认使用继承 Obsidian 强调色作为按钮颜色。
+    colorMode: 'inherit-accent',
+    // 自定义按钮颜色，仅在 colorMode 为 custom 时生效。
+    color: '',
   }),
   // 源码模式配置。
   source: Object.freeze({
