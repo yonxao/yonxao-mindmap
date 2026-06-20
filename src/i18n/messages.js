@@ -214,6 +214,12 @@ const BASE_LOCALE_MESSAGES = Object.freeze({
     'configModal.basic.viewFit': 'View fit',
     'configModal.basic.viewFit.help':
       'Controls the initial zoom when the map opens. Original size keeps text visually stable; fit view tries to show the whole map.',
+    'configModal.basic.fitViewNoUpscale': 'Do not enlarge in fit view',
+    'configModal.basic.fitViewNoUpscale.help':
+      'When enabled, fit view only shrinks maps that are too large; small maps keep their original scale.',
+    'configModal.basic.fitViewMaxScale': 'Fit view max scale',
+    'configModal.basic.fitViewMaxScale.help':
+      'Maximum enlargement used by fit view when "Do not enlarge" is disabled.',
     'configModal.basic.sourceHeight': 'Source height',
     'configModal.basic.sourceHeight.help':
       'Source mode has an independent height and does not affect map height.',
@@ -489,6 +495,12 @@ const BASE_LOCALE_MESSAGES = Object.freeze({
     'configModal.basic.viewFit': '视图适配',
     'configModal.basic.viewFit.help':
       '控制打开导图时的初始缩放方式。原始大小保持字号稳定；适配视图会尽量显示完整导图。',
+    'configModal.basic.fitViewNoUpscale': '适配视图不放大',
+    'configModal.basic.fitViewNoUpscale.help':
+      '开启后，适配视图只会缩小过大的导图；小图保持接近原始比例，不再放大。',
+    'configModal.basic.fitViewMaxScale': '适配视图最大放大倍数',
+    'configModal.basic.fitViewMaxScale.help':
+      '关闭“适配视图不放大”时生效，用于限制小图在适配视图中的最大放大倍数。',
     'configModal.basic.sourceHeight': '源码高度',
     'configModal.basic.sourceHeight.help': '源码模式独立高度，不影响导图高度。',
     'configModal.basic.toolbarCorner': '工具栏角落',
@@ -762,6 +774,12 @@ const BASE_LOCALE_MESSAGES = Object.freeze({
     'configModal.basic.viewFit': '視圖適配',
     'configModal.basic.viewFit.help':
       '控制開啟導圖時的初始縮放方式。原始大小保持字號穩定；適配視圖會盡量顯示完整導圖。',
+    'configModal.basic.fitViewNoUpscale': '適配視圖不放大',
+    'configModal.basic.fitViewNoUpscale.help':
+      '開啟後，適配視圖只會縮小過大的導圖；小圖保持接近原始比例，不再放大。',
+    'configModal.basic.fitViewMaxScale': '適配視圖最大放大倍數',
+    'configModal.basic.fitViewMaxScale.help':
+      '關閉「適配視圖不放大」時生效，用於限制小圖在適配視圖中的最大放大倍數。',
     'configModal.basic.sourceHeight': '原始碼高度',
     'configModal.basic.sourceHeight.help': '原始碼模式有獨立高度，不影響導圖高度。',
     'configModal.basic.toolbarCorner': '工具列角落',
@@ -1894,6 +1912,14 @@ function createAdditionalLocale(text) {
     'configModal.basic.viewFit.help':
       text.viewFitHelp ||
       'Controls the initial zoom when the map opens. Original size keeps text visually stable; fit view tries to show the whole map.',
+    'configModal.basic.fitViewNoUpscale': text.fitViewNoUpscale || 'Do not enlarge in fit view',
+    'configModal.basic.fitViewNoUpscale.help':
+      text.fitViewNoUpscaleHelp ||
+      'When enabled, fit view only shrinks maps that are too large; small maps keep their original scale.',
+    'configModal.basic.fitViewMaxScale': text.fitViewMaxScale || 'Fit view max scale',
+    'configModal.basic.fitViewMaxScale.help':
+      text.fitViewMaxScaleHelp ||
+      'Maximum enlargement used by fit view when "Do not enlarge" is disabled.',
     'configModal.viewFit.original': text.originalSize || 'Original size',
     'configModal.viewFit.fit': text.fitView || 'Fit view',
     'configModal.basic.featureSection': text.features || 'Features',

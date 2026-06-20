@@ -49,6 +49,8 @@ export const TOOLBAR_CORNERS = Object.freeze([
 ]);
 export const TOOLBAR_PLACEMENTS = Object.freeze(['inside', 'outside']);
 export const VIEW_FIT_MODES = Object.freeze(['original', 'fit']);
+export const FIT_VIEW_MAX_SCALE_MIN = 1;
+export const FIT_VIEW_MAX_SCALE_MAX = 6;
 
 export const DEFAULT_FONT_FAMILY = 'var(--font-text)';
 
@@ -74,6 +76,8 @@ export const DEFAULT_MIND_CONFIG = Object.freeze({
   view: Object.freeze({
     mode: 'map',
     fit: 'fit',
+    fitNoUpscale: true,
+    fitMaxScale: 1.5,
   }),
   theme: DEFAULT_THEME_NAME,
   layout: 'mindmap-right',
@@ -199,6 +203,16 @@ export function normalizeMindConfig(rawConfig) {
       ...view,
       mode: normalizeViewMode(view.mode) || DEFAULT_MIND_CONFIG.view.mode,
       fit: normalizeViewFit(basic.viewFit) || DEFAULT_MIND_CONFIG.view.fit,
+      fitNoUpscale:
+        typeof basic.fitViewNoUpscale === 'boolean'
+          ? basic.fitViewNoUpscale
+          : DEFAULT_MIND_CONFIG.view.fitNoUpscale,
+      fitMaxScale:
+        normalizeOptionalNumber(
+          basic.fitViewMaxScale,
+          FIT_VIEW_MAX_SCALE_MIN,
+          FIT_VIEW_MAX_SCALE_MAX
+        ) || DEFAULT_MIND_CONFIG.view.fitMaxScale,
     },
     theme: normalizeMindThemeName(theme.scheme),
     layout: normalizeLayoutType(layout.type) || DEFAULT_MIND_CONFIG.layout,
@@ -267,6 +281,13 @@ function normalizeRuntimeMindConfig(config) {
       ...view,
       mode: normalizeViewMode(view.mode) || DEFAULT_MIND_CONFIG.view.mode,
       fit: normalizeViewFit(view.fit) || DEFAULT_MIND_CONFIG.view.fit,
+      fitNoUpscale:
+        typeof view.fitNoUpscale === 'boolean'
+          ? view.fitNoUpscale
+          : DEFAULT_MIND_CONFIG.view.fitNoUpscale,
+      fitMaxScale:
+        normalizeOptionalNumber(view.fitMaxScale, FIT_VIEW_MAX_SCALE_MIN, FIT_VIEW_MAX_SCALE_MAX) ||
+        DEFAULT_MIND_CONFIG.view.fitMaxScale,
     },
     theme: normalizeMindThemeName(config.theme),
     layout: normalizeLayoutType(config.layout) || DEFAULT_MIND_CONFIG.layout,
@@ -334,6 +355,8 @@ export function canonicalizeMindConfig(rawConfig) {
   setConfigValueIfPresent(next, ['basic', 'toolbar', 'corner'], basicToolbar.corner);
   setConfigValueIfPresent(next, ['basic', 'toolbar', 'placement'], basicToolbar.placement);
   setConfigValueIfPresent(next, ['basic', 'viewFit'], basic.viewFit);
+  setConfigValueIfPresent(next, ['basic', 'fitViewNoUpscale'], basic.fitViewNoUpscale);
+  setConfigValueIfPresent(next, ['basic', 'fitViewMaxScale'], basic.fitViewMaxScale);
   setConfigValueIfPresent(next, ['basic', 'tabIndent'], basic.tabIndent);
   setConfigValueIfPresent(next, ['basic', 'wheelZoom'], basic.wheelZoom);
 
@@ -360,6 +383,77 @@ export function canonicalizeMindConfig(rawConfig) {
     for (const fontKey of ['family', 'size', 'weight', 'lineHeight']) {
       setConfigValueIfPresent(next, ['font', levelKey, fontKey], levelConfig[fontKey]);
     }
+  }
+
+  return next;
+}
+
+/*
+ * 作用：
+ * 清理依赖父配置才生效的子配置，避免保存出不会生效或语义孤立的配置项。
+ *
+ * 规则：
+ * - 子主题展开方式只有在当前布局实际允许时保留。
+ * - 适配视图的子配置只有在 basic.viewFit 明确为 fit 时保留。
+ */
+export function pruneInactiveMindConfig(rawConfig) {
+  let next = canonicalizeMindConfig(rawConfig);
+  next = pruneInactiveBranchExpansionConfig(next);
+  next = pruneInactiveViewFitConfig(next);
+  return next;
+}
+
+/*
+ * 作用：
+ * layout.branchExpansion 依赖当前布局和连线线型。
+ *
+ * 关键点：
+ * 思维导图组只有显式 connectorStyle: elbow 时才保留；非思维导图布局如果支持下挂，
+ * 因为实际线型固定为折线，可以保留。
+ */
+function pruneInactiveBranchExpansionConfig(config) {
+  const layout = isPlainObject(config.layout) ? config.layout : {};
+  if (layout.branchExpansion === undefined) return config;
+
+  const layoutType = normalizeLayoutType(layout.type) || DEFAULT_MIND_CONFIG.layout;
+  const connectorStyle = normalizeConnectorStyle(layout.connectorStyle);
+  const isUnsupportedLayout =
+    layoutType === 'radial' || layoutType === 'tree-table' || layoutType === 'tree-table-stepped';
+  const isMindMapLayout =
+    layoutType === 'mindmap-right' ||
+    layoutType === 'mindmap-left' ||
+    layoutType === 'mindmap-bidirectional' ||
+    layoutType === 'mindmap-down' ||
+    layoutType === 'mindmap-up' ||
+    layoutType === 'mindmap-vertical';
+
+  if (isUnsupportedLayout || (isMindMapLayout && connectorStyle !== 'elbow')) {
+    return deleteMindConfigPath(config, ['layout', 'branchExpansion']);
+  }
+
+  return config;
+}
+
+/*
+ * 作用：
+ * 适配视图子配置依赖 basic.viewFit。
+ *
+ * 规则：
+ * 只有显式 viewFit: fit 时才保留适配视图子配置；开启“不放大”时，最大放大倍数不生效，
+ * 因此也会被移除。
+ */
+function pruneInactiveViewFitConfig(config) {
+  const basic = isPlainObject(config.basic) ? config.basic : {};
+  let next = config;
+
+  if (basic.viewFit !== 'fit') {
+    next = deleteMindConfigPath(next, ['basic', 'fitViewNoUpscale']);
+    next = deleteMindConfigPath(next, ['basic', 'fitViewMaxScale']);
+    return next;
+  }
+
+  if (basic.fitViewNoUpscale !== false) {
+    next = deleteMindConfigPath(next, ['basic', 'fitViewMaxScale']);
   }
 
   return next;
@@ -551,7 +645,7 @@ export function deleteMindConfigPath(rawConfig, path) {
  * 把配置对象和正文重新拼成完整 yxmm 源码。
  */
 export function serializeMindSource(rawConfig, body, forceConfig) {
-  const config = canonicalizeMindConfig(rawConfig);
+  const config = pruneInactiveMindConfig(rawConfig);
   const bodyText = String(body || '').trim();
   const shouldWriteConfig = forceConfig || hasMeaningfulConfig(config);
 
@@ -677,7 +771,16 @@ function configKeyOrder(path) {
     return ['basic', 'theme', 'layout', 'font'];
   }
   if (keyPath === 'basic') {
-    return ['canvasHeight', 'sourceHeight', 'toolbar', 'viewFit', 'tabIndent', 'wheelZoom'];
+    return [
+      'canvasHeight',
+      'sourceHeight',
+      'toolbar',
+      'viewFit',
+      'fitViewNoUpscale',
+      'fitViewMaxScale',
+      'tabIndent',
+      'wheelZoom',
+    ];
   }
   if (keyPath === 'basic.toolbar') return ['corner', 'placement'];
   if (keyPath === 'theme') return ['scheme', 'defaultTopicColor'];

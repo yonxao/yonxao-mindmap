@@ -26,6 +26,8 @@ import {
 } from '../config/configDraft.js';
 import {
   DEFAULT_FONT_FAMILY,
+  FIT_VIEW_MAX_SCALE_MAX,
+  FIT_VIEW_MAX_SCALE_MIN,
   FONT_LINE_HEIGHT_MAX,
   FONT_LINE_HEIGHT_MIN,
   FONT_SIZE_MAX,
@@ -40,6 +42,7 @@ import {
   canonicalizeMindConfig,
   mergeMindConfigObjects,
   normalizeMindConfig,
+  pruneInactiveMindConfig,
 } from '../config/mindConfig.js';
 import { createTranslator } from '../i18n/messages.js';
 import {
@@ -347,7 +350,7 @@ export class ConfigModal extends Modal {
         help: this.t('configModal.basic.canvasHeight.help'),
       }
     );
-    this.createSelectField(
+    const viewFitSelect = this.createSelectField(
       this.t('configModal.basic.viewFit'),
       ['basic', 'viewFit'],
       normalized.view.fit,
@@ -356,6 +359,42 @@ export class ConfigModal extends Modal {
         help: this.t('configModal.basic.viewFit.help'),
       }
     );
+    const fitNoUpscaleToggle = this.createToggleField(
+      this.t('configModal.basic.fitViewNoUpscale'),
+      ['basic', 'fitViewNoUpscale'],
+      normalized.view.fitNoUpscale,
+      {
+        help: this.t('configModal.basic.fitViewNoUpscale.help'),
+      }
+    );
+    const fitMaxScaleInput = this.createNumberField(
+      this.t('configModal.basic.fitViewMaxScale'),
+      ['basic', 'fitViewMaxScale'],
+      normalized.view.fitMaxScale,
+      {
+        min: FIT_VIEW_MAX_SCALE_MIN,
+        max: FIT_VIEW_MAX_SCALE_MAX,
+        step: 0.1,
+        placeholder: this.t('configModal.basic.placeholder.default'),
+        help: this.t('configModal.basic.fitViewMaxScale.help'),
+      }
+    );
+    const syncFitViewSubControls = () => {
+      const isFitView = viewFitSelect.value === 'fit';
+      this.setFieldHidden(fitNoUpscaleToggle, !isFitView);
+      this.setFieldHidden(fitMaxScaleInput, !isFitView || fitNoUpscaleToggle.checked);
+    };
+    viewFitSelect.addEventListener('change', syncFitViewSubControls);
+    fitNoUpscaleToggle.addEventListener('change', () => {
+      setConfigValue(this.draftConfig, ['basic', 'viewFit'], 'fit');
+      this.syncInheritedValueStyle(viewFitSelect._yonxaoMindmapControlEl, ['basic', 'viewFit']);
+      syncFitViewSubControls();
+    });
+    fitMaxScaleInput.addEventListener('input', () => {
+      setConfigValue(this.draftConfig, ['basic', 'viewFit'], 'fit');
+      this.syncInheritedValueStyle(viewFitSelect._yonxaoMindmapControlEl, ['basic', 'viewFit']);
+    });
+    syncFitViewSubControls();
     this.createNumberField(
       this.t('configModal.basic.sourceHeight'),
       ['basic', 'sourceHeight'],
@@ -466,14 +505,16 @@ export class ConfigModal extends Modal {
     }
 
     if (this.isBranchExpansionConfigurable(normalized.layout, normalized.connector.style)) {
-      this.createSelectField(
+      const branchExpansionSelect = this.createSelectField(
         this.t('configModal.layout.branchExpansion'),
         ['layout', 'branchExpansion'],
         normalized.branch.expansion,
         this.branchExpansionOptions()
       );
-    } else {
-      this.createDisabledBranchExpansionField(normalized.layout, normalized.connector.style);
+      branchExpansionSelect.addEventListener('change', () => {
+        if (!this.isConnectorStyleConfigurable(normalized.layout)) return;
+        setConfigValue(this.draftConfig, ['layout', 'connectorStyle'], 'elbow');
+      });
     }
 
     this.createTopicMaxWidthGroup(normalized);
@@ -803,6 +844,7 @@ export class ConfigModal extends Modal {
     input.step = String(options.step ?? 1);
     input.placeholder = options.placeholder || '';
     input.value = String(getConfigValue(this.draftConfig, path, normalizedValue ?? '') ?? '');
+    input.disabled = Boolean(options.disabled);
     input.addEventListener('input', () => {
       setConfigValue(this.draftConfig, path, numberFromInput(input.value));
       this.syncInheritedValueStyle(fieldEl, path);
@@ -840,6 +882,7 @@ export class ConfigModal extends Modal {
       setConfigValue(this.draftConfig, path, select.value);
       this.syncInheritedValueStyle(fieldEl, path);
     });
+    select._yonxaoMindmapControlEl = fieldEl;
     this.appendFieldHelp(fieldEl);
     return select;
   }
@@ -1127,6 +1170,7 @@ export class ConfigModal extends Modal {
     const input = switchEl.createEl('input');
     input.type = 'checkbox';
     input.checked = Boolean(getConfigValue(this.draftConfig, path, value));
+    input.disabled = Boolean(options.disabled);
     const trackEl = switchEl.createSpan({ cls: 'yonxao-mindmap-config-switch-track' });
     trackEl.createSpan({ cls: 'yonxao-mindmap-config-switch-thumb' });
     input.addEventListener('change', () => {
@@ -1137,7 +1181,35 @@ export class ConfigModal extends Modal {
       }
       this.syncInheritedValueStyle(fieldEl, path);
     });
+    input._yonxaoMindmapControlEl = fieldEl;
     this.appendFieldHelp(fieldEl);
+    return input;
+  }
+
+  /*
+   * 作用：
+   * 统一禁用配置控件，并给所在字段加置灰样式。
+   */
+  setFieldDisabled(input, disabled) {
+    if (!input) return;
+    input.disabled = Boolean(disabled);
+    input._yonxaoMindmapControlEl?.parentElement?.classList.toggle(
+      'is-disabled-value',
+      Boolean(disabled)
+    );
+  }
+
+  /*
+   * 作用：
+   * 按当前配置关系隐藏整行字段。隐藏时同步禁用控件，避免键盘焦点进入不可见配置。
+   */
+  setFieldHidden(input, hidden) {
+    if (!input) return;
+    input.disabled = Boolean(hidden);
+    const fieldEl = input._yonxaoMindmapControlEl?.parentElement;
+    if (fieldEl) {
+      fieldEl.style.display = hidden ? 'none' : '';
+    }
   }
 
   /*
@@ -1229,11 +1301,14 @@ export class ConfigModal extends Modal {
       this.draftConfig = canonicalizeMindConfig(parseDraftConfigText(this.advancedInputEl.value));
     }
 
-    this.draftConfig = canonicalizeMindConfig(this.draftConfig);
+    this.draftConfig = pruneInactiveMindConfig(this.draftConfig);
     const saved = await this.onApply(cloneConfig(this.draftConfig));
     if (!saved) return;
 
     this.initialConfig = cloneConfig(this.draftConfig);
+    if (this.activeTab === 'advanced' && this.advancedInputEl) {
+      this.advancedInputEl.value = stringifyDraftConfig(this.draftConfig);
+    }
     this.updateStatus(this.t('configModal.status.saved'));
     if (closeAfterApply) this.close();
   }
@@ -1425,26 +1500,6 @@ export class ConfigModal extends Modal {
    */
   isBranchExpansionConfigurable(layout, connectorStyle) {
     return isBranchExpansionConfigurable(layout, connectorStyle);
-  }
-
-  /*
-   * 作用：
-   * 当前布局或线型不支持时展示只读反馈，避免写入不会生效的配置噪音。
-   */
-  createDisabledBranchExpansionField(layout, connectorStyle) {
-    const help = !isBranchExpansionSupportedLayout(layout)
-      ? this.t('configModal.layout.branchExpansion.unsupportedHelp')
-      : connectorStyle === 'elbow'
-        ? this.t('configModal.layout.branchExpansion.unsupportedHelp')
-        : this.t('configModal.layout.branchExpansion.elbowOnlyHelp');
-    const fieldEl = this.createField(this.t('configModal.layout.branchExpansion'), undefined, help);
-    fieldEl.parentElement?.classList.add('is-disabled-value');
-    const select = fieldEl.createEl('select');
-    const option = select.createEl('option', { text: this.t('configModal.branchExpansion.side') });
-    option.value = 'side';
-    select.value = 'side';
-    select.disabled = true;
-    this.appendFieldHelp(fieldEl);
   }
 
   /*

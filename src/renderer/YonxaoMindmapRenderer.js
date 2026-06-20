@@ -40,6 +40,7 @@ import {
   hasMeaningfulConfig,
   mergeMindConfigObjects,
   normalizeMindConfig,
+  pruneInactiveMindConfig,
   resolveTopicFont,
   resolveTopicMaxWidth,
   serializeMindSource,
@@ -96,6 +97,8 @@ const DOCUMENT_CONFIG_DEFAULT_PRUNE_PATHS = Object.freeze([
   ['basic', 'toolbar', 'corner'],
   ['basic', 'toolbar', 'placement'],
   ['basic', 'viewFit'],
+  ['basic', 'fitViewNoUpscale'],
+  ['basic', 'fitViewMaxScale'],
   ['basic', 'wheelZoom'],
   ['theme', 'scheme'],
   ['theme', 'defaultTopicColor'],
@@ -3690,7 +3693,7 @@ export class YonxaoMindmapRenderer extends Component {
    * 生成写回 Markdown 的配置对象，移除只属于当前会话或旧实验配置的字段。
    */
   documentConfigForSave(config) {
-    let next = canonicalizeMindConfig(config || {});
+    let next = pruneInactiveMindConfig(config || {});
     next = deleteMindConfigPath(next, ['view', 'mode']);
     next = deleteMindConfigPath(next, ['toolbar', 'x']);
     next = deleteMindConfigPath(next, ['toolbar', 'y']);
@@ -3785,6 +3788,8 @@ export class YonxaoMindmapRenderer extends Component {
       'basic.toolbar.corner': ['toolbar', 'corner'],
       'basic.toolbar.placement': ['toolbar', 'placement'],
       'basic.viewFit': ['view', 'fit'],
+      'basic.fitViewNoUpscale': ['view', 'fitNoUpscale'],
+      'basic.fitViewMaxScale': ['view', 'fitMaxScale'],
       'basic.wheelZoom': ['interaction', 'wheelZoom'],
       'theme.scheme': ['theme'],
       'theme.defaultTopicColor': ['topic', 'defaultColor'],
@@ -7221,18 +7226,42 @@ export class YonxaoMindmapRenderer extends Component {
     const maxY = currentBounds.maxY + VIEWBOX_MARGIN_Y;
     const width = Math.max(240, maxX - minX);
     const height = Math.max(TOPIC_MIN_HEIGHT + VIEWBOX_MARGIN_Y * 2, maxY - minY);
+    const viewBox = this.getFitViewBox({ x: minX, y: minY, width, height });
 
-    this.viewBox = {
-      x: minX,
-      y: minY,
-      width,
-      height,
-    };
-    this.updateFitCanvasHeight(width, height, options);
+    this.viewBox = viewBox;
+    this.updateFitCanvasHeight(viewBox.width, viewBox.height, options);
     this.currentViewFitMode = 'fit';
     this.applyViewBox();
     this.updateViewFitButton();
     this.scheduleApplyToolbarPosition();
+  }
+
+  /*
+   * 作用：
+   * 计算适配视图的实际 viewBox。
+   *
+   * 关键点：
+   * 适配视图必须完整包含导图；普通视图下还要限制最大放大倍数，避免小图被铺满容器后
+   * 主题显得过大。这里通过扩大 viewBox 达到“少放大”的效果，不限制大图缩小。
+   * 只用容器宽度推导最小 viewBox，避免首次渲染时 CSS 默认高度反过来撑高适配高度。
+   * 全屏查看时不做放大上限，保持全屏适配尽量铺满屏幕。
+   */
+  getFitViewBox(contentViewBox) {
+    if (this.isFullscreen || !this.containerEl) return contentViewBox;
+
+    const rect = this.containerEl.getBoundingClientRect();
+    if (!rect.width) return contentViewBox;
+
+    const maxScale = this.config.view.fitNoUpscale ? 1 : this.config.view.fitMaxScale;
+    const minWidthForScale = rect.width / maxScale;
+    const width = Math.max(contentViewBox.width, minWidthForScale);
+
+    return {
+      x: contentViewBox.x - (width - contentViewBox.width) / 2,
+      y: contentViewBox.y,
+      width,
+      height: contentViewBox.height,
+    };
   }
 
   /*
