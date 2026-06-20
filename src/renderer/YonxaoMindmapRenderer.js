@@ -221,6 +221,9 @@ export class YonxaoMindmapRenderer extends Component {
     this.fitRetryCount = 0;
     this.currentViewFitMode = null;
     this.isFullscreen = false;
+    this._fsOverlay = null;
+    this._hostElParent = null;
+    this._hostElNextSibling = null;
   }
 
   /*
@@ -230,6 +233,7 @@ export class YonxaoMindmapRenderer extends Component {
   onunload() {
     this.closeTopicEditor();
     this.closeInlineTextEditor(false);
+    this.cleanupFullscreenOverlay();
     this.hostEl?.classList.remove('is-fullscreen');
     this.restoreToolbarToBody();
     if (this.topicEditorEl) {
@@ -1263,13 +1267,41 @@ export class YonxaoMindmapRenderer extends Component {
   /*
    * 作用：
    * 切换当前导图宿主的浏览器全屏状态。
+   *
+   * 实现逻辑：
+   * 编辑视图直接对 hostEl 调原生 Fullscreen API。
+   * 阅读视图在 body 下创建可全屏覆盖层（yonxao-mindmap-fs-overlay），
+   * 把 hostEl 临时移入其中再对覆盖层调 Fullscreen API。原因有二：
+   * 1. 阅读视图祖先容器的 transform 约束会破坏 position: fixed 定位，
+   *    body 级覆盖层能正确覆盖视口。
+   * 2. Obsidian 阅读视图在布局变化时可能重新渲染 Markdown 预览，
+   *    导致 hostEl 被移除 DOM，浏览器检测到全屏元素脱离 DOM 后会
+   *    强制退出全屏（"闪退"）。body 级覆盖层不受重渲染影响。
    */
   async toggleFullscreen() {
     if (!this.hostEl || typeof document === 'undefined') return;
 
-    if (document.fullscreenElement === this.hostEl) {
+    if (this.isFullscreen) {
       if (typeof document.exitFullscreen === 'function') {
         await document.exitFullscreen();
+      }
+      return;
+    }
+
+    if (!this.canEditMindMap()) {
+      this._fsOverlay = document.createElement('div');
+      this._fsOverlay.className = 'yonxao-mindmap-fs-overlay';
+      this._hostElParent = this.hostEl.parentNode;
+      this._hostElNextSibling = this.hostEl.nextSibling;
+      this._fsOverlay.appendChild(this.hostEl);
+      document.body.appendChild(this._fsOverlay);
+      this.moveToolbarIntoFullscreenHost();
+      this.hostEl.classList.add('is-fullscreen');
+      try {
+        await this._fsOverlay.requestFullscreen();
+      } catch (error) {
+        this.cleanupFullscreenOverlay();
+        throw error;
       }
       return;
     }
@@ -1293,20 +1325,79 @@ export class YonxaoMindmapRenderer extends Component {
   /*
    * 作用：
    * 浏览器全屏状态变化后同步 DOM 状态和视图尺寸。
+   *
+   * 调用链：
+   * createToolbar() 注册 document fullscreenchange 事件 -> handleFullscreenChange()。
+   * 进入全屏和退出全屏都可能触发此事件，包括用户按 Escape 键。
    */
   handleFullscreenChange() {
     if (typeof document === 'undefined') return;
 
-    this.isFullscreen = document.fullscreenElement === this.hostEl;
-    this.hostEl?.classList.toggle('is-fullscreen', this.isFullscreen);
-
-    if (this.isFullscreen) {
-      this.moveToolbarIntoFullscreenHost();
-      this.showToolbar();
+    if (document.fullscreenElement) {
+      if (!this.hostEl?.classList.contains('is-fullscreen')) return;
+      this.applyFullscreenEntered();
     } else {
-      this.restoreToolbarToBody();
+      if (!this.isFullscreen) return;
+      this.cleanupFullscreenOverlay();
+      this.applyFullscreenExited();
     }
+  }
 
+  /*
+   * 作用：
+   * 清理阅读视图的 body 级全屏覆盖层（yonxao-mindmap-fs-overlay），
+   * 把 hostEl 移回阅读视图中原来的 DOM 位置。
+   *
+   * 实现逻辑：
+   * 记录了 hostEl 原来的 parentNode 和 nextSibling，用于精准恢复插入位置，
+   * 避免 hostEl 被放到父容器末尾（可能改变 Markdown 预览的文档流）。
+   *
+   * 调用链：
+   * - handleFullscreenChange() 退出全屏时调用
+   * - toggleFullscreen() requestFullscreen 失败时回滚调用
+   * - onunload() 安全清理时调用
+   */
+  cleanupFullscreenOverlay() {
+    if (!this._fsOverlay) return;
+    if (this._hostElParent) {
+      if (this._hostElNextSibling && this._hostElNextSibling.parentNode === this._hostElParent) {
+        this._hostElParent.insertBefore(this.hostEl, this._hostElNextSibling);
+      } else {
+        this._hostElParent.appendChild(this.hostEl);
+      }
+    }
+    this._fsOverlay.remove();
+    this._fsOverlay = null;
+    this._hostElParent = null;
+    this._hostElNextSibling = null;
+  }
+
+  /*
+   * 作用：
+   * 进入全屏后更新按钮、工具栏和视图。
+   *
+   * 调用链：
+   * handleFullscreenChange() 检测到全屏进入时调用。
+   */
+  applyFullscreenEntered() {
+    this.isFullscreen = true;
+    this.showToolbar();
+    this.updateFullscreenButton();
+    this.scheduleFitView();
+    this.scheduleApplyToolbarPosition();
+  }
+
+  /*
+   * 作用：
+   * 退出全屏后清理状态、恢复工具栏并更新视图。
+   *
+   * 调用链：
+   * handleFullscreenChange() 检测到全屏退出时调用。
+   */
+  applyFullscreenExited() {
+    this.isFullscreen = false;
+    this.hostEl?.classList.remove('is-fullscreen');
+    this.restoreToolbarToBody();
     this.updateFullscreenButton();
     this.scheduleFitView();
     this.scheduleApplyToolbarPosition();

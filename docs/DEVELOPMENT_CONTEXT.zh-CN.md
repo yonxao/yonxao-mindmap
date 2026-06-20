@@ -519,7 +519,7 @@ Obsidian 编辑视图：
 - 工具栏透明度有过调整，避免遮挡导图内容。
 - 工具栏不要和 Obsidian 自带“编辑这个块”按钮冲突，必要时偏左上放置。
 - 页面滚动期间不要显示工具栏，避免 body 级浮层停留在旧位置造成视觉错位。
-- 阅读视图全屏时工具栏会临时移入全屏宿主，退出后恢复到 body 级浮层。
+- 全屏时工具栏会临时移入全屏元素内（编辑视图移入 hostEl，阅读视图移入 body 级覆盖层），退出后恢复到 body 级浮层。
 
 ## 15 主题交互规则
 
@@ -688,8 +688,10 @@ dist/styles.css
 CSS/浮层补充约定：
 
 - 主题编辑面板、配置面板、工具栏等浮层不要受导图幕布 `overflow` 限制而被裁切。
-- 需要跨出幕布显示的浮层优先使用 body 级定位；进入全屏时再临时移入全屏宿主。
-- 阅读视图 CSS 全屏使用 `.yonxao-mindmap-host.is-fullscreen` 固定覆盖视口，不能依赖原生 `:fullscreen`。
+- 需要跨出幕布显示的浮层优先使用 body 级定位。
+- 阅读视图全屏使用 body 级覆盖层（`yonxao-mindmap-fs-overlay`），避免祖先容器
+  transform 破坏 position: fixed 定位，以及避免 Obsidian 重渲染导致闪退。
+  编辑视图全屏直接使用浏览器原生 Fullscreen API。
 
 ## 19 源码架构
 

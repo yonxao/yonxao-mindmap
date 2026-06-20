@@ -70,3 +70,56 @@
   height: calc(100vh - 32px) !important;
   max-height: none;
 }
+
+/*
+ * 作用：
+ * 阅读视图全屏覆盖层，挂载在 body 下，不受阅读视图祖先容器约束。
+ *
+ * 为什么需要覆盖层：
+ * 1. 阅读视图祖先容器可能使用了 transform/translate，这会使内部
+ *    position: fixed 元素定位失效。body 级覆盖层能确保 position: fixed
+ *    始终相对视口定位。
+ * 2. Obsidian 阅读视图在布局变化时可能重新渲染 Markdown 预览，导致 hostEl
+ *    被移除 DOM，浏览器会因为全屏元素脱离 DOM 而强制退出全屏（"闪退"）。
+ *    body 级覆盖层不会被重渲染影响。
+ *
+ * 使用场景：
+ * 仅在阅读视图（canEditMindMap() === false）中创建。编辑视图直接对 hostEl
+ * 调用原生 Fullscreen API。
+ *
+ * 参见：
+ * Renderer.toggleFullscreen() / cleanupFullscreenOverlay()
+ */
+.yonxao-mindmap-fs-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  background: var(--background-primary);
+  padding: 16px;
+  overflow: hidden;
+}
+
+/*
+ * 作用：
+ * 覆盖层内 host 填满视口，覆盖层自身的 padding 留出视口边缘间隙。
+ *
+ * 为什么 overflow: hidden：
+ * host 在普通文档流中 overflow: visible 允许浮层越界，但全屏时不需要，
+ * 改为 hidden 避免拖拽或平移把内容推到视口外。
+ */
+.yonxao-mindmap-fs-overlay .yonxao-mindmap-host {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+}
+
+/*
+ * 作用：
+ * 覆盖层内幕布高度不受普通阅读区限制，填满减掉 padding 后的可用空间。
+ * 配合 is-fullscreen 的同类规则，覆盖层内部和原生 Fullscreen API 进入的
+ * 全屏保持一致的幕布高度行为。
+ */
+.yonxao-mindmap-fs-overlay .yonxao-mindmap-container {
+  height: calc(100vh - 32px) !important;
+  max-height: none;
+}
