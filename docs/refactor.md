@@ -72,7 +72,6 @@
 
 我的判断：现在功能完成度已经很高，可以进入 beta 前整理；但还不建议直接正式发布。主要不是功能不够，而是核心渲染器和布局特殊逻辑太集中，发布前需要一次系统回归。
 
-
 ## 好，那我不止想 YonxaoMindmapRenderer.js 拆出几个模块，想完整的重构项目，提示词怎么写。
 
 可以。完整重构不要直接一句“帮我重构项目”，很容易失控。建议拆成两个提示词：先让 Codex 做重构方案，确认后再分阶段执行。
@@ -143,7 +142,6 @@
 
 核心原则就一句：**先方案，后执行；一次只重构一个边界；每一步都保持插件可运行。**
 
-
 ## 这是 yonxao-mindmap 项目。请先阅读 docs/DEVELOPMENT_CONTEXT.zh-CN.md，并严格按其中约定协作。
 
 我想对项目做一次完整重构，但先不要修改代码。请你先做代码审计和重构设计，目标是降低复杂度、拆分 YonxaoMindmapRenderer.js、理清模块边界，并保持现有功能和用户体验不变。
@@ -168,8 +166,8 @@
 
 请输出一个分阶段重构方案，按“阶段 1、阶段 2、阶段 3...”组织，并给出你推荐的执行顺序。
 
-
 ---
+
 我已重新阅读 [DEVELOPMENT_CONTEXT.zh-CN.md](/Users/yonxao/develop/code/plugin/yonxao-mindmap/docs/DEVELOPMENT_CONTEXT.zh-CN.md:1)，这轮只做审计和方案，不改代码。
 
 **总体判断**
@@ -208,14 +206,17 @@ src/
 目标：给后续拆分铺路。把 Renderer 内部到处散落的依赖整理成一个明确的 `rendererContext` 或一组小型上下文对象。
 
 涉及文件：
+
 - [YonxaoMindmapRenderer.js](/Users/yonxao/develop/code/plugin/yonxao-mindmap/src/renderer/YonxaoMindmapRenderer.js:114)
 
 建议动作：
+
 - 梳理 Renderer 状态：DOM 引用、源码状态、配置状态、视口状态、拖拽状态、编辑器状态。
 - 不移动大段逻辑，只把重复访问的状态收拢命名。
 - 给后续模块预留统一能力：`t()`、`register()`、`saveTreeToSourceAndFile()`、`renderMap()`、`closePanels()`。
 
 验收标准：
+
 - 用户可见行为完全不变。
 - `npm run ai:validate` 通过。
 - Renderer 行数可以不明显下降，但状态边界更清楚。
@@ -227,11 +228,13 @@ src/
 目标：先抽最适合纯函数化的逻辑。Renderer 里这段现在很适合外移：`buildRuntimeDocumentForSave`、`mergeRuntimeConfig`、`documentConfigForSave`、`pruneDocumentConfigDefaults` 等。
 
 涉及文件：
+
 - 新增 `src/config/runtimeConfigSave.js`
 - 调整 [YonxaoMindmapRenderer.js](/Users/yonxao/develop/code/plugin/yonxao-mindmap/src/renderer/YonxaoMindmapRenderer.js:3537)
 - 可能调整 [mindConfig.js](/Users/yonxao/develop/code/plugin/yonxao-mindmap/src/config/mindConfig.js:326)
 
 验收标准：
+
 - 配置面板保存后，配置区仍然只保留自定义项。
 - 全局默认配置回填、代码块覆盖、主题属性优先级不变。
 - `npm run ai:validate` 通过。
@@ -243,12 +246,14 @@ src/
 目标：把源码模式从 Renderer 中拿出去。源码模式现在包括配置/正文选项卡、输入事件、语法高亮、源码同步、高度计算。
 
 涉及文件：
+
 - 新增 `src/ui/source/SourceView.js`
 - 新增 `src/ui/source/sourceHighlight.js`
 - 保留 [topicLevelKeys.js](/Users/yonxao/develop/code/plugin/yonxao-mindmap/src/source/topicLevelKeys.js:22)
 - 调整 [YonxaoMindmapRenderer.js](/Users/yonxao/develop/code/plugin/yonxao-mindmap/src/renderer/YonxaoMindmapRenderer.js:1340)
 
 验收标准：
+
 - 显示源码/显示导图切换不变。
 - 配置区和正文区选项卡不变。
 - Tab 键调整主题级别不变。
@@ -262,11 +267,13 @@ src/
 目标：把工具栏创建、按钮状态、拖动吸附、滚动隐藏逻辑抽出。
 
 涉及文件：
+
 - 新增 `src/ui/toolbar/FloatingToolbar.js`
 - 新增 `src/ui/toolbar/toolbarPosition.js`
 - 调整 [YonxaoMindmapRenderer.js](/Users/yonxao/develop/code/plugin/yonxao-mindmap/src/renderer/YonxaoMindmapRenderer.js:486)
 
 验收标准：
+
 - 工具栏默认右上外侧。
 - 四角和内外侧吸附不变。
 - 滚动时隐藏工具栏逻辑不变。
@@ -280,6 +287,7 @@ src/
 目标：把主题编辑面板、字体/颜色/图标控件、长文本编辑、双击编辑统一移出 Renderer。
 
 涉及文件：
+
 - 新增 `src/ui/topic-editor/TopicEditor.js`
 - 新增 `src/ui/topic-editor/InlineTopicEditor.js`
 - 新增 `src/ui/topic-editor/topicEditorFields.js`
@@ -287,6 +295,7 @@ src/
 - 复用 [fontOptions.js](/Users/yonxao/develop/code/plugin/yonxao-mindmap/src/ui/fontOptions.js:25)
 
 验收标准：
+
 - 主题文本、颜色、图标、字体、字号、字重、行高、最大宽度保存不变。
 - 默认值回填、继承样式、取消恢复不变。
 - 双击编辑不缩放，体验不变。
@@ -299,6 +308,7 @@ src/
 目标：把空白处右键、主题右键、复制正文、复制子树、复制/导出图片移出 Renderer。
 
 涉及文件：
+
 - 新增 `src/ui/context-menu/mapContextMenu.js`
 - 新增 `src/ui/context-menu/topicContextMenu.js`
 - 新增 `src/renderer/export/exportImage.js`
@@ -306,6 +316,7 @@ src/
 - 调整 [YonxaoMindmapRenderer.js](/Users/yonxao/develop/code/plugin/yonxao-mindmap/src/renderer/YonxaoMindmapRenderer.js:5920)
 
 验收标准：
+
 - 空白处右键菜单文案不变。
 - 主题右键“编辑主题”“复制子树”等不变。
 - 多代码块复制图片仍复制当前块。
@@ -319,6 +330,7 @@ src/
 目标：把纯绘制函数拆出。先拆“主题绘制”和“连线绘制”，最后再拆特殊布局主干。
 
 涉及文件：
+
 - 新增 `src/renderer/draw/drawTopic.js`
 - 新增 `src/renderer/draw/drawConnector.js`
 - 新增 `src/renderer/draw/drawSpecialTrunks.js`
@@ -326,6 +338,7 @@ src/
 - 调整 [YonxaoMindmapRenderer.js](/Users/yonxao/develop/code/plugin/yonxao-mindmap/src/renderer/YonxaoMindmapRenderer.js:3886)
 
 验收标准：
+
 - 所有布局视觉不变。
 - 折叠按钮、新增按钮、编辑按钮位置不变。
 - 曲线/直线/折线不变。
@@ -339,12 +352,14 @@ src/
 目标：把适配视图、原始大小、自动高度、手动高度、缩放、平移整理成一个 viewport 控制器。
 
 涉及文件：
+
 - 新增 `src/renderer/viewport/viewportState.js`
 - 新增 `src/renderer/viewport/viewFit.js`
 - 新增 `src/renderer/viewport/panZoom.js`
 - 调整 [YonxaoMindmapRenderer.js](/Users/yonxao/develop/code/plugin/yonxao-mindmap/src/renderer/YonxaoMindmapRenderer.js:6895)
 
 验收标准：
+
 - 默认适配视图。
 - 原始大小时中心主题位置合理。
 - 自动高度不裁切。
@@ -359,6 +374,7 @@ src/
 目标：配置面板也已经 `1475` 行，可以在 Renderer 拆完后整理。不要太早做，避免两条大线并行。
 
 涉及文件：
+
 - 拆分 [ConfigModal.js](/Users/yonxao/develop/code/plugin/yonxao-mindmap/src/ui/ConfigModal.js:101)
 - 新增：
   - `src/ui/config-modal/ConfigModal.js`
@@ -370,6 +386,7 @@ src/
   - `src/ui/config-modal/fields.js`
 
 验收标准：
+
 - 配置面板 UI 不变。
 - 默认值置灰、回填、继承联动不变。
 - 高级配置 YAML 不变。
@@ -383,6 +400,7 @@ src/
 目标：重构后不要只靠眼睛。项目现在没有真正的自动化测试，建议先补轻量 Node 测试，不引入重框架也可以。
 
 适合测试的纯函数：
+
 - [parseMind.js](/Users/yonxao/develop/code/plugin/yonxao-mindmap/src/parser/parseMind.js:39)：配置区、多行主题、主题属性。
 - [serializeMind.js](/Users/yonxao/develop/code/plugin/yonxao-mindmap/src/parser/serializeMind.js:44)：多行主题、属性顺序。
 - [mindConfig.js](/Users/yonxao/develop/code/plugin/yonxao-mindmap/src/config/mindConfig.js:170)：normalize、canonicalize、YAML parse/stringify。
@@ -392,6 +410,7 @@ src/
 - [topicLevelKeys.js](/Users/yonxao/develop/code/plugin/yonxao-mindmap/src/source/topicLevelKeys.js:22)：Tab/Shift+Tab 调整主题级别。
 
 验收标准：
+
 - 新增 `npm run test` 或并入 `npm run validate`。
 - 测试只覆盖纯函数，不依赖 Obsidian。
 - `npm run ai:validate` 通过。
