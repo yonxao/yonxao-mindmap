@@ -146,6 +146,19 @@ const TOPIC_CONTROL_AVOID_OFFSET =
 
 /*
  * 作用：
+ * 连线的视觉线宽。JS 端用它把圆形线帽退到主题边界外，CSS 和导出 SVG 也复用同一个值。
+ */
+const CONNECTOR_STROKE_WIDTH = 2.2;
+
+/*
+ * 作用：
+ * SVG round linecap 会在线段端点外多伸出半个线宽。
+ * 连线锚点落在主题边界时，需要把路径端点向外退这段距离，避免线头钻进主题卡片。
+ */
+const CONNECTOR_ROUND_CAP_EXTENSION = CONNECTOR_STROKE_WIDTH / 2;
+
+/*
+ * 作用：
  * 判断连线路径中的两个坐标是否可视为同一条水平线或垂直线。
  * SVG 坐标里可能存在小数误差，保留一个很小的容差可以避免生成无意义的极短折线。
  */
@@ -1475,6 +1488,10 @@ export class YonxaoMindmapRenderer extends Component {
       'aria-label': 'Mind map',
       tabindex: '0',
     });
+    this.svgEl.style.setProperty(
+      '--yonxao-mindmap-connector-stroke-width',
+      String(CONNECTOR_STROKE_WIDTH)
+    );
     this.mapEl = svg('g', { class: 'yonxao-mindmap-map' });
     this.svgEl.appendChild(this.mapEl);
     this.containerEl.appendChild(this.svgEl);
@@ -4107,6 +4124,7 @@ export class YonxaoMindmapRenderer extends Component {
     const layout = layoutTree(this.root, this.collapsedIds, this.config);
     const connectorLayer = svg('g', { class: 'yonxao-mindmap-connectors' });
     const topicLayer = svg('g', { class: 'yonxao-mindmap-topics' });
+    const controlLayer = svg('g', { class: 'yonxao-mindmap-topic-controls-layer' });
 
     const treeTrunk = this.renderTreeTrunk(layout);
     if (treeTrunk) {
@@ -4156,10 +4174,15 @@ export class YonxaoMindmapRenderer extends Component {
     for (const topic of layout.topics) {
       this.topicById.set(topic.id, topic);
       topicLayer.appendChild(this.renderTopic(topic));
+      const topicControls = this.renderTopicControls(topic);
+      if (topicControls) {
+        controlLayer.appendChild(topicControls);
+      }
     }
 
     this.mapEl.appendChild(connectorLayer);
     this.mapEl.appendChild(topicLayer);
+    this.mapEl.appendChild(controlLayer);
 
     if (fitAfterRender || !this.viewBox) {
       this.applyConfiguredViewFit(layout.bounds, options);
@@ -4327,9 +4350,9 @@ export class YonxaoMindmapRenderer extends Component {
   renderOrgSharedTrunkGroup(connectors) {
     if (!connectors.length) return null;
 
-    const firstAnchors = this.connectorAnchors(
-      connectors[0].parentTopic._layout,
-      connectors[0].subtopic._layout
+    const firstAnchors = this.trimConnectorAnchors(
+      this.connectorAnchors(connectors[0].parentTopic._layout, connectors[0].subtopic._layout),
+      this.config.layout
     );
     const busY = firstAnchors.startY + (firstAnchors.endY - firstAnchors.startY) / 2;
     const nearestConnector = this.closestConnectorToRootAxis(connectors, 'x', firstAnchors.startX);
@@ -4360,9 +4383,9 @@ export class YonxaoMindmapRenderer extends Component {
     );
 
     for (const connector of connectors) {
-      const anchors = this.connectorAnchors(
-        connector.parentTopic._layout,
-        connector.subtopic._layout
+      const anchors = this.trimConnectorAnchors(
+        this.connectorAnchors(connector.parentTopic._layout, connector.subtopic._layout),
+        this.config.layout
       );
       const branchColor = connectorColor(connector.subtopic, this.config) || 'currentColor';
       groupEl.appendChild(
@@ -4757,7 +4780,10 @@ export class YonxaoMindmapRenderer extends Component {
   renderConnector(connector, layoutMode) {
     const parentBox = connector.parentTopic._layout;
     const subtopicBox = connector.subtopic._layout;
-    const anchors = this.connectorAnchors(parentBox, subtopicBox);
+    const anchors = this.trimConnectorAnchors(
+      this.connectorAnchors(parentBox, subtopicBox),
+      layoutMode
+    );
     if (anchors.kind === 'skip') return null;
     const color = this.renderConnectorColor(connector, anchors);
 
@@ -4768,6 +4794,151 @@ export class YonxaoMindmapRenderer extends Component {
       stroke: color || 'currentColor',
       style: `opacity: ${themeConnectorOpacity(this.config)}`,
     });
+  }
+
+  /*
+   * 作用：
+   * 把连线路径端点从主题边界向外退半个线宽。
+   *
+   * 原因：
+   * SVG 的 round linecap 会让线头越过路径端点。如果端点正好在主题边界，
+   * 半个圆头会伸进主题卡片；透明主题能看见这截线，实心主题会把它盖住。
+   * 这里从几何上修正长度，让所有主题方案下都不依赖“盖住”来获得正确视觉。
+   */
+  trimConnectorAnchors(anchors, layoutMode) {
+    if (!anchors || anchors.kind === 'skip') return anchors;
+
+    const offset = CONNECTOR_ROUND_CAP_EXTENSION;
+    if (offset <= 0) return anchors;
+
+    if (anchors.kind === 'radial' || anchors.kind === 'fishbone-primary-bone') {
+      return this.trimConnectorAlongVectors(
+        anchors,
+        anchors.endX - anchors.startX,
+        anchors.endY - anchors.startY,
+        anchors.endX - anchors.startX,
+        anchors.endY - anchors.startY,
+        offset
+      );
+    }
+
+    if (anchors.kind === 'hanging-horizontal') {
+      return this.trimConnectorAlongVectors(
+        anchors,
+        0,
+        anchors.endY - anchors.startY,
+        anchors.endX - anchors.startX,
+        0,
+        offset
+      );
+    }
+
+    if (anchors.kind === 'hanging-vertical') {
+      return this.trimConnectorAlongVectors(
+        anchors,
+        anchors.endX - anchors.startX,
+        0,
+        0,
+        anchors.endY - anchors.startY,
+        offset
+      );
+    }
+
+    if (anchors.kind === 'org') {
+      return this.trimConnectorAlongVectors(
+        anchors,
+        0,
+        anchors.endY - anchors.startY,
+        0,
+        anchors.endY - anchors.startY,
+        offset
+      );
+    }
+
+    if (
+      anchors.kind === 'tree-branch' ||
+      anchors.kind === 'trunk-branch' ||
+      anchors.kind === 'org-right-subtopic' ||
+      anchors.kind === 'timeline-detail' ||
+      anchors.kind === 'fishbone-rib-topic'
+    ) {
+      return this.trimConnectorAlongVectors(
+        anchors,
+        anchors.endX - anchors.startX,
+        0,
+        anchors.endX - anchors.startX,
+        0,
+        offset
+      );
+    }
+
+    if (anchors.kind === 'fishbone-rib-descendant') {
+      return this.trimConnectorAlongVectors(
+        anchors,
+        anchors.endX - anchors.startX,
+        0,
+        anchors.endX - anchors.startX,
+        0,
+        offset
+      );
+    }
+
+    if (this.effectiveConnectorStyle(layoutMode) === 'straight') {
+      return this.trimConnectorAlongVectors(
+        anchors,
+        anchors.endX - anchors.startX,
+        anchors.endY - anchors.startY,
+        anchors.endX - anchors.startX,
+        anchors.endY - anchors.startY,
+        offset
+      );
+    }
+
+    const axis = anchors.axis === 'y' ? 'y' : 'x';
+    const sign = anchors.sign || 1;
+    return this.trimConnectorAlongVectors(
+      anchors,
+      axis === 'y' ? 0 : sign,
+      axis === 'y' ? sign : 0,
+      axis === 'y' ? 0 : sign,
+      axis === 'y' ? sign : 0,
+      offset
+    );
+  }
+
+  /*
+   * 作用：
+   * 按起点切线和终点切线裁剪连线端点。
+   *
+   * 参数说明：
+   * - startDx/startDy 表示路径离开父主题时的方向。
+   * - endDx/endDy 表示路径进入子主题前的方向。
+   */
+  trimConnectorAlongVectors(anchors, startDx, startDy, endDx, endDy, offset) {
+    const startVector = this.normalizedVector(startDx, startDy);
+    const endVector = this.normalizedVector(endDx, endDy);
+    if (!startVector || !endVector) return anchors;
+
+    return {
+      ...anchors,
+      startX: anchors.startX + startVector.x * offset,
+      startY: anchors.startY + startVector.y * offset,
+      endX: anchors.endX - endVector.x * offset,
+      endY: anchors.endY - endVector.y * offset,
+    };
+  }
+
+  /*
+   * 作用：
+   * 把任意方向向量归一化；零向量返回 null，避免无法判断端点裁剪方向。
+   */
+  normalizedVector(dx, dy) {
+    const length = Math.hypot(dx, dy);
+    if (length <= Number.EPSILON) return null;
+    return {
+      x: dx / length,
+      y: dy / length,
+    };
   }
 
   /*
@@ -4855,9 +5026,9 @@ export class YonxaoMindmapRenderer extends Component {
   renderMindMapRootElbowSide(side, connectors) {
     if (!connectors.length) return null;
 
-    const firstAnchors = this.connectorAnchors(
-      connectors[0].parentTopic._layout,
-      connectors[0].subtopic._layout
+    const firstAnchors = this.trimConnectorAnchors(
+      this.connectorAnchors(connectors[0].parentTopic._layout, connectors[0].subtopic._layout),
+      this.config.layout
     );
     const groupEl = svg('g', { class: 'yonxao-mindmap-root-elbow-side' });
     const opacityStyle = `opacity: ${themeConnectorOpacity(this.config)}`;
@@ -4894,9 +5065,9 @@ export class YonxaoMindmapRenderer extends Component {
       );
 
       for (const connector of connectors) {
-        const anchors = this.connectorAnchors(
-          connector.parentTopic._layout,
-          connector.subtopic._layout
+        const anchors = this.trimConnectorAnchors(
+          this.connectorAnchors(connector.parentTopic._layout, connector.subtopic._layout),
+          this.config.layout
         );
         const branchColor = connectorColor(connector.subtopic, this.config) || 'currentColor';
         groupEl.appendChild(
@@ -4934,9 +5105,9 @@ export class YonxaoMindmapRenderer extends Component {
     );
 
     for (const connector of connectors) {
-      const anchors = this.connectorAnchors(
-        connector.parentTopic._layout,
-        connector.subtopic._layout
+      const anchors = this.trimConnectorAnchors(
+        this.connectorAnchors(connector.parentTopic._layout, connector.subtopic._layout),
+        this.config.layout
       );
       const branchColor = connectorColor(connector.subtopic, this.config) || 'currentColor';
       groupEl.appendChild(
@@ -5604,10 +5775,32 @@ export class YonxaoMindmapRenderer extends Component {
       group.appendChild(this.renderSubtopicButton(box));
     }
 
-    if (topic.subtopics.length) {
-      group.appendChild(this.renderTopicToggle(topic));
+    return group;
+  }
+
+  /*
+   * 作用：
+   * 绘制需要浮在所有主题卡片之上的主题控件。
+   *
+   * 目前先放折叠/展开按钮。树形表格中相邻单元格会后绘制并盖住边界，
+   * 所以折叠按钮必须脱离单个主题组，统一放到主题图层之后。
+   */
+  renderTopicControls(topic) {
+    if (!topic.subtopics.length) return null;
+
+    const box = topic._layout;
+    const group = svg('g', {
+      class: 'yonxao-mindmap-topic-controls',
+      transform: `translate(${box.x - box.width / 2} ${box.y - box.height / 2})`,
+      'data-topic-id': topic.id,
+    });
+
+    if (this.config.button?.colorMode === 'topic') {
+      const color = topicColor(topic, this.config);
+      group.style.setProperty('--yonxao-mindmap-button-color', color || '#3b82f6');
     }
 
+    group.appendChild(this.renderTopicToggle(topic));
     return group;
   }
 
@@ -5693,6 +5886,58 @@ export class YonxaoMindmapRenderer extends Component {
    */
   shouldHideEditControl(topic) {
     return this.isTreeTableBox(topic?._layout);
+  }
+
+  /*
+   * 作用：
+   * 从事件目标向上找到携带主题 id 的元素。
+   *
+   * 说明：
+   * 折叠按钮已经移到独立控件图层，不再是主题 <g> 的子元素；
+   * 事件处理需要同时支持主题本体和主题控件两种来源。
+   */
+  topicDataElementFromTarget(target) {
+    if (!target?.closest) return null;
+    return target.closest('.yonxao-mindmap-topic, .yonxao-mindmap-topic-controls');
+  }
+
+  /*
+   * 作用：
+   * 从事件目标读取主题 id。
+   */
+  topicIdFromTarget(target) {
+    return this.topicDataElementFromTarget(target)?.getAttribute('data-topic-id') || '';
+  }
+
+  /*
+   * 作用：
+   * 根据主题 id 找到真正的主题本体元素，而不是浮在上层的控件组。
+   */
+  renderedTopicElementById(topicId) {
+    if (!topicId || !this.mapEl) return null;
+
+    for (const element of this.mapEl.querySelectorAll('.yonxao-mindmap-topic')) {
+      if (element.getAttribute('data-topic-id') === topicId) return element;
+    }
+
+    return null;
+  }
+
+  /*
+   * 作用：
+   * 从命中元素得到主题本体元素。
+   *
+   * 使用场景：
+   * 拖拽投放反馈需要读取主题卡片尺寸并给主题本体加高亮 class；
+   * 如果鼠标命中了上层控件，就先通过 data-topic-id 转回主题本体。
+   */
+  renderedTopicElementFromTarget(target) {
+    if (!target?.closest) return null;
+    const topicEl = target.closest('.yonxao-mindmap-topic');
+    if (topicEl) return topicEl;
+
+    const topicId = target.closest('.yonxao-mindmap-topic-controls')?.getAttribute('data-topic-id');
+    return this.renderedTopicElementById(topicId);
   }
 
   /*
@@ -6184,10 +6429,9 @@ export class YonxaoMindmapRenderer extends Component {
     }
 
     const target = event.target;
-    const topicEl = target && target.closest ? target.closest('.yonxao-mindmap-topic') : null;
-    if (!topicEl) return;
+    const id = this.topicIdFromTarget(target);
+    if (!id) return;
 
-    const id = topicEl.getAttribute('data-topic-id');
     const topic = this.topicById.get(id);
     if (!topic) return;
 
@@ -6244,8 +6488,8 @@ export class YonxaoMindmapRenderer extends Component {
     if (!this.canEditMindMap()) return;
 
     const target = event.target;
-    const topicEl = target && target.closest ? target.closest('.yonxao-mindmap-topic') : null;
-    if (!topicEl) return;
+    const id = this.topicIdFromTarget(target);
+    if (!id) return;
 
     // 铅笔按钮和折叠圆点已经有自己的单击语义，双击它们时不进入快速改名。
     if (
@@ -6262,7 +6506,6 @@ export class YonxaoMindmapRenderer extends Component {
     event.preventDefault();
     event.stopPropagation();
 
-    const id = topicEl.getAttribute('data-topic-id');
     const topic = this.topicById.get(id);
     if (topic) {
       this.openInlineTextEditor(topic);
@@ -6279,8 +6522,8 @@ export class YonxaoMindmapRenderer extends Component {
    */
   handleTopicContextMenu(event) {
     const target = event.target;
-    const topicEl = target && target.closest ? target.closest('.yonxao-mindmap-topic') : null;
-    if (!topicEl) {
+    const id = this.topicIdFromTarget(target);
+    if (!id) {
       event.preventDefault();
       event.stopPropagation();
       this.openMapContextMenu(event);
@@ -6289,7 +6532,6 @@ export class YonxaoMindmapRenderer extends Component {
 
     if (!this.canEditMindMap()) return;
 
-    const id = topicEl.getAttribute('data-topic-id');
     const topic = this.topicById.get(id);
     if (!topic || topic._virtual) return;
 
@@ -6735,7 +6977,7 @@ export class YonxaoMindmapRenderer extends Component {
   createExportSvgStyle() {
     const styleEl = svg('style');
     styleEl.textContent = `
-      .yonxao-mindmap-connector{fill:none;stroke-width:2.2;stroke-linecap:round;opacity:.62}
+      .yonxao-mindmap-connector{fill:none;stroke-width:${CONNECTOR_STROKE_WIDTH};stroke-linecap:round;stroke-linejoin:round;opacity:.62}
       .yonxao-mindmap-topic-card{stroke-width:1.4}
       .yonxao-mindmap-topic-tree-table .yonxao-mindmap-topic-card{stroke-width:1.5}
       .yonxao-mindmap-topic-tree-table-root .yonxao-mindmap-topic-card{stroke-width:2}
@@ -6898,14 +7140,17 @@ export class YonxaoMindmapRenderer extends Component {
     if (event.button !== 0 || !this.viewBox) return;
 
     const target = event.target;
-    const topicEl = target && target.closest ? target.closest('.yonxao-mindmap-topic') : null;
-    if (topicEl) {
-      const isTopicControl =
-        target.closest('.yonxao-mindmap-topic-subtopic-add') ||
+    const isTopicControl =
+      target?.closest &&
+      (target.closest('.yonxao-mindmap-topic-subtopic-add') ||
         target.closest('.yonxao-mindmap-topic-sibling-add') ||
         target.closest('.yonxao-mindmap-topic-edit') ||
-        target.closest('.yonxao-mindmap-toggle');
-      if (this.canEditMindMap() && !isTopicControl) {
+        target.closest('.yonxao-mindmap-toggle'));
+    if (isTopicControl) return;
+
+    const topicEl = target && target.closest ? target.closest('.yonxao-mindmap-topic') : null;
+    if (topicEl) {
+      if (this.canEditMindMap()) {
         this.startPendingTopicDrag(event, topicEl);
       }
       return;
@@ -7078,7 +7323,7 @@ export class YonxaoMindmapRenderer extends Component {
     const hitEl = document.elementFromPoint(event.clientX, event.clientY);
     state.topicEl.style.pointerEvents = previousPointerEvents;
 
-    const targetEl = hitEl && hitEl.closest ? hitEl.closest('.yonxao-mindmap-topic') : null;
+    const targetEl = this.renderedTopicElementFromTarget(hitEl);
     if (!targetEl) return null;
 
     const targetId = targetEl.getAttribute('data-topic-id');
