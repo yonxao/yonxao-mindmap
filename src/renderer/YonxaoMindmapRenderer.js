@@ -5758,13 +5758,13 @@ export class YonxaoMindmapRenderer extends Component {
       : [
           {
             placement: 'before',
-            label: this.t('topicButton.addSiblingAbove'),
+            label: this.t('topicButton.addSiblingBefore'),
             x: box.width / 2,
             y: 0,
           },
           {
             placement: 'after',
-            label: this.t('topicButton.addSiblingBelow'),
+            label: this.t('topicButton.addSiblingAfter'),
             x: box.width / 2,
             y: box.height,
           },
@@ -6278,7 +6278,7 @@ export class YonxaoMindmapRenderer extends Component {
    *
    * 菜单分组：
    * - 编辑：快速改名、完整属性、复制文本。
-   * - 新增：子主题、上方兄弟、下方兄弟。
+   * - 新增：子主题、前方兄弟、后方兄弟。
    * - 展开折叠：单层切换、递归展开、递归折叠。
    * - 删除：删除当前主题和其子树。
    */
@@ -6312,10 +6312,10 @@ export class YonxaoMindmapRenderer extends Component {
       this.addSubtopicFromContextMenu(topic)
     );
     if (canHaveSiblingTopic) {
-      this.addTopicContextMenuItem(menu, this.t('contextMenu.addSiblingAbove'), 'arrow-up', () =>
+      this.addTopicContextMenuItem(menu, this.t('contextMenu.addSiblingBefore'), 'arrow-up', () =>
         this.addSiblingFromContextMenu(topic, 'before')
       );
-      this.addTopicContextMenuItem(menu, this.t('contextMenu.addSiblingBelow'), 'arrow-down', () =>
+      this.addTopicContextMenuItem(menu, this.t('contextMenu.addSiblingAfter'), 'arrow-down', () =>
         this.addSiblingFromContextMenu(topic, 'after')
       );
     }
