@@ -159,6 +159,20 @@ const CONNECTOR_ROUND_CAP_EXTENSION = CONNECTOR_STROKE_WIDTH / 2;
 
 /*
  * 作用：
+ * default 主题没有分支自动配色时，连线使用的中性颜色变量。
+ * 彩色主题和用户设置 theme.defaultTopicColor 时仍然走真实主题色。
+ */
+const DEFAULT_CONNECTOR_STROKE = 'var(--yonxao-mindmap-default-connector)';
+
+/*
+ * 作用：
+ * 按钮选择“主题色”但当前主题没有实际主题色时使用的中性兜底色。
+ * 典型场景是 default 主题，它跟随 Obsidian，不自动分配蓝/绿等分支色。
+ */
+const DEFAULT_TOPIC_BUTTON_COLOR = 'var(--yonxao-mindmap-default-button-color)';
+
+/*
+ * 作用：
  * 判断连线路径中的两个坐标是否可视为同一条水平线或垂直线。
  * SVG 坐标里可能存在小数误差，保留一个很小的容差可以避免生成无意义的极短折线。
  */
@@ -4356,7 +4370,8 @@ export class YonxaoMindmapRenderer extends Component {
     );
     const busY = firstAnchors.startY + (firstAnchors.endY - firstAnchors.startY) / 2;
     const nearestConnector = this.closestConnectorToRootAxis(connectors, 'x', firstAnchors.startX);
-    const nearestColor = connectorColor(nearestConnector.subtopic, this.config) || 'currentColor';
+    const nearestColor =
+      connectorColor(nearestConnector.subtopic, this.config) || DEFAULT_CONNECTOR_STROKE;
     const opacityStyle = `opacity: ${themeConnectorOpacity(this.config)}`;
     const groupEl = svg('g', { class: 'yonxao-mindmap-org-shared-trunk' });
 
@@ -4387,7 +4402,8 @@ export class YonxaoMindmapRenderer extends Component {
         this.connectorAnchors(connector.parentTopic._layout, connector.subtopic._layout),
         this.config.layout
       );
-      const branchColor = connectorColor(connector.subtopic, this.config) || 'currentColor';
+      const branchColor =
+        connectorColor(connector.subtopic, this.config) || DEFAULT_CONNECTOR_STROKE;
       groupEl.appendChild(
         this.renderConnectorPath(
           ['M', anchors.endX, busY, 'V', anchors.endY],
@@ -4635,7 +4651,7 @@ export class YonxaoMindmapRenderer extends Component {
       rootBox.y,
       segmentStart,
       tailEnd,
-      connectorColor(this.root, this.config) || 'currentColor',
+      connectorColor(this.root, this.config) || DEFAULT_CONNECTOR_STROKE,
       `opacity: ${themeConnectorOpacity(this.config)}`
     );
     if (tailEl) {
@@ -4659,7 +4675,7 @@ export class YonxaoMindmapRenderer extends Component {
     return svg('path', {
       class: 'yonxao-mindmap-connector yonxao-mindmap-fishbone-tail',
       d: ['M', x, y, 'L', wingEndX, y - wingY, 'M', x, y, 'L', wingEndX, y + wingY].join(' '),
-      stroke: color || 'currentColor',
+      stroke: color || DEFAULT_CONNECTOR_STROKE,
       style: `opacity: ${themeConnectorOpacity(this.config)}`,
     });
   }
@@ -4748,7 +4764,7 @@ export class YonxaoMindmapRenderer extends Component {
         svg('path', {
           class: 'yonxao-mindmap-connector yonxao-mindmap-timeline-detail-trunk',
           d: commands.join(' '),
-          stroke: color || 'currentColor',
+          stroke: color || DEFAULT_CONNECTOR_STROKE,
           style: `opacity: ${themeConnectorOpacity(this.config)}`,
         })
       );
@@ -4791,7 +4807,7 @@ export class YonxaoMindmapRenderer extends Component {
     return svg('path', {
       class: 'yonxao-mindmap-connector',
       d: this.connectorPath(anchors, layoutMode),
-      stroke: color || 'currentColor',
+      stroke: color || DEFAULT_CONNECTOR_STROKE,
       style: `opacity: ${themeConnectorOpacity(this.config)}`,
     });
   }
@@ -5040,7 +5056,8 @@ export class YonxaoMindmapRenderer extends Component {
         'y',
         firstAnchors.startY
       );
-      const nearestColor = connectorColor(nearestConnector.subtopic, this.config) || 'currentColor';
+      const nearestColor =
+        connectorColor(nearestConnector.subtopic, this.config) || DEFAULT_CONNECTOR_STROKE;
 
       /*
        * root 到共享主干只画一次，颜色取离 root 最近的一级主题。
@@ -5069,7 +5086,8 @@ export class YonxaoMindmapRenderer extends Component {
           this.connectorAnchors(connector.parentTopic._layout, connector.subtopic._layout),
           this.config.layout
         );
-        const branchColor = connectorColor(connector.subtopic, this.config) || 'currentColor';
+        const branchColor =
+          connectorColor(connector.subtopic, this.config) || DEFAULT_CONNECTOR_STROKE;
         groupEl.appendChild(
           this.renderConnectorPath(
             ['M', bendX, anchors.endY, 'H', anchors.endX],
@@ -5084,7 +5102,8 @@ export class YonxaoMindmapRenderer extends Component {
 
     const bendY = firstAnchors.startY + (firstAnchors.endY - firstAnchors.startY) / 2;
     const nearestConnector = this.closestConnectorToRootAxis(connectors, 'x', firstAnchors.startX);
-    const nearestColor = connectorColor(nearestConnector.subtopic, this.config) || 'currentColor';
+    const nearestColor =
+      connectorColor(nearestConnector.subtopic, this.config) || DEFAULT_CONNECTOR_STROKE;
 
     groupEl.appendChild(
       this.renderConnectorPath(
@@ -5109,7 +5128,8 @@ export class YonxaoMindmapRenderer extends Component {
         this.connectorAnchors(connector.parentTopic._layout, connector.subtopic._layout),
         this.config.layout
       );
-      const branchColor = connectorColor(connector.subtopic, this.config) || 'currentColor';
+      const branchColor =
+        connectorColor(connector.subtopic, this.config) || DEFAULT_CONNECTOR_STROKE;
       groupEl.appendChild(
         this.renderConnectorPath(
           ['M', anchors.endX, bendY, 'V', anchors.endY],
@@ -5175,7 +5195,8 @@ export class YonxaoMindmapRenderer extends Component {
 
     for (const connector of sortedConnectors) {
       const segmentEndCoord = connector.subtopic._layout[trunk.axis];
-      const segmentColor = connectorColor(connector.subtopic, this.config) || 'currentColor';
+      const segmentColor =
+        connectorColor(connector.subtopic, this.config) || DEFAULT_CONNECTOR_STROKE;
       const segmentEl = this.renderBranchColoredTrunkSegment(
         trunk.axis,
         trunk.fixedCoord,
@@ -5207,7 +5228,7 @@ export class YonxaoMindmapRenderer extends Component {
 
     for (const topic of topics) {
       const segmentEndCoord = trunk.segmentEndCoord(topic);
-      const segmentColor = connectorColor(topic, this.config) || 'currentColor';
+      const segmentColor = connectorColor(topic, this.config) || DEFAULT_CONNECTOR_STROKE;
       const segmentEl = this.renderBranchColoredTrunkSegment(
         trunk.axis,
         trunk.fixedCoord,
@@ -5688,10 +5709,14 @@ export class YonxaoMindmapRenderer extends Component {
   renderTopic(topic) {
     const box = topic._layout;
     const canEdit = this.canEditMindMap();
+    const color = topicColor(topic, this.config);
     const classNames = ['yonxao-mindmap-topic'];
     if (topic.subtopics.length) classNames.push('yonxao-mindmap-topic-clickable');
     if (canEdit && !topic._virtual && topic !== this.root) {
       classNames.push('yonxao-mindmap-topic-draggable');
+    }
+    if (!color) {
+      classNames.push('yonxao-mindmap-topic-default');
     }
     if (this.isTreeTableBox(box)) {
       classNames.push('yonxao-mindmap-topic-tree-table');
@@ -5707,18 +5732,16 @@ export class YonxaoMindmapRenderer extends Component {
       'data-topic-id': topic.id,
     });
 
-    const color = topicColor(topic, this.config);
-
     // 当按钮配色模式为 topic 时，设置该主题组的局部按钮颜色变量。
     // 这样该主题下的所有按钮（编辑、折叠、新增）都会使用该主题自身的颜色。
     if (this.config.button?.colorMode === 'topic') {
-      group.style.setProperty('--yonxao-mindmap-button-color', color || '#3b82f6');
+      group.style.setProperty('--yonxao-mindmap-button-color', color || DEFAULT_TOPIC_BUTTON_COLOR);
     }
 
     const fill = color
       ? transparentColor(color, themeTopicFillAlpha(this.config))
       : 'var(--background-primary)';
-    const stroke = color || 'var(--background-modifier-border)';
+    const stroke = color || 'var(--yonxao-mindmap-default-topic-border)';
 
     group.appendChild(
       svg('rect', {
@@ -5797,7 +5820,7 @@ export class YonxaoMindmapRenderer extends Component {
 
     if (this.config.button?.colorMode === 'topic') {
       const color = topicColor(topic, this.config);
-      group.style.setProperty('--yonxao-mindmap-button-color', color || '#3b82f6');
+      group.style.setProperty('--yonxao-mindmap-button-color', color || DEFAULT_TOPIC_BUTTON_COLOR);
     }
 
     group.appendChild(this.renderTopicToggle(topic));
@@ -6979,6 +7002,7 @@ export class YonxaoMindmapRenderer extends Component {
     styleEl.textContent = `
       .yonxao-mindmap-connector{fill:none;stroke-width:${CONNECTOR_STROKE_WIDTH};stroke-linecap:round;stroke-linejoin:round;opacity:.62}
       .yonxao-mindmap-topic-card{stroke-width:1.4}
+      .yonxao-mindmap-topic-default .yonxao-mindmap-topic-card{stroke-width:1.6}
       .yonxao-mindmap-topic-tree-table .yonxao-mindmap-topic-card{stroke-width:1.5}
       .yonxao-mindmap-topic-tree-table-root .yonxao-mindmap-topic-card{stroke-width:2}
       .yonxao-mindmap-topic-text{letter-spacing:0;dominant-baseline:auto;user-select:none}
@@ -7004,6 +7028,14 @@ export class YonxaoMindmapRenderer extends Component {
   inlineExportSvgColors(mapClone) {
     const textColor = this.resolveCssColor('--text-normal', '#1f2328');
     const borderColor = this.resolveCssColor('--background-modifier-border', '#d0d7de');
+    const defaultTopicBorderColor = this.resolveCssColor(
+      '--background-modifier-border-hover',
+      borderColor
+    );
+    const defaultConnectorColor = this.resolveCssColor(
+      '--yonxao-mindmap-default-connector',
+      textColor
+    );
     const backgroundColor = this.resolveCssColor('--background-primary', '#ffffff');
 
     for (const textEl of mapClone.querySelectorAll('.yonxao-mindmap-topic-text')) {
@@ -7011,11 +7043,16 @@ export class YonxaoMindmapRenderer extends Component {
     }
     for (const cardEl of mapClone.querySelectorAll('.yonxao-mindmap-topic-card')) {
       this.replaceSvgVarAttribute(cardEl, 'fill', backgroundColor);
-      this.replaceSvgVarAttribute(cardEl, 'stroke', borderColor);
+      const defaultTopicEl = cardEl.closest('.yonxao-mindmap-topic-default');
+      this.replaceSvgVarAttribute(
+        cardEl,
+        'stroke',
+        defaultTopicEl ? defaultTopicBorderColor : borderColor
+      );
     }
     for (const pathEl of mapClone.querySelectorAll('.yonxao-mindmap-connector')) {
-      this.replaceSvgVarAttribute(pathEl, 'stroke', textColor);
-      if (!pathEl.getAttribute('stroke')) pathEl.setAttribute('stroke', textColor);
+      this.replaceSvgVarAttribute(pathEl, 'stroke', defaultConnectorColor);
+      if (!pathEl.getAttribute('stroke')) pathEl.setAttribute('stroke', defaultConnectorColor);
     }
     for (const iconEl of mapClone.querySelectorAll('.yonxao-mindmap-topic-icon *')) {
       this.replaceSvgVarAttribute(iconEl, 'stroke', textColor);
@@ -7035,9 +7072,15 @@ export class YonxaoMindmapRenderer extends Component {
   }
 
   resolveCssColor(variableName, fallback) {
-    if (!this.hostEl || typeof window === 'undefined') return fallback;
-    const value = window.getComputedStyle(this.hostEl).getPropertyValue(variableName).trim();
-    return value || fallback;
+    if (typeof window === 'undefined') return fallback;
+
+    for (const element of [this.svgEl, this.hostEl]) {
+      if (!element) continue;
+      const value = window.getComputedStyle(element).getPropertyValue(variableName).trim();
+      if (value) return value;
+    }
+
+    return fallback;
   }
 
   exportPixelScale(width, height) {

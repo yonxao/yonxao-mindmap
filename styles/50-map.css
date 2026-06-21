@@ -33,6 +33,15 @@
 
 /*
  * 作用：
+ * default 主题不自动分配主题色，因此需要更清晰的中性边框，
+ * 避免卡片在 Obsidian 浅色/深色主题中融进背景。
+ */
+.yonxao-mindmap-topic-default .yonxao-mindmap-topic-card {
+  stroke-width: 1.6;
+}
+
+/*
+ * 作用：
  * 树形表格主题的单元格外观。
  *
  * 实现逻辑：
@@ -146,7 +155,7 @@
  *
  * 颜色来源：
  * - 全局模式（accent/neutral/custom）：由 Renderer 的 applyButtonColorMode() 在 SVG 根元素上设置
- * - 节点色模式（topic）：由 Renderer 的 renderTopic() 在每个主题组上设置，值为该主题自身的颜色
+ * - 主题色模式（topic）：由 Renderer 的 renderTopic() 在每个主题组上设置，值为该主题自身的颜色
  *
  * 颜色来源优先级：
  * 1. 主题组局部变量（--yonxao-mindmap-button-color）：仅 topic 模式
