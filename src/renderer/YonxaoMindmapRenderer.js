@@ -146,6 +146,13 @@ const TOPIC_CONTROL_AVOID_OFFSET =
 
 /*
  * 作用：
+ * 判断连线路径中的两个坐标是否可视为同一条水平线或垂直线。
+ * SVG 坐标里可能存在小数误差，保留一个很小的容差可以避免生成无意义的极短折线。
+ */
+const CONNECTOR_AXIS_EPSILON = 0.5;
+
+/*
+ * 作用：
  * 非全屏自动幕布高度的上限。没有手动配置 canvasHeight 时，适配视图和原始大小
  * 都最多自动增长到这个高度，避免普通文档流里的导图一次占用过多页面空间。
  */
@@ -5338,6 +5345,70 @@ export class YonxaoMindmapRenderer extends Component {
 
   /*
    * 作用：
+   * 生成水平或垂直直线路径。
+   */
+  axisLinePath(startX, startY, endX, endY) {
+    if (Math.abs(startY - endY) < CONNECTOR_AXIS_EPSILON) {
+      return ['M', startX, startY, 'H', endX].join(' ');
+    }
+
+    if (Math.abs(startX - endX) < CONNECTOR_AXIS_EPSILON) {
+      return ['M', startX, startY, 'V', endY].join(' ');
+    }
+
+    return null;
+  }
+
+  /*
+   * 作用：
+   * 生成折线路径，同时把已经共线的折线退化成自然直线。
+   *
+   * 这样单子主题或几何上刚好对齐的父子主题，不会为了套 elbow 模板额外折一下。
+   */
+  elbowPath(startX, startY, endX, endY, axis) {
+    const linePath = this.axisLinePath(startX, startY, endX, endY);
+    if (linePath) return linePath;
+
+    if (axis === 'y') {
+      const midY = startY + (endY - startY) / 2;
+      return ['M', startX, startY, 'V', midY, 'H', endX, 'V', endY].join(' ');
+    }
+
+    const midX = startX + (endX - startX) / 2;
+    return ['M', startX, startY, 'H', midX, 'V', endY, 'H', endX].join(' ');
+  }
+
+  /*
+   * 作用：
+   * 生成下挂展开的水平布局连线。
+   *
+   * 关键点：
+   * 下挂展开不是普通 elbow 的“中点折线”，它需要从父主题下方出口直接落到子主题中心线，
+   * 再横向连接子主题。否则会出现截图里那种额外绕一折的视觉错误。
+   */
+  hangingHorizontalPath(startX, startY, endX, endY) {
+    return (
+      this.axisLinePath(startX, startY, endX, endY) ||
+      ['M', startX, startY, 'V', endY, 'H', endX].join(' ')
+    );
+  }
+
+  /*
+   * 作用：
+   * 生成下挂展开的竖向布局连线。
+   *
+   * 说明：
+   * 这是 hangingHorizontalPath 的转置版本，先横向到子主题出口列，再垂直接入子主题。
+   */
+  hangingVerticalPath(startX, startY, endX, endY) {
+    return (
+      this.axisLinePath(startX, startY, endX, endY) ||
+      ['M', startX, startY, 'H', endX, 'V', endY].join(' ')
+    );
+  }
+
+  /*
+   * 作用：
    * 根据配置生成连线路径。
    *
    * 线型说明：
@@ -5350,28 +5421,31 @@ export class YonxaoMindmapRenderer extends Component {
     const connectorStyle = this.effectiveConnectorStyle(layoutMode);
 
     if (kind === 'tree-branch' || kind === 'trunk-branch') {
-      return ['M', startX, startY, 'H', endX].join(' ');
+      return this.axisLinePath(startX, startY, endX, startY);
     }
 
     if (kind === 'org') {
       const midY = startY + (endY - startY) / 2;
-      return ['M', startX, startY, 'V', midY, 'H', endX, 'V', endY].join(' ');
+      return (
+        this.axisLinePath(startX, startY, endX, endY) ||
+        ['M', startX, startY, 'V', midY, 'H', endX, 'V', endY].join(' ')
+      );
     }
 
     if (kind === 'org-right-subtopic') {
-      return ['M', startX, startY, 'H', endX].join(' ');
+      return this.axisLinePath(startX, startY, endX, startY);
     }
 
     if (kind === 'timeline-detail') {
-      return ['M', startX, startY, 'H', endX].join(' ');
+      return this.axisLinePath(startX, startY, endX, startY);
     }
 
     if (kind === 'hanging-horizontal') {
-      return ['M', startX, startY, 'V', endY, 'H', endX].join(' ');
+      return this.hangingHorizontalPath(startX, startY, endX, endY);
     }
 
     if (kind === 'hanging-vertical') {
-      return ['M', startX, startY, 'H', endX, 'V', endY].join(' ');
+      return this.hangingVerticalPath(startX, startY, endX, endY);
     }
 
     if (kind === 'radial') {
@@ -5384,11 +5458,14 @@ export class YonxaoMindmapRenderer extends Component {
 
     if (kind === 'fishbone-rib-descendant') {
       const midX = startX + (endX - startX) / 2;
-      return ['M', startX, startY, 'H', midX, 'V', endY, 'H', endX].join(' ');
+      return (
+        this.axisLinePath(startX, startY, endX, endY) ||
+        ['M', startX, startY, 'H', midX, 'V', endY, 'H', endX].join(' ')
+      );
     }
 
     if (kind === 'fishbone-rib-topic') {
-      return ['M', startX, startY, 'H', endX].join(' ');
+      return this.axisLinePath(startX, startY, endX, startY);
     }
 
     if (kind === 'skip') {
@@ -5400,21 +5477,7 @@ export class YonxaoMindmapRenderer extends Component {
     }
 
     if (connectorStyle === 'elbow') {
-      if (Math.abs(startY - endY) < 0.5) {
-        return ['M', startX, startY, 'H', endX].join(' ');
-      }
-
-      if (Math.abs(startX - endX) < 0.5) {
-        return ['M', startX, startY, 'V', endY].join(' ');
-      }
-
-      if (axis === 'y') {
-        const midY = startY + (endY - startY) / 2;
-        return ['M', startX, startY, 'V', midY, 'H', endX, 'V', endY].join(' ');
-      }
-
-      const midX = startX + (endX - startX) / 2;
-      return ['M', startX, startY, 'H', midX, 'V', endY, 'H', endX].join(' ');
+      return this.elbowPath(startX, startY, endX, endY, axis);
     }
 
     const bend = Math.max(44, Math.abs(axis === 'y' ? endY - startY : endX - startX) * 0.46);
