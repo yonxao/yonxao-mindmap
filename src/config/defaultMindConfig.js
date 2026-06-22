@@ -119,7 +119,7 @@ export const LAYOUT_TYPES = Object.freeze(
 
 // 传统思维导图支持的连线线型：曲线、直线、折线。
 export const CONNECTOR_STYLES = Object.freeze(['curve', 'straight', 'elbow']);
-// 普通主题的子主题展开方式：侧向展开或下挂展开。
+// 普通主题的子主题展开方式：自然展开或下挂展开。
 export const BRANCH_EXPANSIONS = Object.freeze(['side', 'hanging']);
 
 // 允许用户手动选择连线线型的布局集合。
@@ -190,7 +190,7 @@ export const DEFAULT_MIND_CONFIG = Object.freeze({
   }),
   // 普通主题分支配置。
   branch: Object.freeze({
-    // 折线下的子主题默认侧向展开。
+    // 折线下的子主题默认自然展开。
     expansion: 'side',
   }),
   // 字体配置。

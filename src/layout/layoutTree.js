@@ -673,7 +673,7 @@ export function placeHorizontalDescendants(parent, side, collapsedIds, branchExp
  * 水平布局的下挂展开：父主题从下方引出纵向支线，子主题再向左右侧接出。
  *
  * 说明：
- * 相比侧向展开，它不再从父主题侧边缘继续推进，从而减少横向占用；
+ * 相比自然展开，它不再从父主题侧边缘继续推进，从而减少横向占用；
  * 代价是父主题和子主题组会在垂直方向上串开，占用更多高度。
  */
 export function placeHorizontalHangingDescendants(parent, side, collapsedIds, branchExpansion) {
@@ -1365,7 +1365,7 @@ export function placeOrgRightDescendants(parent, collapsedIds, branchExpansion =
   if (!subtopics.length) return;
 
   if (Number(parent?.level || 1) >= 3 && branchExpansion === 'side') {
-    placeOrgRightSideDescendants(parent, collapsedIds, branchExpansion);
+    placeOrgRightNaturalDescendants(parent, collapsedIds, branchExpansion);
     return;
   }
 
@@ -1402,9 +1402,9 @@ export function placeOrgRightDescendants(parent, collapsedIds, branchExpansion =
 
 /*
  * 作用：
- * 右向组织结构图的侧向展开：普通主题从右侧直接展开子主题组。
+ * 右向组织结构图的自然展开：普通主题从右侧直接展开子主题组。
  */
-export function placeOrgRightSideDescendants(parent, collapsedIds, branchExpansion) {
+export function placeOrgRightNaturalDescendants(parent, collapsedIds, branchExpansion) {
   const subtopics = visibleSubtopics(parent, collapsedIds);
   if (!subtopics.length) return;
 
@@ -1568,7 +1568,7 @@ export function placeTimelineDetails(parent, branchSide, collapsedIds, branchExp
   if (!subtopics.length) return;
 
   if (Number(parent?.level || 1) >= 3 && branchExpansion === 'side') {
-    placeTimelineSideDetails(parent, branchSide, collapsedIds, branchExpansion);
+    placeTimelineNaturalDetails(parent, branchSide, collapsedIds, branchExpansion);
     return;
   }
 
@@ -1657,9 +1657,9 @@ export function placeTimelineHangingDetails(parent, branchSide, collapsedIds, br
 
 /*
  * 作用：
- * 时间轴详情区的侧向展开：三级及更深主题从右侧直接继续展开。
+ * 时间轴详情区的自然展开：三级及更深主题从右侧直接继续展开。
  */
-export function placeTimelineSideDetails(parent, branchSide, collapsedIds, branchExpansion) {
+export function placeTimelineNaturalDetails(parent, branchSide, collapsedIds, branchExpansion) {
   const subtopics = visibleSubtopics(parent, collapsedIds);
   if (!subtopics.length) return;
 

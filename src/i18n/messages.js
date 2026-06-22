@@ -283,7 +283,7 @@ const BASE_LOCALE_MESSAGES = Object.freeze({
       'Subtopic expansion only applies when the actual connector style is elbow.',
     'configModal.layout.branchExpansion.unsupportedHelp':
       'The current layout does not support subtopic expansion.',
-    'configModal.branchExpansion.side': 'Side expansion',
+    'configModal.branchExpansion.side': 'Natural expansion',
     'configModal.branchExpansion.hanging': 'Hanging expansion',
 
     'configModal.font.globalSection': 'Global topic font',
@@ -573,7 +573,7 @@ const BASE_LOCALE_MESSAGES = Object.freeze({
     'configModal.layout.branchExpansion.elbowOnlyHelp':
       '子主题展开方式仅在实际连线线型为折线时生效。',
     'configModal.layout.branchExpansion.unsupportedHelp': '当前布局不支持子主题展开方式。',
-    'configModal.branchExpansion.side': '侧向展开',
+    'configModal.branchExpansion.side': '自然展开',
     'configModal.branchExpansion.hanging': '下挂展开',
 
     'configModal.font.globalSection': '全局主题字体',
@@ -864,7 +864,7 @@ const BASE_LOCALE_MESSAGES = Object.freeze({
     'configModal.layout.branchExpansion.elbowOnlyHelp':
       '子主題展開方式僅在實際連線線型為折線時生效。',
     'configModal.layout.branchExpansion.unsupportedHelp': '目前佈局不支援子主題展開方式。',
-    'configModal.branchExpansion.side': '側向展開',
+    'configModal.branchExpansion.side': '自然展開',
     'configModal.branchExpansion.hanging': '下掛展開',
 
     'configModal.font.globalSection': '全域主題字型',

@@ -316,7 +316,7 @@ layout:
 
 `layout.branchExpansion` 当前可选：
 
-- `side`：侧向展开。
+- `side`：自然展开。
 - `hanging`：下挂展开。
 
 已确认规则：
