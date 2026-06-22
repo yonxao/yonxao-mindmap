@@ -1,5 +1,34 @@
 /*
  * 作用：
+ * 主题按钮整体显示策略。
+ *
+ * 规则：
+ * - always：所有按钮常显。
+ * - toggle-always：折叠按钮常显，编辑/新增按钮在主题或按钮组悬浮时显示。
+ * - hover：所有按钮都在主题或按钮组悬浮时显示。
+ */
+.yonxao-mindmap-topic-controls.is-visibility-toggle-always .yonxao-mindmap-topic-edit,
+.yonxao-mindmap-topic-controls.is-visibility-toggle-always .yonxao-mindmap-topic-sibling-actions,
+.yonxao-mindmap-topic-controls.is-visibility-toggle-always .yonxao-mindmap-topic-subtopic-add,
+.yonxao-mindmap-topic-controls.is-visibility-hover .yonxao-mindmap-topic-edit,
+.yonxao-mindmap-topic-controls.is-visibility-hover .yonxao-mindmap-topic-sibling-actions,
+.yonxao-mindmap-topic-controls.is-visibility-hover .yonxao-mindmap-topic-subtopic-add,
+.yonxao-mindmap-topic-controls.is-visibility-hover .yonxao-mindmap-toggle {
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 120ms ease;
+}
+
+.yonxao-mindmap-topic-controls.is-topic-hovered .yonxao-mindmap-topic-edit,
+.yonxao-mindmap-topic-controls.is-topic-hovered .yonxao-mindmap-topic-sibling-actions,
+.yonxao-mindmap-topic-controls.is-topic-hovered .yonxao-mindmap-topic-subtopic-add,
+.yonxao-mindmap-topic-controls.is-topic-hovered .yonxao-mindmap-toggle {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+/*
+ * 作用：
  * 主题编辑按钮。
  * 按钮由 renderer 放在父线入口点，和主题本体分层绘制。
  */

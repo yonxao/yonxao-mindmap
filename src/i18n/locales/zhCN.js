@@ -145,6 +145,9 @@ export const zhCNMessages = Object.freeze({
     '关闭“适配视图不放大”时生效，用于限制小图在适配视图中的最大放大倍数。',
   'configModal.basic.sourceHeight': '源码高度',
   'configModal.basic.sourceHeight.help': '源码模式独立高度，不影响导图高度。',
+  'configModal.basic.topicControlVisibility': '主题按钮显示方式',
+  'configModal.basic.topicControlVisibility.help':
+    '控制导图中编辑、折叠和新增主题按钮的显示时机。阅读视图仍会禁用编辑类按钮。',
   'configModal.basic.toolbarCorner': '工具栏角落',
   'configModal.basic.toolbarPlacement': '工具栏位置',
   'configModal.toolbarCorner.topLeft': '左上',
@@ -164,6 +167,9 @@ export const zhCNMessages = Object.freeze({
     '开启后，源码模式中按 Tab / Shift+Tab 会调整当前行的主题级别。',
   'configModal.viewFit.original': '原始大小',
   'configModal.viewFit.fit': '适配视图',
+  'configModal.topicControlVisibility.always': '始终显示全部按钮',
+  'configModal.topicControlVisibility.toggle-always': '折叠按钮常显，其余悬浮显示',
+  'configModal.topicControlVisibility.hover': '全部按钮悬浮显示',
 
   'configModal.theme.section': '主题',
   'configModal.theme.scheme': '主题方案',

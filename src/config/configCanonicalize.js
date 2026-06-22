@@ -15,6 +15,7 @@ export function canonicalizeMindConfig(rawConfig) {
   const basicToolbar = isPlainObject(basic.toolbar) ? basic.toolbar : {};
   setConfigValueIfPresent(next, ['basic', 'toolbar', 'corner'], basicToolbar.corner);
   setConfigValueIfPresent(next, ['basic', 'toolbar', 'placement'], basicToolbar.placement);
+  setConfigValueIfPresent(next, ['basic', 'topicControlVisibility'], basic.topicControlVisibility);
   setConfigValueIfPresent(next, ['basic', 'viewFit'], basic.viewFit);
   setConfigValueIfPresent(next, ['basic', 'fitViewNoUpscale'], basic.fitViewNoUpscale);
   setConfigValueIfPresent(next, ['basic', 'fitViewMaxScale'], basic.fitViewMaxScale);

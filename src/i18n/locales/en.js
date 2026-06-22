@@ -152,6 +152,9 @@ export const enMessages = Object.freeze({
   'configModal.basic.sourceHeight': 'Source height',
   'configModal.basic.sourceHeight.help':
     'Source mode has an independent height and does not affect map height.',
+  'configModal.basic.topicControlVisibility': 'Topic button visibility',
+  'configModal.basic.topicControlVisibility.help':
+    'Controls when edit, collapse, and add-topic buttons are shown on the map. Edit buttons remain disabled in reading view.',
   'configModal.basic.toolbarCorner': 'Toolbar corner',
   'configModal.basic.toolbarPlacement': 'Toolbar placement',
   'configModal.toolbarCorner.topLeft': 'Top left',
@@ -171,6 +174,9 @@ export const enMessages = Object.freeze({
     'When enabled, Tab and Shift+Tab in source mode adjust the current line topic level.',
   'configModal.viewFit.original': 'Original size',
   'configModal.viewFit.fit': 'Fit view',
+  'configModal.topicControlVisibility.always': 'Always show all buttons',
+  'configModal.topicControlVisibility.toggle-always': 'Always show collapse; show others on hover',
+  'configModal.topicControlVisibility.hover': 'Show all buttons on hover',
 
   'configModal.theme.section': 'Theme',
   'configModal.theme.scheme': 'Theme scheme',

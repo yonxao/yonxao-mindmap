@@ -32,6 +32,27 @@ export const basicTabMethods = {
         help: this.t('configModal.basic.canvasHeight.help'),
       }
     );
+    this.createNumberField(
+      this.t('configModal.basic.sourceHeight'),
+      ['basic', 'sourceHeight'],
+      normalized.source.height,
+      {
+        min: CANVAS_MIN_HEIGHT,
+        max: CANVAS_MAX_HEIGHT,
+        step: 10,
+        placeholder: this.t('configModal.basic.placeholder.auto'),
+        help: this.t('configModal.basic.sourceHeight.help'),
+      }
+    );
+    this.createSelectField(
+      this.t('configModal.basic.topicControlVisibility'),
+      ['basic', 'topicControlVisibility'],
+      normalized.button.topicControlVisibility,
+      this.topicControlVisibilityOptions(),
+      {
+        help: this.t('configModal.basic.topicControlVisibility.help'),
+      }
+    );
     const viewFitSelect = this.createSelectField(
       this.t('configModal.basic.viewFit'),
       ['basic', 'viewFit'],
@@ -82,18 +103,6 @@ export const basicTabMethods = {
       ]);
     });
     syncFitViewSubControls();
-    this.createNumberField(
-      this.t('configModal.basic.sourceHeight'),
-      ['basic', 'sourceHeight'],
-      normalized.source.height,
-      {
-        min: CANVAS_MIN_HEIGHT,
-        max: CANVAS_MAX_HEIGHT,
-        step: 10,
-        placeholder: this.t('configModal.basic.placeholder.auto'),
-        help: this.t('configModal.basic.sourceHeight.help'),
-      }
-    );
     this.createSelectField(
       this.t('configModal.basic.toolbarCorner'),
       ['basic', 'toolbar', 'corner'],

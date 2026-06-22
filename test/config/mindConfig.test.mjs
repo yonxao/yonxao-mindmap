@@ -20,6 +20,14 @@ test('normalizeMindConfig clamps numeric font values and keeps legal layout', ()
   assert.equal(config.font.lineHeight, 160);
 });
 
+test('normalizeMindConfig keeps legal topic control visibility', () => {
+  const config = normalizeMindConfig({
+    basic: { topicControlVisibility: 'hover' },
+  });
+
+  assert.equal(config.button.topicControlVisibility, 'hover');
+});
+
 test('mergeMindConfigObjects recursively merges plain objects', () => {
   assert.deepEqual(
     mergeMindConfigObjects(

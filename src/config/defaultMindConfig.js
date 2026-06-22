@@ -64,6 +64,8 @@ export const THEME_SCHEMES = Object.freeze([
 
 // 按钮配色模式可选值：inherit-accent 继承 Obsidian 强调色，subtle 为低调色，topic 为使用主题自身颜色，custom 为自定义颜色。
 export const BUTTON_COLOR_MODES = Object.freeze(['inherit-accent', 'subtle', 'topic', 'custom']);
+// 主题按钮显示方式：全部常显、折叠按钮常显其余悬浮、全部悬浮。
+export const TOPIC_CONTROL_VISIBILITY_MODES = Object.freeze(['always', 'toggle-always', 'hover']);
 
 // 预定义的自定义按钮颜色选项，供配置面板使用。
 export const BUTTON_COLOR_PRESETS = Object.freeze([
@@ -221,6 +223,8 @@ export const DEFAULT_MIND_CONFIG = Object.freeze({
     colorMode: 'inherit-accent',
     // 自定义按钮颜色，仅在 colorMode 为 custom 时生效。
     color: '',
+    // 默认保留折叠按钮常显，其余编辑/新增按钮在主题悬浮时显示。
+    topicControlVisibility: 'toggle-always',
   }),
   // 源码模式配置。
   source: Object.freeze({

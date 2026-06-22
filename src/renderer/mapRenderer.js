@@ -15,6 +15,7 @@ export const mapRendererMethods = {
   renderMap(fitAfterRender, options = {}) {
     this.clearTopicDropHighlight();
     this.closeInlineTextEditor(false);
+    this.hoveredTopicControlId = '';
     this.topicById.clear();
     this.mapEl.textContent = '';
 

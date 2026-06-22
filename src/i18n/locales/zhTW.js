@@ -145,6 +145,9 @@ export const zhTWMessages = Object.freeze({
     '關閉「適配視圖不放大」時生效，用於限制小圖在適配視圖中的最大放大倍數。',
   'configModal.basic.sourceHeight': '原始碼高度',
   'configModal.basic.sourceHeight.help': '原始碼模式有獨立高度，不影響導圖高度。',
+  'configModal.basic.topicControlVisibility': '主題按鈕顯示方式',
+  'configModal.basic.topicControlVisibility.help':
+    '控制導圖中編輯、折疊和新增主題按鈕的顯示時機。閱讀視圖仍會停用編輯類按鈕。',
   'configModal.basic.toolbarCorner': '工具列角落',
   'configModal.basic.toolbarPlacement': '工具列位置',
   'configModal.toolbarCorner.topLeft': '左上',
@@ -164,6 +167,9 @@ export const zhTWMessages = Object.freeze({
     '開啟後，原始碼模式中按 Tab / Shift+Tab 會調整目前行的主題級別。',
   'configModal.viewFit.original': '原始大小',
   'configModal.viewFit.fit': '適配視圖',
+  'configModal.topicControlVisibility.always': '始終顯示全部按鈕',
+  'configModal.topicControlVisibility.toggle-always': '折疊按鈕常顯，其餘懸浮顯示',
+  'configModal.topicControlVisibility.hover': '全部按鈕懸浮顯示',
 
   'configModal.theme.section': '主題',
   'configModal.theme.scheme': '主題方案',

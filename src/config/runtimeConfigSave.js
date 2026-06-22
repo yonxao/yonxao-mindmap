@@ -243,6 +243,7 @@ export const runtimeConfigSaveMethods = {
     const normalizedPathMap = {
       'basic.canvasHeight': ['canvas', 'height'],
       'basic.sourceHeight': ['source', 'height'],
+      'basic.topicControlVisibility': ['button', 'topicControlVisibility'],
       'basic.tabIndent': ['source', 'enableTabIndent'],
       'basic.toolbar.corner': ['toolbar', 'corner'],
       'basic.toolbar.placement': ['toolbar', 'placement'],

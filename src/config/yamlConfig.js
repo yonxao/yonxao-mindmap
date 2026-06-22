@@ -108,6 +108,7 @@ function configKeyOrder(path) {
     return [
       'canvasHeight',
       'sourceHeight',
+      'topicControlVisibility',
       'toolbar',
       'viewFit',
       'fitViewNoUpscale',

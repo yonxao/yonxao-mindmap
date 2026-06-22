@@ -25,6 +25,7 @@ import {
   LAYOUT_TYPES,
   TOOLBAR_CORNERS,
   TOOLBAR_PLACEMENTS,
+  TOPIC_CONTROL_VISIBILITY_MODES,
   TOPIC_MAX_WIDTH_MAX,
   TOPIC_MAX_WIDTH_MIN,
   VIEW_FIT_MODES,
@@ -85,7 +86,7 @@ export function normalizeMindConfig(rawConfig) {
     },
     font: normalizeFontConfig(font),
     topic: normalizeTopicConfig(theme, layout),
-    button: normalizeButtonConfig(theme),
+    button: normalizeButtonConfig(theme, basic),
     source: {
       enableTabIndent:
         typeof basic.tabIndent === 'boolean'
@@ -235,14 +236,18 @@ export function normalizeTopicConfig(rawTheme, rawLayout) {
  * - colorMode：规范化的配色模式，默认 inherit-accent
  * - color：自定义颜色字符串，可能为空
  */
-export function normalizeButtonConfig(rawTheme) {
+export function normalizeButtonConfig(rawTheme, rawBasic = {}) {
   const theme = isPlainObject(rawTheme) ? rawTheme : {};
+  const basic = isPlainObject(rawBasic) ? rawBasic : {};
   const colorMode = normalizeText(theme.buttonColorMode).toLowerCase();
   return {
     colorMode: BUTTON_COLOR_MODES.includes(colorMode)
       ? colorMode
       : DEFAULT_MIND_CONFIG.button.colorMode,
     color: normalizeText(theme.buttonColor),
+    topicControlVisibility:
+      normalizeTopicControlVisibility(basic.topicControlVisibility) ||
+      DEFAULT_MIND_CONFIG.button.topicControlVisibility,
   };
 }
 
@@ -261,6 +266,9 @@ export function normalizeRuntimeButtonConfig(rawButton) {
       ? colorMode
       : DEFAULT_MIND_CONFIG.button.colorMode,
     color: normalizeText(button.color),
+    topicControlVisibility:
+      normalizeTopicControlVisibility(button.topicControlVisibility) ||
+      DEFAULT_MIND_CONFIG.button.topicControlVisibility,
   };
 }
 
@@ -413,6 +421,15 @@ export function normalizeConnectorStyle(value) {
 export function normalizeBranchExpansion(value) {
   const text = normalizeText(value).toLowerCase();
   return BRANCH_EXPANSIONS.includes(text) ? text : '';
+}
+
+/*
+ * 作用：
+ * 规范化主题按钮显示方式。
+ */
+export function normalizeTopicControlVisibility(value) {
+  const text = normalizeText(value).toLowerCase();
+  return TOPIC_CONTROL_VISIBILITY_MODES.includes(text) ? text : '';
 }
 
 /*

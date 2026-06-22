@@ -24,8 +24,9 @@ export const topicControlDrawMethods = {
     if (!positions) return null;
 
     const box = topic._layout;
+    const visibility = this.topicControlVisibilityMode();
     const group = svg('g', {
-      class: 'yonxao-mindmap-topic-controls',
+      class: `yonxao-mindmap-topic-controls is-visibility-${visibility}`,
       transform: `translate(${box.x - box.width / 2} ${box.y - box.height / 2})`,
       'data-topic-id': topic.id,
     });
@@ -56,6 +57,11 @@ export const topicControlDrawMethods = {
     }
 
     return group;
+  },
+
+  topicControlVisibilityMode() {
+    const mode = String(this.config.button?.topicControlVisibility || 'toggle-always');
+    return ['always', 'toggle-always', 'hover'].includes(mode) ? mode : 'toggle-always';
   },
 
   renderTopicToggle(topic, position) {

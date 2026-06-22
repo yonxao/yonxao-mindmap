@@ -12,6 +12,40 @@
 import { Notice, containsTopicId, moveTopicInTree, svg } from '../../shared/rendererShared.js';
 
 export const topicInteractionMethods = {
+  handleTopicPointerOver(event) {
+    const topicId = this.topicIdFromTarget(event.target);
+    if (!topicId) return;
+    this.setHoveredTopicControls(topicId);
+  },
+
+  handleTopicPointerOut(event) {
+    const topicId = this.topicIdFromTarget(event.target);
+    if (!topicId) return;
+
+    const nextTopicId = this.topicIdFromTarget(event.relatedTarget);
+    if (nextTopicId === topicId) return;
+    this.setHoveredTopicControls('');
+  },
+
+  setHoveredTopicControls(topicId) {
+    if (this.hoveredTopicControlId === topicId) return;
+
+    this.setTopicControlHoverClass(this.hoveredTopicControlId, false);
+    this.hoveredTopicControlId = topicId || '';
+    this.setTopicControlHoverClass(this.hoveredTopicControlId, true);
+  },
+
+  setTopicControlHoverClass(topicId, isHovered) {
+    if (!topicId || !this.mapEl) return;
+
+    for (const controlEl of this.mapEl.querySelectorAll('.yonxao-mindmap-topic-controls')) {
+      if (controlEl.getAttribute('data-topic-id') === topicId) {
+        controlEl.classList.toggle('is-topic-hovered', Boolean(isHovered));
+        return;
+      }
+    }
+  },
+
   handleTopicClick(event) {
     if (this.suppressNextTopicClick) {
       this.suppressNextTopicClick = false;

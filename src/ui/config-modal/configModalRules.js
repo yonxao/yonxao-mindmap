@@ -14,6 +14,7 @@ import {
   CONNECTOR_STYLES,
   LAYOUT_OPTION_GROUPS,
   THEME_SCHEMES,
+  TOPIC_CONTROL_VISIBILITY_MODES,
   TOOLBAR_CORNERS,
   TOOLBAR_PLACEMENTS,
   VIEW_FIT_MODES,
@@ -58,6 +59,13 @@ export const configModalRuleMethods = {
 
   viewFitOptions() {
     return VIEW_FIT_MODES.map((mode) => [mode, this.t(`configModal.viewFit.${mode}`)]);
+  },
+
+  topicControlVisibilityOptions() {
+    return TOPIC_CONTROL_VISIBILITY_MODES.map((mode) => [
+      mode,
+      this.t(`configModal.topicControlVisibility.${mode}`),
+    ]);
   },
 
   layoutOptionGroups() {
