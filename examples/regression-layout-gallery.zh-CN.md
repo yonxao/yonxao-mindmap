@@ -16,7 +16,7 @@
 ```yxmm
 ---
 theme:
-  scheme: ocean
+  buttonColorMode: topic
 ---
 
 # 曲线连线
@@ -49,7 +49,7 @@ layout:
 ### 侧向内容
 ```
 
-### 折线连线与自然展开
+### 折线连线与侧向展开
 
 ```yxmm
 ---
@@ -113,8 +113,6 @@ theme:
 
 ```yxmm
 ---
-basic:
-  viewFit: original
 theme:
   scheme: ocean
 layout:
@@ -184,8 +182,6 @@ layout:
 
 ```yxmm
 ---
-basic:
-  viewFit: original
 theme:
   scheme: forest
 layout:
@@ -213,8 +209,6 @@ layout:
 
 ```yxmm
 ---
-basic:
-  viewFit: fit
 theme:
   scheme: forest
 layout:
@@ -245,8 +239,6 @@ font:
 
 ```yxmm
 ---
-basic:
-  viewFit: fit
 theme:
   scheme: pastel-rainbow
 layout:
@@ -263,8 +255,6 @@ layout:
 
 ```yxmm
 ---
-basic:
-  viewFit: original
 theme:
   scheme: pastel-rainbow
 layout:
@@ -322,8 +312,6 @@ font:
 
 ```yxmm
 ---
-basic:
-  viewFit: fit
 theme:
   scheme: sunset
 layout:
@@ -339,8 +327,6 @@ layout:
 
 ```yxmm
 ---
-basic:
-  viewFit: original
 theme:
   scheme: sunset
 layout:
@@ -367,8 +353,6 @@ layout:
 
 ```yxmm
 ---
-basic:
-  viewFit: fit
 theme:
   scheme: sunset
 layout:
@@ -398,10 +382,6 @@ font:
 
 ```yxmm
 ---
-basic:
-  viewFit: fit
-theme:
-  scheme: grape
 layout:
   type: mindmap-up
 ---
@@ -415,8 +395,8 @@ layout:
 
 ```yxmm
 ---
-basic:
-  viewFit: original
+theme:
+  buttonColorMode: topic
 layout:
   type: mindmap-up
   connectorStyle: elbow
@@ -441,8 +421,6 @@ layout:
 
 ```yxmm
 ---
-basic:
-  canvasHeight: 411
 layout:
   type: mindmap-up
   connectorStyle: elbow
@@ -473,8 +451,6 @@ font:
 
 ```yxmm
 ---
-basic:
-  viewFit: fit
 theme:
   scheme: neon-rainbow
 layout:
@@ -491,8 +467,6 @@ layout:
 
 ```yxmm
 ---
-basic:
-  viewFit: original
 theme:
   scheme: neon-rainbow
 layout:
@@ -585,8 +559,6 @@ font:
 
 ```yxmm
 ---
-basic:
-  viewFit: fit
 theme:
   scheme: ocean
 layout:
@@ -602,9 +574,6 @@ layout:
 
 ```yxmm
 ---
-basic:
-  viewFit: original
-  canvasHeight: 520
 theme:
   scheme: ocean
 layout:
@@ -631,8 +600,6 @@ layout:
 
 ```yxmm
 ---
-basic:
-  viewFit: fit
 theme:
   scheme: ocean
 layout:
@@ -663,8 +630,6 @@ font:
 
 ```yxmm
 ---
-basic:
-  viewFit: fit
 theme:
   scheme: forest
 layout:
@@ -680,9 +645,6 @@ layout:
 
 ```yxmm
 ---
-basic:
-  viewFit: original
-  canvasHeight: 520
 theme:
   scheme: forest
 layout:
@@ -709,8 +671,6 @@ layout:
 
 ```yxmm
 ---
-basic:
-  viewFit: fit
 theme:
   scheme: forest
 layout:
@@ -741,8 +701,6 @@ font:
 
 ```yxmm
 ---
-basic:
-  viewFit: fit
 theme:
   scheme: pastel-rainbow
 layout:
@@ -759,9 +717,6 @@ layout:
 
 ```yxmm
 ---
-basic:
-  viewFit: original
-  canvasHeight: 560
 theme:
   scheme: pastel-rainbow
 layout:
@@ -789,8 +744,6 @@ layout:
 
 ```yxmm
 ---
-basic:
-  viewFit: fit
 theme:
   scheme: pastel-rainbow
 layout:
@@ -821,8 +774,6 @@ font:
 
 ```yxmm
 ---
-basic:
-  viewFit: fit
 theme:
   scheme: ocean
 layout:
@@ -839,9 +790,6 @@ layout:
 
 ```yxmm
 ---
-basic:
-  viewFit: original
-  canvasHeight: 520
 theme:
   scheme: ocean
 layout:
@@ -867,8 +815,6 @@ layout:
 
 ```yxmm
 ---
-basic:
-  viewFit: fit
 theme:
   scheme: ocean
 layout:
@@ -878,7 +824,6 @@ layout:
     global: 260
     level2: 340
 font:
-  size: 16
   lineHeight: 22
 ---
 
@@ -888,8 +833,10 @@ font:
 第二行检查上下层级对齐。
 ### 这是一个很长的岗位主题，用来检查组织结构图文本折行
 #### 更深层级职责说明
+##### 新主题
 ## 另一个部门
 ### 短主题
+#### 新主题
 ```
 
 ## org-right
@@ -898,8 +845,6 @@ font:
 
 ```yxmm
 ---
-basic:
-  viewFit: fit
 theme:
   scheme: forest
 layout:
@@ -915,9 +860,6 @@ layout:
 
 ```yxmm
 ---
-basic:
-  viewFit: original
-  canvasHeight: 520
 theme:
   scheme: forest
 layout:
@@ -943,8 +885,6 @@ layout:
 
 ```yxmm
 ---
-basic:
-  viewFit: fit
 theme:
   scheme: forest
 layout:
@@ -974,8 +914,6 @@ font:
 
 ```yxmm
 ---
-basic:
-  viewFit: fit
 theme:
   scheme: sunset
 layout:
@@ -992,9 +930,6 @@ layout:
 
 ```yxmm
 ---
-basic:
-  viewFit: original
-  canvasHeight: 520
 theme:
   scheme: sunset
 layout:
@@ -1021,8 +956,6 @@ layout:
 
 ```yxmm
 ---
-basic:
-  viewFit: fit
 theme:
   scheme: sunset
 layout:
@@ -1052,10 +985,6 @@ font:
 
 ```yxmm
 ---
-basic:
-  viewFit: fit
-theme:
-  scheme: grape
 layout:
   type: timeline-down
 ---
@@ -1070,11 +999,6 @@ layout:
 
 ```yxmm
 ---
-basic:
-  viewFit: original
-  canvasHeight: 520
-theme:
-  scheme: grape
 layout:
   type: timeline-down
   branchExpansion: hanging
@@ -1099,8 +1023,6 @@ layout:
 
 ```yxmm
 ---
-basic:
-  viewFit: fit
 theme:
   scheme: grape
 layout:
@@ -1130,8 +1052,6 @@ font:
 
 ```yxmm
 ---
-basic:
-  viewFit: fit
 theme:
   scheme: neon-rainbow
 layout:
@@ -1148,9 +1068,6 @@ layout:
 
 ```yxmm
 ---
-basic:
-  viewFit: original
-  canvasHeight: 560
 theme:
   scheme: neon-rainbow
 layout:
@@ -1179,8 +1096,6 @@ layout:
 
 ```yxmm
 ---
-basic:
-  viewFit: fit
 theme:
   scheme: neon-rainbow
 layout:
@@ -1211,8 +1126,6 @@ font:
 
 ```yxmm
 ---
-basic:
-  viewFit: fit
 theme:
   scheme: pastel-rainbow
 layout:
@@ -1229,9 +1142,6 @@ layout:
 
 ```yxmm
 ---
-basic:
-  viewFit: original
-  canvasHeight: 560
 theme:
   scheme: pastel-rainbow
 layout:
@@ -1257,18 +1167,13 @@ layout:
 
 ```yxmm
 ---
-basic:
-  viewFit: fit
 theme:
   scheme: pastel-rainbow
 layout:
   type: radial
-  branchExpansion: hanging
   topicMaxWidth:
-    global: 240
     level2: 320
 font:
-  size: 16
   lineHeight: 22
 ---
 
@@ -1288,8 +1193,6 @@ font:
 
 ```yxmm
 ---
-basic:
-  viewFit: fit
 theme:
   scheme: ocean
 layout:
@@ -1305,9 +1208,6 @@ layout:
 
 ```yxmm
 ---
-basic:
-  viewFit: original
-  canvasHeight: 560
 theme:
   scheme: ocean
 layout:
@@ -1333,8 +1233,6 @@ layout:
 
 ```yxmm
 ---
-basic:
-  viewFit: fit
 theme:
   scheme: ocean
 layout:
@@ -1344,7 +1242,6 @@ layout:
     global: 260
     level2: 340
 font:
-  size: 16
   lineHeight: 22
 ---
 
@@ -1364,8 +1261,6 @@ font:
 
 ```yxmm
 ---
-basic:
-  viewFit: fit
 theme:
   scheme: forest
 layout:
@@ -1381,14 +1276,10 @@ layout:
 
 ```yxmm
 ---
-basic:
-  viewFit: original
-  canvasHeight: 560
 theme:
   scheme: forest
 layout:
   type: fishbone-right
-  branchExpansion: hanging
 ---
 
 # 右向鱼骨中图
@@ -1409,8 +1300,6 @@ layout:
 
 ```yxmm
 ---
-basic:
-  viewFit: fit
 theme:
   scheme: forest
 layout:
@@ -1440,8 +1329,6 @@ font:
 
 ```yxmm
 ---
-basic:
-  viewFit: fit
 theme:
   scheme: ocean
 layout:
@@ -1457,11 +1344,8 @@ layout:
 
 ```yxmm
 ---
-basic:
-  viewFit: original
-  canvasHeight: 500
 theme:
-  scheme: ocean
+  scheme: default
 layout:
   type: tree-table
 ---
@@ -1483,8 +1367,6 @@ layout:
 
 ```yxmm
 ---
-basic:
-  viewFit: fit
 theme:
   scheme: ocean
 layout:
@@ -1514,8 +1396,6 @@ font:
 
 ```yxmm
 ---
-basic:
-  viewFit: fit
 theme:
   scheme: forest
 layout:
@@ -1531,9 +1411,6 @@ layout:
 
 ```yxmm
 ---
-basic:
-  viewFit: original
-  canvasHeight: 500
 theme:
   scheme: forest
 layout:
@@ -1557,8 +1434,6 @@ layout:
 
 ```yxmm
 ---
-basic:
-  viewFit: fit
 theme:
   scheme: forest
 layout:
@@ -1588,8 +1463,6 @@ font:
 
 ```yxmm
 ---
-basic:
-  viewFit: fit
 theme:
   scheme: ocean
 layout:
@@ -1608,8 +1481,6 @@ layout:
 
 ```yxmm
 ---
-basic:
-  viewFit: fit
 theme:
   scheme: forest
 layout:
@@ -1628,8 +1499,6 @@ layout:
 
 ```yxmm
 ---
-basic:
-  viewFit: fit
 theme:
   scheme: ocean
 layout:
