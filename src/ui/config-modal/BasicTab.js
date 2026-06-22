@@ -27,7 +27,7 @@ export const basicTabMethods = {
       {
         min: CANVAS_MIN_HEIGHT,
         max: CANVAS_MAX_HEIGHT,
-        step: 10,
+        step: 1,
         placeholder: this.t('configModal.basic.placeholder.auto'),
         help: this.t('configModal.basic.canvasHeight.help'),
       }
@@ -39,7 +39,7 @@ export const basicTabMethods = {
       {
         min: CANVAS_MIN_HEIGHT,
         max: CANVAS_MAX_HEIGHT,
-        step: 10,
+        step: 1,
         placeholder: this.t('configModal.basic.placeholder.auto'),
         help: this.t('configModal.basic.sourceHeight.help'),
       }
