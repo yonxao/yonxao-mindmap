@@ -63,6 +63,34 @@
   color: var(--color-purple);
 }
 
+.yonxao-mindmap-source-token-comment {
+  color: var(--text-faint);
+  font-style: italic;
+}
+
+.yonxao-mindmap-source-token-yaml-marker,
+.yonxao-mindmap-source-token-yaml-separator {
+  color: var(--text-muted);
+}
+
+.yonxao-mindmap-source-token-yaml-key {
+  color: var(--color-blue);
+  font-weight: 650;
+}
+
+.yonxao-mindmap-source-token-yaml-string {
+  color: var(--color-green);
+}
+
+.yonxao-mindmap-source-token-yaml-number {
+  color: var(--color-orange);
+}
+
+.yonxao-mindmap-source-token-yaml-literal {
+  color: var(--color-purple);
+  font-weight: 600;
+}
+
 .yonxao-mindmap-source-highlight-line.is-continuation {
   color: var(--text-muted);
 }

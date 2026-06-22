@@ -38,6 +38,9 @@ export class ConfigModal extends Modal {
     this.activeTab = 'basic';
     this.formEl = null;
     this.advancedInputEl = null;
+    this.advancedEditorEl = null;
+    this.advancedHighlightEl = null;
+    this.advancedLineNumbersEl = null;
     this.statusEl = null;
     this.applyButton = null;
     this.saveAndCloseButton = null;

@@ -85,7 +85,8 @@
  */
 .yonxao-mindmap-config-field input,
 .yonxao-mindmap-config-field select,
-.yonxao-mindmap-config-yaml {
+.yonxao-mindmap-config-yaml,
+.yonxao-mindmap-config-yaml-editor {
   width: 100%;
 }
 

@@ -19,6 +19,7 @@ export const sourceDocumentMethods = {
     this.sourceInputEl.value = sections.body;
     this.sourceLineCount = this.sourceInputLineCount();
     this.sourceDirty = false;
+    this.updateSourceConfigEditor();
     this.updateSourceBodyEditor();
     this.updateSourceStatus();
   },

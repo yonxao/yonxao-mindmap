@@ -218,6 +218,7 @@ export const configModalStateMethods = {
     this.initialConfig = cloneConfig(this.draftConfig);
     if (this.activeTab === 'advanced' && this.advancedInputEl) {
       this.advancedInputEl.value = stringifyDraftConfig(this.draftConfig);
+      this.updateAdvancedEditor();
     }
     this.updateActionButtons();
     this.updateStatus(this.t('configModal.status.saved'));

@@ -14,15 +14,32 @@ import {
   stringifyDraftConfig,
   canonicalizeMindConfig,
 } from './configModalShared.js';
+import {
+  appendConfigHighlightedLine,
+  createSourceCodeEditor,
+  syncSourceCodeEditorScroll,
+  updateSourceCodeEditor,
+  updateSourceCodeEditorActiveLine,
+} from '../source/sourceCodeEditor.js';
 
 export const advancedTabMethods = {
   renderAdvancedTab() {
     this.createSection(this.t('configModal.advanced.section'));
-    this.advancedInputEl = this.formEl.createEl('textarea', {
-      cls: 'yonxao-mindmap-config-yaml',
-    });
+    this.advancedInputEl = document.createElement('textarea');
+    this.advancedInputEl.className =
+      'yonxao-mindmap-source-input yonxao-mindmap-config-yaml is-active';
     this.advancedInputEl.spellcheck = false;
+    this.advancedInputEl.wrap = 'off';
     this.advancedInputEl.value = stringifyDraftConfig(this.draftConfig);
+    const advancedEditor = createSourceCodeEditor(this.advancedInputEl, {
+      className: 'yonxao-mindmap-config-yaml-editor is-active',
+    });
+    this.advancedEditorEl = advancedEditor.editorEl;
+    this.advancedHighlightEl = advancedEditor.highlightEl;
+    this.advancedLineNumbersEl = advancedEditor.lineNumbersEl;
+    this.formEl.appendChild(this.advancedEditorEl);
+    this.updateAdvancedEditor();
+
     this.advancedInputEl.addEventListener('input', () => {
       try {
         this.draftConfig = canonicalizeMindConfig(parseDraftConfigText(this.advancedInputEl.value));
@@ -33,6 +50,38 @@ export const advancedTabMethods = {
           true
         );
       }
+      this.updateAdvancedEditor();
     });
+    this.advancedInputEl.addEventListener('scroll', () => this.syncAdvancedEditorScroll());
+    this.advancedInputEl.addEventListener('click', () => this.updateAdvancedEditorActiveLine());
+    this.advancedInputEl.addEventListener('keyup', () => this.updateAdvancedEditorActiveLine());
+    this.advancedInputEl.addEventListener('select', () => this.updateAdvancedEditorActiveLine());
+  },
+
+  updateAdvancedEditor() {
+    updateSourceCodeEditor(
+      this.advancedInputEl,
+      this.advancedHighlightEl,
+      this.advancedLineNumbersEl,
+      {
+        renderLine: appendConfigHighlightedLine,
+      }
+    );
+  },
+
+  updateAdvancedEditorActiveLine() {
+    updateSourceCodeEditorActiveLine(
+      this.advancedInputEl,
+      this.advancedHighlightEl,
+      this.advancedLineNumbersEl
+    );
+  },
+
+  syncAdvancedEditorScroll() {
+    syncSourceCodeEditorScroll(
+      this.advancedInputEl,
+      this.advancedHighlightEl,
+      this.advancedLineNumbersEl
+    );
   },
 };

@@ -9,59 +9,67 @@
  * SourceView input/scroll -> sourceHighlightMethods。
  */
 
+import {
+  appendConfigHighlightedLine,
+  sourceInputCursorLineIndex,
+  syncSourceCodeEditorScroll,
+  updateSourceCodeEditor,
+  updateSourceCodeEditorActiveLine,
+} from './sourceCodeEditor.js';
+
 export const sourceHighlightMethods = {
   updateSourceBodyEditor() {
-    if (!this.sourceInputEl || !this.sourceBodyHighlightEl || !this.sourceBodyLineNumbersEl) {
-      return;
-    }
+    updateSourceCodeEditor(
+      this.sourceInputEl,
+      this.sourceBodyHighlightEl,
+      this.sourceBodyLineNumbersEl,
+      {
+        renderLine: (lineEl, line) => this.appendSourceBodyHighlightedLine(lineEl, line),
+      }
+    );
+  },
 
-    const lines = this.sourceInputEl.value.split(/\r?\n/);
-    const activeLineIndex = this.sourceInputCursorLineIndex();
-    const highlightFragment = document.createDocumentFragment();
-    const lineNumberFragment = document.createDocumentFragment();
-
-    lines.forEach((line, index) => {
-      const isActive = index === activeLineIndex;
-
-      const lineEl = document.createElement('div');
-      lineEl.className = 'yonxao-mindmap-source-highlight-line';
-      if (isActive) lineEl.classList.add('is-active-line');
-      this.appendSourceBodyHighlightedLine(lineEl, line);
-      highlightFragment.appendChild(lineEl);
-
-      const lineNumberEl = document.createElement('div');
-      lineNumberEl.className = 'yonxao-mindmap-source-line-number';
-      if (isActive) lineNumberEl.classList.add('is-active-line');
-      lineNumberEl.textContent = String(index + 1);
-      lineNumberFragment.appendChild(lineNumberEl);
-    });
-
-    this.sourceBodyHighlightEl.replaceChildren(highlightFragment);
-    this.sourceBodyLineNumbersEl.replaceChildren(lineNumberFragment);
-    this.syncSourceBodyEditorScroll();
+  updateSourceConfigEditor() {
+    updateSourceCodeEditor(
+      this.sourceConfigInputEl,
+      this.sourceConfigHighlightEl,
+      this.sourceConfigLineNumbersEl,
+      {
+        renderLine: appendConfigHighlightedLine,
+      }
+    );
   },
 
   updateSourceBodyEditorActiveLine() {
-    if (!this.sourceBodyHighlightEl || !this.sourceBodyLineNumbersEl) return;
-    const activeLineIndex = this.sourceInputCursorLineIndex();
-    const highlightLines = Array.from(this.sourceBodyHighlightEl.children);
-    const lineNumbers = Array.from(this.sourceBodyLineNumbersEl.children);
+    updateSourceCodeEditorActiveLine(
+      this.sourceInputEl,
+      this.sourceBodyHighlightEl,
+      this.sourceBodyLineNumbersEl
+    );
+  },
 
-    highlightLines.forEach((lineEl, index) => {
-      lineEl.classList.toggle('is-active-line', index === activeLineIndex);
-    });
-    lineNumbers.forEach((lineEl, index) => {
-      lineEl.classList.toggle('is-active-line', index === activeLineIndex);
-    });
+  updateSourceConfigEditorActiveLine() {
+    updateSourceCodeEditorActiveLine(
+      this.sourceConfigInputEl,
+      this.sourceConfigHighlightEl,
+      this.sourceConfigLineNumbersEl
+    );
   },
 
   syncSourceBodyEditorScroll() {
-    if (!this.sourceInputEl || !this.sourceBodyHighlightEl || !this.sourceBodyLineNumbersEl) {
-      return;
-    }
+    syncSourceCodeEditorScroll(
+      this.sourceInputEl,
+      this.sourceBodyHighlightEl,
+      this.sourceBodyLineNumbersEl
+    );
+  },
 
-    this.sourceBodyHighlightEl.style.transform = `translate(${-this.sourceInputEl.scrollLeft}px, ${-this.sourceInputEl.scrollTop}px)`;
-    this.sourceBodyLineNumbersEl.style.transform = `translateY(${-this.sourceInputEl.scrollTop}px)`;
+  syncSourceConfigEditorScroll() {
+    syncSourceCodeEditorScroll(
+      this.sourceConfigInputEl,
+      this.sourceConfigHighlightEl,
+      this.sourceConfigLineNumbersEl
+    );
   },
 
   appendSourceBodyHighlightedLine(lineEl, line) {
@@ -102,9 +110,6 @@ export const sourceHighlightMethods = {
   },
 
   sourceInputCursorLineIndex() {
-    if (!this.sourceInputEl) return 0;
-    return (
-      this.sourceInputEl.value.slice(0, this.sourceInputEl.selectionStart).split(/\r?\n/).length - 1
-    );
+    return sourceInputCursorLineIndex(this.sourceInputEl);
   },
 };

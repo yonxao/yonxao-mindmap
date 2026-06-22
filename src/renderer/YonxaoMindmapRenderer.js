@@ -75,6 +75,9 @@ export class YonxaoMindmapRenderer extends Component {
     this.heightResizeHandleEl = null;
     this.sourceInputEl = null;
     this.sourceConfigInputEl = null;
+    this.sourceConfigEditorEl = null;
+    this.sourceConfigHighlightEl = null;
+    this.sourceConfigLineNumbersEl = null;
     this.sourceBodyEditorEl = null;
     this.sourceBodyHighlightEl = null;
     this.sourceBodyLineNumbersEl = null;

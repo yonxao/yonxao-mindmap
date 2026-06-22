@@ -1,14 +1,20 @@
 /*
- * 高级 YAML 编辑区使用等宽字体，方便对齐嵌套层级。
+ * 高级 YAML 编辑区复用源码模式编辑器，保留行号、当前行和等宽字体。
  */
-.yonxao-mindmap-config-yaml {
+.yonxao-mindmap-config-yaml-editor {
+  width: 100%;
   min-height: 280px;
-  resize: vertical;
-  font-family: var(--font-monospace);
-  line-height: 1.55;
+  border: 1px solid var(--background-modifier-border);
+  border-radius: 8px;
+  background: var(--background-secondary);
 }
 
-.yonxao-mindmap-config-body.is-advanced .yonxao-mindmap-config-yaml {
+.yonxao-mindmap-config-yaml-editor:focus-within {
+  border-color: var(--interactive-accent);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--interactive-accent) 24%, transparent);
+}
+
+.yonxao-mindmap-config-body.is-advanced .yonxao-mindmap-config-yaml-editor {
   flex: 1 1 auto;
   height: auto;
   min-height: 0;

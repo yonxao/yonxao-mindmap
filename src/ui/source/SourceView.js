@@ -15,6 +15,7 @@ import {
   parseMindDocument,
   applyTopicLevelKey,
 } from '../../shared/rendererShared.js';
+import { createSourceCodeEditor } from './sourceCodeEditor.js';
 
 export const sourceViewMethods = {
   createSourceView() {
@@ -52,25 +53,19 @@ export const sourceViewMethods = {
     this.sourceInputEl.setAttribute('aria-label', this.t('source.tab.body'));
     this.sourceInputEl.setAttribute('role', 'tabpanel');
 
-    this.sourceBodyEditorEl = document.createElement('div');
-    this.sourceBodyEditorEl.className = 'yonxao-mindmap-source-code-editor';
-    this.sourceBodyEditorEl.setAttribute('role', 'presentation');
+    const sourceConfigEditor = createSourceCodeEditor(this.sourceConfigInputEl, {
+      className: 'yonxao-mindmap-source-config-editor',
+    });
+    this.sourceConfigEditorEl = sourceConfigEditor.editorEl;
+    this.sourceConfigHighlightEl = sourceConfigEditor.highlightEl;
+    this.sourceConfigLineNumbersEl = sourceConfigEditor.lineNumbersEl;
 
-    const sourceBodyHighlightViewportEl = document.createElement('div');
-    sourceBodyHighlightViewportEl.className = 'yonxao-mindmap-source-highlight-viewport';
-    this.sourceBodyHighlightEl = document.createElement('div');
-    this.sourceBodyHighlightEl.className = 'yonxao-mindmap-source-highlight';
-    sourceBodyHighlightViewportEl.appendChild(this.sourceBodyHighlightEl);
-
-    const sourceBodyLineNumberViewportEl = document.createElement('div');
-    sourceBodyLineNumberViewportEl.className = 'yonxao-mindmap-source-line-number-viewport';
-    this.sourceBodyLineNumbersEl = document.createElement('div');
-    this.sourceBodyLineNumbersEl.className = 'yonxao-mindmap-source-line-numbers';
-    sourceBodyLineNumberViewportEl.appendChild(this.sourceBodyLineNumbersEl);
-
-    this.sourceBodyEditorEl.appendChild(sourceBodyHighlightViewportEl);
-    this.sourceBodyEditorEl.appendChild(sourceBodyLineNumberViewportEl);
-    this.sourceBodyEditorEl.appendChild(this.sourceInputEl);
+    const sourceBodyEditor = createSourceCodeEditor(this.sourceInputEl, {
+      className: 'yonxao-mindmap-source-body-editor',
+    });
+    this.sourceBodyEditorEl = sourceBodyEditor.editorEl;
+    this.sourceBodyHighlightEl = sourceBodyEditor.highlightEl;
+    this.sourceBodyLineNumbersEl = sourceBodyEditor.lineNumbersEl;
 
     this.syncSourceInput();
     this.sourceLineCount = this.sourceInputLineCount();
@@ -79,7 +74,7 @@ export const sourceViewMethods = {
     this.sourceStatusEl.className = 'yonxao-mindmap-source-status';
     this.sourceStatusEl.textContent = this.t('source.status.editable');
 
-    editorEl.appendChild(this.sourceConfigInputEl);
+    editorEl.appendChild(this.sourceConfigEditorEl);
     editorEl.appendChild(this.sourceBodyEditorEl);
     this.sourceEl.appendChild(tabListEl);
     this.sourceEl.appendChild(editorEl);
@@ -111,6 +106,7 @@ export const sourceViewMethods = {
       this.sourceDirty = this.composeSourceFromSourceInputs() !== this.source;
       this.updateSourceStatus();
       if (tab === 'body') this.updateSourceBodyEditor();
+      if (tab === 'config') this.updateSourceConfigEditor();
       if (tab === this.sourceActiveTab) {
         this.scheduleSourceModeHeightIfLineCountChanged();
       }
@@ -137,12 +133,18 @@ export const sourceViewMethods = {
       }
     });
 
-    if (tab === 'body') {
-      this.registerDomEvent(inputEl, 'scroll', () => this.syncSourceBodyEditorScroll());
-      this.registerDomEvent(inputEl, 'click', () => this.updateSourceBodyEditorActiveLine());
-      this.registerDomEvent(inputEl, 'keyup', () => this.updateSourceBodyEditorActiveLine());
-      this.registerDomEvent(inputEl, 'select', () => this.updateSourceBodyEditorActiveLine());
-    }
+    const syncEditorScroll = () => {
+      if (tab === 'body') this.syncSourceBodyEditorScroll();
+      if (tab === 'config') this.syncSourceConfigEditorScroll();
+    };
+    const updateActiveLine = () => {
+      if (tab === 'body') this.updateSourceBodyEditorActiveLine();
+      if (tab === 'config') this.updateSourceConfigEditorActiveLine();
+    };
+    this.registerDomEvent(inputEl, 'scroll', syncEditorScroll);
+    this.registerDomEvent(inputEl, 'click', updateActiveLine);
+    this.registerDomEvent(inputEl, 'keyup', updateActiveLine);
+    this.registerDomEvent(inputEl, 'select', updateActiveLine);
   },
 
   setSourceActiveTab(tab, options = {}) {
@@ -156,10 +158,12 @@ export const sourceViewMethods = {
       button.tabIndex = isActive ? 0 : -1;
     }
 
+    this.sourceConfigEditorEl?.classList.toggle('is-active', nextTab === 'config');
     this.sourceConfigInputEl?.classList.toggle('is-active', nextTab === 'config');
     this.sourceInputEl?.classList.toggle('is-active', nextTab === 'body');
     this.sourceBodyEditorEl?.classList.toggle('is-active', nextTab === 'body');
     this.sourceLineCount = this.sourceInputLineCount();
+    this.updateSourceConfigEditor();
     this.updateSourceBodyEditor();
     this.scheduleSourceModeHeight();
 

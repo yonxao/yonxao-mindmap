@@ -24,7 +24,7 @@
 
 /*
  * 作用：
- * 正文区的 CodeMirror 风格编辑器外壳。
+ * CodeMirror 风格编辑器外壳。
  *
  * 实现逻辑：
  * textarea 负责真实输入；行号层和高亮层只负责视觉，不参与事件。
@@ -65,17 +65,18 @@
   z-index: 2;
   width: 48px;
   border-right: 1px solid var(--background-modifier-border);
-  background: color-mix(in srgb, var(--background-secondary-alt) 70%, transparent);
+  background: color-mix(in srgb, var(--background-secondary-alt) 90%, transparent);
 }
 
 /*
  * 作用：
- * 正文区 textarea 叠在高亮层上面，只显示光标和选区，文本由高亮层负责显示。
+ * textarea 叠在高亮层上面，只显示光标和选区，文本由高亮层负责显示。
  */
-.yonxao-mindmap-source-code-editor .yonxao-mindmap-source-body-input {
+.yonxao-mindmap-source-code-editor .yonxao-mindmap-source-code-input {
   position: absolute;
   inset: 0;
   z-index: 3;
+  display: block;
   padding: 10px 12px 10px 62px;
   color: transparent;
   caret-color: var(--text-normal);
@@ -85,7 +86,7 @@
   -webkit-text-fill-color: transparent;
 }
 
-.yonxao-mindmap-source-code-editor .yonxao-mindmap-source-body-input::selection {
+.yonxao-mindmap-source-code-editor .yonxao-mindmap-source-code-input::selection {
   background: color-mix(in srgb, var(--interactive-accent) 34%, transparent);
 }
 
