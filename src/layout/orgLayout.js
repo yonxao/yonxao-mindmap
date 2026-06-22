@@ -11,13 +11,16 @@ import {
   ORG_RIGHT_DESCENDANT_SIBLING_GAP,
   SIBLING_GAP,
   TOPIC_MIN_HEIGHT,
+  directSubtopicGroupCenterOffset,
   directSubtopicGroupCenterXOffset,
   horizontalExtentGroupWidth,
   horizontalHangingStartOffset,
   horizontalHangingSubtreeWidth,
   normalizeHorizontalExtent,
+  normalizeVerticalExtent,
   shouldUseHangingExpansion,
   verticalBlockTopicY,
+  verticalExtentGroupHeight,
   visibleSubtopics,
 } from './layoutShared.js';
 
@@ -288,15 +291,15 @@ export function placeOrgRightDescendants(parent, collapsedIds, branchExpansion =
 
   const parentBox = parent._layout;
   parentBox.childBranchExpansion = 'hanging-horizontal';
-  const heights = subtopics.map((subtopic) =>
-    orgRightSubtreeHeight(subtopic, collapsedIds, branchExpansion)
+  const extents = subtopics.map((subtopic) =>
+    orgRightSubtreeExtent(subtopic, collapsedIds, branchExpansion)
   );
   let y = parentBox.y + parentBox.height / 2 + ORG_RIGHT_DESCENDANT_SIBLING_GAP;
 
   for (let index = 0; index < subtopics.length; index += 1) {
     const subtopic = subtopics[index];
     const subtopicBox = subtopic._layout;
-    const height = heights[index];
+    const extent = extents[index];
 
     subtopicBox.side = 'org-right';
     subtopicBox.branchExpansion = 'hanging';
@@ -309,11 +312,11 @@ export function placeOrgRightDescendants(parent, collapsedIds, branchExpansion =
           subtopicBox.width / 2;
     subtopicBox.y =
       branchExpansion === 'hanging'
-        ? verticalBlockTopicY(y, height, subtopic, branchExpansion)
-        : y + subtopicBox.height / 2;
+        ? verticalBlockTopicY(y, extent.height, subtopic, branchExpansion)
+        : y + extent.above;
 
     placeOrgRightDescendants(subtopic, collapsedIds, branchExpansion);
-    y += height + ORG_RIGHT_DESCENDANT_SIBLING_GAP;
+    y += extent.height + ORG_RIGHT_DESCENDANT_SIBLING_GAP;
   }
 }
 
@@ -326,27 +329,28 @@ export function placeOrgRightNaturalDescendants(parent, collapsedIds, branchExpa
   if (!subtopics.length) return;
 
   const parentBox = parent._layout;
-  const heights = subtopics.map((subtopic) =>
-    orgRightSubtreeHeight(subtopic, collapsedIds, branchExpansion)
+  const extents = subtopics.map((subtopic) =>
+    orgRightSubtreeExtent(subtopic, collapsedIds, branchExpansion)
   );
-  const totalHeight =
-    heights.reduce((sum, height) => sum + height, 0) +
-    Math.max(0, subtopics.length - 1) * ORG_RIGHT_DESCENDANT_SIBLING_GAP;
-  let y = parentBox.y - totalHeight / 2;
+  const subtopicGroupCenterOffset = directSubtopicGroupCenterOffset(
+    extents,
+    ORG_RIGHT_DESCENDANT_SIBLING_GAP
+  );
+  let y = parentBox.y - subtopicGroupCenterOffset;
 
   for (let index = 0; index < subtopics.length; index += 1) {
     const subtopic = subtopics[index];
     const subtopicBox = subtopic._layout;
-    const height = heights[index];
+    const extent = extents[index];
 
     subtopicBox.side = 'org-right';
     subtopicBox.branchExpansion = 'side';
     subtopicBox.x =
       parentBox.x + parentBox.width / 2 + ORG_RIGHT_DESCENDANT_LEVEL_GAP + subtopicBox.width / 2;
-    subtopicBox.y = verticalBlockTopicY(y, height, subtopic, branchExpansion);
+    subtopicBox.y = y + extent.above;
 
     placeOrgRightDescendants(subtopic, collapsedIds, branchExpansion);
-    y += height + ORG_RIGHT_DESCENDANT_SIBLING_GAP;
+    y += extent.height + ORG_RIGHT_DESCENDANT_SIBLING_GAP;
   }
 }
 
@@ -373,27 +377,53 @@ export function orgRightSubtreeWidth(topic, collapsedIds, branchExpansion = 'sid
 
 /*
  * 作用：
- * 计算“右向组织结构图”中一个普通主题展开后需要占用的垂直高度。
+ * 计算“右向组织结构图”普通主题相对自身中心线的上下占位。
  *
- * 为什么需要单独计算：
- * 右向组织结构图的一级分支仍然横向排列，但一级分支下面的普通主题应该像右向树形图一样，
- * 按每棵子树的实际高度向下展开，避免后代主题和兄弟主题重叠。
+ * 关键点：
+ * 自然展开的子主题组会围绕父主题中心线上下展开。如果只返回总高度，再把主题放在占位块顶部，
+ * 后代可能向上溢出到前一个兄弟主题区域。这里保留 above/below，调用处才能把主题中心放到
+ * 当前子树真正需要的位置。
  */
-export function orgRightSubtreeHeight(topic, collapsedIds, branchExpansion = 'side') {
+function orgRightSubtreeExtent(topic, collapsedIds, branchExpansion = 'side') {
   const box = topic._layout;
   const subtopics = visibleSubtopics(topic, collapsedIds);
-  if (!subtopics.length) return box.height;
+  const ownAbove = box.height / 2;
+  const ownBelow = box.height / 2;
 
-  const subtopicHeight =
-    subtopics.reduce(
-      (sum, subtopic) => sum + orgRightSubtreeHeight(subtopic, collapsedIds, branchExpansion),
-      0
-    ) +
-    Math.max(0, subtopics.length - 1) * ORG_RIGHT_DESCENDANT_SIBLING_GAP;
-
-  if (Number(topic?.level || 1) >= 3 && branchExpansion === 'side') {
-    return Math.max(box.height, subtopicHeight);
+  if (!subtopics.length) {
+    return normalizeVerticalExtent({ above: ownAbove, below: ownBelow });
   }
 
-  return box.height + ORG_RIGHT_DESCENDANT_SIBLING_GAP + subtopicHeight;
+  const subtopicExtents = subtopics.map((subtopic) =>
+    orgRightSubtreeExtent(subtopic, collapsedIds, branchExpansion)
+  );
+  const subtopicHeight = verticalExtentGroupHeight(
+    subtopicExtents,
+    ORG_RIGHT_DESCENDANT_SIBLING_GAP
+  );
+
+  if (Number(topic?.level || 1) >= 3 && branchExpansion === 'side') {
+    const subtopicCenterOffset = directSubtopicGroupCenterOffset(
+      subtopicExtents,
+      ORG_RIGHT_DESCENDANT_SIBLING_GAP
+    );
+
+    return normalizeVerticalExtent({
+      above: Math.max(ownAbove, subtopicCenterOffset),
+      below: Math.max(ownBelow, subtopicHeight - subtopicCenterOffset),
+    });
+  }
+
+  return normalizeVerticalExtent({
+    above: ownAbove,
+    below: ownBelow + ORG_RIGHT_DESCENDANT_SIBLING_GAP + subtopicHeight,
+  });
+}
+
+/*
+ * 作用：
+ * 计算“右向组织结构图”中一个普通主题展开后需要占用的垂直高度。
+ */
+export function orgRightSubtreeHeight(topic, collapsedIds, branchExpansion = 'side') {
+  return orgRightSubtreeExtent(topic, collapsedIds, branchExpansion).height;
 }
