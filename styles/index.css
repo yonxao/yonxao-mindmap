@@ -4,18 +4,41 @@
  *
  * 执行逻辑：
  * scripts/build-css.mjs 会从本文件开始读取 @import，并把所有分层样式合并到 dist/styles.css。
- * 因此新增样式分层时，需要先创建对应 CSS 文件，再在这里按依赖顺序引入。
- *
- * 调用链位置：
- * npm run build:css -> scripts/build-css.mjs -> styles/index.css -> dist/styles.css
  */
 
-@import './10-host.css';
-@import './20-toolbar.css';
-@import './30-canvas.css';
-@import './40-source.css';
-@import './50-map.css';
-@import './60-panels.css';
-@import './70-responsive.css';
-@import './80-live-preview.css';
-@import './90-config-modal.css';
+@import './00-foundation/tokens.css';
+@import './00-foundation/accessibility.css';
+
+@import './10-host/host.css';
+@import './10-host/fullscreen.css';
+@import './10-host/messages.css';
+
+@import './20-toolbar/toolbar.css';
+
+@import './30-canvas/canvas.css';
+@import './30-canvas/height-resize.css';
+
+@import './40-source/source-shell.css';
+@import './40-source/source-editor.css';
+@import './40-source/source-highlight.css';
+
+@import './50-map/svg.css';
+@import './50-map/connectors.css';
+@import './50-map/topics.css';
+@import './50-map/topic-controls.css';
+@import './50-map/drag-drop.css';
+
+@import './60-panels/topic-editor.css';
+@import './60-panels/topic-text-editor.css';
+@import './60-panels/inline-text-editor.css';
+
+@import './70-config-modal/modal-shell.css';
+@import './70-config-modal/modal-tabs.css';
+@import './70-config-modal/modal-fields.css';
+@import './70-config-modal/modal-color-font.css';
+@import './70-config-modal/modal-switches.css';
+@import './70-config-modal/modal-advanced.css';
+@import './70-config-modal/modal-responsive.css';
+
+@import './80-obsidian/live-preview.css';
+@import './80-obsidian/responsive.css';

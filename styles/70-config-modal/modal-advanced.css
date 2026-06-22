@@ -1,0 +1,15 @@
+/*
+ * 高级 YAML 编辑区使用等宽字体，方便对齐嵌套层级。
+ */
+.yonxao-mindmap-config-yaml {
+  min-height: 280px;
+  resize: vertical;
+  font-family: var(--font-monospace);
+  line-height: 1.55;
+}
+
+.yonxao-mindmap-config-body.is-advanced .yonxao-mindmap-config-yaml {
+  flex: 1 1 auto;
+  height: auto;
+  min-height: 0;
+}

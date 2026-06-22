@@ -1,0 +1,140 @@
+/*
+ * 作用：
+ * 主题背景卡片，提供边框和轻微阴影。
+ */
+.yonxao-mindmap-topic-card {
+  stroke-width: 1.4;
+  filter: drop-shadow(0 4px 12px rgba(0, 0, 0, 0.08));
+}
+
+/*
+ * 作用：
+ * default 主题不自动分配主题色，因此需要更清晰的中性边框，
+ * 避免卡片在 Obsidian 浅色/深色主题中融进背景。
+ */
+.yonxao-mindmap-topic-default .yonxao-mindmap-topic-card {
+  stroke-width: 1.6;
+}
+
+/*
+ * 作用：
+ * 树形表格主题的单元格外观。
+ *
+ * 实现逻辑：
+ * 树形表格用“单元格边框”表达层级关系，不再依赖连线。
+ * 因此这里去掉卡片阴影并收敛边框，让相邻单元格拼接时更像一张表。
+ */
+.yonxao-mindmap-topic-tree-table .yonxao-mindmap-topic-card {
+  filter: none;
+  stroke-width: 1.5;
+}
+
+/*
+ * 作用：
+ * 树形表格表头样式。
+ *
+ * 说明：
+ * 表头对应 Markdown 一级标题，占满整张表格宽度。
+ */
+.yonxao-mindmap-topic-tree-table-root .yonxao-mindmap-topic-card {
+  stroke-width: 2;
+}
+
+/*
+ * 作用：
+ * 主题文本。
+ *
+ * 关键点：
+ * pointer-events: none 让点击事件落到主题 group 上，便于统一处理折叠和编辑。
+ * 字体族、字号和字重由 renderer 根据 yxmm 配置写入 SVG 属性，本样式不再固定这些值。
+ */
+.yonxao-mindmap-topic-text {
+  fill: var(--text-normal);
+  letter-spacing: 0;
+  dominant-baseline: auto;
+  pointer-events: none;
+  user-select: none;
+}
+
+/*
+ * 作用：
+ * 标记“有子主题”的主题。
+ *
+ * 关键点：
+ * 当前主题本体单击不做动作，真正可点击的是折叠/展开圆点，所以这里保持默认光标。
+ */
+.yonxao-mindmap-topic-clickable {
+  cursor: default;
+}
+
+/*
+ * 作用：
+ * 可拖拽主题的默认光标。
+ *
+ * 关键点：
+ * 根主题不加这个 class，所以中心主题不会暗示可以被移动。
+ */
+.yonxao-mindmap-topic-draggable {
+  cursor: grab;
+}
+
+/*
+ * 作用：
+ * 主题拖拽过程中显示抓取光标。
+ */
+.yonxao-mindmap-svg.is-topic-dragging,
+.yonxao-mindmap-svg.is-topic-dragging .yonxao-mindmap-topic-draggable {
+  cursor: grabbing;
+}
+
+/*
+ * 作用：
+ * 正在被拖动的主题半透明显示，降低它对投放目标的遮挡。
+ */
+.yonxao-mindmap-topic.is-dragging {
+  opacity: 0.62;
+}
+
+/*
+ * 作用：
+ * 拖到目标主题中部时，表示“作为这个主题的子主题”。
+ */
+.yonxao-mindmap-topic.is-drop-subtopic .yonxao-mindmap-topic-card {
+  stroke: var(--interactive-accent);
+  stroke-width: 2;
+}
+
+/*
+ * 作用：
+ * 拖到目标主题上方或下方时，目标主题保持轻微高亮，具体插入位置由插入线表达。
+ */
+.yonxao-mindmap-topic.is-drop-before .yonxao-mindmap-topic-card,
+.yonxao-mindmap-topic.is-drop-after .yonxao-mindmap-topic-card {
+  stroke: var(--interactive-accent);
+}
+
+/*
+ * 作用：
+ * 主题拖拽排序的插入线。
+ */
+.yonxao-mindmap-drop-indicator {
+  stroke: var(--interactive-accent);
+  stroke-width: 3;
+  stroke-linecap: round;
+  pointer-events: none;
+}
+
+/*
+ * 按钮颜色变量说明：
+ *
+ * --yonxao-mindmap-button-color 用于控制所有主题按钮（编辑、折叠、新增）的描边和图标颜色。
+ *
+ * 颜色来源：
+ * - 全局模式（accent/neutral/custom）：由 Renderer 的 applyButtonColorMode() 在 SVG 根元素上设置
+ * - 主题色模式（topic）：由 Renderer 的 renderTopicControls() 在每个主题控件组上设置，值为该主题自身的颜色
+ *
+ * 颜色来源优先级：
+ * 1. 主题控件组局部变量（--yonxao-mindmap-button-color）：仅 topic 模式
+ * 2. SVG 根元素变量（--yonxao-mindmap-button-color）：accent/neutral/custom 模式
+ * 3. CSS 默认值（transparent）：回退到透明（由 SVG fill 属性决定）
+ */

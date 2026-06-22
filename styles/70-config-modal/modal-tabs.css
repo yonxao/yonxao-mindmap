@@ -1,0 +1,25 @@
+.yonxao-mindmap-config-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--background-modifier-border);
+}
+
+/*
+ * 每个 tab 是普通 button，保留键盘焦点和主题按钮状态。
+ */
+.yonxao-mindmap-config-tab {
+  min-height: 30px;
+  padding: 4px 10px;
+  border-radius: 6px;
+}
+
+/*
+ * 激活态直接使用主题强调色。
+ * 这样不同主题下不会出现固定蓝色和主题色打架的问题。
+ */
+.yonxao-mindmap-config-tab.is-active {
+  color: var(--text-on-accent);
+  background: var(--interactive-accent);
+}

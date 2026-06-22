@@ -1,0 +1,43 @@
+/*
+ * 状态文本预留最小高度，避免“配置已保存”出现时按钮区上下跳动。
+ */
+.yonxao-mindmap-config-status {
+  min-height: 18px;
+  color: var(--text-muted);
+  font-size: var(--font-ui-smaller);
+}
+
+.yonxao-mindmap-config-status.is-error {
+  color: var(--text-error);
+}
+
+/*
+ * 底部操作区靠右排列，符合 Obsidian 设置弹框的常见操作习惯。
+ */
+.yonxao-mindmap-config-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  padding-top: 8px;
+  border-top: 1px solid var(--background-modifier-border);
+}
+
+/*
+ * 窄屏下改成单列字段，避免标签挤压输入框。
+ */
+@media (max-width: 640px) {
+  .yonxao-mindmap-config-modal-host {
+    width: calc(100vw - 24px);
+    max-width: calc(100vw - 24px);
+    height: calc(100vh - 24px);
+    max-height: calc(100vh - 24px);
+  }
+
+  .yonxao-mindmap-config-field {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .yonxao-mindmap-config-combo {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

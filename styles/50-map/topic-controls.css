@@ -1,0 +1,152 @@
+/*
+ * 作用：
+ * 主题编辑按钮。
+ * 按钮由 renderer 放在父线入口点，和主题本体分层绘制。
+ */
+.yonxao-mindmap-topic-edit {
+  cursor: pointer;
+  opacity: 1;
+}
+
+/*
+ * 编辑按钮底板样式。
+ *
+ * 设计说明：
+ * 配色和折叠按钮、新增兄弟/子主题按钮保持一致：白底 + accent 描边。
+ */
+.yonxao-mindmap-topic-edit rect {
+  fill: var(--background-primary);
+  stroke: var(--yonxao-mindmap-button-color);
+  stroke-width: 1.4;
+}
+
+/*
+ * 作用：
+ * 编辑按钮内部铅笔图标线条。
+ *
+ * 设计说明：
+ * 配色和加号按钮保持一致，使用 accent 强调。
+ */
+.yonxao-mindmap-topic-edit path {
+  fill: none;
+  stroke: var(--yonxao-mindmap-button-color);
+  stroke-width: 1.4;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+/*
+ * 作用：
+ * 新增兄弟主题按钮组。
+ *
+ * 交互逻辑：
+ * Renderer 会根据“兄主题插入点 / 弟主题插入点”放置 before/after 两个按钮。
+ */
+.yonxao-mindmap-topic-sibling-actions {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+/*
+ * 作用：
+ * 新增子主题按钮。
+ *
+ * 显示条件：
+ * Renderer 只会在没有子主题的真实主题上渲染它；已有子主题的主题保留折叠/展开圆点。
+ */
+.yonxao-mindmap-topic-subtopic-add {
+  cursor: pointer;
+  opacity: 1;
+  pointer-events: auto;
+}
+
+/*
+ * 作用：
+ * 新增兄弟主题的小圆形加号按钮。
+ */
+.yonxao-mindmap-topic-sibling-add {
+  cursor: pointer;
+  pointer-events: auto;
+}
+
+/*
+ * 作用：
+ * 加号按钮圆形底板。
+ */
+.yonxao-mindmap-topic-sibling-add circle,
+.yonxao-mindmap-topic-subtopic-add circle {
+  fill: var(--background-primary);
+  stroke: var(--yonxao-mindmap-button-color);
+  stroke-width: 1.4;
+}
+
+/*
+ * 作用：
+ * 加号按钮中的横竖线。
+ */
+.yonxao-mindmap-topic-sibling-add path,
+.yonxao-mindmap-topic-subtopic-add path {
+  fill: none;
+  stroke: var(--yonxao-mindmap-button-color);
+  stroke-width: 1.4;
+  stroke-linecap: round;
+}
+
+.yonxao-mindmap-topic-sibling-direction {
+  opacity: 0.72;
+  stroke-width: 1.2;
+}
+
+/*
+ * 作用：
+ * 主题内置图标的 SVG group 样式。
+ */
+.yonxao-mindmap-topic-icon {
+  fill: none;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  pointer-events: none;
+}
+
+/*
+ * 作用：
+ * 未知图标 fallback 文本徽标样式。
+ */
+.yonxao-mindmap-topic-icon text {
+  fill: var(--text-muted);
+  stroke: none;
+  font-family: var(--yonxao-mindmap-mono-font);
+  font-size: 8px;
+  font-weight: 700;
+}
+
+/*
+ * 折叠/展开圆形按钮外观。
+ *
+ * 设计说明：
+ * 折叠/展开按钮使用实心底色，和白底加号的新增按钮区分开。
+ */
+.yonxao-mindmap-toggle {
+  cursor: pointer;
+  pointer-events: auto;
+}
+
+.yonxao-mindmap-toggle circle {
+  fill: var(--yonxao-mindmap-button-color);
+  stroke: var(--background-primary);
+  stroke-width: 1.4;
+}
+
+/*
+ * 作用：
+ * 折叠/展开按钮里的横线和竖线。
+ *
+ * 设计说明：
+ * 实心底上的符号使用背景色，避免和新增按钮的加号混淆。
+ */
+.yonxao-mindmap-toggle path {
+  stroke: var(--background-primary);
+  stroke-width: 1.8;
+  stroke-linecap: round;
+}

@@ -1,0 +1,35 @@
+/*
+ * 作用：
+ * 双击主题时显示的快速改名文本框。
+ */
+.yonxao-mindmap-inline-text-editor {
+  position: fixed;
+  z-index: 1001;
+  left: 12px;
+  top: 12px;
+  box-sizing: border-box;
+  padding: 8px 10px;
+  overflow: auto;
+  resize: none;
+  color: var(--text-normal);
+  font-size: 14px;
+  font-weight: 400;
+  line-height: 22px;
+  border: 1px solid var(--interactive-accent);
+  border-radius: 8px;
+  outline: none;
+  background: var(--background-primary);
+  box-shadow:
+    0 0 0 2px rgba(var(--interactive-accent-rgb), 0.22),
+    var(--shadow-l);
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+/*
+ * 作用：
+ * 内联改名输入框聚焦时保持清晰边界。
+ */
+.yonxao-mindmap-inline-text-editor:focus {
+  border-color: var(--interactive-accent);
+}

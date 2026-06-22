@@ -1,13 +1,14 @@
 {
   "name": "yonxao-mindmap",
   "version": "0.1.0",
-  "description": "Obsidian plugin for rendering Markdown-heading-style mind maps from yxmm code blocks.",
+  "description": "Obsidian plugin for rendering Markdown topic-level mind maps from yxmm code blocks.",
   "main": "dist/main.js",
   "scripts": {
     "clean": "node scripts/clean.mjs",
     "build:js": "node scripts/build-js.mjs",
     "build:css": "node scripts/build-css.mjs",
     "build": "npm run build:js && npm run build:css",
+    "test": "node --no-warnings --test test/**/*.test.mjs",
     "release:prepare": "npm run clean && npm run build && node scripts/prepare-release.mjs",
     "dev:obsidian": "npm run release:prepare && node scripts/prepare-obsidian-dev.mjs",
     "check": "npm run release:prepare && node --check dist/main.js",
@@ -15,7 +16,7 @@
     "lint:fix": "eslint . --fix",
     "format": "prettier . --write",
     "format:check": "prettier . --check",
-    "validate": "npm run check && npm run lint && npm run format:check",
+    "validate": "npm run test && npm run check && npm run lint && npm run format:check",
     "ai:validate": "npm run validate && node scripts/prepare-obsidian-dev.mjs"
   },
   "files": [

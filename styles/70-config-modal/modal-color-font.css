@@ -1,0 +1,96 @@
+.yonxao-mindmap-config-level {
+  margin-top: 16px;
+  padding: 12px;
+  border: 1px solid var(--background-modifier-border);
+  border-radius: 8px;
+  background: var(--background-secondary);
+}
+
+.yonxao-mindmap-config-level:first-child {
+  margin-top: 8px;
+}
+
+.yonxao-mindmap-config-level-title {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 10px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--background-modifier-border);
+  font-size: var(--font-ui-small);
+  font-weight: var(--font-semibold);
+  color: var(--text-accent);
+}
+
+.yonxao-mindmap-config-small-button {
+  width: fit-content;
+  padding: 2px 8px;
+  font-size: var(--font-ui-smaller);
+  color: var(--text-muted);
+  background: transparent;
+  border: 1px solid var(--background-modifier-border);
+  border-radius: 4px;
+  cursor: pointer;
+  transition:
+    color 0.12s ease,
+    background-color 0.12s ease,
+    border-color 0.12s ease;
+}
+
+.yonxao-mindmap-config-small-button:hover {
+  color: var(--text-normal);
+  background: var(--background-modifier-hover);
+  border-color: var(--background-modifier-border-hover);
+}
+
+.yonxao-mindmap-config-combo {
+  display: grid;
+  grid-template-columns: minmax(132px, 0.38fr) minmax(0, 1fr);
+  gap: 8px;
+}
+
+/*
+ * 颜色预设色块容器。
+ */
+.yonxao-mindmap-config-color-swatches {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding-top: 4px;
+}
+
+/*
+ * 单个颜色预设色块按钮。
+ */
+.yonxao-mindmap-config-color-swatch {
+  width: 20px;
+  height: 20px;
+  border-radius: 6px;
+  border: 1px solid var(--background-modifier-border);
+  cursor: pointer;
+  transition:
+    transform 0.12s ease,
+    border-color 0.12s ease;
+  padding: 0;
+}
+
+.yonxao-mindmap-config-color-swatch:hover {
+  transform: scale(1.15);
+  border-color: var(--interactive-accent);
+}
+
+.yonxao-mindmap-config-color-swatch:focus-visible {
+  outline: none;
+  box-shadow:
+    0 0 0 2px var(--background-primary),
+    0 0 0 4px var(--interactive-accent);
+}
+
+.yonxao-mindmap-config-combo > select {
+  min-width: 132px;
+}
+
+.yonxao-mindmap-config-combo > input {
+  min-width: 0;
+}

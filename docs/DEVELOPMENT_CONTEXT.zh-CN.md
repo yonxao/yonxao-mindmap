@@ -224,7 +224,7 @@ font:
 src/config/defaultMindConfig.js
 ```
 
-配置区解析、规范化、保存清理仍在 `src/config/mindConfig.js`。配置弹框需要展示选项时，也应优先复用 `src/config/defaultMindConfig.js` 中的值集合，再在 UI 层映射为本地化文案。
+`src/config/mindConfig.js` 是配置系统对外聚合入口。具体实现已按职责拆到 `configAccessors.js`、`configCanonicalize.js`、`configNormalize.js`、`configSerialize.js`、`yamlConfig.js` 和 `runtimeConfigSave.js`。配置弹框需要展示选项时，也应优先复用 `src/config/defaultMindConfig.js` 中的值集合，再在 UI 层映射为本地化文案。
 
 核心配置项：
 
@@ -409,6 +409,8 @@ i18n 文件：
 
 ```text
 src/i18n/messages.js
+src/i18n/languageOptions.js
+src/i18n/locales/
 ```
 
 当前语言：
@@ -461,6 +463,7 @@ src/ui/YonxaoMindmapSettingTab.js
 
 ```text
 src/ui/ConfigModal.js
+src/ui/config-modal/
 ```
 
 ## 12 可视化配置弹框
@@ -469,6 +472,11 @@ src/ui/ConfigModal.js
 
 ```text
 src/ui/ConfigModal.js
+src/ui/config-modal/ConfigModal.js
+src/ui/config-modal/*Tab.js
+src/ui/config-modal/configFields.js
+src/ui/config-modal/configModalRules.js
+src/ui/config-modal/configModalState.js
 ```
 
 当前 Tab：
@@ -601,12 +609,31 @@ Obsidian 编辑视图：
 
 ```text
 src/layout/layoutTree.js
+src/layout/layoutTypes.js
+src/layout/layoutShared.js
+src/layout/layoutBounds.js
+src/layout/mindmapLayout.js
+src/layout/treeLayout.js
+src/layout/orgLayout.js
+src/layout/timelineLayout.js
+src/layout/radialLayout.js
+src/layout/radialGeometry.js
+src/layout/fishboneLayout.js
+src/layout/treeTableLayout.js
 ```
 
 渲染主要在：
 
 ```text
 src/renderer/YonxaoMindmapRenderer.js
+src/renderer/draw/
+src/renderer/export/
+src/renderer/interaction/
+src/renderer/viewport/
+src/ui/toolbar/
+src/ui/source/
+src/ui/topic-editor/
+src/ui/context-menu/
 ```
 
 解析和序列化：
@@ -642,7 +669,7 @@ src/obsidian/embed.js
 - 共享主干不应简单使用中心主题颜色。
 - 时间轴和鱼骨图的主干上色逻辑大致和思维导图、树形图、组织结构图一致，已抽取过公共的分段上色思路。
 
-相关渲染辅助逻辑在 `YonxaoMindmapRenderer.js` 中，例如：
+相关渲染辅助逻辑已拆到 `src/renderer/draw/` 中，例如：
 
 - `renderBranchColoredTrunkFromOrigin`
 - `renderBranchColoredTrunkRun`
@@ -773,8 +800,8 @@ src/renderer/YonxaoMindmapRenderer.js
 
 注意：
 
-- `YonxaoMindmapRenderer.js` 仍然较长，后续可以继续拆分。
-- 但拆分前应先确认职责边界，例如连接线渲染、主题渲染、交互事件、工具栏、源码视图、上下文菜单等。
+- `YonxaoMindmapRenderer.js` 当前是代码块实例调度器，具体职责已拆到 `src/renderer/` 和 `src/ui/` 子目录。
+- 继续修改时优先进入对应分片，例如连接线渲染、主题渲染、交互事件、工具栏、源码视图、上下文菜单等。
 - 不要为了拆分而引入过度抽象。
 
 ## 20 不要恢复的旧逻辑
@@ -871,11 +898,11 @@ sed -n '1,220p' package.json
 
 处理具体需求时再按需阅读相关源码：
 
-- 配置问题：`src/config/defaultMindConfig.js`、`src/config/mindConfig.js`、`src/ui/ConfigModal.js`、`src/ui/YonxaoMindmapSettingTab.js`。
-- 布局问题：`src/layout/layoutTree.js`。
-- 渲染问题：`src/renderer/YonxaoMindmapRenderer.js`。
+- 配置问题：`src/config/defaultMindConfig.js`、`src/config/mindConfig.js`、`src/config/config*.js`、`src/ui/config-modal/`、`src/ui/YonxaoMindmapSettingTab.js`。
+- 布局问题：`src/layout/layoutTree.js` 入口和 `src/layout/*Layout.js` 分片。
+- 渲染问题：`src/renderer/YonxaoMindmapRenderer.js` 入口、`src/renderer/draw/`、`src/renderer/viewport/`、`src/ui/` 对应分片。
 - 解析/保存问题：`src/parser/parseMind.js`、`src/parser/serializeMind.js`、`src/model/topicTreeActions.js`。
-- 文案问题：`src/i18n/messages.js`。
+- 文案问题：`src/i18n/messages.js` 入口和 `src/i18n/locales/`。
 - 样式问题：`styles/`。
 
 ## 24 当前开发节奏建议

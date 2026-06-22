@@ -35,9 +35,9 @@ export const FONT_LINE_HEIGHT_MIN = 12;
 // 全局/层级行高允许的最大值，单位为 px。
 export const FONT_LINE_HEIGHT_MAX = 160;
 
-// 主题最大宽度允许的最小值，防止节点过窄导致文字频繁换行。
+// 主题最大宽度允许的最小值，防止主题过窄导致文字频繁换行。
 export const TOPIC_MAX_WIDTH_MIN = 120;
-// 主题最大宽度允许的最大值，防止节点过宽影响整体布局。
+// 主题最大宽度允许的最大值，防止主题过宽影响整体布局。
 export const TOPIC_MAX_WIDTH_MAX = 800;
 
 // 工具栏可吸附的幕布角落，顺序同时决定配置面板下拉顺序。
@@ -160,7 +160,7 @@ export const DEFAULT_MIND_CONFIG = Object.freeze({
   toolbar: Object.freeze({
     // 默认吸附在右上角，避开多数导图从左向右的主干起点。
     corner: 'top-right',
-    // 默认放在幕布外侧，减少遮挡主题节点。
+    // 默认放在幕布外侧，减少遮挡主题。
     placement: 'outside',
   }),
   // 交互配置。
@@ -206,7 +206,7 @@ export const DEFAULT_MIND_CONFIG = Object.freeze({
     // 默认没有任何层级字体覆盖。
     levels: Object.freeze({}),
   }),
-  // 主题节点配置。
+  // 主题配置。
   topic: Object.freeze({
     // 空字符串表示不覆盖主题色，由当前主题色系决定。
     defaultColor: '',
@@ -224,7 +224,7 @@ export const DEFAULT_MIND_CONFIG = Object.freeze({
   }),
   // 源码模式配置。
   source: Object.freeze({
-    // 默认允许 Tab/Shift+Tab 调整源码标题级别。
+    // 默认允许 Tab/Shift+Tab 调整源码主题级别。
     enableTabIndent: true,
     // null 表示源码编辑区高度跟随自动高度。
     height: null,

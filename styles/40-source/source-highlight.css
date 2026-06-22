@@ -1,0 +1,91 @@
+.yonxao-mindmap-source-highlight {
+  box-sizing: border-box;
+  min-width: max-content;
+  padding: 10px 12px 10px 62px;
+  color: var(--text-normal);
+  white-space: pre;
+  will-change: transform;
+}
+
+.yonxao-mindmap-source-line-numbers {
+  box-sizing: border-box;
+  padding: 10px 0;
+  color: var(--text-faint);
+  text-align: right;
+  white-space: pre;
+  will-change: transform;
+}
+
+.yonxao-mindmap-source-highlight-line,
+.yonxao-mindmap-source-line-number {
+  min-height: 1.55em;
+}
+
+.yonxao-mindmap-source-highlight-line {
+  position: relative;
+  padding: 0 10px 0 0;
+}
+
+.yonxao-mindmap-source-highlight-line.is-active-line::before {
+  position: absolute;
+  top: 0;
+  right: -100vw;
+  bottom: 0;
+  left: -62px;
+  background: color-mix(in srgb, var(--interactive-accent) 10%, transparent);
+  content: '';
+}
+
+.yonxao-mindmap-source-highlight-line > span {
+  position: relative;
+}
+
+.yonxao-mindmap-source-line-number {
+  box-sizing: border-box;
+  padding: 0 9px 0 4px;
+}
+
+.yonxao-mindmap-source-line-number.is-active-line {
+  color: var(--text-muted);
+  font-weight: 600;
+}
+
+.yonxao-mindmap-source-token-marker {
+  color: var(--text-accent);
+  font-weight: 700;
+}
+
+.yonxao-mindmap-source-token-topic {
+  color: var(--text-normal);
+}
+
+.yonxao-mindmap-source-token-attribute {
+  color: var(--color-purple);
+}
+
+.yonxao-mindmap-source-highlight-line.is-continuation {
+  color: var(--text-muted);
+}
+
+.yonxao-mindmap-source-highlight-line.is-level-1 .yonxao-mindmap-source-token-topic {
+  color: var(--color-blue);
+  font-weight: 700;
+}
+
+.yonxao-mindmap-source-highlight-line.is-level-2 .yonxao-mindmap-source-token-topic {
+  color: var(--color-red);
+  font-weight: 650;
+}
+
+.yonxao-mindmap-source-highlight-line.is-level-3 .yonxao-mindmap-source-token-topic {
+  color: var(--color-orange);
+}
+
+.yonxao-mindmap-source-highlight-line.is-level-4 .yonxao-mindmap-source-token-topic {
+  color: var(--color-green);
+}
+
+.yonxao-mindmap-source-highlight-line.is-level-5 .yonxao-mindmap-source-token-topic,
+.yonxao-mindmap-source-highlight-line.is-level-6 .yonxao-mindmap-source-token-topic {
+  color: var(--color-cyan);
+}

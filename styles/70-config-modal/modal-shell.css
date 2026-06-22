@@ -1,0 +1,131 @@
+/*
+ * 文件作用：
+ * 可视化配置弹框的样式分层。
+ *
+ * 功能范围：
+ * - 设置弹框宽度、tab、表单字段、组合输入和底部按钮。
+ * - 尽量复用 Obsidian 的 CSS 变量，让浅色/深色主题都能自然适配。
+ *
+ * 调用链：
+ * styles/index.css -> build-css.mjs -> dist/styles.css -> ConfigModal 生成的 DOM class。
+ */
+
+/*
+ * 弹框宿主控制稳定宽高，避免不同 tab 内容量不同导致外框跳动。
+ * 尺寸使用 clamp/vh，桌面端保持舒适工作区，小屏自动收缩并让表单主体滚动。
+ */
+.yonxao-mindmap-config-modal-host {
+  width: clamp(720px, 72vw, 820px);
+  max-width: calc(100vw - 48px);
+  height: clamp(560px, 74vh, 720px);
+  max-height: calc(100vh - 48px);
+}
+
+/*
+ * 弹框内容采用纵向布局：
+ * header 固定在上方，tab 和操作按钮固定可见，中间表单区域滚动。
+ */
+.yonxao-mindmap-config-modal {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  height: 100%;
+  min-height: 0;
+}
+
+/*
+ * 标题区域保持克制，同时作为配置弹框拖拽手柄。
+ */
+.yonxao-mindmap-config-header {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: move;
+  user-select: none;
+  touch-action: none;
+}
+
+.yonxao-mindmap-config-header h2 {
+  margin: 0;
+  font-size: var(--font-ui-large);
+  font-weight: var(--font-semibold);
+}
+
+/*
+ * 标题旁的信息按钮用于解释配置优先级和保存清理规则。
+ * hover/focus 适合快速查看，点击则临时固定展开。
+ */
+.yonxao-mindmap-config-info {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+}
+
+.yonxao-mindmap-config-info-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  min-width: 26px;
+  padding: 0;
+  color: var(--text-muted);
+  cursor: pointer;
+  background: transparent;
+  border: 0;
+  box-shadow: none;
+}
+
+.yonxao-mindmap-config-info-button:hover,
+.yonxao-mindmap-config-info-button:focus-visible,
+.yonxao-mindmap-config-info.is-open .yonxao-mindmap-config-info-button {
+  color: var(--text-accent);
+  background: var(--background-modifier-hover);
+}
+
+.yonxao-mindmap-config-info-popover {
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 0;
+  z-index: 20;
+  display: none;
+  width: min(460px, calc(100vw - 72px));
+  padding: 12px 14px;
+  color: var(--text-normal);
+  font-size: var(--font-ui-small);
+  line-height: 1.6;
+  white-space: pre-line;
+  cursor: default;
+  user-select: text;
+  background: var(--background-primary);
+  border: 1px solid var(--background-modifier-border);
+  border-radius: 8px;
+  box-shadow: var(--shadow-s);
+}
+
+.yonxao-mindmap-config-info:hover .yonxao-mindmap-config-info-popover,
+.yonxao-mindmap-config-info.is-open .yonxao-mindmap-config-info-popover {
+  display: block;
+}
+
+.yonxao-mindmap-config-modal-host.is-dragging-config-modal {
+  user-select: none;
+}
+
+.yonxao-mindmap-config-body {
+  display: grid;
+  flex: 1 1 auto;
+  gap: 10px;
+  align-content: start;
+  grid-auto-rows: max-content;
+  min-height: 0;
+  padding-right: 4px;
+  overflow: auto;
+}
+
+.yonxao-mindmap-config-body.is-advanced {
+  display: flex;
+  flex-direction: column;
+  align-content: initial;
+}

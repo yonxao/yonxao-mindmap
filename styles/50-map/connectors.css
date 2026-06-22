@@ -1,0 +1,7 @@
+.yonxao-mindmap-connector {
+  fill: none;
+  stroke-width: var(--yonxao-mindmap-connector-stroke-width, 2.2);
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  opacity: 0.62;
+}
