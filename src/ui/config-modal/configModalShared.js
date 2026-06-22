@@ -26,6 +26,7 @@ export {
   CANVAS_MIN_HEIGHT,
   CONNECTOR_STYLE_CONFIGURABLE_LAYOUTS,
   CONNECTOR_STYLES,
+  CUSTOM_FONT_VALUE,
   DEFAULT_FONT_FAMILY,
   FIT_VIEW_MAX_SCALE_MAX,
   FIT_VIEW_MAX_SCALE_MIN,
@@ -50,7 +51,6 @@ export {
 } from '../../config/mindConfig.js';
 export { createTranslator } from '../../i18n/messages.js';
 export {
-  CUSTOM_FONT_VALUE,
   getLocalizedFontFamilyGroups,
   isValidFontFamilyInput,
   normalizeFontFamilyInput,

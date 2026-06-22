@@ -24,6 +24,7 @@ export {
 export {
   canonicalizeMindConfig,
   CONNECTOR_STYLE_CONFIGURABLE_LAYOUTS,
+  CUSTOM_FONT_VALUE,
   deleteMindConfigPath,
   FONT_LINE_HEIGHT_MAX,
   FONT_LINE_HEIGHT_MIN,
@@ -63,7 +64,6 @@ export { applyTopicLevelKey } from '../source/topicLevelKeys.js';
 export { themeConnectorOpacity, themeTopicFillAlpha } from '../theme/mindThemes.js';
 export { ConfigModal } from '../ui/ConfigModal.js';
 export {
-  CUSTOM_FONT_VALUE,
   getLocalizedFontFamilyGroups,
   isValidFontFamilyInput,
   isPresetFontValue,

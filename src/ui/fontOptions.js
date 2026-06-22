@@ -1,102 +1,21 @@
 /*
  * 文件作用：
- * 这里集中维护配置弹框里可选择的字体预设。
+ * 这里提供字体选项本地化、字体输入规范化和字体值校验。
  *
  * 设计思路：
- * Obsidian 插件运行在浏览器/Electron 环境中，不能可靠读取完整系统字体列表。
- * 因此这里提供一组常见字体和 CSS 字体栈；用户也可以选择“自定义”后手动输入。
+ * 字体预设值集合属于配置系统默认选项，定义在 defaultMindConfig.js。
+ * UI 层只负责把 i18n key 翻译成当前语言文案，并校验用户手动输入的 CSS font-family。
  *
  * 调用链：
- * ConfigModal.renderFontTab()/createLevelFontGroup() -> FONT_FAMILY_GROUPS。
+ * ConfigModal.renderFontTab()/createLevelFontGroup() -> getLocalizedFontFamilyGroups()。
  */
 
-export const CUSTOM_FONT_VALUE = '__custom_font__';
-
-/*
- * 作用：
- * 按类型分组的字体下拉选项。
- *
- * 字段说明：
- * - group: 下拉框 optgroup 标题。
- * - options: 该组下的选项。
- * - value: 实际写入配置区的 CSS font-family 字符串；空字符串表示删除配置并继承全局字体。
- * - label: 配置弹框里的显示文本。
- */
-export const FONT_FAMILY_GROUPS = Object.freeze([
-  {
-    group: 'font.group.inherit',
-    options: Object.freeze([
-      ['', 'font.inherit'],
-      [CUSTOM_FONT_VALUE, 'font.custom'],
-    ]),
-  },
-
-  {
-    group: 'font.group.obsidian',
-    options: Object.freeze([
-      ['var(--font-interface)', 'font.obsidian.interface'],
-      ['var(--font-text)', 'font.obsidian.text'],
-      ['var(--font-monospace)', 'font.obsidian.monospace'],
-    ]),
-  },
-
-  {
-    group: 'font.group.system',
-    options: Object.freeze([
-      ['system-ui, sans-serif', 'font.system.sans'],
-      ['ui-serif, serif', 'font.system.serif'],
-      ['ui-monospace, monospace', 'font.system.monospace'],
-    ]),
-  },
-
-  {
-    group: 'font.group.chinese',
-    options: Object.freeze([
-      [
-        "'Microsoft YaHei', 'PingFang SC', 'Source Han Sans SC', 'Noto Sans CJK SC', sans-serif",
-        'font.chinese.sans',
-      ],
-      [
-        "'SimSun', 'Songti SC', 'STSong', 'Source Han Serif SC', 'Noto Serif CJK SC', serif",
-        'font.chinese.serif',
-      ],
-      ["'KaiTi', 'Kaiti SC', 'STKaiti', 'LXGW WenKai', serif", 'font.chinese.kaiti'],
-      ["'FangSong', 'STFangsong', serif", 'font.chinese.fangsong'],
-      ["'Microsoft YaHei', '微软雅黑', sans-serif", 'font.chinese.microsoftYaHei'],
-      ["'PingFang SC', '苹方', sans-serif", 'font.chinese.pingFang'],
-      ["'Source Han Sans SC', 'Noto Sans CJK SC', sans-serif", 'font.chinese.sourceHanSans'],
-      ["'Source Han Serif SC', 'Noto Serif CJK SC', serif", 'font.chinese.sourceHanSerif'],
-      [
-        "'LXGW WenKai GB', '霞鹜文楷 GB', 'LXGW WenKai', '霞鹜文楷', serif",
-        'font.chinese.lxgwWenkai',
-      ],
-    ]),
-  },
-
-  {
-    group: 'font.group.monospace',
-    options: Object.freeze([
-      [
-        "'Sarasa Mono SC', 'Noto Sans Mono CJK SC', 'Source Han Mono SC', monospace",
-        'font.monospace.cjkStack',
-      ],
-      [
-        "'Sarasa Mono SC', 'Sarasa Fixed SC','等距更纱黑体 SC','更纱黑体 Mono', monospace",
-        'font.monospace.sarasa',
-      ],
-      [
-        "'LXGW WenKai Mono', '霞鹜文楷等宽','LXGW WenKai Mono GB','霞鹜文楷等宽 GB', monospace",
-        'font.monospace.lxgwwenkai',
-      ],
-      ["'JetBrains Mono', monospace", 'font.monospace.jetbrains'],
-      ["'Cascadia Mono', monospace", 'font.monospace.cascadia'],
-    ]),
-  },
-]);
-
-export const FONT_FAMILY_OPTIONS = Object.freeze(
-  FONT_FAMILY_GROUPS.flatMap((group) => group.options)
-);
+import { FONT_FAMILY_GROUPS, FONT_FAMILY_OPTIONS } from '../config/mindConfig.js';
+export {
+  CUSTOM_FONT_VALUE,
+  FONT_FAMILY_GROUPS,
+  FONT_FAMILY_OPTIONS,
+} from '../config/mindConfig.js';
 
 /*
  * 作用：
@@ -127,7 +46,7 @@ export function getLocalizedFontFamilyGroups(t, options = {}) {
 }
 
 const FONT_FAMILY_ITEM_PATTERN =
-  '(?:var\\(\\s*--[a-zA-Z0-9_-]+\\s*\\)|"(?:[^"\\\\]|\\\\.)+"|\'(?:[^\'\\\\]|\\\\.)+\'|[\\p{L}\\p{N}_-]+(?:\\s+[\\p{L}\\p{N}_-]+)*)';
+  "(?:var\\(\\s*--[a-zA-Z0-9_-]+\\s*\\)|'(?:[^'\\\\]|\\\\.)+'|[\\p{L}\\p{N}_-]+(?:\\s+[\\p{L}\\p{N}_-]+)*)";
 const FONT_FAMILY_LIST_PATTERN = new RegExp(
   `^\\s*${FONT_FAMILY_ITEM_PATTERN}(?:\\s*,\\s*${FONT_FAMILY_ITEM_PATTERN})*\\s*$`,
   'u'
@@ -149,12 +68,7 @@ export function isPresetFontValue(value) {
  * 规范化用户输入的 CSS font-family 字符串。
  */
 export function normalizeFontFamilyInput(value) {
-  return String(value || '')
-    .trim()
-    .replace(/"((?:[^"\\]|\\.)*)"/g, (_match, fontName) => {
-      const normalizedName = fontName.replace(/\\"/g, '"').replace(/\\'/g, "'");
-      return `'${normalizedName.replace(/'/g, "\\'")}'`;
-    });
+  return String(value || '').trim();
 }
 
 /*
@@ -162,7 +76,7 @@ export function normalizeFontFamilyInput(value) {
  * 校验用户输入是否像一个合法的 CSS font-family 列表。
  *
  * 支持：
- * - 双引号/单引号包裹的字体名
+ * - 单引号包裹的字体名（不接受双引号）
  * - 未加引号的字体名与通用字体族
  * - var(--font-*) 这类 Obsidian CSS 变量
  * - 逗号分隔的字体回退列表
