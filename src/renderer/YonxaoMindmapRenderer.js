@@ -134,8 +134,9 @@ const TOPIC_SUBTOPIC_BUTTON_RADIUS = 8;
 /*
  * 作用：
  * 折叠按钮和新增兄弟主题按钮错位后的最小视觉间隙。
+ * 3px 在不同缩放下都能看出分离感，同时不会让按钮显得离语义点位太远。
  */
-const TOPIC_CONTROL_AVOID_GAP = 7;
+const TOPIC_CONTROL_AVOID_GAP = 3;
 
 /*
  * 作用：
@@ -5704,7 +5705,11 @@ export class YonxaoMindmapRenderer extends Component {
 
   /*
    * 作用：
-   * 绘制单个思维导图主题，包括卡片、图标、文字、编辑按钮和折叠按钮。
+   * 绘制单个主题本体。
+   *
+   * 分层规则：
+   * 主题本体层只负责卡片、图标、文本和主题样式；编辑、折叠/展开、新增等
+   * 主题按钮统一交给 renderTopicControls() 绘制到独立控件层。
    */
   renderTopic(topic) {
     const box = topic._layout;
@@ -5731,12 +5736,6 @@ export class YonxaoMindmapRenderer extends Component {
       transform: `translate(${box.x - box.width / 2} ${box.y - box.height / 2})`,
       'data-topic-id': topic.id,
     });
-
-    // 当按钮配色模式为 topic 时，设置该主题组的局部按钮颜色变量。
-    // 这样该主题下的所有按钮（编辑、折叠、新增）都会使用该主题自身的颜色。
-    if (this.config.button?.colorMode === 'topic') {
-      group.style.setProperty('--yonxao-mindmap-button-color', color || DEFAULT_TOPIC_BUTTON_COLOR);
-    }
 
     const fill = color
       ? transparentColor(color, themeTopicFillAlpha(this.config))
@@ -5781,35 +5780,20 @@ export class YonxaoMindmapRenderer extends Component {
 
     group.appendChild(textEl);
 
-    if (canEdit && !topic._virtual && !this.shouldHideEditControl(topic)) {
-      group.appendChild(this.renderEditButton(topic, box));
-    }
-
-    if (canEdit && !topic._virtual && topic !== this.root && !this.shouldHideAddControls(topic)) {
-      group.appendChild(this.renderSiblingButtons(box));
-    }
-
-    if (
-      canEdit &&
-      !topic._virtual &&
-      !topic.subtopics.length &&
-      !this.shouldHideAddControls(topic)
-    ) {
-      group.appendChild(this.renderSubtopicButton(box));
-    }
-
     return group;
   }
 
   /*
    * 作用：
-   * 绘制需要浮在所有主题卡片之上的主题控件。
+   * 绘制需要浮在所有主题卡片之上的主题控件层。
    *
-   * 目前先放折叠/展开按钮。树形表格中相邻单元格会后绘制并盖住边界，
-   * 所以折叠按钮必须脱离单个主题组，统一放到主题图层之后。
+   * 分层规则：
+   * 所有主题按钮都从统一语义点位计算结果中取位置，避免编辑、折叠、新增按钮
+   * 各自按布局写一套坐标规则。
    */
   renderTopicControls(topic) {
-    if (!topic.subtopics.length) return null;
+    const positions = this.resolveTopicControlPositions(topic);
+    if (!positions) return null;
 
     const box = topic._layout;
     const group = svg('g', {
@@ -5823,22 +5807,39 @@ export class YonxaoMindmapRenderer extends Component {
       group.style.setProperty('--yonxao-mindmap-button-color', color || DEFAULT_TOPIC_BUTTON_COLOR);
     }
 
-    group.appendChild(this.renderTopicToggle(topic));
+    if (positions.edit) {
+      group.appendChild(this.renderEditButton(positions.edit));
+    }
+    if (positions.previousSibling || positions.nextSibling) {
+      const siblingGroup = svg('g', { class: 'yonxao-mindmap-topic-sibling-actions' });
+      if (positions.previousSibling) {
+        siblingGroup.appendChild(this.renderSiblingButton(positions.previousSibling));
+      }
+      if (positions.nextSibling) {
+        siblingGroup.appendChild(this.renderSiblingButton(positions.nextSibling));
+      }
+      group.appendChild(siblingGroup);
+    }
+    if (positions.subtopic) {
+      group.appendChild(this.renderSubtopicButton(positions.subtopic));
+    }
+    if (positions.toggle) {
+      group.appendChild(this.renderTopicToggle(topic, positions.toggle));
+    }
+
     return group;
   }
 
   /*
    * 作用：
-   * 绘制主题右侧或左侧的折叠/展开按钮。
+   * 绘制折叠/展开按钮。
    */
-  renderTopicToggle(topic) {
-    const box = topic._layout;
+  renderTopicToggle(topic, position) {
     const collapsed = this.collapsedIds.has(topic.id);
-    const outlet = this.topicTogglePoint(box);
-    const dir = box.side === 'left' ? -1 : 1;
+    const dir = position.side === 'left' ? -1 : 1;
     const toggle = svg('g', {
       class: 'yonxao-mindmap-toggle',
-      transform: `translate(${outlet.x} ${outlet.y})`,
+      transform: `translate(${position.x} ${position.y})`,
     });
 
     toggle.appendChild(
@@ -5867,25 +5868,7 @@ export class YonxaoMindmapRenderer extends Component {
 
   /*
    * 作用：
-   * 判断某个主题是否应该隐藏“新增兄弟/新增子主题”控件。
-   *
-   * 鱼骨图的大分支（Markdown 里的 ##，布局 side 为 fishbone-top/bottom）
-   * 是主骨上的一级结构。它们的子主题不是从主题右侧自然长出，而是挂在斜骨线上；
-   * 如果继续显示新增按钮，按钮会和鱼骨结构的交点互相干扰，所以这里统一隐藏。
-   */
-  shouldHideAddControls(topic) {
-    const box = topic?._layout;
-    return (
-      this.isFishbonePrimaryBoneBox(box) || this.isTreeTableBox(box) || this.isTimelinePointBox(box)
-    );
-  }
-
-  /*
-   * 作用：
    * 判断主题是否属于树形表格布局。
-   *
-   * 树形表格的单元格空间更紧凑，悬浮新增按钮容易遮挡文本和边框；
-   * 因此主题新增动作优先通过右键菜单完成。
    */
   isTreeTableBox(box) {
     const side = String(box?.side || '');
@@ -5898,17 +5881,6 @@ export class YonxaoMindmapRenderer extends Component {
    */
   isTreeTableRootBox(box) {
     return String(box?.side || '') === 'tree-table-root';
-  }
-
-  /*
-   * 作用：
-   * 判断某个主题是否应该隐藏“编辑主题”控件。
-   *
-   * 树形表格当前采用单元格密集排布，右上角编辑按钮会破坏表格视觉，
-   * 所以这个布局先隐藏编辑按钮；折叠按钮仍然保留，用于控制子树显示。
-   */
-  shouldHideEditControl(topic) {
-    return this.isTreeTableBox(topic?._layout);
   }
 
   /*
@@ -5965,27 +5937,6 @@ export class YonxaoMindmapRenderer extends Component {
 
   /*
    * 作用：
-   * 判断主题是否是鱼骨图的大分支。
-   *
-   * 命名说明：
-   * Markdown 源码里这些主题是二级标题（##），但在鱼骨图视觉结构里，
-   * 它们是从主骨斜着伸出去的“大分支”，所以这里命名为 primaryBone。
-   */
-  isFishbonePrimaryBoneBox(box) {
-    const side = String(box?.side || '');
-    return side === 'fishbone-top' || side === 'fishbone-bottom';
-  }
-
-  /*
-   * 作用：
-   * 判断主题是否是时间轴上的二级时间点主题。
-   */
-  isTimelinePointBox(box) {
-    return String(box?.side || '') === 'timeline-point';
-  }
-
-  /*
-   * 作用：
    * 判断主题是否属于鱼骨图布局。
    *
    * 使用场景：
@@ -6000,6 +5951,15 @@ export class YonxaoMindmapRenderer extends Component {
       side === 'fishbone-rib-topic' ||
       side === 'fishbone-rib-descendant'
     );
+  }
+
+  /*
+   * 作用：
+   * 判断主题是否是鱼骨图二级大分支主题。
+   */
+  isFishbonePrimaryTopicBox(box) {
+    const side = String(box?.side || '');
+    return side === 'fishbone-top' || side === 'fishbone-bottom';
   }
 
   /*
@@ -6039,106 +5999,6 @@ export class YonxaoMindmapRenderer extends Component {
 
   /*
    * 作用：
-   * 计算鱼骨图主题编辑按钮的位置。
-   *
-   * 设计逻辑：
-   * 编辑按钮永远放在靠近鱼头的一侧；折叠按钮和新增/子线出口留给鱼尾方向。
-   * 这样主题右侧或左侧的功能含义稳定：靠鱼头的一侧用于编辑，靠鱼尾的一侧用于展开结构。
-   */
-  fishboneEditButtonPosition(box, buttonSize) {
-    const buttonY = box.height / 2 - buttonSize / 2;
-    if (this.fishboneHeadSide() === 'left') {
-      return {
-        x: -buttonSize / 2,
-        y: buttonY,
-      };
-    }
-
-    return {
-      x: box.width - buttonSize / 2,
-      y: buttonY,
-    };
-  }
-
-  /*
-   * 作用：
-   * 绘制“新增兄弟主题”的两个小按钮。
-   *
-   * 实现逻辑：
-   * 当前思维导图是左右展开布局，同级主题在垂直方向排列，所以按钮放在主题上/下边框。
-   * 如果后续加入 top/bottom/vertical 竖向结构，同级主题会更偏横向排列，此函数会把按钮切到左/右边框。
-   */
-  renderSiblingButtons(box) {
-    const group = svg('g', { class: 'yonxao-mindmap-topic-sibling-actions' });
-    const horizontal = this.shouldPlaceSiblingButtonsHorizontally(box);
-    const positions = horizontal
-      ? [
-          {
-            placement: 'before',
-            label: this.t('topicButton.addSiblingLeft'),
-            x: 0,
-            y: box.height / 2,
-          },
-          {
-            placement: 'after',
-            label: this.t('topicButton.addSiblingRight'),
-            x: box.width,
-            y: box.height / 2,
-          },
-        ]
-      : [
-          {
-            placement: 'before',
-            label: this.t('topicButton.addSiblingBefore'),
-            x: box.width / 2,
-            y: 0,
-          },
-          {
-            placement: 'after',
-            label: this.t('topicButton.addSiblingAfter'),
-            x: box.width / 2,
-            y: box.height,
-          },
-        ];
-
-    for (const position of positions) {
-      group.appendChild(this.renderSiblingButton(this.adjustSiblingButtonPosition(box, position)));
-    }
-
-    return group;
-  }
-
-  /*
-   * 作用：
-   * 避开下挂展开时“新增兄弟主题”按钮和折叠/展开按钮重叠。
-   *
-   * 说明：
-   * 下挂展开会把折叠按钮放在子线出口；竖向布局的左右兄弟按钮、横向布局的上下兄弟按钮
-   * 都可能正好占用同一个点。这里只在坐标真正重合时沿边缘切线挪开一点，保留按钮语义。
-   */
-  adjustSiblingButtonPosition(box, position) {
-    if (!box.childBranchExpansion) return position;
-
-    const togglePoint = this.topicTogglePoint(box);
-    const overlapsToggle =
-      Math.abs(position.x - togglePoint.x) < 0.5 && Math.abs(position.y - togglePoint.y) < 0.5;
-    if (!overlapsToggle) return position;
-
-    if (togglePoint.side === 'left' || togglePoint.side === 'right') {
-      return {
-        ...position,
-        y: position.y + TOPIC_CONTROL_AVOID_OFFSET,
-      };
-    }
-
-    return {
-      ...position,
-      x: position.x + TOPIC_CONTROL_AVOID_OFFSET,
-    };
-  }
-
-  /*
-   * 作用：
    * 判断兄弟主题按钮应该放在左右还是上下。
    *
    * 当前 layoutTree 只会输出 root/left/right，所以默认是上下按钮。
@@ -6159,6 +6019,29 @@ export class YonxaoMindmapRenderer extends Component {
 
   /*
    * 作用：
+   * 判断是否显示“添加兄弟主题”按钮。
+   */
+  shouldShowSiblingTopicControls(topic) {
+    if (Number(topic?.level || 1) <= 1) return false;
+    const side = String(topic?._layout?.side || '');
+    return (
+      !this.isTreeTableBox(topic?._layout) &&
+      side !== 'timeline-point' &&
+      side !== 'fishbone-top' &&
+      side !== 'fishbone-bottom'
+    );
+  }
+
+  /*
+   * 作用：
+   * 判断是否显示“添加子主题”按钮。
+   */
+  shouldShowSubtopicControl(topic) {
+    return !this.isTreeTableBox(topic?._layout);
+  }
+
+  /*
+   * 作用：
    * 绘制单个兄弟主题新增按钮。
    */
   renderSiblingButton(position) {
@@ -6173,25 +6056,41 @@ export class YonxaoMindmapRenderer extends Component {
     button.appendChild(title);
     button.appendChild(svg('circle', { cx: 0, cy: 0, r: TOPIC_SIBLING_BUTTON_RADIUS }));
     button.appendChild(svg('path', { d: 'M -3 0 H 3 M 0 -3 V 3' }));
+    button.appendChild(
+      svg('path', {
+        class: 'yonxao-mindmap-topic-sibling-direction',
+        d: this.siblingButtonDirectionPath(position),
+      })
+    );
 
     return button;
   }
 
   /*
    * 作用：
-   * 绘制“新增子主题”的小按钮。
-   *
-   * 位置策略：
-   * 没有子主题时才显示这个按钮；如果已有子主题，同一位置会显示折叠/展开圆点。
-   * 右侧分支放在右边框中点，左侧分支放在左边框中点，中心主题默认放在右边框中点。
-   * 鱼骨图不会在这里单独写死方向，而是交给 topicOutletPoint() 按鱼头侧动态推导。
+   * 兄弟主题按钮在加号旁增加一个短方向标记，用来区分“前方”和“后方”。
    */
-  renderSubtopicButton(box) {
-    const outlet = this.topicOutletPoint(box);
+  siblingButtonDirectionPath(position) {
+    const side = position.side;
+    const placement = position.placement;
+    if (side === 'left' || side === 'right') {
+      const x = placement === 'before' ? -5 : 5;
+      return `M ${x} -3 V 3`;
+    }
+
+    const y = placement === 'before' ? -5 : 5;
+    return `M -3 ${y} H 3`;
+  }
+
+  /*
+   * 作用：
+   * 绘制“新增子主题”的小按钮。
+   */
+  renderSubtopicButton(position) {
     const button = svg('g', {
       class: 'yonxao-mindmap-topic-subtopic-add',
-      transform: `translate(${outlet.x} ${outlet.y})`,
-      'data-subtopic-side': outlet.side,
+      transform: `translate(${position.x} ${position.y})`,
+      'data-subtopic-side': position.side,
     });
 
     const title = svg('title');
@@ -6205,10 +6104,307 @@ export class YonxaoMindmapRenderer extends Component {
 
   /*
    * 作用：
-   * 计算一个主题的“子线出口”位置。
+   * 统一计算主题按钮的实际显示位置。
+   *
+   * 规则：
+   * 1. 先计算父线入口、子线出口、兄主题插入点、弟主题插入点。
+   * 2. 再按主题状态决定按钮是否显示。
+   * 3. 最后只让优先级最低的兄弟主题插入按钮局部避让，不移动子线出口按钮。
    */
-  topicOutletPoint(box) {
-    const side = this.topicOutletSide(box);
+  resolveTopicControlPositions(topic) {
+    if (!topic || topic._virtual) return null;
+
+    const canEdit = this.canEditMindMap();
+    const points = this.resolveTopicControlPoints(topic);
+    const hasSubtopics = topic.subtopics.length > 0;
+    const positions = {};
+
+    if (canEdit) {
+      positions.edit = this.pointToButtonPosition(points.parentConnectorInlet, {
+        width: 20,
+        height: 20,
+      });
+
+      if (this.shouldShowSiblingTopicControls(topic)) {
+        positions.previousSibling = this.resolveSiblingButtonPosition(
+          points.previousSiblingInsertionPoint,
+          'before',
+          points
+        );
+        positions.nextSibling = this.resolveSiblingButtonPosition(
+          points.nextSiblingInsertionPoint,
+          'after',
+          points
+        );
+      }
+
+      if (!hasSubtopics && this.shouldShowSubtopicControl(topic)) {
+        positions.subtopic = points.childConnectorOutlet;
+      }
+    }
+
+    if (hasSubtopics) {
+      positions.toggle = points.childConnectorOutlet;
+    }
+
+    if (
+      !positions.edit &&
+      !positions.previousSibling &&
+      !positions.nextSibling &&
+      !positions.subtopic &&
+      !positions.toggle
+    ) {
+      return null;
+    }
+
+    return positions;
+  }
+
+  /*
+   * 作用：
+   * 计算一个主题框周围的 4 个语义点位。
+   */
+  resolveTopicControlPoints(topic) {
+    const box = topic._layout;
+    const childConnectorOutlet = this.withHangingOutletAvoidance(
+      this.childConnectorOutletPoint(topic),
+      box
+    );
+    const parentConnectorInlet = this.parentConnectorInletPoint(topic, childConnectorOutlet);
+    const siblingPoints = this.siblingInsertionPoints(box);
+
+    return {
+      parentConnectorInlet,
+      childConnectorOutlet,
+      previousSiblingInsertionPoint: siblingPoints.previous,
+      nextSiblingInsertionPoint: siblingPoints.next,
+    };
+  }
+
+  /*
+   * 作用：
+   * 计算“子线出口”。
+   *
+   * 优先级：
+   * - 如果主题有可见子主题，优先使用实际连线离开当前主题的交点。
+   * - 如果子主题被折叠或还没有子主题，则按当前布局语义推导默认出口。
+   */
+  childConnectorOutletPoint(topic) {
+    const box = topic._layout;
+    if (this.isSemanticMultiOutletRootTopic(topic)) {
+      const controlSide = this.multiChildConnectorOutletControlSide(topic, new Set());
+      return this.topicBorderPoint(box, controlSide);
+    }
+
+    if (this.shouldUseDefaultChildConnectorOutlet(topic)) {
+      return this.defaultChildConnectorOutletPoint(box);
+    }
+
+    const connectorPoints = this.visibleChildConnectorOutletPoints(topic);
+    const outletSides = new Set(connectorPoints.map((point) => point.side));
+    if (outletSides.size > 1) {
+      return this.multiChildConnectorOutletPoint(topic, connectorPoints);
+    }
+    if (connectorPoints.length >= 1) {
+      return this.sharedChildConnectorOutletPoint(topic, outletSides);
+    }
+    return this.defaultChildConnectorOutletPoint(box);
+  }
+
+  /*
+   * 作用：
+   * 下挂展开会让子线出口和兄弟主题插入点更容易重合。
+   * 这里给子线出口附加“兄弟按钮避让方向”，方向与下挂子主题展开方向相反。
+   */
+  withHangingOutletAvoidance(point, box) {
+    const vector = this.hangingOutletAvoidVector(box);
+    if (!vector) return point;
+    return {
+      ...point,
+      siblingAvoidVector: vector,
+    };
+  }
+
+  /*
+   * 作用：
+   * 计算下挂展开方向的反方向。
+   */
+  hangingOutletAvoidVector(box) {
+    if (box.childBranchExpansion === 'hanging-vertical') {
+      const side = String(box?.side || '');
+      if (side === 'top') {
+        return { x: 0, y: 1 };
+      }
+      if (side === 'bottom') {
+        return { x: 0, y: -1 };
+      }
+      return { x: -1, y: 0 };
+    }
+
+    if (box.childBranchExpansion === 'hanging-horizontal') {
+      const direction = this.topicHorizontalGrowthDirection(box);
+      return { x: -direction, y: 0 };
+    }
+
+    return null;
+  }
+
+  /*
+   * 作用：
+   * 判断主题子级在水平方向上向哪边展开。
+   */
+  topicHorizontalGrowthDirection(box) {
+    const side = String(box?.side || '');
+    if (side === 'left' || side === 'tree-left') return -1;
+    if (Number(box?.fishboneDirection) < 0) return -1;
+    return 1;
+  }
+
+  /*
+   * 作用：
+   * 从当前可见父子连线中读取实际子线出口候选点。
+   */
+  visibleChildConnectorOutletPoints(topic) {
+    if (this.collapsedIds.has(topic.id)) return [];
+
+    return (topic.subtopics || [])
+      .filter((subtopic) => subtopic?._layout)
+      .map((subtopic) => {
+        const anchors = this.connectorAnchors(topic._layout, subtopic._layout);
+        if (this.isStructuralConnectorAnchor(anchors)) return null;
+        return this.globalPointToTopicPoint(topic._layout, anchors.startX, anchors.startY);
+      })
+      .filter(Boolean);
+  }
+
+  /*
+   * 作用：
+   * 判断当前主题是否应该直接使用布局语义出口。
+   *
+   * 树形图、时间轴、鱼骨图的根主题连接的是主干、时间轴或主骨，不是普通父子出口；
+   * 如果读取实际连线锚点，按钮会被结构线带偏，并且随内容多少变化。
+   */
+  shouldUseDefaultChildConnectorOutlet(topic) {
+    if (String(topic?._layout?.side || '') === 'timeline-point') return true;
+    if (topic !== this.root) return false;
+    const mode = this.config.layout;
+    return (
+      mode === 'tree' ||
+      mode === 'tree-left' ||
+      mode === 'tree-right' ||
+      mode === 'timeline-up' ||
+      mode === 'timeline-down' ||
+      mode === 'timeline' ||
+      this.isFishboneLayoutMode(mode)
+    );
+  }
+
+  /*
+   * 作用：
+   * 结构线不参与主题按钮出口计算。
+   */
+  isStructuralConnectorAnchor(anchors) {
+    return [
+      'tree-branch',
+      'trunk-branch',
+      'skip',
+      'fishbone-primary-bone',
+      'fishbone-rib-topic',
+    ].includes(String(anchors?.kind || ''));
+  }
+
+  /*
+   * 作用：
+   * 多个子线出口同时存在时，选择一个中性的控制点。
+   *
+   * 典型场景是双向思维导图中心主题，左右两侧都有分支；折叠按钮不能压在任一侧
+   * 实际连线上，因此统一放到未被主连线占用的中性边。
+   */
+  multiChildConnectorOutletPoint(topic, connectorPoints) {
+    const outletSides = new Set(connectorPoints.map((point) => point.side));
+    const controlSide = this.multiChildConnectorOutletControlSide(topic, outletSides);
+    return this.topicBorderPoint(topic._layout, controlSide);
+  }
+
+  /*
+   * 作用：
+   * 多条子线共享同一侧出口时，按钮放回这一侧的边框中点。
+   *
+   * 说明：
+   * 多个子主题不等于多个子线出口。普通右向思维导图里，多个子主题通常仍共享
+   * 右侧出口；如果直接走多出口中性点，折叠按钮会被错误放到下侧。
+   */
+  sharedChildConnectorOutletPoint(topic, outletSides) {
+    const [side] = outletSides;
+    return this.topicBorderPoint(
+      topic._layout,
+      side || this.defaultChildConnectorOutletSide(topic._layout)
+    );
+  }
+
+  /*
+   * 作用：
+   * 多出口主题的子线出口控制侧。
+   */
+  multiChildConnectorOutletControlSide(topic, outletSides) {
+    const mode = this.config.layout;
+    const box = topic._layout;
+
+    if (topic === this.root) {
+      if (this.isFishboneLayoutMode(mode)) return this.fishboneSubtopicOutletSide();
+      if (mode === 'mindmap-bidirectional') return 'bottom';
+      if (mode === 'mindmap-vertical') return 'right';
+      if (mode === 'timeline-up' || mode === 'timeline-down' || mode === 'timeline') {
+        return 'bottom';
+      }
+      if (mode === 'tree' || mode === 'tree-left' || mode === 'tree-right' || mode === 'org') {
+        return 'bottom';
+      }
+    }
+
+    const defaultSide = this.defaultChildConnectorOutletSide(box);
+    if (!outletSides.has(defaultSide)) return defaultSide;
+    if (!outletSides.has('bottom')) return 'bottom';
+    if (!outletSides.has('top')) return 'top';
+    if (!outletSides.has('right')) return 'right';
+    return 'left';
+  }
+
+  /*
+   * 作用：
+   * 判断当前主题是否属于布局语义上的多出口根主题。
+   */
+  isSemanticMultiOutletRootTopic(topic) {
+    return topic === this.root && this.isMindMapMultiOutletRootMode(this.config.layout);
+  }
+
+  /*
+   * 作用：
+   * 双向思维导图和垂直双向思维导图的根主题天然有两侧子线出口，
+   * 不应依赖当前内容是否刚好在两个侧边都有可见子主题。
+   */
+  isMindMapMultiOutletRootMode(mode) {
+    return mode === 'mindmap-bidirectional' || mode === 'mindmap-vertical';
+  }
+
+  /*
+   * 作用：
+   * 计算没有可见子线时的默认子线出口。
+   */
+  defaultChildConnectorOutletPoint(box) {
+    if (
+      this.isFishbonePrimaryTopicBox(box) &&
+      Number.isFinite(box.fishboneDiagonalBoneEndX) &&
+      Number.isFinite(box.fishboneDiagonalBoneEndY)
+    ) {
+      return this.globalPointToTopicPoint(
+        box,
+        box.fishboneDiagonalBoneEndX,
+        box.fishboneDiagonalBoneEndY
+      );
+    }
+
+    const side = this.defaultChildConnectorOutletSide(box);
     if (side === 'left') return { side, x: 0, y: box.height / 2 };
     if (side === 'top') return { side, x: box.width / 2, y: 0 };
     if (side === 'bottom') return { side, x: box.width / 2, y: box.height };
@@ -6217,34 +6413,67 @@ export class YonxaoMindmapRenderer extends Component {
 
   /*
    * 作用：
-   * 计算折叠/展开按钮的位置。
-   *
-   * 普通布局直接复用子线出口位置；鱼骨图大分支比较特殊：
-   * 它的子线不是从右侧出去，而是从主题内侧连到斜骨线。
-   * 因此折叠按钮应吸附在斜骨线和主题边框的交点，用户能更直观看到它控制的是整条大分支。
+   * 计算父线入口。
    */
-  topicTogglePoint(box) {
-    const side = String(box?.side || '');
-    if (
-      (side === 'fishbone-top' || side === 'fishbone-bottom') &&
-      Number.isFinite(box.fishboneDiagonalBoneEndX) &&
-      Number.isFinite(box.fishboneDiagonalBoneEndY)
-    ) {
+  parentConnectorInletPoint(topic, childConnectorOutlet) {
+    if (this.isFishbonePrimaryTopicBox(topic?._layout)) {
+      return this.topicBorderPoint(topic._layout, this.fishboneHeadSide());
+    }
+
+    if (String(topic?._layout?.side || '') === 'timeline-point') {
+      return this.topicBorderPoint(topic._layout, 'left');
+    }
+
+    const parentTopic = this.parentTopicForTopic(topic);
+    if (parentTopic?._layout) {
+      const anchors = this.connectorAnchors(parentTopic._layout, topic._layout);
+      return this.globalPointToTopicPoint(topic._layout, anchors.endX, anchors.endY);
+    }
+
+    return this.topicBorderPoint(
+      topic._layout,
+      this.rootParentConnectorInletSide(topic, childConnectorOutlet)
+    );
+  }
+
+  /*
+   * 作用：
+   * 没有父主题时，按布局阅读语义推导逻辑父线入口。
+   */
+  rootParentConnectorInletSide(topic, childConnectorOutlet) {
+    const mode = this.config.layout;
+    if (this.isFishboneLayoutMode(mode)) return this.fishboneHeadSide();
+    if (mode === 'timeline-up' || mode === 'timeline-down' || mode === 'timeline') return 'left';
+    if (mode === 'tree' || mode === 'tree-left' || mode === 'tree-right') return 'top';
+    if (mode === 'mindmap-bidirectional') return 'top';
+    if (mode === 'mindmap-vertical') return 'left';
+    if (mode === 'org' || mode === 'org-right') return 'top';
+    return this.oppositeTopicSide(childConnectorOutlet.side);
+  }
+
+  /*
+   * 作用：
+   * 计算兄主题插入点和弟主题插入点。
+   */
+  siblingInsertionPoints(box) {
+    if (this.shouldPlaceSiblingButtonsHorizontally(box)) {
       return {
-        side: side === 'fishbone-top' ? 'bottom' : 'top',
-        x: box.fishboneDiagonalBoneEndX - (box.x - box.width / 2),
-        y: box.fishboneDiagonalBoneEndY - (box.y - box.height / 2),
+        previous: this.topicBorderPoint(box, 'left'),
+        next: this.topicBorderPoint(box, 'right'),
       };
     }
 
-    return this.topicOutletPoint(box);
+    return {
+      previous: this.topicBorderPoint(box, 'top'),
+      next: this.topicBorderPoint(box, 'bottom'),
+    };
   }
 
   /*
    * 作用：
    * 根据当前布局和主题所在方向判断子主题应该从哪一侧长出去。
    */
-  topicOutletSide(box) {
+  defaultChildConnectorOutletSide(box) {
     const side = String(box.side || '');
     if (box.childBranchExpansion === 'hanging-horizontal') return 'bottom';
     if (box.childBranchExpansion === 'hanging-vertical') return 'right';
@@ -6256,9 +6485,9 @@ export class YonxaoMindmapRenderer extends Component {
     if (this.isTreeTableBox(box)) return 'right';
     if (side === 'tree-left') return 'left';
     if (side === 'org-bottom') return 'bottom';
-    if (side === 'org-right' || side === 'org-right-branch') {
-      return 'right';
-    }
+    if (side === 'org-right-branch') return 'bottom';
+    if (side === 'org-hanging') return 'right';
+    if (side === 'org-right') return 'right';
     if (side === 'timeline-point') {
       return box.timelineBranchSide === 'timeline-top' ? 'top' : 'bottom';
     }
@@ -6268,6 +6497,8 @@ export class YonxaoMindmapRenderer extends Component {
     if (side === 'tree-right') return 'right';
 
     const mode = this.config.layout;
+    if (mode === 'tree' || mode === 'tree-left' || mode === 'tree-right') return 'bottom';
+    if (mode === 'timeline-up' || mode === 'timeline-down' || mode === 'timeline') return 'right';
     if (mode === 'mindmap-left') return 'left';
     if (mode === 'mindmap-up') return 'top';
     if (mode === 'mindmap-down' || mode === 'org') return 'bottom';
@@ -6277,14 +6508,185 @@ export class YonxaoMindmapRenderer extends Component {
 
   /*
    * 作用：
+   * 根据主题边框语义侧计算点位。
+   */
+  topicBorderPoint(box, side) {
+    if (side === 'left') return { side, x: 0, y: box.height / 2 };
+    if (side === 'right') return { side, x: box.width, y: box.height / 2 };
+    if (side === 'top') return { side, x: box.width / 2, y: 0 };
+    return { side: 'bottom', x: box.width / 2, y: box.height };
+  }
+
+  /*
+   * 作用：
+   * 把全局 SVG 坐标转换成当前主题局部坐标，并补上所在边框侧。
+   */
+  globalPointToTopicPoint(box, x, y) {
+    const localX = x - (box.x - box.width / 2);
+    const localY = y - (box.y - box.height / 2);
+    return this.projectTopicPointToBorder(box, localX, localY);
+  }
+
+  /*
+   * 作用：
+   * 把任意局部点投影到主题边框上，避免按钮漂到连接线或主题内部。
+   */
+  projectTopicPointToBorder(box, x, y) {
+    const side = this.nearestTopicBorderSide(box, x, y);
+    if (side === 'left') return { side, x: 0, y: clamp(y, 0, box.height) };
+    if (side === 'right') return { side, x: box.width, y: clamp(y, 0, box.height) };
+    if (side === 'top') return { side, x: clamp(x, 0, box.width), y: 0 };
+    return { side: 'bottom', x: clamp(x, 0, box.width), y: box.height };
+  }
+
+  /*
+   * 作用：
+   * 判断一个局部坐标最靠近主题框哪条边。
+   */
+  nearestTopicBorderSide(box, x, y) {
+    const distances = [
+      { side: 'left', distance: Math.abs(x) },
+      { side: 'right', distance: Math.abs(box.width - x) },
+      { side: 'top', distance: Math.abs(y) },
+      { side: 'bottom', distance: Math.abs(box.height - y) },
+    ];
+    distances.sort((a, b) => a.distance - b.distance);
+    return distances[0].side;
+  }
+
+  /*
+   * 作用：
+   * 返回主题侧边的对侧。
+   */
+  oppositeTopicSide(side) {
+    if (side === 'left') return 'right';
+    if (side === 'right') return 'left';
+    if (side === 'top') return 'bottom';
+    return 'top';
+  }
+
+  /*
+   * 作用：
+   * 查找当前主题的父主题。
+   *
+   * 说明：
+   * 主题树本身不保存 parent 指针，所以这里从当前根主题轻量遍历。
+   */
+  parentTopicForTopic(topic) {
+    if (!topic || topic === this.root) return null;
+    return this.findParentTopic(this.root, topic.id);
+  }
+
+  findParentTopic(parent, topicId) {
+    if (!parent || !topicId) return null;
+    for (const subtopic of parent.subtopics || []) {
+      if (subtopic.id === topicId) return parent;
+      const found = this.findParentTopic(subtopic, topicId);
+      if (found) return found;
+    }
+    return null;
+  }
+
+  /*
+   * 作用：
+   * 把点位转换成编辑按钮左上角坐标。
+   */
+  pointToButtonPosition(point, size) {
+    return {
+      ...point,
+      x: point.x - size.width / 2,
+      y: point.y - size.height / 2,
+    };
+  }
+
+  /*
+   * 作用：
+   * 计算兄弟主题插入按钮位置，并在冲突时沿当前边框轻微避让。
+   */
+  resolveSiblingButtonPosition(point, placement, points) {
+    const label = this.siblingButtonLabel(point.side, placement);
+    const blockedPoints = [points.childConnectorOutlet, points.parentConnectorInlet];
+    const avoidedPoint = this.avoidSiblingInsertionPoint(point, placement, blockedPoints);
+    return {
+      ...avoidedPoint,
+      placement,
+      label,
+    };
+  }
+
+  /*
+   * 作用：
+   * 兄弟主题插入按钮优先级最低，和子线出口或父线入口重合时只做局部偏移。
+   */
+  avoidSiblingInsertionPoint(point, placement, blockedPoints) {
+    const conflictPoint = blockedPoints.find((blockedPoint) =>
+      this.topicControlPointsConflict(point, blockedPoint)
+    );
+    if (!conflictPoint) return point;
+
+    if (conflictPoint.siblingAvoidVector) {
+      return {
+        ...point,
+        x: point.x + conflictPoint.siblingAvoidVector.x * TOPIC_CONTROL_AVOID_OFFSET,
+        y: point.y + conflictPoint.siblingAvoidVector.y * TOPIC_CONTROL_AVOID_OFFSET,
+      };
+    }
+
+    const tangentSign = placement === 'before' ? -1 : 1;
+    if (point.side === 'left' || point.side === 'right') {
+      return {
+        ...point,
+        y: point.y + tangentSign * TOPIC_CONTROL_AVOID_OFFSET,
+      };
+    }
+
+    return {
+      ...point,
+      x: point.x + tangentSign * TOPIC_CONTROL_AVOID_OFFSET,
+    };
+  }
+
+  /*
+   * 作用：
+   * 判断两个按钮语义点是否重合。
+   */
+  sameTopicControlPoint(a, b) {
+    return Boolean(a && b && Math.abs(a.x - b.x) < 0.5 && Math.abs(a.y - b.y) < 0.5);
+  }
+
+  /*
+   * 作用：
+   * 判断两个按钮点位是否会产生视觉重叠。
+   */
+  topicControlPointsConflict(a, b) {
+    if (!a || !b) return false;
+    if (this.sameTopicControlPoint(a, b)) return true;
+    const dx = a.x - b.x;
+    const dy = a.y - b.y;
+    const minDistance =
+      TOPIC_SIBLING_BUTTON_RADIUS + TOPIC_TOGGLE_BUTTON_RADIUS + TOPIC_CONTROL_AVOID_GAP;
+    return Math.sqrt(dx * dx + dy * dy) < minDistance;
+  }
+
+  /*
+   * 作用：
+   * 根据兄弟插入点所在边和插入方向，选择按钮提示文案。
+   */
+  siblingButtonLabel(side, placement) {
+    if (side === 'left') return this.t('topicButton.addSiblingLeft');
+    if (side === 'right') return this.t('topicButton.addSiblingRight');
+    return placement === 'before'
+      ? this.t('topicButton.addSiblingBefore')
+      : this.t('topicButton.addSiblingAfter');
+  }
+
+  /*
+   * 作用：
    * 绘制主题编辑按钮。
    */
-  renderEditButton(topic, box) {
+  renderEditButton(position) {
     // SVG 里不能直接放 HTML button，所以这里用一个小 <g> 分组模拟“编辑按钮”。
     // 点击事件仍然通过 handleTopicClick 统一处理，避免给每个主题单独注册事件造成额外开销。
-    // 普通主题放在“父线进入主题”的一侧；中心主题没有父线，单独避开子线出口。
-    const buttonSize = 20;
-    const position = this.editButtonPosition(topic, box, buttonSize);
     const edit = svg('g', {
       class: 'yonxao-mindmap-topic-edit',
       transform: `translate(${position.x} ${position.y})`,
@@ -6307,131 +6709,6 @@ export class YonxaoMindmapRenderer extends Component {
     );
 
     return edit;
-  }
-
-  /*
-   * 作用：
-   * 计算主题编辑按钮位置。
-   *
-   * 实现逻辑：
-   * - 普通主题：放在父线进入主题的一侧。
-   * - 鱼骨图：编辑按钮统一放鱼头侧，鱼尾侧留给子线出口、折叠按钮和结构延展。
-   * - 中心主题：如果子线只从一侧出去，按钮放到对侧；如果左右都有子线，放在上边框中点，避开子线交点。
-   */
-  editButtonPosition(topic, box, buttonSize) {
-    if (box.side === 'root') {
-      return this.rootEditButtonPosition(topic, box, buttonSize);
-    }
-
-    if (this.isFishboneTopicBox(box)) {
-      return this.fishboneEditButtonPosition(box, buttonSize);
-    }
-
-    if (this.isTreeTableBox(box)) {
-      return {
-        x: box.width - buttonSize / 2,
-        y: -buttonSize / 2,
-      };
-    }
-
-    if (box.side === 'top' || box.side === 'timeline-top') {
-      return {
-        x: box.width / 2 - buttonSize / 2,
-        y: box.height - buttonSize / 2,
-      };
-    }
-
-    if (
-      box.side === 'bottom' ||
-      box.side === 'timeline-bottom' ||
-      box.side === 'org-bottom' ||
-      box.side === 'org-right-branch'
-    ) {
-      return {
-        x: box.width / 2 - buttonSize / 2,
-        y: -buttonSize / 2,
-      };
-    }
-
-    if (
-      box.side === 'tree-right' ||
-      box.side === 'timeline-point' ||
-      box.side === 'timeline-detail-top' ||
-      box.side === 'timeline-detail-bottom' ||
-      box.side === 'org-right'
-    ) {
-      return {
-        x: -buttonSize / 2,
-        y: box.height / 2 - buttonSize / 2,
-      };
-    }
-
-    if (box.side === 'tree-left') {
-      return {
-        x: box.width - buttonSize / 2,
-        y: box.height / 2 - buttonSize / 2,
-      };
-    }
-
-    return {
-      x: box.side === 'right' ? -buttonSize / 2 : box.width - buttonSize / 2,
-      y: box.height / 2 - buttonSize / 2,
-    };
-  }
-
-  /*
-   * 作用：
-   * 计算中心主题编辑按钮位置。
-   */
-  rootEditButtonPosition(topic, box, buttonSize) {
-    const mode = this.config.layout;
-    if (this.isFishboneLayoutMode(mode)) {
-      return this.fishboneEditButtonPosition(box, buttonSize);
-    }
-
-    if (
-      mode === 'mindmap-down' ||
-      mode === 'org' ||
-      mode === 'org-right' ||
-      mode === 'timeline-up' ||
-      mode === 'timeline-down' ||
-      mode === 'timeline'
-    ) {
-      return {
-        x: box.width / 2 - buttonSize / 2,
-        y: -buttonSize / 2,
-      };
-    }
-
-    if (mode === 'mindmap-up') {
-      return {
-        x: box.width / 2 - buttonSize / 2,
-        y: box.height - buttonSize / 2,
-      };
-    }
-
-    const sides = new Set((topic.subtopics || []).map((subtopic) => subtopic._layout?.side));
-    const hasLeftSubtopics = sides.has('left') || sides.has('tree-left');
-    const hasRightSubtopics = sides.has('right') || sides.has('tree-right');
-
-    if (hasLeftSubtopics && hasRightSubtopics) {
-      return {
-        x: box.width / 2 - buttonSize / 2,
-        y: -buttonSize / 2,
-      };
-    }
-
-    if (hasRightSubtopics) {
-      return {
-        x: -buttonSize / 2,
-        y: box.height / 2 - buttonSize / 2,
-      };
-    }
-
-    return {
-      x: box.width - buttonSize / 2,
-      y: box.height / 2 - buttonSize / 2,
-    };
   }
 
   /*

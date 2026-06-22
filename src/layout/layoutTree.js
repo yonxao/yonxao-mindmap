@@ -58,8 +58,16 @@ export const LAYOUT_TYPES = Object.freeze([
  * 右向组织结构图的后代主题更像“挂在竖线上的紧凑目录树”。
  * 如果直接使用全局 LEVEL_GAP/SIBLING_GAP，小尺寸主题之间会显得线段过长、空白过大。
  */
+/*
+ * 主题边框上的同级新增按钮半径是 8px，相邻主题之间至少保留 3px 可见间隙，
+ * 因此紧凑布局的兄弟间距不能低于 8 + 8 + 3。
+ */
+const TOPIC_CONTROL_SAFE_SIBLING_GAP = 19;
 const ORG_RIGHT_DESCENDANT_LEVEL_GAP = Math.round(LEVEL_GAP * 0.62);
-const ORG_RIGHT_DESCENDANT_SIBLING_GAP = Math.max(8, Math.round(SIBLING_GAP * 0.56));
+const ORG_RIGHT_DESCENDANT_SIBLING_GAP = Math.max(
+  TOPIC_CONTROL_SAFE_SIBLING_GAP,
+  Math.round(SIBLING_GAP * 0.56)
+);
 
 /*
  * 树形图天然有一条主干，分支之间已经由主干建立层级关系。
@@ -71,15 +79,24 @@ const TREE_TRUNK_BRANCH_GAP = Math.max(12, Math.round(BRANCH_GAP * 0.42));
 // 树形图双侧模式中，相邻一级主题在主干上的最小挂点距离，用来保留文档顺序感。
 const TREE_TRUNK_ORDER_GAP = Math.max(18, Math.round(SIBLING_GAP * 1.05));
 const TREE_DESCENDANT_LEVEL_GAP = Math.max(28, Math.round(LEVEL_GAP * 0.55));
-const TREE_DESCENDANT_SIBLING_GAP = Math.max(10, Math.round(SIBLING_GAP * 0.72));
-const TREE_HANGING_SIBLING_GAP = Math.max(12, Math.round(SIBLING_GAP * 0.78));
+const TREE_DESCENDANT_SIBLING_GAP = Math.max(
+  TOPIC_CONTROL_SAFE_SIBLING_GAP,
+  Math.round(SIBLING_GAP * 0.72)
+);
+const TREE_HANGING_SIBLING_GAP = Math.max(
+  TOPIC_CONTROL_SAFE_SIBLING_GAP,
+  Math.round(SIBLING_GAP * 0.78)
+);
 
 /*
  * 时间轴详情区不是普通的“父子左右展开”，而是挂在时间轴竖线旁的事件详情树。
  * 这里保留独立间距，但比普通导图更紧凑，让时间点本身的横向节奏更接近时间轴。
  */
 const TIMELINE_DETAIL_LEVEL_GAP = Math.max(38, Math.round(LEVEL_GAP * 0.82));
-const TIMELINE_DETAIL_SIBLING_GAP = Math.max(14, Math.round(SIBLING_GAP * 0.82));
+const TIMELINE_DETAIL_SIBLING_GAP = Math.max(
+  TOPIC_CONTROL_SAFE_SIBLING_GAP,
+  Math.round(SIBLING_GAP * 0.82)
+);
 const TIMELINE_DETAIL_HANGING_SIBLING_GAP = Math.max(
   TIMELINE_DETAIL_SIBLING_GAP,
   Math.round(SIBLING_GAP * 1.12)
@@ -93,12 +110,12 @@ const TIMELINE_AXIS_DETAIL_GAP = Math.max(20, Math.round(SIBLING_GAP * 1.05));
 const RADIAL_ROOT_RADIUS_MIN = 168;
 const RADIAL_ROOT_RADIUS_EXTRA = 72;
 const RADIAL_LEVEL_GAP = Math.round(LEVEL_GAP * 0.82);
-const RADIAL_SIBLING_GAP = Math.max(16, Math.round(SIBLING_GAP * 0.9));
+const RADIAL_SIBLING_GAP = Math.max(TOPIC_CONTROL_SAFE_SIBLING_GAP, Math.round(SIBLING_GAP * 0.9));
 const RADIAL_RADIUS_EXTRA_LIMIT = Math.round(LEVEL_GAP * 1.35);
 const RADIAL_COLLISION_MARGIN = 24;
 const RADIAL_COLLISION_ITERATIONS = 24;
 const HANGING_LEVEL_GAP = Math.round(LEVEL_GAP * 0.72);
-const HANGING_SIBLING_GAP = SIBLING_GAP;
+const HANGING_SIBLING_GAP = Math.max(TOPIC_CONTROL_SAFE_SIBLING_GAP, SIBLING_GAP);
 /*
  * 作用：
  * 水平下挂展开时，第一子主题中心点距离父主题出口边缘的最小视觉间隙。

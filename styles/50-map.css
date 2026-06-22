@@ -155,31 +155,21 @@
  *
  * 颜色来源：
  * - 全局模式（accent/neutral/custom）：由 Renderer 的 applyButtonColorMode() 在 SVG 根元素上设置
- * - 主题色模式（topic）：由 Renderer 的 renderTopic() 在每个主题组上设置，值为该主题自身的颜色
+ * - 主题色模式（topic）：由 Renderer 的 renderTopicControls() 在每个主题控件组上设置，值为该主题自身的颜色
  *
  * 颜色来源优先级：
- * 1. 主题组局部变量（--yonxao-mindmap-button-color）：仅 topic 模式
+ * 1. 主题控件组局部变量（--yonxao-mindmap-button-color）：仅 topic 模式
  * 2. SVG 根元素变量（--yonxao-mindmap-button-color）：accent/neutral/custom 模式
  * 3. CSS 默认值（transparent）：回退到透明（由 SVG fill 属性决定）
  */
 
 /*
  * 作用：
- * 主题编辑按钮，默认隐藏。
- * 按钮由 renderer 放在父线进入主题的位置，避免遮挡主题文字。
+ * 主题编辑按钮。
+ * 按钮由 renderer 放在父线入口点，和主题本体分层绘制。
  */
 .yonxao-mindmap-topic-edit {
   cursor: pointer;
-  opacity: 0;
-  transition: opacity 120ms ease;
-}
-
-/*
- * 作用：
- * 主题 hover 或编辑按钮聚焦时显示编辑按钮。
- */
-.yonxao-mindmap-topic:hover .yonxao-mindmap-topic-edit,
-.yonxao-mindmap-topic-edit:focus {
   opacity: 1;
 }
 
@@ -212,40 +202,25 @@
 
 /*
  * 作用：
- * 新增兄弟主题按钮组，默认隐藏。
+ * 新增兄弟主题按钮组。
  *
  * 交互逻辑：
- * Renderer 会把 before/after 两个按钮放到主题上/下边框；
- * 后续竖向布局时会改为左/右边框。
+ * Renderer 会根据“兄主题插入点 / 弟主题插入点”放置 before/after 两个按钮。
  */
 .yonxao-mindmap-topic-sibling-actions {
-  opacity: 0;
-  transition: opacity 120ms ease;
-  pointer-events: none;
+  opacity: 1;
+  pointer-events: auto;
 }
 
 /*
  * 作用：
- * 新增子主题按钮，默认隐藏。
+ * 新增子主题按钮。
  *
  * 显示条件：
  * Renderer 只会在没有子主题的真实主题上渲染它；已有子主题的主题保留折叠/展开圆点。
  */
 .yonxao-mindmap-topic-subtopic-add {
   cursor: pointer;
-  opacity: 0;
-  transition: opacity 120ms ease;
-  pointer-events: none;
-}
-
-/*
- * 作用：
- * 主题 hover 时显示新增主题按钮。
- */
-.yonxao-mindmap-topic:hover .yonxao-mindmap-topic-sibling-actions,
-.yonxao-mindmap-topic-sibling-actions:focus,
-.yonxao-mindmap-topic:hover .yonxao-mindmap-topic-subtopic-add,
-.yonxao-mindmap-topic-subtopic-add:focus {
   opacity: 1;
   pointer-events: auto;
 }
@@ -282,6 +257,11 @@
   stroke-linecap: round;
 }
 
+.yonxao-mindmap-topic-sibling-direction {
+  opacity: 0.72;
+  stroke-width: 1.2;
+}
+
 /*
  * 作用：
  * 主题内置图标的 SVG group 样式。
@@ -310,14 +290,17 @@
  * 折叠/展开圆形按钮外观。
  *
  * 设计说明：
- * 配色和编辑按钮、新增兄弟/子主题按钮保持一致：白底 + accent 描边。
+ * 折叠/展开按钮使用实心底色，和白底加号的新增按钮区分开。
  */
 .yonxao-mindmap-toggle {
-  fill: var(--background-primary);
-  stroke: var(--yonxao-mindmap-button-color);
-  stroke-width: 1.4;
   cursor: pointer;
   pointer-events: auto;
+}
+
+.yonxao-mindmap-toggle circle {
+  fill: var(--yonxao-mindmap-button-color);
+  stroke: var(--background-primary);
+  stroke-width: 1.4;
 }
 
 /*
@@ -325,10 +308,10 @@
  * 折叠/展开按钮里的横线和竖线。
  *
  * 设计说明：
- * 配色和加号按钮保持一致，使用 accent 强调。
+ * 实心底上的符号使用背景色，避免和新增按钮的加号混淆。
  */
 .yonxao-mindmap-toggle path {
-  stroke: var(--yonxao-mindmap-button-color);
-  stroke-width: 1.4;
+  stroke: var(--background-primary);
+  stroke-width: 1.8;
   stroke-linecap: round;
 }
