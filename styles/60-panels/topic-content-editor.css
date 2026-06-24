@@ -1,8 +1,8 @@
 /*
  * 作用：
- * 长主题文本编辑浮层，独立悬浮在视口中，避免被幕布裁切。
+ * 长内容编辑浮层，独立悬浮在视口中，避免被幕布裁切。
  */
-.yonxao-mindmap-topic-text-editor {
+.yonxao-mindmap-topic-content-editor {
   --yonxao-mindmap-mono-font:
     'Sarasa Mono SC', 'Noto Sans Mono CJK SC', 'Source Han Mono SC', 'Cascadia Mono',
     'JetBrains Mono', 'Liberation Mono', monospace;
@@ -23,15 +23,15 @@
   overscroll-behavior: contain;
 }
 
-.yonxao-mindmap-topic-text-editor[hidden] {
+.yonxao-mindmap-topic-content-editor[hidden] {
   display: none;
 }
 
-.yonxao-mindmap-topic-text-editor.is-dragging {
+.yonxao-mindmap-topic-content-editor.is-dragging {
   user-select: none;
 }
 
-.yonxao-mindmap-topic-text-editor-title {
+.yonxao-mindmap-topic-content-editor-title {
   color: var(--text-normal);
   font-size: var(--font-ui-small);
   font-weight: 700;
@@ -40,7 +40,7 @@
   touch-action: none;
 }
 
-.yonxao-mindmap-topic-text-editor-input {
+.yonxao-mindmap-topic-content-editor-input {
   min-height: min(320px, 52vh);
   max-height: calc(100vh - 140px);
   resize: vertical;

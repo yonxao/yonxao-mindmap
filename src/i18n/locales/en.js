@@ -1,19 +1,22 @@
 export const enMessages = Object.freeze({
   'settings.description':
-    'Configure plugin-level global defaults here. The config block at the top of an individual yxmm code block still has priority, which is useful for per-map overrides.',
+    'Configure the plugin-level global default value config here. The config block at the top of an individual yxmm code block still has priority, which is useful for per-map overrides.',
   'settings.language.name': 'Language',
   'settings.language.desc':
     'Controls yonxao-mindmap UI text. The initial default follows the current Obsidian language.',
-  'settings.defaultConfig.name': 'Global default config',
-  'settings.defaultConfig.desc':
+  'settings.globalDefaultValueConfigPanel.name': 'Global default value config panel',
+  'settings.globalDefaultValueConfigPanel.desc':
     'Used as the base config for every yxmm code block; block config and topic attributes still override it.',
-  'settings.defaultConfig.edit': 'Edit defaults',
-  'settings.defaultConfig.reset': 'Reset to built-in defaults',
-  'settings.defaultConfig.resetNotice': 'yonxao-mindmap: Built-in defaults restored.',
-  'settings.defaultConfig.savedNotice': 'yonxao-mindmap: Global default config saved.',
-  'settings.defaultConfig.empty':
-    'No global default config is set. All maps use the plugin built-in defaults.',
-  'settings.defaultConfig.summaryTitle': 'Current global default config summary:',
+  'settings.globalDefaultValueConfigPanel.edit': 'Edit default value config',
+  'settings.globalDefaultValueConfigPanel.reset': 'Reset to built-in defaults',
+  'settings.globalDefaultValueConfigPanel.resetNotice':
+    'yonxao-mindmap: Built-in defaults restored.',
+  'settings.globalDefaultValueConfigPanel.savedNotice':
+    'yonxao-mindmap: Global default value config saved.',
+  'settings.globalDefaultValueConfigPanel.empty':
+    'No global default value config is set. All maps use the plugin built-in defaults.',
+  'settings.globalDefaultValueConfigPanel.summaryTitle':
+    'Current global default value config summary:',
   'settings.summary.theme': 'Theme',
   'settings.summary.layout': 'Layout',
   'settings.summary.connector': 'Connector style',
@@ -49,7 +52,7 @@ export const enMessages = Object.freeze({
   'source.status.synced': 'Source is synced to the current Markdown code block.',
   'canvas.resizeHandle': 'Drag to resize canvas height',
   'notice.configSaved': 'yonxao-mindmap: Config saved.',
-  'notice.topicCopied': 'yonxao-mindmap: Topic text copied.',
+  'notice.topicCopied': 'yonxao-mindmap: Content copied.',
   'notice.bodyCopied': 'yonxao-mindmap: Body copied.',
   'notice.sourceCopied': 'yonxao-mindmap: Source copied.',
   'notice.configCopied': 'yonxao-mindmap: Config copied.',
@@ -59,8 +62,8 @@ export const enMessages = Object.freeze({
     'yonxao-mindmap: This environment does not support copying images to clipboard.',
   'notice.imageClipboardFocusRequired':
     'yonxao-mindmap: Please click the mind map first, then copy the image again.',
-  'notice.topicTextRequired': 'yonxao-mindmap: Topic text cannot be empty.',
-  'notice.topicTextSaved': 'Topic text saved.',
+  'notice.topicContentRequired': 'yonxao-mindmap: Content cannot be empty.',
+  'notice.topicContentSaved': 'Content saved.',
   'notice.subtopicAdded': 'Subtopic added.',
   'notice.siblingTopicAdded': 'Sibling topic added.',
   'notice.topicDeleted': 'Topic deleted.',
@@ -70,10 +73,10 @@ export const enMessages = Object.freeze({
   'confirm.deleteTopic': 'Delete “{topic}”?',
   'confirm.deleteTopicWithDescendants': 'Delete “{topic}” and its {count} subtopics?',
 
-  'topicEditor.title': 'Edit topic',
-  'topicEditor.text': 'Topic text',
+  'topicEditor.title': 'Topic edit panel',
+  'topicEditor.content': 'Content',
   'topicEditor.expandText': 'Open large text editor',
-  'topicEditor.textEditorTitle': 'Edit topic text',
+  'topicEditor.contentEditorTitle': 'Edit content',
   'topicEditor.applyText': 'Apply',
   'topicEditor.color': 'Topic color',
   'topicEditor.icon': 'Topic icon',
@@ -86,7 +89,7 @@ export const enMessages = Object.freeze({
   'topicEditor.fontCustomPlaceholder': "'LXGW WenKai', sans-serif",
   'topicEditor.fontFamily.invalid':
     "Please enter a valid CSS font-family list, for example: 'SimSun', 'Songti SC', serif",
-  'topicEditor.editTextAria': 'Edit topic text',
+  'topicEditor.editContentAria': 'Edit content',
   'topicEditor.save': 'Save',
   'topicEditor.addSubtopic': 'Add subtopic',
   'topicEditor.delete': 'Delete',
@@ -96,10 +99,10 @@ export const enMessages = Object.freeze({
   'topicButton.addSiblingBefore': 'Add sibling topic before',
   'topicButton.addSiblingAfter': 'Add sibling topic after',
   'topicButton.addSubtopic': 'Add subtopic',
-  'topicButton.editTopic': 'Edit topic',
-  'contextMenu.renameTopic': 'Edit topic',
-  'contextMenu.editTopicAttributes': 'Edit topic attributes',
-  'contextMenu.copyTopicText': 'Copy topic text',
+  'topicButton.editTopic': 'Edit',
+  'contextMenu.editTopic': 'Edit',
+  'contextMenu.topicEditPanel': 'Topic edit panel',
+  'contextMenu.copyTopicContent': 'Copy content',
   'contextMenu.copySubtreeBody': 'Copy subtree',
   'contextMenu.copyIndentedSubtree': 'Copy indented subtree',
   'contextMenu.addSubtopic': 'Add subtopic',
@@ -117,11 +120,11 @@ export const enMessages = Object.freeze({
   'contextMenu.exportPng': 'Export image',
   'contextMenu.copyPng': 'Copy image',
 
-  'configModal.title': 'Mind Map Config',
-  'configModal.globalTitle': 'Global Default Config',
+  'configModal.title': 'Config Panel',
+  'configModal.globalDefaultValueTitle': 'Global Default Value Config Panel',
   'configModal.info.label': 'Config rules',
   'configModal.info.tooltip':
-    'Config priority:\nTopic attributes > Code block config > Plugin global default config > Plugin built-in defaults\n\nColor priority:\nTopic attribute color > Default topic color > Theme scheme\n\nSave cleanup logic:\nWhen a config value is the same as the effective default value from the plugin global default config or plugin built-in defaults, it is removed to keep the config concise.',
+    'Config priority:\nTopic attributes > Code block config > Plugin global default value config > Plugin built-in defaults\n\nColor priority:\nTopic attribute color > Default topic color > Theme scheme\n\nSave cleanup logic:\nWhen a config value is the same as the effective default value from the plugin global default value config or plugin built-in defaults, it is removed to keep the config concise.',
   'configModal.tabs.basic': 'Basic',
   'configModal.tabs.theme': 'Theme',
   'configModal.tabs.layout': 'Layout',
@@ -220,7 +223,7 @@ export const enMessages = Object.freeze({
   'configModal.font.family.help':
     'Defaults to the Obsidian text font. Choose a built-in preset, or choose Custom and enter a CSS font-family.',
   'configModal.font.size': 'Topic font size',
-  'configModal.font.size.help': 'The unit is px and controls topic text size.',
+  'configModal.font.size.help': 'The unit is px and controls topic content size.',
   'configModal.font.weight': 'Topic font weight',
   'configModal.font.weight.help': 'Font weight follows the CSS standard range 100-900.',
   'configModal.font.lineHeight': 'Topic line height',

@@ -1,6 +1,6 @@
 /*
  * 文件作用：
- * 配置弹框字体页方法集合，负责全局字体和按主题级别字体覆盖。
+ * 配置面板字体页方法集合，负责全局字体和按主题级别字体覆盖。
  *
  * 实现逻辑：
  * 全局字体字段作为默认值，level1/level2/level3 字段可继承或覆盖全局字体配置。
@@ -33,7 +33,10 @@ export const fontTabMethods = {
         allowInherit: false,
       }
     );
-    /* 强制回填全局字体 */
+    /*
+     * 全局字体字段不提供“继承上层”的空状态。
+     * 没有显式配置时显示运行时默认字体，但保存时仍会裁剪和默认值相同的路径。
+     */
     if (globalFontFamilyField && normalized.font.family) {
       this.syncConfigFontField(
         globalFontFamilyField.select,
@@ -89,7 +92,10 @@ export const fontTabMethods = {
       },
       levelFontGroups
     );
-    /* 初始渲染：继承全局字体的层级输入框填充全局输入框的值 */
+    /*
+     * 层级字体允许继承全局字体。
+     * 初始显示继承值，用户清空字段时再退回 placeholder，避免误以为空值会被保存。
+     */
     for (const group of levelFontGroups) {
       const field = group.fields.family;
       if (field && !this.hasDraftConfigPath(['font', group.levelKey, 'family'])) {
@@ -217,22 +223,51 @@ export const fontTabMethods = {
   },
 
   syncInheritedFontFamilyField(field, path, value) {
-    if (!field || this.hasDraftConfigPath(path)) return;
+    if (!field) return;
 
     const nextValue =
       typeof value === 'string' || typeof value === 'number'
         ? normalizeFontFamilyInput(String(value))
         : '';
     field.setInheritedValue?.(nextValue);
+    if (this.hasDraftConfigPath(path)) {
+      if (normalizeFontFamilyInput(field.input.value) === nextValue) {
+        deleteConfigValue(this.draftConfig, path);
+        this.syncConfigFontInheritedField(field.select, field.input, nextValue, true);
+        this.syncInheritedValueStyle(field.controlEl, path);
+      }
+      return;
+    }
+
+    if (document.activeElement === field.input && !normalizeFontFamilyInput(field.input.value)) {
+      this.syncInheritedValueStyle(field.controlEl, path);
+      return;
+    }
+
     this.syncConfigFontField(field.select, field.input, '');
     if (nextValue) field.input.value = nextValue;
     this.syncInheritedValueStyle(field.controlEl, path);
   },
 
   syncInheritedNumberInput(input, path, value) {
-    if (!input || this.hasDraftConfigPath(path)) return;
+    if (!input) return;
 
-    input.value = value === null || value === undefined ? '' : String(value);
+    const nextValue = value === null || value === undefined ? '' : String(value);
+    this.setConfigInputInheritedValue(input, nextValue);
+    if (this.hasDraftConfigPath(path)) {
+      if (String(input.value ?? '').trim() === nextValue) {
+        deleteConfigValue(this.draftConfig, path);
+        this.syncInheritedValueStyle(input._yonxaoMindmapControlEl, path);
+      }
+      return;
+    }
+
+    if (document.activeElement === input && !String(input.value || '').trim()) {
+      this.syncInheritedValueStyle(input._yonxaoMindmapControlEl, path);
+      return;
+    }
+
+    input.value = nextValue;
     this.syncInheritedValueStyle(input._yonxaoMindmapControlEl, path);
   },
 };

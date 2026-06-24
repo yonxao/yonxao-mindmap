@@ -9,7 +9,7 @@
  * YonxaoMindmapRenderer.render -> mapRendererMethods -> layoutTree -> draw/*。
  */
 
-import { layoutTree, normalizeColor, svg } from '../shared/rendererShared.js';
+import { DEFAULT_BUTTON_COLOR, layoutTree, normalizeColor, svg } from '../shared/rendererShared.js';
 
 export const mapRendererMethods = {
   renderMap(fitAfterRender, options = {}) {
@@ -107,14 +107,14 @@ export const mapRendererMethods = {
       case 'subtle': {
         const cssVarName = colorMode === 'inherit-accent' ? '--interactive-accent' : '--text-muted';
         const computedValue = getComputedStyle(document.body).getPropertyValue(cssVarName).trim();
-        buttonColor = computedValue || '#3b82f6';
+        buttonColor = computedValue || DEFAULT_BUTTON_COLOR;
         break;
       }
       case 'custom':
-        buttonColor = normalizeColor(buttonConfig.color) || '#3b82f6';
+        buttonColor = normalizeColor(buttonConfig.color) || DEFAULT_BUTTON_COLOR;
         break;
       default:
-        buttonColor = '#3b82f6';
+        buttonColor = DEFAULT_BUTTON_COLOR;
     }
 
     if (this.svgEl) {

@@ -1,6 +1,6 @@
 /*
  * 文件作用：
- * 配置弹框基础页方法集合，负责幕布高度、源码高度、工具栏位置和基础交互开关。
+ * 配置面板基础页方法集合，负责幕布高度、源码高度、工具栏位置和基础交互开关。
  *
  * 实现逻辑：
  * 根据当前 normalized 配置创建字段，并把用户输入写入 draftConfig 对应路径。
@@ -10,7 +10,6 @@
  */
 
 import {
-  setConfigValue,
   CANVAS_MAX_HEIGHT,
   CANVAS_MIN_HEIGHT,
   FIT_VIEW_MAX_SCALE_MAX,
@@ -89,13 +88,25 @@ export const basicTabMethods = {
     };
     viewFitSelect.addEventListener('change', syncFitViewSubControls);
     fitNoUpscaleToggle.addEventListener('change', () => {
-      setConfigValue(this.draftConfig, ['basic', 'viewFit'], 'fit');
+      this.setConfigValueOrDeleteInherited(
+        ['basic', 'viewFit'],
+        'fit',
+        viewFitSelect._yonxaoMindmapInheritedValue
+      );
       this.syncInheritedValueStyle(viewFitSelect._yonxaoMindmapControlEl, ['basic', 'viewFit']);
       syncFitViewSubControls();
     });
     fitMaxScaleInput.addEventListener('input', () => {
-      setConfigValue(this.draftConfig, ['basic', 'viewFit'], 'fit');
-      setConfigValue(this.draftConfig, ['basic', 'fitViewNoUpscale'], false);
+      this.setConfigValueOrDeleteInherited(
+        ['basic', 'viewFit'],
+        'fit',
+        viewFitSelect._yonxaoMindmapInheritedValue
+      );
+      this.setConfigValueOrDeleteInherited(
+        ['basic', 'fitViewNoUpscale'],
+        false,
+        fitNoUpscaleToggle._yonxaoMindmapInheritedValue
+      );
       this.syncInheritedValueStyle(viewFitSelect._yonxaoMindmapControlEl, ['basic', 'viewFit']);
       this.syncInheritedValueStyle(fitNoUpscaleToggle._yonxaoMindmapControlEl, [
         'basic',

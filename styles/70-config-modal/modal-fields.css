@@ -104,9 +104,10 @@
 
 .yonxao-mindmap-config-control.is-inherited-value input:focus,
 .yonxao-mindmap-config-control.is-inherited-value select:focus {
-  color: var(--text-normal);
-  border-style: solid;
-  background-color: var(--background-primary);
+  color: var(--text-muted);
+  border-color: var(--interactive-accent);
+  border-style: dashed;
+  background-color: var(--background-secondary);
 }
 
 .yonxao-mindmap-config-field.is-disabled-value select,

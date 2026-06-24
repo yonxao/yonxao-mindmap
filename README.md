@@ -76,23 +76,23 @@ yonxao-mindmap uses these terms consistently across docs, config, UI text, and c
 
 ### Content Components
 
-| 中文术语 | English Term      | yxmm Term / Config Key                | Purpose                                                 |
-| -------- | ----------------- | ------------------------------------- | ------------------------------------------------------- |
-| 主题     | topic             | heading line                          | A visual unit generated from one Markdown heading line. |
-| 中心主题 | center topic      | `#`                                   | The root topic and core topic.                          |
-| 分支主题 | branch topic      | `##`                                  | A first-level branch under the center topic.            |
-| 子主题   | subtopic          | `###` and deeper headings             | A descendant topic under a branch topic.                |
-| 文本     | Text              | topic text                            | The text displayed inside a topic.                      |
-| 主题属性 | Topic Attribute   | `[key=value]`                         | A per-topic setting written at the end of a topic text. |
-| 主题颜色 | Topic Color       | `[color=#...]`                        | Sets a single topic's color.                            |
-| 主题图标 | Topic Icon        | `[icon=book]`                         | Sets a single topic's icon.                             |
-| 主题字体 | Topic Font Family | `[fontFamily="..."]` / `font.family`  | Sets the topic text font family.                        |
-| 主题字号 | Topic Font Size   | `[fontSize=16]` / `font.size`         | Sets the topic text font size.                          |
-| 主题字重 | Topic Font Weight | `[fontWeight=700]` / `font.weight`    | Sets the topic text font weight.                        |
-| 主题行高 | Topic Line Height | `[lineHeight=20]` / `font.lineHeight` | Sets line spacing for multi-line topic text.            |
-| 局部配置 | Local Config      | topic attribute                       | A setting that only affects a single topic.             |
-| 全局配置 | Global Config     | config block                          | A setting that affects the whole map by default.        |
-| 配置项   | Config Key        | YAML key                              | A concrete field inside the config block.               |
+| 中文术语 | English Term      | yxmm Term / Config Key                | Purpose                                                  |
+| -------- | ----------------- | ------------------------------------- | -------------------------------------------------------- |
+| 主题     | topic             | heading line                          | A visual unit generated from one Markdown heading line.  |
+| 中心主题 | center topic      | `#`                                   | The root topic and core topic.                           |
+| 分支主题 | branch topic      | `##`                                  | A first-level branch under the center topic.             |
+| 子主题   | subtopic          | `###` and deeper headings             | A descendant topic under a branch topic.                 |
+| 内容     | Content           | content                               | The content displayed inside a topic.                    |
+| 主题属性 | Topic Attribute   | `[key=value]`                         | A per-topic setting written at the end of topic content. |
+| 主题颜色 | Topic Color       | `[color=#...]`                        | Sets a single topic's color.                             |
+| 主题图标 | Topic Icon        | `[icon=book]`                         | Sets a single topic's icon.                              |
+| 主题字体 | Topic Font Family | `[fontFamily="..."]` / `font.family`  | Sets the topic content font family.                      |
+| 主题字号 | Topic Font Size   | `[fontSize=16]` / `font.size`         | Sets the topic content font size.                        |
+| 主题字重 | Topic Font Weight | `[fontWeight=700]` / `font.weight`    | Sets the topic content font weight.                      |
+| 主题行高 | Topic Line Height | `[lineHeight=20]` / `font.lineHeight` | Sets line spacing for multi-line content.                |
+| 局部配置 | Local Config      | topic attribute                       | A setting that only affects a single topic.              |
+| 全局配置 | Global Config     | config block                          | A setting that affects the whole map by default.         |
+| 配置项   | Config Key        | YAML key                              | A concrete field inside the config block.                |
 
 ### Relationship Structure
 
@@ -141,8 +141,8 @@ yonxao-mindmap uses these terms consistently across docs, config, UI text, and c
 | 中文术语      | English Term           | yxmm Term / Config Key                 | Purpose                                                             |
 | ------------- | ---------------------- | -------------------------------------- | ------------------------------------------------------------------- |
 | 悬浮工具栏    | floating toolbar       | `toolbar.corner` / `toolbar.placement` | Holds common action buttons and snaps to a dragged corner position. |
-| 配置弹框      | config modal           | -                                      | Visually edits theme, layout, font, source, and advanced settings.  |
-| 主题编辑面板  | topic editor           | -                                      | Edits topic text, color, icon, layout, and related settings.        |
+| 配置面板      | config panel           | -                                      | Visually edits theme, layout, font, source, and advanced settings.  |
+| 主题编辑面板  | topic edit panel       | -                                      | Edits content, color, icon, layout, and related settings.           |
 | 编辑按钮      | edit button            | -                                      | Opens the topic editor; some compact layouts hide it.               |
 | 折叠/展开按钮 | collapse/expand button | -                                      | Hides or shows the current topic's subtree.                         |
 | 新增按钮      | add button             | -                                      | Adds a child topic or sibling topic.                                |
@@ -160,7 +160,7 @@ yonxao-mindmap uses these terms consistently across docs, config, UI text, and c
 | 主题卡片     | topic card           | -                      | The rectangular visual shape of a topic, including background, border, and radius.                                 |
 | 主题色系     | theme                | -                      | Controls the overall color scheme, distinct from topic.                                                            |
 | 默认主题颜色 | default topic color  | `topic.defaultColor`   | Overrides theme auto topic colors; topic attribute `color` still wins.                                             |
-| 字体         | font                 | `font.*`               | Controls topic text styling.                                                                                       |
+| 字体         | font                 | `font.*`               | Controls topic content styling.                                                                                    |
 | 连线线型     | connector style      | `connector.style`      | Controls whether connectors are curved, straight, or orthogonal; currently configurable only for mind map layouts. |
 | 平移         | pan                  | -                      | Drags the canvas to change the viewport position.                                                                  |
 | 缩放         | zoom                 | -                      | Zooms the current viewport in or out.                                                                              |
@@ -175,7 +175,7 @@ A `yxmm` block can start with a `---` config block. The config block stores glob
 
 ### Plugin Settings
 
-Obsidian `Settings` -> `Community plugins` -> `yonxao-mindmap` provides a plugin-level global default config.
+Obsidian `Settings` -> `Community plugins` -> `yonxao-mindmap` provides a plugin-level global default value config panel.
 
 The settings page also includes a language option. The initial default follows the current Obsidian language; if that language is not supported yet, it falls back to English. Supported languages:
 
@@ -233,7 +233,7 @@ Theme color priority:
 
 `rainbow`, `pastel-rainbow`, and `neon-rainbow` automatically assign colors by first-level branch.
 The center topic uses an independent center color from the theme. Topic attribute `color` changes only the topic itself, not the connector from its parent.
-Hex colors in the config block should be quoted, for example `defaultColor: '#66ed0c'`; the visual config modal writes quoted colors automatically.
+Hex colors in the config block should be quoted, for example `defaultColor: '#66ed0c'`; the visual config panel writes quoted colors automatically.
 
 Layout types:
 
@@ -255,18 +255,18 @@ Layout types:
 - Use the source/map button to switch between raw `yxmm` source and the rendered mind map.
 - In source view, edit the textarea; switching back to the mind map auto-saves, and Ctrl/Cmd+S also saves.
 - In source view, Tab/Shift+Tab promotes or demotes selected heading lines.
-- In editor/Live Preview mind map view, hover a topic and click the small edit button to edit text, color, icon, or layout.
+- In editor/Live Preview mind map view, hover a topic and click the small edit button to edit content, color, icon, or layout.
 - Use the toolbar to fit view, zoom in, zoom out, or reset collapse state.
-- Use the toolbar settings button to open the visual config modal; common fields have select presets, and the advanced tab supports direct YAML editing.
+- Use the toolbar settings button to open the visual config panel; common fields have select presets, and the advanced tab supports direct YAML editing.
 - Drag the toolbar grip to snap the floating toolbar to the nearest inside/outside corner position.
-- Drag the canvas to pan. By default, the mouse wheel keeps scrolling the Obsidian page; enable mouse-wheel zoom in the Basic tab of the config modal to zoom the current mind map with the wheel.
+- Drag the canvas to pan. By default, the mouse wheel keeps scrolling the Obsidian page; enable mouse-wheel zoom in the Basic tab of the config panel to zoom the current mind map with the wheel.
 - Drag the canvas height resize handle to set manual height. Double-click the handle to return to auto height.
 
 Edits are written back to the same `yxmm` code block in the current Markdown file.
 
 The plugin uses an open-source/commercial-friendly monospace font stack by default when those fonts are installed locally, such as Noto Sans Mono CJK SC, Source Han Mono SC, Sarasa Mono SC, Cascadia Mono, JetBrains Mono, and Liberation Mono.
 
-The visual config modal provides grouped font presets plus a custom font-family input:
+The visual config panel provides grouped font presets plus a custom font-family input:
 
 - Presets are grouped by inheritance/custom values, Obsidian fonts, common Chinese fonts, system fonts, and monospace fonts.
 - Common Chinese presets include Hei, Song, Kai, FangSong, Microsoft YaHei, PingFang SC, Source Han Sans, Source Han Serif, and LXGW WenKai.

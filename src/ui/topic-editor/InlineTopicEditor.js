@@ -3,7 +3,7 @@
  * 主题内联文本编辑方法集合，负责双击编辑、定位、提交和取消。
  *
  * 实现逻辑：
- * 内联输入框覆盖在 SVG 主题位置上，保存时复用主题文本保存逻辑。
+ * 内联输入框覆盖在 SVG 主题位置上，保存时复用主题内容保存逻辑。
  *
  * 调用链：
  * SVG double click -> inlineTopicEditorMethods -> documentPersistenceMethods。
@@ -32,7 +32,7 @@ export const inlineTopicEditorMethods = {
     inputEl.className = 'yonxao-mindmap-inline-text-editor';
     inputEl.value = topic.text || '';
     inputEl.spellcheck = false;
-    inputEl.setAttribute('aria-label', this.t('topicEditor.editTextAria'));
+    inputEl.setAttribute('aria-label', this.t('topicEditor.editContentAria'));
 
     // 编辑框使用固定 UI 字号，不跟随主题字号缩放；大字号主题直接继承会让浮层过大、阅读别扭。
     if (box && box.font) {
@@ -128,7 +128,7 @@ export const inlineTopicEditorMethods = {
 
     const nextText = normalizeTopicTextForStorage(inputEl.value);
     if (!nextText) {
-      new Notice(this.t('notice.topicTextRequired'));
+      new Notice(this.t('notice.topicContentRequired'));
       inputEl.focus();
       return false;
     }
@@ -143,7 +143,7 @@ export const inlineTopicEditorMethods = {
     this.closeInlineTextEditor(false);
 
     try {
-      return await this.saveTreeToSourceAndFile(this.t('notice.topicTextSaved'));
+      return await this.saveTreeToSourceAndFile(this.t('notice.topicContentSaved'));
     } finally {
       this.inlineTextEditorSaving = false;
     }

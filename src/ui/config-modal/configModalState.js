@@ -1,6 +1,6 @@
 /*
  * 文件作用：
- * 配置弹框状态方法集合，负责草稿快照、应用保存、继承态判断和状态栏更新。
+ * 配置面板状态方法集合，负责草稿快照、应用保存、继承态判断和状态栏更新。
  *
  * 实现逻辑：
  * 保存时先 canonicalize/prune 草稿，再交给调用方 onApply；继承态通过 baseConfig 与 draftConfig 比较得出。
@@ -12,13 +12,72 @@
 import {
   setIcon,
   cloneConfig,
+  deleteConfigValue,
   parseDraftConfigText,
   stringifyDraftConfig,
   canonicalizeMindConfig,
   mergeMindConfigObjects,
+  normalizeMindConfig,
   pruneInactiveMindConfig,
   clamp,
 } from './configModalShared.js';
+
+function readConfigPath(config, path, fallback = '') {
+  let current = config;
+  for (const key of path) {
+    if (!current || typeof current !== 'object') return fallback;
+    current = current[key];
+  }
+
+  return current === undefined || current === null ? fallback : current;
+}
+
+function runtimePathForDraftPath(path) {
+  const key = path.join('.');
+  const directPaths = {
+    'basic.canvasHeight': ['canvas', 'height'],
+    'basic.sourceHeight': ['source', 'height'],
+    'basic.topicControlVisibility': ['button', 'topicControlVisibility'],
+    'basic.viewFit': ['view', 'fit'],
+    'basic.fitViewNoUpscale': ['view', 'fitNoUpscale'],
+    'basic.fitViewMaxScale': ['view', 'fitMaxScale'],
+    'basic.toolbar.corner': ['toolbar', 'corner'],
+    'basic.toolbar.placement': ['toolbar', 'placement'],
+    'basic.tabIndent': ['source', 'enableTabIndent'],
+    'basic.wheelZoom': ['interaction', 'wheelZoom'],
+    'theme.scheme': ['theme'],
+    'theme.defaultTopicColor': ['topic', 'defaultColor'],
+    'theme.buttonColorMode': ['button', 'colorMode'],
+    'theme.buttonColor': ['button', 'color'],
+    'layout.type': ['layout'],
+    'layout.connectorStyle': ['connector', 'style'],
+    'layout.branchExpansion': ['branch', 'expansion'],
+    'layout.topicMaxWidth.global': ['topic', 'maxWidth'],
+    'font.family': ['font', 'family'],
+    'font.size': ['font', 'size'],
+    'font.weight': ['font', 'weight'],
+    'font.lineHeight': ['font', 'lineHeight'],
+  };
+  if (directPaths[key]) return directPaths[key];
+
+  const fontLevelMatch = key.match(/^font\.level([123])\.(family|size|weight|lineHeight)$/);
+  if (fontLevelMatch) return ['font', 'levels', fontLevelMatch[1], fontLevelMatch[2]];
+
+  const topicLevelMatch = key.match(/^layout\.topicMaxWidth\.level([123])$/);
+  if (topicLevelMatch) return ['topic', 'levels', topicLevelMatch[1], 'maxWidth'];
+
+  return null;
+}
+
+function inheritedRuntimeFallback(normalized, path, fallback) {
+  const key = path.join('.');
+  const fontLevelMatch = key.match(/^font\.level[123]\.(family|size|weight|lineHeight)$/);
+  if (fontLevelMatch) return readConfigPath(normalized, ['font', fontLevelMatch[1]], fallback);
+  if (/^layout\.topicMaxWidth\.level[123]$/.test(key)) {
+    return readConfigPath(normalized, ['topic', 'maxWidth'], fallback);
+  }
+  return fallback;
+}
 
 export const configModalStateMethods = {
   createConfigInfoPopover(headerEl) {
@@ -146,6 +205,18 @@ export const configModalStateMethods = {
 
   effectiveDraftConfig() {
     return mergeMindConfigObjects(this.baseConfig, this.draftConfig);
+  },
+
+  configDefaultValueForPath(path, fallback = '') {
+    const draftWithoutPath = cloneConfig(this.draftConfig);
+    deleteConfigValue(draftWithoutPath, path);
+    const normalized = normalizeMindConfig(
+      mergeMindConfigObjects(this.baseConfig, draftWithoutPath)
+    );
+    const runtimePath = runtimePathForDraftPath(path);
+    const inheritedFallback = inheritedRuntimeFallback(normalized, path, fallback);
+    if (!runtimePath) return inheritedFallback;
+    return readConfigPath(normalized, runtimePath, inheritedFallback);
   },
 
   updateTabs() {

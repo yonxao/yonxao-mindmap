@@ -1,6 +1,6 @@
 /*
  * 文件作用：
- * 汇总配置弹框子模块共享的依赖。
+ * 汇总配置面板子模块共享的依赖。
  */
 
 export { Notice, setIcon } from 'obsidian';
@@ -27,6 +27,7 @@ export {
   CONNECTOR_STYLE_CONFIGURABLE_LAYOUTS,
   CONNECTOR_STYLES,
   CUSTOM_FONT_VALUE,
+  DEFAULT_BUTTON_COLOR,
   DEFAULT_FONT_FAMILY,
   FIT_VIEW_MAX_SCALE_MAX,
   FIT_VIEW_MAX_SCALE_MIN,

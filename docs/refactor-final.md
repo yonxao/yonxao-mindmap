@@ -12,7 +12,7 @@
 - 最大风险是 `src/renderer/YonxaoMindmapRenderer.js`，它已经承载过多 UI、渲染、交互、保存和导出职责。
 - 第二梯队风险是 `src/ui/ConfigModal.js`、`src/config/mindConfig.js`、`src/layout/layoutTree.js`。
 - 解析、序列化、主题树操作、代码块写回、文本换行等模块边界已经较清楚，适合作为测试安全网的第一批对象。
-- CSS 已经有分层基础，但需要跟随 JS 模块拆分进一步细化，尤其是配置弹框、主题编辑面板、源码模式、导图 SVG 控件。
+- CSS 已经有分层基础，但需要跟随 JS 模块拆分进一步细化，尤其是配置面板、主题编辑面板、源码模式、导图 SVG 控件。
 
 最终推荐路线：
 
@@ -174,7 +174,7 @@ src/
     topic-editor/
       TopicEditorPanel.js
       TopicEditorFields.js
-      TopicTextEditor.js
+      TopicContentEditor.js
       InlineTopicEditor.js
       topicEditorState.js
     context-menu/
@@ -221,12 +221,12 @@ src/
 
 ### 3.1 入口与 Obsidian 接入
 
-| 文件                                | 职责                                                                    |
-| ----------------------------------- | ----------------------------------------------------------------------- |
-| `src/main.js`                       | 插件入口，只导出插件类。                                                |
-| `src/plugin/YonxaoMindmapPlugin.js` | Obsidian 生命周期、注册 `yxmm` 代码块处理器、设置页、全局默认配置刷新。 |
-| `src/obsidian/embed.js`             | Obsidian 嵌入相关 DOM 标记、错误渲染、宿主兼容辅助。                    |
-| `src/markdown/codeBlock.js`         | 在完整 Markdown 文档中定位并替换当前 `yxmm` 代码块内容。                |
+| 文件                                | 职责                                                                      |
+| ----------------------------------- | ------------------------------------------------------------------------- |
+| `src/main.js`                       | 插件入口，只导出插件类。                                                  |
+| `src/plugin/YonxaoMindmapPlugin.js` | Obsidian 生命周期、注册 `yxmm` 代码块处理器、设置页、全局默认值配置刷新。 |
+| `src/obsidian/embed.js`             | Obsidian 嵌入相关 DOM 标记、错误渲染、宿主兼容辅助。                      |
+| `src/markdown/codeBlock.js`         | 在完整 Markdown 文档中定位并替换当前 `yxmm` 代码块内容。                  |
 
 ### 3.2 解析、序列化与模型
 
@@ -244,7 +244,7 @@ src/
 | --------------------------------- | ------------------------------------------------------------------------- |
 | `src/config/defaultMindConfig.js` | 用户配置层默认值、枚举值、数值范围。                                      |
 | `src/config/pluginSettings.js`    | Obsidian `data.json` 中插件设置的规范化。                                 |
-| `src/config/configDraft.js`       | 配置弹框草稿对象读写。                                                    |
+| `src/config/configDraft.js`       | 配置面板草稿对象读写。                                                    |
 | `src/config/mindConfig.js`        | 对外聚合配置 API，保持旧 import 入口稳定，逐步变薄。                      |
 | `src/config/runtimeConfigSave.js` | 运行时配置保存前的合并、转换、默认值裁剪。                                |
 | `src/config/configAccessors.js`   | `getPath`、`setPath`、`deletePath`、`clone`、`merge` 等配置对象访问工具。 |
@@ -294,33 +294,33 @@ src/
 
 ### 3.6 UI 模块
 
-| 文件                                       | 职责                                                     |
-| ------------------------------------------ | -------------------------------------------------------- |
-| `src/ui/toolbar/FloatingToolbar.js`        | 工具栏 DOM、按钮组合、显隐、事件边界、滚动隐藏。         |
-| `src/ui/toolbar/toolbarPosition.js`        | 工具栏吸附点、四角 inside/outside 坐标、最近吸附点计算。 |
-| `src/ui/toolbar/toolbarButtons.js`         | 工具栏按钮定义、状态刷新、tooltip 文案绑定。             |
-| `src/ui/source/SourceView.js`              | 源码模式外壳、配置/正文 Tab、输入框和事件协调。          |
-| `src/ui/source/sourceDocument.js`          | 源码模式配置区/正文区拆分和组合。                        |
-| `src/ui/source/sourceHighlight.js`         | 源码模式高亮行和 token 生成。                            |
-| `src/ui/source/sourceStatus.js`            | 源码模式状态消息、错误提示、行数变化辅助。               |
-| `src/ui/topic-editor/TopicEditorPanel.js`  | 主题编辑面板外壳、保存/取消、继承值显示。                |
-| `src/ui/topic-editor/TopicEditorFields.js` | 文本、颜色、图标、字体、数字输入等字段工厂。             |
-| `src/ui/topic-editor/TopicTextEditor.js`   | 长文本编辑浮层、拖拽、保存/取消。                        |
-| `src/ui/topic-editor/InlineTopicEditor.js` | 双击内联编辑文本框、定位、提交和取消。                   |
-| `src/ui/topic-editor/topicEditorState.js`  | 打开前快照、自定义/继承状态、取消恢复。                  |
-| `src/ui/context-menu/mapContextMenu.js`    | 空白处右键菜单。                                         |
-| `src/ui/context-menu/topicContextMenu.js`  | 主题右键菜单。                                           |
-| `src/ui/config-modal/ConfigModal.js`       | 配置弹框外壳、Tab 切换、保存/取消/重置、拖拽。           |
-| `src/ui/config-modal/BasicTab.js`          | 基础配置页。                                             |
-| `src/ui/config-modal/ThemeTab.js`          | 主题色系、默认主题颜色、按钮颜色配置页。                 |
-| `src/ui/config-modal/LayoutTab.js`         | 布局类型、连线线型、下挂展开、主题最大宽度配置页。       |
-| `src/ui/config-modal/FontTab.js`           | 全局字体和按主题级别字体配置页。                         |
-| `src/ui/config-modal/AdvancedTab.js`       | 高级 YAML 文本编辑页。                                   |
-| `src/ui/config-modal/configFields.js`      | 数字、下拉、字体、颜色、开关、帮助文案等字段工厂。       |
-| `src/ui/config-modal/configModalRules.js`  | 连线线型可配置性、下挂展开可配置性、禁用态和警告规则。   |
-| `src/ui/config-modal/configModalState.js`  | 草稿快照、是否已修改、继承样式同步。                     |
-| `src/ui/YonxaoMindmapSettingTab.js`        | Obsidian 设置页。                                        |
-| `src/ui/fontOptions.js`                    | 字体选项数据和本地化映射。                               |
+| 文件                                        | 职责                                                     |
+| ------------------------------------------- | -------------------------------------------------------- |
+| `src/ui/toolbar/FloatingToolbar.js`         | 工具栏 DOM、按钮组合、显隐、事件边界、滚动隐藏。         |
+| `src/ui/toolbar/toolbarPosition.js`         | 工具栏吸附点、四角 inside/outside 坐标、最近吸附点计算。 |
+| `src/ui/toolbar/toolbarButtons.js`          | 工具栏按钮定义、状态刷新、tooltip 文案绑定。             |
+| `src/ui/source/SourceView.js`               | 源码模式外壳、配置/正文 Tab、输入框和事件协调。          |
+| `src/ui/source/sourceDocument.js`           | 源码模式配置区/正文区拆分和组合。                        |
+| `src/ui/source/sourceHighlight.js`          | 源码模式高亮行和 token 生成。                            |
+| `src/ui/source/sourceStatus.js`             | 源码模式状态消息、错误提示、行数变化辅助。               |
+| `src/ui/topic-editor/TopicEditorPanel.js`   | 主题编辑面板外壳、保存/取消、继承值显示。                |
+| `src/ui/topic-editor/TopicEditorFields.js`  | 文本、颜色、图标、字体、数字输入等字段工厂。             |
+| `src/ui/topic-editor/TopicContentEditor.js` | 长文本编辑浮层、拖拽、保存/取消。                        |
+| `src/ui/topic-editor/InlineTopicEditor.js`  | 双击内联编辑文本框、定位、提交和取消。                   |
+| `src/ui/topic-editor/topicEditorState.js`   | 打开前快照、自定义/继承状态、取消恢复。                  |
+| `src/ui/context-menu/mapContextMenu.js`     | 空白处右键菜单。                                         |
+| `src/ui/context-menu/topicContextMenu.js`   | 主题右键菜单。                                           |
+| `src/ui/config-modal/ConfigModal.js`        | 配置面板外壳、Tab 切换、保存/取消/重置、拖拽。           |
+| `src/ui/config-modal/BasicTab.js`           | 基础配置页。                                             |
+| `src/ui/config-modal/ThemeTab.js`           | 主题色系、默认主题颜色、按钮颜色配置页。                 |
+| `src/ui/config-modal/LayoutTab.js`          | 布局类型、连线线型、下挂展开、主题最大宽度配置页。       |
+| `src/ui/config-modal/FontTab.js`            | 全局字体和按主题级别字体配置页。                         |
+| `src/ui/config-modal/AdvancedTab.js`        | 高级 YAML 文本编辑页。                                   |
+| `src/ui/config-modal/configFields.js`       | 数字、下拉、字体、颜色、开关、帮助文案等字段工厂。       |
+| `src/ui/config-modal/configModalRules.js`   | 连线线型可配置性、下挂展开可配置性、禁用态和警告规则。   |
+| `src/ui/config-modal/configModalState.js`   | 草稿快照、是否已修改、继承样式同步。                     |
+| `src/ui/YonxaoMindmapSettingTab.js`         | Obsidian 设置页。                                        |
+| `src/ui/fontOptions.js`                     | 字体选项数据和本地化映射。                               |
 
 ### 3.7 导出与复制
 
@@ -394,7 +394,7 @@ styles/
 
   60-panels/
     topic-editor.css
-    topic-text-editor.css
+    topic-content-editor.css
     inline-text-editor.css
 
   70-config-modal/
@@ -433,17 +433,17 @@ styles/
 | `styles/50-map/topic-controls.css`            | 编辑、折叠/展开、新增子主题、新增兄弟主题按钮。    |
 | `styles/50-map/drag-drop.css`                 | 主题拖拽、drop-subtopic、drop-before/after 高亮。  |
 | `styles/60-panels/topic-editor.css`           | 主题编辑面板、字段、颜色、图标、字体控件。         |
-| `styles/60-panels/topic-text-editor.css`      | 长文本编辑浮层。                                   |
+| `styles/60-panels/topic-content-editor.css`   | 长文本编辑浮层。                                   |
 | `styles/60-panels/inline-text-editor.css`     | 双击内联编辑框。                                   |
-| `styles/70-config-modal/modal-shell.css`      | 配置弹框宿主、标题、拖拽、主体布局。               |
-| `styles/70-config-modal/modal-tabs.css`       | 配置弹框 Tab 导航。                                |
+| `styles/70-config-modal/modal-shell.css`      | 配置面板宿主、标题、拖拽、主体布局。               |
+| `styles/70-config-modal/modal-tabs.css`       | 配置面板 Tab 导航。                                |
 | `styles/70-config-modal/modal-fields.css`     | 通用字段、label、control、help、warning、actions。 |
 | `styles/70-config-modal/modal-color-font.css` | 颜色色板、字体 combo、层级字体块。                 |
 | `styles/70-config-modal/modal-switches.css`   | 开关控件。                                         |
 | `styles/70-config-modal/modal-advanced.css`   | 高级 YAML 编辑区和高级页特殊布局。                 |
-| `styles/70-config-modal/modal-responsive.css` | 配置弹框移动端响应式。                             |
+| `styles/70-config-modal/modal-responsive.css` | 配置面板移动端响应式。                             |
 | `styles/80-obsidian/live-preview.css`         | Obsidian Live Preview 专用兼容样式。               |
-| `styles/80-obsidian/responsive.css`           | 非配置弹框的通用移动端响应式。                     |
+| `styles/80-obsidian/responsive.css`           | 非配置面板的通用移动端响应式。                     |
 
 ### 4.2 CSS 导入顺序
 
@@ -473,7 +473,7 @@ styles/
 @import './50-map/drag-drop.css';
 
 @import './60-panels/topic-editor.css';
-@import './60-panels/topic-text-editor.css';
+@import './60-panels/topic-content-editor.css';
 @import './60-panels/inline-text-editor.css';
 
 @import './70-config-modal/modal-shell.css';
@@ -492,7 +492,7 @@ styles/
 
 - 只移动样式，不改视觉效果。
 - class 名保持稳定，除非同步修改 JS 并有明确收益。
-- 配置弹框 CSS 优先拆，因为 `90-config-modal.css` 已接近 500 行。
+- 配置面板 CSS 优先拆，因为 `90-config-modal.css` 已接近 500 行。
 - `60-panels.css` 拆为主题编辑、长文本编辑、内联编辑三块。
 - `50-map.css` 拆为主题、连线、控件、拖拽状态四块。
 - `40-source.css` 拆为源码壳、编辑器、高亮三块。
@@ -512,7 +512,7 @@ styles/
 - 运行 `npm run ai:validate`。
 - 使用 `examples/regression-layout-gallery.zh-CN.md` 做一次人工回归。
 - 确认重构期间不新增功能。
-- 记录重点截图：普通思维导图、下挂展开、时间轴、鱼骨图、树形表格、配置弹框、主题编辑面板、源码模式、全屏。
+- 记录重点截图：普通思维导图、下挂展开、时间轴、鱼骨图、树形表格、配置面板、主题编辑面板、源码模式、全屏。
 
 验收：
 
@@ -584,7 +584,7 @@ src/config/runtimeConfigSave.js
 
 验收：
 
-- 配置弹框保存后配置区仍精简。
+- 配置面板保存后配置区仍精简。
 - 非思维导图布局不保存无意义连线线型。
 - 下挂展开可用性规则不变。
 - `npm test` 和 `npm run ai:validate` 通过。
@@ -695,7 +695,7 @@ src/renderer/viewport/canvasHeight.js
 ```text
 src/ui/topic-editor/TopicEditorPanel.js
 src/ui/topic-editor/TopicEditorFields.js
-src/ui/topic-editor/TopicTextEditor.js
+src/ui/topic-editor/TopicContentEditor.js
 src/ui/topic-editor/InlineTopicEditor.js
 src/ui/topic-editor/topicEditorState.js
 ```
@@ -833,7 +833,7 @@ src/renderer/viewport/panZoomController.js
 
 目标：
 
-配置弹框按 Tab 和字段组件拆分。
+配置面板按 Tab 和字段组件拆分。
 
 新增：
 
@@ -860,7 +860,7 @@ src/ui/config-modal/configModalState.js
 
 - 所有 Tab UI 和文案不变。
 - 默认值回填、继承置灰、自定义状态不变。
-- 全局默认配置弹框和单个代码块配置弹框行为一致。
+- 全局默认值配置面板和单个代码块配置面板行为一致。
 - 保存后配置区仍精简。
 - `npm run ai:validate` 通过。
 
@@ -891,7 +891,7 @@ src/ui/config-modal/configModalState.js
 验收：
 
 - `dist/styles.css` 构建结果包含全部样式。
-- 配置弹框、主题编辑面板、源码模式、导图 SVG 控件视觉不变。
+- 配置面板、主题编辑面板、源码模式、导图 SVG 控件视觉不变。
 - 深色/浅色主题不回退。
 - 移动端宽度检查通过。
 - Live Preview 样式不回退。
@@ -918,7 +918,7 @@ src/config/configSerialize.js
 
 - `mindConfig.js` 对外导出保持兼容。
 - 配置区解析和序列化测试通过。
-- 配置弹框保存、全局默认保存、代码块配置裁剪不变。
+- 配置面板保存、全局默认保存、代码块配置裁剪不变。
 - `npm run ai:validate` 通过。
 
 风险：中低。
@@ -1055,7 +1055,7 @@ src/layout/treeTableLayout.js
 - 曲线、直线、折线；下挂展开只在折线生效。
 - 源码模式/导图模式切换。
 - 主题编辑：颜色、图标、字体、最大宽度、多行文本、取消恢复。
-- 配置弹框：全局默认、代码块覆盖、默认值置灰、保存裁剪。
+- 配置面板：全局默认、代码块覆盖、默认值置灰、保存裁剪。
 - 下挂展开按钮避让。
 - 时间轴、鱼骨图、树形表格。
 - 阅读视图、Live Preview、深色主题、浅色主题。

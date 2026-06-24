@@ -1,6 +1,6 @@
 /*
  * 文件作用：
- * 主题属性编辑面板方法集合，负责面板外壳、字段组合、保存/取消和拖拽。
+ * 主题编辑面板方法集合，负责面板外壳、字段组合、保存/取消和拖拽。
  *
  * 实现逻辑：
  * 字段值写入主题属性后走统一保存链路，取消时恢复打开前快照。
@@ -11,6 +11,7 @@
 
 import {
   Notice,
+  DEFAULT_MIND_CONFIG,
   FONT_LINE_HEIGHT_MAX,
   FONT_LINE_HEIGHT_MIN,
   FONT_SIZE_MAX,
@@ -35,10 +36,11 @@ export const topicEditorPanelMethods = {
     titleEl.className = 'yonxao-mindmap-topic-editor-title';
     titleEl.textContent = this.t('topicEditor.title');
 
-    const textInput = document.createElement('textarea');
-    textInput.className = 'yonxao-mindmap-topic-editor-input yonxao-mindmap-topic-editor-textarea';
-    textInput.placeholder = this.t('topicEditor.text');
-    const textField = this.createTopicEditorTextField(textInput);
+    const contentInput = document.createElement('textarea');
+    contentInput.className =
+      'yonxao-mindmap-topic-editor-input yonxao-mindmap-topic-editor-textarea';
+    contentInput.placeholder = this.t('topicEditor.content');
+    const contentField = this.createTopicEditorContentField(contentInput);
 
     const colorField = this.createTopicEditorColorField();
     const colorInput = document.createElement('input');
@@ -55,25 +57,25 @@ export const topicEditorPanelMethods = {
       min: FONT_SIZE_MIN,
       max: FONT_SIZE_MAX,
       step: 1,
-      placeholder: '16',
+      placeholder: DEFAULT_MIND_CONFIG.font.size,
     });
     const fontWeightInput = this.createTopicEditorNumberInput({
       min: FONT_WEIGHT_MIN,
       max: FONT_WEIGHT_MAX,
       step: 100,
-      placeholder: '400',
+      placeholder: DEFAULT_MIND_CONFIG.font.weight,
     });
     const lineHeightInput = this.createTopicEditorNumberInput({
       min: FONT_LINE_HEIGHT_MIN,
       max: FONT_LINE_HEIGHT_MAX,
       step: 1,
-      placeholder: '20',
+      placeholder: DEFAULT_MIND_CONFIG.font.lineHeight,
     });
     const maxWidthInput = this.createTopicEditorNumberInput({
       min: TOPIC_MAX_WIDTH_MIN,
       max: TOPIC_MAX_WIDTH_MAX,
       step: 1,
-      placeholder: '240',
+      placeholder: DEFAULT_MIND_CONFIG.topic.maxWidth,
     });
 
     const actions = document.createElement('div');
@@ -90,9 +92,12 @@ export const topicEditorPanelMethods = {
     actions.appendChild(cancelButton);
 
     this.topicEditorEl.appendChild(titleEl);
-    this.topicEditorEl.appendChild(textField);
-    this.topicEditorEl.appendChild(createLabeledField(this.t('topicEditor.color'), colorField));
+    this.topicEditorEl.appendChild(contentField);
     this.topicEditorEl.appendChild(createLabeledField(this.t('topicEditor.icon'), iconPicker));
+    this.topicEditorEl.appendChild(createLabeledField(this.t('topicEditor.color'), colorField));
+    this.topicEditorEl.appendChild(
+      createLabeledField(this.t('topicEditor.maxWidth'), maxWidthInput)
+    );
     this.topicEditorEl.appendChild(
       createLabeledField(this.t('topicEditor.fontFamily'), fontFamilyField)
     );
@@ -105,14 +110,11 @@ export const topicEditorPanelMethods = {
     this.topicEditorEl.appendChild(
       createLabeledField(this.t('topicEditor.lineHeight'), lineHeightInput)
     );
-    this.topicEditorEl.appendChild(
-      createLabeledField(this.t('topicEditor.maxWidth'), maxWidthInput)
-    );
     this.topicEditorEl.appendChild(actions);
     document.body.appendChild(this.topicEditorEl);
 
     this.topicEditorFields = {
-      text: textInput,
+      content: contentInput,
       color: colorInput,
       colorField,
       icon: iconInput,
@@ -123,6 +125,7 @@ export const topicEditorPanelMethods = {
       fontWeight: fontWeightInput,
       lineHeight: lineHeightInput,
       maxWidth: maxWidthInput,
+      saveButton,
     };
     this.installTopicEditorInheritanceEvents();
 
@@ -157,7 +160,7 @@ export const topicEditorPanelMethods = {
       this.finishTopicEditorDrag(event);
     });
 
-    this.registerDomEvent(textInput, 'keydown', (event) => {
+    this.registerDomEvent(contentInput, 'keydown', (event) => {
       if (event.key === 'Enter' && (event.metaKey || event.ctrlKey)) {
         event.preventDefault();
         Promise.resolve(this.saveTopicEditor()).catch((error) => {
@@ -165,8 +168,19 @@ export const topicEditorPanelMethods = {
         });
       }
     });
+    this.registerDomEvent(this.topicEditorEl, 'keydown', (event) => {
+      if (event.key !== 'Escape') return;
+      event.preventDefault();
+      this.closeTopicEditor();
+    });
+    this.registerDomEvent(this.topicEditorEl, 'input', () => {
+      this.updateTopicEditorActionState();
+    });
+    this.registerDomEvent(this.topicEditorEl, 'change', () => {
+      this.updateTopicEditorActionState();
+    });
 
-    this.createTopicTextEditor();
+    this.createTopicContentEditor();
   },
 
   installTopicEditorInheritanceEvents() {
@@ -179,16 +193,20 @@ export const topicEditorPanelMethods = {
       ['lineHeight', fields.lineHeight],
       ['maxWidth', fields.maxWidth],
     ]) {
+      input._yonxaoMindmapTopicEditorKey = key;
       this.registerDomEvent(input, 'input', () => {
-        this.setTopicEditorCustomState(input, input.value !== '');
+        this.setTopicEditorCustomState(input, this.isTopicEditorExplicitValue(key, input.value));
+        this.updateTopicEditorActionState();
       });
       this.registerDomEvent(input, 'blur', () => {
         this.restoreTopicEditorInheritedValue(key);
+        this.updateTopicEditorActionState();
       });
     }
 
     this.registerDomEvent(fields.colorField._textInput, 'blur', () => {
       this.restoreTopicEditorInheritedValue('color');
+      this.updateTopicEditorActionState();
     });
   },
 
@@ -201,8 +219,9 @@ export const topicEditorPanelMethods = {
     this.closeInlineTextEditor(false);
     this.editingTopicId = topic.id;
     this.topicEditorInheritedValues = this.resolveTopicEditorInheritedValues(topic);
+    this.updateTopicEditorInheritedPlaceholders();
     const attributes = topic.attributes || {};
-    this.topicEditorFields.text.value = topic.text || '';
+    this.topicEditorFields.content.value = topic.text || '';
     this.setTopicEditorColorValue(attributes.color || this.topicEditorInheritedValues.color, {
       custom: attributes.color !== undefined,
     });
@@ -237,8 +256,10 @@ export const topicEditorPanelMethods = {
     );
     this.topicEditorEl.hidden = false;
     this.positionTopicEditor(topic);
-    this.topicEditorFields.text.focus();
-    this.topicEditorFields.text.select();
+    this.captureTopicEditorFormSnapshot();
+    this.updateTopicEditorActionState();
+    this.topicEditorFields.content.focus();
+    this.topicEditorFields.content.select();
   },
 
   positionTopicEditor(topic) {
@@ -334,7 +355,8 @@ export const topicEditorPanelMethods = {
   closeTopicEditor() {
     this.editingTopicId = null;
     this.topicEditorInheritedValues = null;
-    this.closeTopicTextEditor(false);
+    this.topicEditorFormSnapshot = null;
+    this.closeTopicContentEditor(false);
     if (this.topicEditorEl) {
       this.topicEditorEl.hidden = true;
       this.topicEditorEl.style.left = '';
@@ -342,9 +364,9 @@ export const topicEditorPanelMethods = {
       this.topicEditorEl.classList.remove('is-dragging');
     }
     this.topicEditorDragState = null;
-    if (this.topicEditorFields?.text) {
-      this.topicEditorFields.text.style.width = '';
-      this.topicEditorFields.text.style.height = '';
+    if (this.topicEditorFields?.content) {
+      this.topicEditorFields.content.style.width = '';
+      this.topicEditorFields.content.style.height = '';
     }
     if (this.topicEditorFields?.iconPicker?._menu) {
       this.topicEditorFields.iconPicker._menu.hidden = true;

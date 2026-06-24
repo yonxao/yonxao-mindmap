@@ -114,8 +114,8 @@ export const runtimeConfigSaveMethods = {
   },
 
   pruneDocumentConfigDefaults(config) {
-    const globalDefaultConfig = this.plugin?.getGlobalDefaultConfig?.() || {};
-    const normalizedGlobal = normalizeMindConfig(globalDefaultConfig);
+    const globalDefaultValueConfig = this.plugin?.getGlobalDefaultValueConfig?.() || {};
+    const normalizedGlobal = normalizeMindConfig(globalDefaultValueConfig);
     const normalizedDocument = normalizeMindConfig(this.buildEffectiveRawConfig(config));
     let next = config || {};
 
@@ -286,9 +286,9 @@ export const runtimeConfigSaveMethods = {
   },
 
   buildEffectiveRawConfig(documentConfig = this.rawConfig) {
-    const globalDefaultConfig = this.plugin?.getGlobalDefaultConfig?.() || {};
+    const globalDefaultValueConfig = this.plugin?.getGlobalDefaultValueConfig?.() || {};
     return mergeMindConfigObjects(
-      canonicalizeMindConfig(globalDefaultConfig),
+      canonicalizeMindConfig(globalDefaultValueConfig),
       canonicalizeMindConfig(documentConfig || {})
     );
   },
@@ -297,7 +297,7 @@ export const runtimeConfigSaveMethods = {
     this.config = normalizeMindConfig(this.buildEffectiveRawConfig(this.rawConfig));
   },
 
-  applyGlobalDefaultConfig() {
+  applyGlobalDefaultValueConfig() {
     this.refreshNormalizedConfig();
     this.applyRuntimeConfigToView();
 

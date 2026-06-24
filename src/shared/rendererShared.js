@@ -9,6 +9,8 @@
  * renderer/*、ui/*、model/* -> shared/rendererShared.js -> config/layout/parser/utils 等基础模块。
  */
 
+import { BUTTON_COLOR_PRESETS, DEFAULT_BUTTON_COLOR } from '../config/mindConfig.js';
+
 export { Menu, Notice, setIcon } from 'obsidian';
 
 export {
@@ -21,10 +23,14 @@ export {
   TOPIC_PADDING_X,
   LEVEL_GAP,
 } from '../constants.js';
+
 export {
   canonicalizeMindConfig,
+  BUTTON_COLOR_PRESETS,
   CONNECTOR_STYLE_CONFIGURABLE_LAYOUTS,
   CUSTOM_FONT_VALUE,
+  DEFAULT_BUTTON_COLOR,
+  DEFAULT_MIND_CONFIG,
   deleteMindConfigPath,
   FONT_LINE_HEIGHT_MAX,
   FONT_LINE_HEIGHT_MIN,
@@ -75,19 +81,9 @@ export { clamp } from '../utils/math.js';
 export { svg } from '../utils/svg.js';
 export { normalizeTopicTextForStorage } from '../utils/text.js';
 
-// 主题编辑面板颜色快捷选项；只影响 UI 预设，不限制用户手写任意合法颜色。
-export const TOPIC_EDITOR_COLOR_SWATCHES = Object.freeze([
-  '#ef4444',
-  '#f97316',
-  '#f59e0b',
-  '#22c55e',
-  '#14b8a6',
-  '#06b6d4',
-  '#3b82f6',
-  '#8b5cf6',
-  '#ec4899',
-  '#64748b',
-]);
+// 主题编辑面板颜色快捷选项；复用配置面板的预设，不限制用户手写任意合法颜色。
+export const TOPIC_EDITOR_COLOR_SWATCHES = BUTTON_COLOR_PRESETS;
+export const TOPIC_EDITOR_DEFAULT_COLOR = DEFAULT_BUTTON_COLOR;
 
 // 保存文档配置时可与默认配置比较并裁剪的路径集合，用于保持 yxmm 配置区简洁。
 export const DOCUMENT_CONFIG_DEFAULT_PRUNE_PATHS = Object.freeze([

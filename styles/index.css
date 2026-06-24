@@ -29,7 +29,7 @@
 @import './50-map/drag-drop.css';
 
 @import './60-panels/topic-editor.css';
-@import './60-panels/topic-text-editor.css';
+@import './60-panels/topic-content-editor.css';
 @import './60-panels/inline-text-editor.css';
 
 @import './70-config-modal/modal-shell.css';

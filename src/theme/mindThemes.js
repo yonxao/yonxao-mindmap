@@ -20,7 +20,7 @@ export const DEFAULT_THEME_NAME = 'default';
  * 主题选择列表。
  *
  * 关键点：
- * label 写中文是因为当前配置弹框主要面向中文使用者；README 中会同步英文说明。
+ * label 写中文是因为当前配置面板主要面向中文使用者；README 中会同步英文说明。
  */
 export const MIND_THEME_OPTIONS = Object.freeze([
   ['default', '默认：跟随 Obsidian'],

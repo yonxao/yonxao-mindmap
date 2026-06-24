@@ -20,11 +20,12 @@ import {
   isPresetFontValue,
   normalizeFontFamilyInput,
   svg,
+  TOPIC_EDITOR_DEFAULT_COLOR,
   TOPIC_EDITOR_COLOR_SWATCHES,
 } from '../../shared/rendererShared.js';
 
 export const topicEditorFieldMethods = {
-  createTopicEditorTextField(textInput) {
+  createTopicEditorContentField(contentInput) {
     const field = document.createElement('div');
     field.className = 'yonxao-mindmap-topic-editor-field yonxao-mindmap-topic-editor-text-control';
 
@@ -32,7 +33,7 @@ export const topicEditorFieldMethods = {
     labelColumn.className = 'yonxao-mindmap-topic-editor-text-label';
 
     const labelText = document.createElement('span');
-    labelText.textContent = this.t('topicEditor.text');
+    labelText.textContent = this.t('topicEditor.content');
 
     const expandButton = document.createElement('button');
     expandButton.type = 'button';
@@ -51,14 +52,19 @@ export const topicEditorFieldMethods = {
     expandButton.appendChild(expandButtonText);
 
     labelColumn.appendChild(labelText);
-    labelColumn.appendChild(expandButton);
+
+    const inputColumn = document.createElement('div');
+    inputColumn.className = 'yonxao-mindmap-topic-editor-text-input-column';
+    inputColumn.appendChild(contentInput);
+
     field.appendChild(labelColumn);
-    field.appendChild(textInput);
+    field.appendChild(inputColumn);
+    field.appendChild(expandButton);
 
     this.registerDomEvent(expandButton, 'click', (event) => {
       event.preventDefault();
       event.stopPropagation();
-      this.openTopicTextEditor();
+      this.openTopicContentEditor();
     });
 
     return field;
@@ -93,13 +99,18 @@ export const topicEditorFieldMethods = {
         this.setTopicEditorFontFamilyValue(this.topicEditorInheritedValues?.fontFamily || '', {
           custom: false,
         });
+        this.updateTopicEditorActionState();
         return;
       }
 
       if (select.value === CUSTOM_FONT_VALUE) {
         customInput.hidden = false;
         valueInput.value = normalizeFontFamilyInput(customInput.value);
-        this.setTopicEditorCustomState(field, true);
+        this.setTopicEditorCustomState(
+          field,
+          this.isTopicEditorExplicitValue('fontFamily', valueInput.value)
+        );
+        this.updateTopicEditorActionState();
         customInput.focus();
         return;
       }
@@ -108,12 +119,20 @@ export const topicEditorFieldMethods = {
       customInput.value = '';
       customInput.setCustomValidity('');
       valueInput.value = select.value;
-      this.setTopicEditorCustomState(field, true);
+      this.setTopicEditorCustomState(
+        field,
+        this.isTopicEditorExplicitValue('fontFamily', select.value)
+      );
+      this.updateTopicEditorActionState();
     });
 
     this.registerDomEvent(customInput, 'input', () => {
       const nextValue = normalizeFontFamilyInput(customInput.value);
-      this.setTopicEditorCustomState(field, nextValue !== '');
+      this.setTopicEditorCustomState(
+        field,
+        this.isTopicEditorExplicitValue('fontFamily', nextValue)
+      );
+      this.updateTopicEditorActionState();
       if (!nextValue) {
         customInput.setCustomValidity('');
         valueInput.value = '';
@@ -133,6 +152,7 @@ export const topicEditorFieldMethods = {
       this.setTopicEditorFontFamilyValue(this.topicEditorInheritedValues?.fontFamily || '', {
         custom: false,
       });
+      this.updateTopicEditorActionState();
     });
 
     return field;
@@ -163,7 +183,10 @@ export const topicEditorFieldMethods = {
     const select = fields.fontFamilyField._select;
     const customInput = fields.fontFamilyField._customInput;
     fields.fontFamily.value = fontFamily;
-    this.setTopicEditorCustomState(fields.fontFamilyField, Boolean(options.custom));
+    this.setTopicEditorCustomState(
+      fields.fontFamilyField,
+      Boolean(options.custom) && this.isTopicEditorExplicitValue('fontFamily', fontFamily)
+    );
 
     if (!fontFamily) {
       select.value = '';
@@ -207,12 +230,12 @@ export const topicEditorFieldMethods = {
     const input = document.createElement('input');
     input.type = 'text';
     input.className = 'yonxao-mindmap-topic-editor-input';
-    input.placeholder = '#3b82f6';
+    input.placeholder = TOPIC_EDITOR_DEFAULT_COLOR;
 
     const picker = document.createElement('input');
     picker.type = 'color';
     picker.className = 'yonxao-mindmap-topic-editor-color-picker';
-    picker.value = TOPIC_EDITOR_COLOR_SWATCHES[6];
+    picker.value = TOPIC_EDITOR_DEFAULT_COLOR;
 
     const swatches = document.createElement('div');
     swatches.className = 'yonxao-mindmap-topic-editor-swatches';
@@ -235,17 +258,21 @@ export const topicEditorFieldMethods = {
     this.registerDomEvent(input, 'input', () => {
       this.setTopicEditorColorValue(input.value, {
         updateText: false,
-        custom: input.value.trim() !== '',
+        custom: this.isTopicEditorExplicitValue('color', input.value),
       });
     });
     this.registerDomEvent(picker, 'input', () => {
-      this.setTopicEditorColorValue(picker.value, { custom: true });
+      this.setTopicEditorColorValue(picker.value, {
+        custom: this.isTopicEditorExplicitValue('color', picker.value),
+      });
     });
     this.registerDomEvent(swatches, 'click', (event) => {
       const swatch = event.target?.closest?.('.yonxao-mindmap-topic-editor-swatch');
       if (!swatch) return;
       event.preventDefault();
-      this.setTopicEditorColorValue(swatch.dataset.color || '', { custom: true });
+      this.setTopicEditorColorValue(swatch.dataset.color || '', {
+        custom: this.isTopicEditorExplicitValue('color', swatch.dataset.color || ''),
+      });
     });
 
     return field;
@@ -257,7 +284,10 @@ export const topicEditorFieldMethods = {
 
     const text = String(value || '').trim();
     fields.color.value = text;
-    this.setTopicEditorCustomState(fields.colorField, Boolean(options.custom));
+    this.setTopicEditorCustomState(
+      fields.colorField,
+      Boolean(options.custom) && this.isTopicEditorExplicitValue('color', text)
+    );
     if (options.updateText !== false) {
       fields.colorField._textInput.value = text;
     }
@@ -265,6 +295,7 @@ export const topicEditorFieldMethods = {
     if (/^#[0-9a-f]{6}$/i.test(text)) {
       fields.colorField._colorPicker.value = text;
     }
+    this.updateTopicEditorActionState();
   },
 
   createTopicEditorIconPicker() {
@@ -310,8 +341,9 @@ export const topicEditorFieldMethods = {
       event.preventDefault();
       event.stopPropagation();
       this.setTopicEditorIconValue(option.dataset.icon || '', {
-        custom: Boolean(option.dataset.icon),
+        custom: this.isTopicEditorExplicitValue('icon', option.dataset.icon || ''),
       });
+      this.updateTopicEditorActionState();
       menu.hidden = true;
       button.setAttribute('aria-expanded', 'false');
     });
@@ -363,13 +395,17 @@ export const topicEditorFieldMethods = {
 
     const iconName = normalizeIcon(value);
     fields.icon.value = iconName;
-    this.setTopicEditorCustomState(fields.iconPicker, Boolean(options.custom));
+    this.setTopicEditorCustomState(
+      fields.iconPicker,
+      Boolean(options.custom) && this.isTopicEditorExplicitValue('icon', iconName)
+    );
     this.renderTopicEditorIconOption(fields.iconPicker._button, iconName);
     for (const option of fields.iconPicker._menu.querySelectorAll(
       '.yonxao-mindmap-topic-editor-icon-option'
     )) {
       option.setAttribute('aria-selected', String((option.dataset.icon || '') === iconName));
     }
+    this.updateTopicEditorActionState();
   },
 
   createPanelButton(label, onClick) {

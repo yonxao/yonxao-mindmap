@@ -1,6 +1,6 @@
 /*
  * 文件作用：
- * 配置弹框布局页方法集合，负责布局类型、连线线型、下挂展开和主题最大宽度。
+ * 配置面板布局页方法集合，负责布局类型、连线线型、下挂展开和主题最大宽度。
  *
  * 实现逻辑：
  * 布局类型变化会影响连线和下挂展开是否可编辑，因此相关字段变更后立即重绘布局页。
@@ -9,7 +9,7 @@
  * ConfigModal.render() -> layoutTabMethods -> configModalRules/configFields。
  */
 
-import { setConfigValue, TOPIC_MAX_WIDTH_MAX, TOPIC_MAX_WIDTH_MIN } from './configModalShared.js';
+import { TOPIC_MAX_WIDTH_MAX, TOPIC_MAX_WIDTH_MIN } from './configModalShared.js';
 
 export const layoutTabMethods = {
   renderLayoutTab(normalized) {
@@ -48,10 +48,18 @@ export const layoutTabMethods = {
         this.branchExpansionOptions()
       );
       branchExpansionSelect.addEventListener('change', () => {
-        setConfigValue(this.draftConfig, ['layout', 'type'], normalized.layout);
+        this.setConfigValueOrDeleteInherited(
+          ['layout', 'type'],
+          normalized.layout,
+          layoutSelect._yonxaoMindmapInheritedValue
+        );
         this.syncInheritedValueStyle(layoutSelect._yonxaoMindmapControlEl, ['layout', 'type']);
         if (!this.isConnectorStyleConfigurable(normalized.layout)) return;
-        setConfigValue(this.draftConfig, ['layout', 'connectorStyle'], 'elbow');
+        this.setConfigValueOrDeleteInherited(
+          ['layout', 'connectorStyle'],
+          'elbow',
+          connectorSelect._yonxaoMindmapInheritedValue
+        );
         this.syncInheritedValueStyle(connectorSelect._yonxaoMindmapControlEl, [
           'layout',
           'connectorStyle',

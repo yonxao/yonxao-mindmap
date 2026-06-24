@@ -3,7 +3,7 @@
  * 这里定义 Obsidian 偏好设置中的第三方插件设置页。
  *
  * 当前职责：
- * - 显示 yonxao-mindmap 的全局默认配置入口。
+ * - 显示 yonxao-mindmap 的全局默认值配置面板入口。
  * - 复用 ConfigModal 提供下拉框、输入框和高级 YAML 编辑能力。
  * - 保存后写入 Obsidian 插件 data.json，并通知当前已渲染的导图刷新默认配置。
  *
@@ -54,8 +54,8 @@ export class YonxaoMindmapSettingTab extends PluginSettingTab {
     });
 
     this.renderLanguageSetting(containerEl);
-    this.renderGlobalDefaultConfigSetting(containerEl);
-    this.renderGlobalDefaultConfigSummary(containerEl);
+    this.renderGlobalDefaultValueConfigPanelSetting(containerEl);
+    this.renderGlobalDefaultValueConfigSummary(containerEl);
   }
 
   /*
@@ -84,40 +84,42 @@ export class YonxaoMindmapSettingTab extends PluginSettingTab {
 
   /*
    * 作用：
-   * 创建“编辑全局默认配置”和“恢复内置默认值”两个主要操作。
+   * 创建“编辑全局默认值配置面板”和“恢复内置默认值”两个主要操作。
    */
-  renderGlobalDefaultConfigSetting(containerEl) {
+  renderGlobalDefaultValueConfigPanelSetting(containerEl) {
     new Setting(containerEl)
-      .setName(this.t('settings.defaultConfig.name'))
-      .setDesc(this.t('settings.defaultConfig.desc'))
+      .setName(this.t('settings.globalDefaultValueConfigPanel.name'))
+      .setDesc(this.t('settings.globalDefaultValueConfigPanel.desc'))
       .addButton((button) => {
-        button.setButtonText(this.t('settings.defaultConfig.edit')).onClick(() => {
-          this.openGlobalDefaultConfigModal();
+        button.setButtonText(this.t('settings.globalDefaultValueConfigPanel.edit')).onClick(() => {
+          this.openGlobalDefaultValueConfigPanel();
         });
       })
       .addButton((button) => {
-        button.setButtonText(this.t('settings.defaultConfig.reset')).onClick(async () => {
-          await this.yonxaoPlugin.updateGlobalDefaultConfig({});
-          new Notice(this.t('settings.defaultConfig.resetNotice'));
-          this.display();
-        });
+        button
+          .setButtonText(this.t('settings.globalDefaultValueConfigPanel.reset'))
+          .onClick(async () => {
+            await this.yonxaoPlugin.updateGlobalDefaultValueConfig({});
+            new Notice(this.t('settings.globalDefaultValueConfigPanel.resetNotice'));
+            this.display();
+          });
       });
   }
 
   /*
    * 作用：
-   * 打开复用的可视化配置弹框，并把保存结果写入插件 settings。
+   * 打开复用的全局默认值配置面板，并把保存结果写入插件 settings。
    */
-  openGlobalDefaultConfigModal() {
+  openGlobalDefaultValueConfigPanel() {
     const modal = new ConfigModal(this.app, {
-      title: this.t('configModal.globalTitle'),
+      title: this.t('configModal.globalDefaultValueTitle'),
       t: this.t.bind(this),
-      rawConfig: this.yonxaoPlugin.getGlobalDefaultConfig(),
+      rawConfig: this.yonxaoPlugin.getGlobalDefaultValueConfig(),
       onApply: async (nextConfig) => {
-        const sanitizedConfig = this.sanitizeGlobalDefaultConfig(nextConfig);
-        await this.yonxaoPlugin.updateGlobalDefaultConfig(sanitizedConfig);
+        const sanitizedConfig = this.sanitizeGlobalDefaultValueConfig(nextConfig);
+        await this.yonxaoPlugin.updateGlobalDefaultValueConfig(sanitizedConfig);
         this.display();
-        new Notice(this.t('settings.defaultConfig.savedNotice'));
+        new Notice(this.t('settings.globalDefaultValueConfigPanel.savedNotice'));
         return true;
       },
     });
@@ -132,21 +134,21 @@ export class YonxaoMindmapSettingTab extends PluginSettingTab {
    * view.mode 是单个代码块当前会话的显示状态，不应该成为全局默认值。
    * 其余字段保持原样，让用户可以用高级 YAML 自己填写插件支持的配置项。
    */
-  sanitizeGlobalDefaultConfig(config) {
+  sanitizeGlobalDefaultValueConfig(config) {
     return deleteMindConfigPath(canonicalizeMindConfig(config || {}), ['view', 'mode']);
   }
 
   /*
    * 作用：
-   * 展示当前全局默认配置的简短摘要，方便用户不打开弹框也能知道当前状态。
+   * 展示当前全局默认值配置的简短摘要，方便用户不打开面板也能知道当前状态。
    */
-  renderGlobalDefaultConfigSummary(containerEl) {
-    const rawConfig = this.yonxaoPlugin.getGlobalDefaultConfig();
+  renderGlobalDefaultValueConfigSummary(containerEl) {
+    const rawConfig = this.yonxaoPlugin.getGlobalDefaultValueConfig();
     const normalized = normalizeMindConfig(rawConfig);
     const summaryEl = containerEl.createDiv({ cls: 'setting-item-description' });
 
     if (!hasMeaningfulConfig(rawConfig)) {
-      summaryEl.setText(this.t('settings.defaultConfig.empty'));
+      summaryEl.setText(this.t('settings.globalDefaultValueConfigPanel.empty'));
       return;
     }
 
@@ -154,7 +156,9 @@ export class YonxaoMindmapSettingTab extends PluginSettingTab {
      * 摘要只展示最常用的几项。
      * 具体完整配置仍然以弹框的“高级”页为准，避免设置页变成第二套编辑器。
      */
-    summaryEl.createEl('p', { text: this.t('settings.defaultConfig.summaryTitle') });
+    summaryEl.createEl('p', {
+      text: this.t('settings.globalDefaultValueConfigPanel.summaryTitle'),
+    });
     const listEl = summaryEl.createEl('ul');
     const connectorSummary = isConnectorStyleConfigurableLayout(normalized.layout)
       ? normalized.connector.style

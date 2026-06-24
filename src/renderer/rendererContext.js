@@ -36,11 +36,11 @@ export const rendererContextMethods = {
     this.topicEditorEl = null;
     this.topicEditorFields = null;
     this.topicEditorInheritedValues = null;
-    if (this.topicTextEditorEl) {
-      this.topicTextEditorEl.remove();
+    if (this.topicContentEditorEl) {
+      this.topicContentEditorEl.remove();
     }
-    this.topicTextEditorEl = null;
-    this.topicTextEditorInput = null;
+    this.topicContentEditorEl = null;
+    this.topicContentEditorInput = null;
     if (this.pendingToolbarHideTimer) {
       window.clearTimeout(this.pendingToolbarHideTimer);
       this.pendingToolbarHideTimer = null;
@@ -283,7 +283,7 @@ export const rendererContextMethods = {
   openConfigModal() {
     const modal = new ConfigModal(this.plugin.app, {
       t: this.t.bind(this),
-      baseConfig: this.plugin?.getGlobalDefaultConfig?.() || {},
+      baseConfig: this.plugin?.getGlobalDefaultValueConfig?.() || {},
       rawConfig: this.documentConfigForSave(this.rawConfig),
       onApply: async (nextConfig) => this.applyConfigFromModal(nextConfig),
     });

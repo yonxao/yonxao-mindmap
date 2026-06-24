@@ -3,7 +3,7 @@
  * 为新增语种生成当前主要界面使用的文案。
  *
  * 说明：
- * 这批语言先覆盖设置页、配置弹框、工具栏、主题编辑和右键菜单等主要入口。
+ * 这批语言先覆盖设置页、配置面板、工具栏、主题编辑和右键菜单等主要入口。
  * 未覆盖的长说明会继续回退到英文，避免出现 undefined。
  */
 
@@ -12,12 +12,12 @@ export function createAdditionalLocale(text) {
     'settings.description': text.settingsDescription,
     'settings.language.name': text.language,
     'settings.language.desc': text.languageDesc,
-    'settings.defaultConfig.name': text.globalDefaultConfig,
-    'settings.defaultConfig.desc': text.globalDefaultDesc,
-    'settings.defaultConfig.edit': text.editDefaults,
-    'settings.defaultConfig.reset': text.resetDefaults,
-    'settings.defaultConfig.empty': text.noDefaults,
-    'settings.defaultConfig.summaryTitle': text.summaryTitle,
+    'settings.globalDefaultValueConfigPanel.name': text.globalDefaultValueConfigPanel,
+    'settings.globalDefaultValueConfigPanel.desc': text.globalDefaultDesc,
+    'settings.globalDefaultValueConfigPanel.edit': text.editDefaults,
+    'settings.globalDefaultValueConfigPanel.reset': text.resetDefaults,
+    'settings.globalDefaultValueConfigPanel.empty': text.noDefaults,
+    'settings.globalDefaultValueConfigPanel.summaryTitle': text.summaryTitle,
     'settings.summary.theme': text.theme,
     'settings.summary.layout': text.layout,
     'settings.summary.connector': text.connector,
@@ -55,12 +55,12 @@ export function createAdditionalLocale(text) {
     'notice.imageClipboardFocusRequired':
       text.imageClipboardFocusRequired ||
       'yonxao-mindmap: Please click the mind map first, then copy the image again.',
-    'configModal.title': text.config,
-    'configModal.globalTitle': text.globalDefaultConfig,
+    'configModal.title': text.configPanel || text.config,
+    'configModal.globalDefaultValueTitle': text.globalDefaultValueConfigPanel,
     'configModal.info.label': text.configRules || 'Config rules',
     'configModal.info.tooltip':
       text.configRulesTooltip ||
-      'Config priority:\nTopic attributes > Code block config > Plugin global default config > Plugin built-in defaults\n\nColor priority:\nTopic attribute color > Default topic color > Theme scheme\n\nSave cleanup logic:\nWhen a config value is the same as the effective default value from the plugin global default config or plugin built-in defaults, it is removed to keep the config concise.',
+      'Config priority:\nTopic attributes > Code block config > Plugin global default value config > Plugin built-in defaults\n\nColor priority:\nTopic attribute color > Default topic color > Theme scheme\n\nSave cleanup logic:\nWhen a config value is the same as the effective default value from the plugin global default value config or plugin built-in defaults, it is removed to keep the config concise.',
     'configModal.tabs.basic': text.basic,
     'configModal.tabs.theme': text.theme,
     'configModal.tabs.layout': text.layout,
@@ -129,13 +129,13 @@ export function createAdditionalLocale(text) {
     'configModal.connector.elbow': text.elbow,
     'configModal.branchExpansion.side': text.branchExpansionSide || 'Side expansion',
     'configModal.branchExpansion.hanging': text.branchExpansionHanging || 'Hanging expansion',
-    'topicEditor.title': text.editTopic,
-    'topicEditor.text': text.topicText,
+    'topicEditor.title': text.topicEditPanel || 'Topic edit panel',
+    'topicEditor.content': text.content || 'Content',
     'topicEditor.expandText': text.expandText || 'Open large text editor',
-    'topicEditor.textEditorTitle': text.editTopicText || text.editTopic || 'Edit topic text',
+    'topicEditor.contentEditorTitle': text.editContent || 'Edit content',
     'topicEditor.applyText': text.apply || 'Apply',
-    'topicEditor.color': text.topicColor,
-    'topicEditor.icon': text.topicIcon,
+    'topicEditor.color': text.color || 'Topic color',
+    'topicEditor.icon': text.icon || 'Topic icon',
     'topicEditor.noIcon': text.noIcon || 'No icon',
     'topicEditor.fontFamily': text.font || 'Font',
     'topicEditor.fontSize': text.topicFontSize || 'Font size',
@@ -146,15 +146,16 @@ export function createAdditionalLocale(text) {
     'topicEditor.fontFamily.invalid':
       text.fontFamilyInvalid ||
       "Please enter a valid CSS font-family list, for example: 'SimSun', 'Songti SC', serif",
+    'topicEditor.editContentAria': text.editContent || 'Edit content',
     'topicEditor.save': text.save,
     'topicEditor.addSubtopic': text.addSubtopic,
     'topicEditor.delete': text.delete,
     'topicEditor.cancel': text.cancel,
     'topicButton.addSubtopic': text.addSubtopic,
-    'topicButton.editTopic': text.editTopic,
-    'contextMenu.renameTopic': text.editTopic || text.renameTopic,
-    'contextMenu.editTopicAttributes': text.editTopicAttributes,
-    'contextMenu.copyTopicText': text.copyTopicText,
+    'topicButton.editTopic': text.edit || 'Edit',
+    'contextMenu.editTopic': text.edit || 'Edit',
+    'contextMenu.topicEditPanel': text.topicEditPanel || 'Topic edit panel',
+    'contextMenu.copyTopicContent': text.copyTopicContent,
     'contextMenu.copySubtreeBody': text.copySubtreeBody || 'Copy subtree',
     'contextMenu.copyIndentedSubtree': text.copyIndentedSubtree || 'Copy indented subtree',
     'contextMenu.addSubtopic': text.addSubtopic,

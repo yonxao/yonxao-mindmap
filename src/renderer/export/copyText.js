@@ -1,6 +1,6 @@
 /*
  * 文件作用：
- * 文本复制方法集合，负责复制主题文本、子树正文、完整正文和配置区。
+ * 文本复制方法集合，负责复制主题内容、子树正文、完整正文和配置区。
  *
  * 实现逻辑：
  * 复制前根据当前主题或整棵树序列化为纯文本，并通过 Obsidian Notice 反馈结果。
@@ -12,7 +12,7 @@
 import { Notice } from '../../shared/rendererShared.js';
 
 export const copyTextMethods = {
-  async copyTopicText(topic) {
+  async copyTopicContent(topic) {
     if (!topic) return false;
 
     await navigator.clipboard.writeText(topic.text || '');

@@ -1,6 +1,6 @@
 /*
  * 文件作用：
- * 配置弹框字段工厂方法集合，负责数字、下拉、开关、颜色、字体和帮助文案控件。
+ * 配置面板字段工厂方法集合，负责数字、下拉、开关、颜色、字体和帮助文案控件。
  *
  * 实现逻辑：
  * 字段工厂统一处理路径读写、继承态样式、禁用态样式和 input/change 事件。
@@ -16,12 +16,24 @@ import {
   numberFromInput,
   setConfigValue,
   BUTTON_COLOR_PRESETS,
+  DEFAULT_BUTTON_COLOR,
   DEFAULT_FONT_FAMILY,
   CUSTOM_FONT_VALUE,
   getLocalizedFontFamilyGroups,
   isValidFontFamilyInput,
   normalizeFontFamilyInput,
 } from './configModalShared.js';
+
+function configFieldValueEquals(left, right) {
+  if (typeof left === 'boolean' || typeof right === 'boolean') {
+    return Boolean(left) === Boolean(right);
+  }
+  return String(left ?? '').trim() === String(right ?? '').trim();
+}
+
+function isConfigHexColor(value) {
+  return /^#[0-9a-f]{6}$/i.test(String(value || '').trim());
+}
 
 export const configFieldMethods = {
   createSection(title) {
@@ -33,6 +45,7 @@ export const configFieldMethods = {
   },
 
   createNumberField(label, path, normalizedValue, options = {}) {
+    const inheritedValue = this.prepareConfigFieldDefault(path, normalizedValue ?? '');
     const fieldEl = this.createField(label, options.parentEl, options.help);
     this.applyInheritedValueStyle(fieldEl, path);
     const input = fieldEl.createEl('input');
@@ -40,12 +53,19 @@ export const configFieldMethods = {
     input.min = String(options.min ?? '');
     input.max = String(options.max ?? '');
     input.step = String(options.step ?? 1);
-    input.placeholder = options.placeholder || '';
-    input.value = String(getConfigValue(this.draftConfig, path, normalizedValue ?? '') ?? '');
+    input.value = String(getConfigValue(this.draftConfig, path, inheritedValue) ?? '');
     input.disabled = Boolean(options.disabled);
+    this.setConfigInputInheritedValue(input, inheritedValue, options.placeholder || '');
     input.addEventListener('input', () => {
-      setConfigValue(this.draftConfig, path, numberFromInput(input.value));
+      this.setConfigValueOrDeleteInherited(
+        path,
+        numberFromInput(input.value),
+        input._yonxaoMindmapInheritedValue
+      );
       this.syncInheritedValueStyle(fieldEl, path);
+    });
+    input.addEventListener('blur', () => {
+      this.restoreConfigInputInheritedValue(input);
     });
     input._yonxaoMindmapControlEl = fieldEl;
     this.appendFieldHelp(fieldEl);
@@ -53,6 +73,7 @@ export const configFieldMethods = {
   },
 
   createSelectField(label, path, value, options, fieldOptions = {}) {
+    const inheritedValue = this.prepareConfigFieldDefault(path, value);
     const fieldEl = this.createField(label, fieldOptions.parentEl, fieldOptions.help);
     this.applyInheritedValueStyle(fieldEl, path);
     const select = fieldEl.createEl('select');
@@ -71,9 +92,10 @@ export const configFieldMethods = {
         option.value = optionValue;
       }
     }
-    select.value = String(getConfigValue(this.draftConfig, path, value));
+    select.value = String(getConfigValue(this.draftConfig, path, inheritedValue));
+    select._yonxaoMindmapInheritedValue = inheritedValue;
     select.addEventListener('change', () => {
-      setConfigValue(this.draftConfig, path, select.value);
+      this.setConfigValueOrDeleteInherited(path, select.value, select._yonxaoMindmapInheritedValue);
       this.syncInheritedValueStyle(fieldEl, path);
     });
     select._yonxaoMindmapControlEl = fieldEl;
@@ -97,7 +119,8 @@ export const configFieldMethods = {
   },
 
   createSelectTextField(label, path, value, options, fieldOptions = {}) {
-    const fieldEl = this.createField(label, fieldOptions.parentEl);
+    const inheritedValue = this.prepareConfigFieldDefault(path, value ?? '');
+    const fieldEl = this.createField(label, fieldOptions.parentEl, fieldOptions.help);
     this.applyInheritedValueStyle(fieldEl, path);
     const rowEl = fieldEl.createDiv({ cls: 'yonxao-mindmap-config-combo' });
     const select = rowEl.createEl('select');
@@ -109,42 +132,63 @@ export const configFieldMethods = {
       option.value = optionValue;
     }
 
-    input.value = String(getConfigValue(this.draftConfig, path, value) || '');
-    select.value = options.some(([optionValue]) => optionValue === input.value) ? input.value : '';
-    select.addEventListener('change', () => {
-      input.value = select.value;
-      setConfigValue(this.draftConfig, path, input.value);
-      this.syncInheritedValueStyle(fieldEl, path);
-    });
-    input.addEventListener('input', () => {
-      setConfigValue(this.draftConfig, path, input.value.trim());
+    input.value = String(getConfigValue(this.draftConfig, path, inheritedValue) || '');
+    this.setConfigInputInheritedValue(input, inheritedValue);
+    select._yonxaoMindmapInheritedValue = inheritedValue;
+    const syncSelectValue = () => {
       select.value = options.some(([optionValue]) => optionValue === input.value)
         ? input.value
         : '';
+    };
+    syncSelectValue();
+    select.addEventListener('change', () => {
+      input.value = select.value;
+      this.setConfigValueOrDeleteInherited(path, input.value, input._yonxaoMindmapInheritedValue);
+      syncSelectValue();
       this.syncInheritedValueStyle(fieldEl, path);
     });
+    input.addEventListener('input', () => {
+      this.setConfigValueOrDeleteInherited(
+        path,
+        input.value.trim(),
+        input._yonxaoMindmapInheritedValue
+      );
+      syncSelectValue();
+      this.syncInheritedValueStyle(fieldEl, path);
+    });
+    input.addEventListener('blur', () => {
+      this.restoreConfigInputInheritedValue(input);
+      syncSelectValue();
+    });
+    select._yonxaoMindmapControlEl = fieldEl;
+    input._yonxaoMindmapControlEl = fieldEl;
     this.appendFieldHelp(fieldEl);
     return { select, input };
   },
 
   createFontFamilyField(label, path, value, fieldOptions = {}) {
+    let inheritedValue = this.prepareConfigFieldDefault(path, value ?? '');
     const fieldEl = this.createField(label, fieldOptions.parentEl, fieldOptions.help);
     this.applyInheritedValueStyle(fieldEl, path);
     const rowEl = fieldEl.createDiv({ cls: 'yonxao-mindmap-config-combo' });
     const select = rowEl.createEl('select');
     const input = rowEl.createEl('input');
     input.type = 'text';
-    input.placeholder = '';
 
     const explicitValue = getConfigValue(this.draftConfig, path, undefined);
-    let inheritedValue =
-      typeof value === 'string' || typeof value === 'number'
-        ? normalizeFontFamilyInput(String(value))
+    inheritedValue =
+      typeof inheritedValue === 'string' || typeof inheritedValue === 'number'
+        ? normalizeFontFamilyInput(String(inheritedValue))
         : '';
     const allowInherit = fieldOptions.allowInherit !== false;
     if (!allowInherit && !inheritedValue && path.join('.') === 'font.family') {
       inheritedValue = DEFAULT_FONT_FAMILY;
     }
+    this.setConfigInputInheritedValue(
+      input,
+      inheritedValue,
+      this.t('topicEditor.fontCustomPlaceholder')
+    );
     this.appendFontOptions(select, { includeInherit: allowInherit });
     const hasExplicitValue = this.hasDraftConfigPath(path);
     const currentValue =
@@ -157,12 +201,18 @@ export const configFieldMethods = {
       const nextValue = normalizeFontFamilyInput(input.value);
       if (!nextValue) {
         input.setCustomValidity('');
-        if (allowInherit) {
-          deleteConfigValue(this.draftConfig, path);
-          select.value = '';
-          input.value = inheritedValue;
+        deleteConfigValue(this.draftConfig, path);
+        this.setConfigInputInheritedValue(
+          input,
+          inheritedValue,
+          this.t('topicEditor.fontCustomPlaceholder')
+        );
+        if (document.activeElement === input) {
+          select.value = allowInherit ? '' : CUSTOM_FONT_VALUE;
+          input.value = '';
+        } else if (allowInherit) {
+          this.syncConfigFontInheritedField(select, input, inheritedValue, allowInherit);
         } else {
-          deleteConfigValue(this.draftConfig, path);
           this.syncConfigFontField(select, input, inheritedValue);
         }
         this.updateStatus('');
@@ -176,8 +226,13 @@ export const configFieldMethods = {
       }
 
       input.setCustomValidity('');
-      setConfigValue(this.draftConfig, path, nextValue);
-      this.syncConfigFontField(select, input, nextValue);
+      if (configFieldValueEquals(nextValue, inheritedValue)) {
+        deleteConfigValue(this.draftConfig, path);
+        this.syncConfigFontInheritedField(select, input, inheritedValue, allowInherit);
+      } else {
+        setConfigValue(this.draftConfig, path, nextValue);
+        this.syncConfigFontField(select, input, nextValue);
+      }
       this.updateStatus('');
       return true;
     };
@@ -188,8 +243,15 @@ export const configFieldMethods = {
     select.addEventListener('change', () => {
       if (select.value === CUSTOM_FONT_VALUE) {
         input.setCustomValidity('');
+        deleteConfigValue(this.draftConfig, path);
         input.value = '';
+        this.setConfigInputInheritedValue(
+          input,
+          inheritedValue,
+          this.t('topicEditor.fontCustomPlaceholder')
+        );
         input.focus();
+        this.updateStatus('');
         this.syncInheritedValueStyle(fieldEl, path);
         return;
       }
@@ -214,13 +276,28 @@ export const configFieldMethods = {
 
       input.value = select.value;
       input.setCustomValidity('');
-      setConfigValue(this.draftConfig, path, select.value);
+      if (configFieldValueEquals(select.value, inheritedValue)) {
+        deleteConfigValue(this.draftConfig, path);
+        this.syncConfigFontInheritedField(select, input, inheritedValue, allowInherit);
+      } else {
+        setConfigValue(this.draftConfig, path, select.value);
+      }
       this.syncInheritedValueStyle(fieldEl, path);
     });
 
     input.addEventListener('input', () => {
       if (normalizeFontFamilyInput(input.value)) select.value = CUSTOM_FONT_VALUE;
       if (validateAndStore()) this.syncInheritedValueStyle(fieldEl, path);
+    });
+    input.addEventListener('blur', () => {
+      if (!normalizeFontFamilyInput(input.value)) {
+        if (allowInherit) {
+          this.syncConfigFontInheritedField(select, input, inheritedValue, allowInherit);
+        } else {
+          this.syncConfigFontField(select, input, inheritedValue);
+        }
+        this.syncInheritedValueStyle(fieldEl, path);
+      }
     });
 
     select._yonxaoMindmapControlEl = fieldEl;
@@ -230,11 +307,16 @@ export const configFieldMethods = {
       select,
       input,
       controlEl: fieldEl,
-      setInheritedValue(nextValue) {
+      setInheritedValue: (nextValue) => {
         inheritedValue =
           typeof nextValue === 'string' || typeof nextValue === 'number'
             ? normalizeFontFamilyInput(String(nextValue))
             : '';
+        this.setConfigInputInheritedValue(
+          input,
+          inheritedValue,
+          this.t('topicEditor.fontCustomPlaceholder')
+        );
       },
     };
   },
@@ -257,6 +339,16 @@ export const configFieldMethods = {
 
     select.value = CUSTOM_FONT_VALUE;
     input.value = fontFamily;
+  },
+
+  syncConfigFontInheritedField(select, input, inheritedValue, allowInherit) {
+    if (allowInherit) {
+      select.value = '';
+      input.value = inheritedValue || '';
+      return;
+    }
+
+    this.syncConfigFontField(select, input, inheritedValue);
   },
 
   findConfigFontPresetIndex(select, value) {
@@ -287,6 +379,7 @@ export const configFieldMethods = {
   },
 
   createColorTextField(label, path, value, help) {
+    const inheritedValue = this.prepareConfigFieldDefault(path, value ?? '');
     const fieldEl = this.createField(label, undefined, help);
     this.applyInheritedValueStyle(fieldEl, path);
     const rowEl = fieldEl.createDiv({ cls: 'yonxao-mindmap-config-combo' });
@@ -299,16 +392,43 @@ export const configFieldMethods = {
       typeof rawValue === 'string' || typeof rawValue === 'number' ? String(rawValue) : '';
 
     textInput.value = currentValue;
-    colorInput.value = /^#[0-9a-f]{6}$/i.test(currentValue) ? currentValue : '#3b82f6';
+    this.setConfigInputInheritedValue(textInput, inheritedValue);
+    colorInput._yonxaoMindmapInheritedValue = inheritedValue;
+    colorInput.value = this.configColorPickerValue(currentValue, inheritedValue);
+    colorInput._yonxaoMindmapControlEl = fieldEl;
+    textInput._yonxaoMindmapControlEl = fieldEl;
 
     colorInput.addEventListener('input', () => {
       textInput.value = colorInput.value;
-      setConfigValue(this.draftConfig, path, colorInput.value);
+      this.setConfigValueOrDeleteInherited(
+        path,
+        colorInput.value,
+        colorInput._yonxaoMindmapInheritedValue
+      );
       this.syncInheritedValueStyle(fieldEl, path);
     });
     textInput.addEventListener('input', () => {
-      setConfigValue(this.draftConfig, path, textInput.value.trim());
+      this.setConfigValueOrDeleteInherited(
+        path,
+        textInput.value.trim(),
+        textInput._yonxaoMindmapInheritedValue
+      );
+      if (!String(textInput.value || '').trim()) {
+        colorInput.value = this.configColorPickerValue('', textInput._yonxaoMindmapInheritedValue);
+      } else {
+        colorInput.value = this.configColorPickerValue(
+          textInput.value,
+          textInput._yonxaoMindmapInheritedValue
+        );
+      }
       this.syncInheritedValueStyle(fieldEl, path);
+    });
+    textInput.addEventListener('blur', () => {
+      this.restoreConfigInputInheritedValue(textInput);
+      colorInput.value = this.configColorPickerValue(
+        textInput.value,
+        textInput._yonxaoMindmapInheritedValue
+      );
     });
 
     const swatches = fieldEl.createDiv({ cls: 'yonxao-mindmap-config-color-swatches' });
@@ -322,7 +442,7 @@ export const configFieldMethods = {
         event.preventDefault();
         textInput.value = color;
         colorInput.value = color;
-        setConfigValue(this.draftConfig, path, color);
+        this.setConfigValueOrDeleteInherited(path, color, textInput._yonxaoMindmapInheritedValue);
         this.syncInheritedValueStyle(fieldEl, path);
         this.updateActionButtons();
       });
@@ -333,13 +453,15 @@ export const configFieldMethods = {
   },
 
   createToggleField(label, path, value, options = {}) {
+    const inheritedValue = Boolean(this.prepareConfigFieldDefault(path, value));
     const fieldEl = this.createField(label, undefined, options.help);
     this.applyInheritedValueStyle(fieldEl, path);
     fieldEl.parentElement?.classList.add('is-toggle');
     const switchEl = fieldEl.createEl('label', { cls: 'yonxao-mindmap-config-switch' });
     const input = switchEl.createEl('input');
     input.type = 'checkbox';
-    input.checked = Boolean(getConfigValue(this.draftConfig, path, value));
+    input.checked = Boolean(getConfigValue(this.draftConfig, path, inheritedValue));
+    input._yonxaoMindmapInheritedValue = inheritedValue;
     input.disabled = Boolean(options.disabled);
     const trackEl = switchEl.createSpan({ cls: 'yonxao-mindmap-config-switch-track' });
     trackEl.createSpan({ cls: 'yonxao-mindmap-config-switch-thumb' });
@@ -347,13 +469,75 @@ export const configFieldMethods = {
       if (options.omitWhenFalse && !input.checked) {
         deleteConfigValue(this.draftConfig, path);
       } else {
-        setConfigValue(this.draftConfig, path, input.checked);
+        this.setConfigValueOrDeleteInherited(
+          path,
+          input.checked,
+          input._yonxaoMindmapInheritedValue
+        );
       }
       this.syncInheritedValueStyle(fieldEl, path);
     });
     input._yonxaoMindmapControlEl = fieldEl;
     this.appendFieldHelp(fieldEl);
     return input;
+  },
+
+  setConfigValueOrDeleteInherited(path, value, inheritedValue) {
+    if (configFieldValueEquals(value, inheritedValue)) {
+      deleteConfigValue(this.draftConfig, path);
+      return;
+    }
+
+    setConfigValue(this.draftConfig, path, value);
+  },
+
+  prepareConfigFieldDefault(path, fallbackValue) {
+    const defaultValue = this.configDefaultValueForPath?.(path, fallbackValue) ?? fallbackValue;
+    const explicitValue = getConfigValue(this.draftConfig, path, undefined);
+    if (
+      explicitValue !== undefined &&
+      explicitValue !== null &&
+      configFieldValueEquals(explicitValue, defaultValue)
+    ) {
+      deleteConfigValue(this.draftConfig, path);
+    }
+    return defaultValue;
+  },
+
+  /*
+   * 空输入框展示继承值时只更新 placeholder，不写入 value。
+   * 这样用户清空字段时能看到默认来源，保存时仍会删除当前路径以继承上层配置。
+   */
+  configInputPlaceholderText(value, fallbackValue = '') {
+    const text = String(value ?? '').trim();
+    return text || String(fallbackValue ?? '').trim();
+  },
+
+  setConfigInputInheritedValue(input, inheritedValue, fallbackValue = '') {
+    if (!input) return;
+    input._yonxaoMindmapInheritedValue = inheritedValue;
+    input.placeholder = this.configInputPlaceholderText(inheritedValue, fallbackValue);
+  },
+
+  restoreConfigInputInheritedValue(input, selectText = false) {
+    if (!input || String(input.value || '').trim()) return;
+    this.showConfigInputDefaultValue(input, selectText);
+  },
+
+  showConfigInputDefaultValue(input, selectText = false) {
+    if (!input) return;
+    const inheritedValue = input._yonxaoMindmapInheritedValue;
+    input.value =
+      inheritedValue === null || inheritedValue === undefined ? '' : String(inheritedValue);
+    if (selectText && input.value && document.activeElement === input) {
+      input.select?.();
+    }
+  },
+
+  configColorPickerValue(value, inheritedValue = '') {
+    if (isConfigHexColor(value)) return String(value).trim();
+    if (isConfigHexColor(inheritedValue)) return String(inheritedValue).trim();
+    return DEFAULT_BUTTON_COLOR;
   },
 
   setFieldDisabled(input, disabled) {

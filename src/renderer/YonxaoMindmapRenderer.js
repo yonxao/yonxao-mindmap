@@ -45,7 +45,7 @@ import { sourceViewMethods } from '../ui/source/SourceView.js';
 import { inlineTopicEditorMethods } from '../ui/topic-editor/InlineTopicEditor.js';
 import { topicEditorFieldMethods } from '../ui/topic-editor/TopicEditorFields.js';
 import { topicEditorPanelMethods } from '../ui/topic-editor/TopicEditorPanel.js';
-import { topicTextEditorMethods } from '../ui/topic-editor/TopicTextEditor.js';
+import { topicContentEditorMethods } from '../ui/topic-editor/TopicContentEditor.js';
 import { topicEditorStateMethods } from '../ui/topic-editor/topicEditorState.js';
 import { floatingToolbarMethods } from '../ui/toolbar/FloatingToolbar.js';
 import { toolbarButtonMethods } from '../ui/toolbar/toolbarButtons.js';
@@ -89,8 +89,8 @@ export class YonxaoMindmapRenderer extends Component {
     this.topicEditorEl = null;
     this.topicEditorFields = null;
     this.topicEditorInheritedValues = null;
-    this.topicTextEditorEl = null;
-    this.topicTextEditorInput = null;
+    this.topicContentEditorEl = null;
+    this.topicContentEditorInput = null;
     this.inlineTextEditorEl = null;
     this.inlineTextEditorInput = null;
     this.inlineEditingTopicId = null;
@@ -108,7 +108,7 @@ export class YonxaoMindmapRenderer extends Component {
     this.pendingToolbarScrollTimer = null;
     this.suppressToolbarDuringScroll = false;
     this.topicEditorDragState = null;
-    this.topicTextEditorDragState = null;
+    this.topicContentEditorDragState = null;
     this.manualCanvasHeight = false;
     this.manualSourceHeight = false;
     this.isSourceMode = false;
@@ -151,7 +151,7 @@ Object.assign(
   canvasHeightMethods,
   topicEditorPanelMethods,
   topicEditorFieldMethods,
-  topicTextEditorMethods,
+  topicContentEditorMethods,
   inlineTopicEditorMethods,
   topicEditorStateMethods,
   topicCommandMethods,

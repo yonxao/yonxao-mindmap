@@ -4,7 +4,7 @@
  *
  * 当前功能：
  * - language：插件界面语言。
- * - defaultConfig：全局默认配置，作为所有 yxmm 代码块的基础配置。
+ * - defaultConfig：持久化字段名，保存全局默认值配置，作为所有 yxmm 代码块的基础配置。
  *
  * 执行逻辑：
  * 1. YonxaoMindmapPlugin.onload() 调用 loadSettings()。

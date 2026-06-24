@@ -38,17 +38,17 @@ export const topicContextMenuMethods = {
     const hasSubtopics = topic.subtopics.length > 0;
     const isCollapsed = this.collapsedIds.has(topic.id);
 
-    this.addTopicContextMenuItem(menu, this.t('contextMenu.renameTopic'), 'pencil', () =>
+    this.addTopicContextMenuItem(menu, this.t('contextMenu.editTopic'), 'pencil', () =>
       this.openInlineTextEditor(topic)
     );
     this.addTopicContextMenuItem(
       menu,
-      this.t('contextMenu.editTopicAttributes'),
+      this.t('contextMenu.topicEditPanel'),
       'sliders-horizontal',
       () => this.openTopicEditor(topic)
     );
-    this.addTopicContextMenuItem(menu, this.t('contextMenu.copyTopicText'), 'copy', () =>
-      this.copyTopicText(topic)
+    this.addTopicContextMenuItem(menu, this.t('contextMenu.copyTopicContent'), 'copy', () =>
+      this.copyTopicContent(topic)
     );
     this.addTopicContextMenuItem(menu, this.t('contextMenu.copySubtreeBody'), 'git-branch', () =>
       this.copyPlainSubtree(topic)

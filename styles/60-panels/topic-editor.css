@@ -80,10 +80,14 @@
  * 主题编辑面板标题，同时作为拖拽手柄。
  */
 .yonxao-mindmap-topic-editor-title {
-  margin-bottom: 8px;
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0 0 10px;
   color: var(--text-normal);
-  font-size: var(--font-ui-small);
-  font-weight: 700;
+  font-size: var(--font-ui-large);
+  font-weight: var(--font-semibold);
   cursor: move;
   user-select: none;
   touch-action: none;
@@ -108,7 +112,14 @@
 }
 
 .yonxao-mindmap-topic-editor-field.is-inherited-value > span:first-child {
-  color: var(--text-muted);
+  color: var(--text-faint);
+  font-style: italic;
+  font-weight: 400;
+}
+
+.yonxao-mindmap-topic-editor-field.is-custom-value > span:first-child {
+  color: var(--text-normal);
+  font-weight: 700;
 }
 
 /*
@@ -136,25 +147,51 @@
   border-color: var(--interactive-accent);
 }
 
+.yonxao-mindmap-topic-editor-field.is-custom-value .yonxao-mindmap-topic-editor-input {
+  border-color: color-mix(
+    in srgb,
+    var(--interactive-accent) 62%,
+    var(--background-modifier-border)
+  );
+  background: color-mix(in srgb, var(--interactive-accent) 8%, var(--background-secondary));
+}
+
 .yonxao-mindmap-topic-editor-field.is-inherited-value
   .yonxao-mindmap-topic-editor-input:not(:focus) {
-  color: var(--text-muted);
+  color: var(--text-faint);
   border-style: dashed;
   background: var(--background-secondary);
 }
 
 .yonxao-mindmap-topic-editor-field.is-inherited-value .yonxao-mindmap-topic-editor-icon-button {
-  color: var(--text-muted);
+  color: var(--text-faint);
   border-style: dashed;
+}
+
+.yonxao-mindmap-topic-editor-field.is-custom-value .yonxao-mindmap-topic-editor-icon-button {
+  border-color: color-mix(
+    in srgb,
+    var(--interactive-accent) 62%,
+    var(--background-modifier-border)
+  );
+  background: color-mix(in srgb, var(--interactive-accent) 8%, var(--background-secondary));
 }
 
 .yonxao-mindmap-topic-editor-field.is-inherited-value .yonxao-mindmap-topic-editor-color-picker {
   opacity: 0.72;
 }
 
+.yonxao-mindmap-topic-editor-field.is-custom-value .yonxao-mindmap-topic-editor-color-picker {
+  border-color: color-mix(
+    in srgb,
+    var(--interactive-accent) 62%,
+    var(--background-modifier-border)
+  );
+}
+
 /*
  * 作用：
- * 主题文本编辑框，默认保持紧凑，只允许用户纵向拖高。
+ * 内容编辑框，默认保持紧凑，只允许用户纵向拖高。
  */
 .yonxao-mindmap-topic-editor-textarea {
   min-height: 64px;
@@ -166,9 +203,10 @@
 
 /*
  * 作用：
- * 主题文本输入区，右侧提供长文本编辑入口。
+ * 内容输入区，右侧提供长内容编辑入口。
  */
 .yonxao-mindmap-topic-editor-text-control {
+  position: relative;
   display: grid;
   grid-template-columns: 58px minmax(0, 1fr);
   align-items: start;
@@ -179,20 +217,29 @@
 .yonxao-mindmap-topic-editor-text-label {
   display: flex;
   min-width: 0;
+  padding-top: 7px;
+}
+
+.yonxao-mindmap-topic-editor-text-input-column {
+  display: flex;
+  min-width: 0;
   flex-direction: column;
   align-items: flex-start;
-  gap: 6px;
 }
 
 .yonxao-mindmap-topic-editor-icon-button.yonxao-mindmap-topic-editor-text-expand {
-  width: 30px;
-  height: 30px;
-  min-height: 30px;
+  position: absolute;
+  left: 28px;
+  bottom: 0;
+  width: 24px;
+  height: 24px;
+  min-height: 24px;
   align-items: center;
   justify-content: center;
-  padding: 5px;
-  flex: 0 0 30px;
+  padding: 4px;
+  flex: 0 0 24px;
   gap: 0;
+  border-radius: 5px;
 }
 
 .yonxao-mindmap-topic-editor-icon-button.yonxao-mindmap-topic-editor-text-expand svg {
@@ -356,6 +403,7 @@
 .yonxao-mindmap-topic-editor-actions {
   display: flex;
   flex-wrap: wrap;
+  justify-content: flex-end;
   gap: 6px;
   margin-top: 10px;
 }

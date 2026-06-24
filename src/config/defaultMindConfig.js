@@ -67,6 +67,8 @@ export const BUTTON_COLOR_MODES = Object.freeze(['inherit-accent', 'subtle', 'to
 // 主题按钮显示方式：全部常显、折叠按钮常显其余悬浮、全部悬浮。
 export const TOPIC_CONTROL_VISIBILITY_MODES = Object.freeze(['always', 'toggle-always', 'hover']);
 
+// 当 Obsidian 主题变量或用户自定义颜色不可用时，按钮和颜色选择器使用的兜底蓝色。
+export const DEFAULT_BUTTON_COLOR = '#3b82f6';
 // 预定义的自定义按钮颜色选项，供配置面板使用。
 export const BUTTON_COLOR_PRESETS = Object.freeze([
   '#ef4444',
@@ -75,7 +77,7 @@ export const BUTTON_COLOR_PRESETS = Object.freeze([
   '#22c55e',
   '#14b8a6',
   '#06b6d4',
-  '#3b82f6',
+  DEFAULT_BUTTON_COLOR,
   '#8b5cf6',
   '#ec4899',
   '#64748b',
@@ -154,7 +156,7 @@ export const CUSTOM_FONT_VALUE = '__custom_font__';
  * - group: 下拉框 optgroup 标题的 i18n key。
  * - options: 该组下的选项。
  * - value: 实际写入配置区的 CSS font-family 字符串；空字符串表示删除配置并继承全局字体。
- * - label: 配置弹框里的显示文本 i18n key。
+ * - label: 配置面板里的显示文本 i18n key。
  */
 export const FONT_FAMILY_GROUPS = Object.freeze([
   {

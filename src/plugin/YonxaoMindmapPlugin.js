@@ -29,7 +29,7 @@ export class YonxaoMindmapPlugin extends Plugin {
      * 当前已挂载的 yxmm 渲染器集合。
      *
      * 为什么需要记录：
-     * 当用户在 Obsidian 偏好设置里修改“全局默认配置”后，已经显示在当前页面里的导图
+     * 当用户在 Obsidian 偏好设置里修改“全局默认值配置”后，已经显示在当前页面里的导图
      * 也应该能收到通知并重新读取默认值。这里不保存文档数据，只保存运行中的 renderer 引用。
      */
     this.activeRenderers = new Set();
@@ -153,20 +153,24 @@ export class YonxaoMindmapPlugin extends Plugin {
 
   /*
    * 作用：
-   * 读取全局默认配置。
+   * 读取全局默认值配置。
    *
    * 关键点：
    * 返回的是 raw config，也就是和 yxmm 配置区一致的结构；renderer 会在使用前再统一规范化。
    */
-  getGlobalDefaultConfig() {
+  getGlobalDefaultValueConfig() {
     return normalizePluginSettings(this.settings, this.getObsidianLanguage()).defaultConfig;
   }
 
   /*
    * 作用：
-   * 更新全局默认配置，并通知当前页面里的渲染器重新读取默认值。
+   * 更新全局默认值配置，并通知当前页面里的渲染器重新读取默认值。
+   *
+   * 说明：
+   * settings.defaultConfig 是 Obsidian data.json 中已经使用的持久化字段名，
+   * 为避免用户已有配置丢失，这里只更新方法术语，不改底层字段名。
    */
-  async updateGlobalDefaultConfig(defaultConfig) {
+  async updateGlobalDefaultValueConfig(defaultConfig) {
     this.settings = normalizePluginSettings(
       {
         ...this.settings,
@@ -191,11 +195,11 @@ export class YonxaoMindmapPlugin extends Plugin {
 
   /*
    * 作用：
-   * 全局默认配置变化后刷新已打开的导图。
+   * 全局默认值配置变化后刷新已打开的导图。
    */
   refreshActiveRenderers() {
     for (const renderer of this.activeRenderers) {
-      renderer.applyGlobalDefaultConfig?.();
+      renderer.applyGlobalDefaultValueConfig?.();
     }
   }
 }

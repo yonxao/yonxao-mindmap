@@ -11,12 +11,14 @@
 
 import {
   Notice,
+  DEFAULT_MIND_CONFIG,
   resolveTopicFont,
   resolveTopicMaxWidth,
   removeTopicById,
   setOptionalTopicAttribute,
   assignIds,
   topicColor,
+  TOPIC_EDITOR_DEFAULT_COLOR,
   normalizeTopicTextForStorage,
 } from '../../shared/rendererShared.js';
 
@@ -26,7 +28,9 @@ export const topicEditorStateMethods = {
 
     controlEl.dataset.topicEditorCustom = isCustom ? 'true' : 'false';
     controlEl.classList.toggle('is-inherited-value', !isCustom);
+    controlEl.classList.toggle('is-custom-value', isCustom);
     controlEl._fieldWrapper?.classList.toggle('is-inherited-value', !isCustom);
+    controlEl._fieldWrapper?.classList.toggle('is-custom-value', isCustom);
   },
 
   isTopicEditorCustomValue(controlEl) {
@@ -35,7 +39,18 @@ export const topicEditorStateMethods = {
 
   setTopicEditorNumberValue(input, value, isCustom) {
     input.value = value === null || value === undefined ? '' : String(value);
-    this.setTopicEditorCustomState(input, isCustom);
+    const key = input._yonxaoMindmapTopicEditorKey;
+    this.setTopicEditorCustomState(
+      input,
+      Boolean(isCustom) && (!key || this.isTopicEditorExplicitValue(key, input.value))
+    );
+  },
+
+  isTopicEditorExplicitValue(key, value) {
+    const text = String(value ?? '').trim();
+    if (!text) return false;
+    const inheritedValue = this.topicEditorInheritedValues?.[key];
+    return text !== String(inheritedValue ?? '').trim();
   },
 
   restoreTopicEditorInheritedValue(key) {
@@ -48,16 +63,90 @@ export const topicEditorStateMethods = {
         return;
       }
       this.setTopicEditorColorValue(inheritedValue || '', { custom: false });
+      this.updateTopicEditorActionState();
       return;
     }
 
     const input = fields[key];
     if (!input || this.isTopicEditorCustomValue(input) || input.value) return;
     this.setTopicEditorNumberValue(input, inheritedValue ?? '', false);
+    this.updateTopicEditorActionState();
   },
 
   topicEditorSaveValue(controlEl) {
     return this.isTopicEditorCustomValue(controlEl) ? controlEl.value : '';
+  },
+
+  serializeTopicEditorFormState() {
+    const fields = this.topicEditorFields;
+    if (!fields) return null;
+
+    return {
+      content: normalizeTopicTextForStorage(fields.content.value),
+      color: this.isTopicEditorCustomValue(fields.colorField) ? fields.color.value : '',
+      icon: this.isTopicEditorCustomValue(fields.iconPicker) ? fields.icon.value : '',
+      fontFamily: this.isTopicEditorCustomValue(fields.fontFamilyField)
+        ? fields.fontFamily.value
+        : '',
+      fontSize: this.topicEditorSaveValue(fields.fontSize),
+      fontWeight: this.topicEditorSaveValue(fields.fontWeight),
+      lineHeight: this.topicEditorSaveValue(fields.lineHeight),
+      maxWidth: this.topicEditorSaveValue(fields.maxWidth),
+    };
+  },
+
+  captureTopicEditorFormSnapshot() {
+    this.topicEditorFormSnapshot = this.serializeTopicEditorFormState();
+  },
+
+  hasTopicEditorChanges() {
+    const snapshot = this.topicEditorFormSnapshot;
+    const current = this.serializeTopicEditorFormState();
+    if (!snapshot || !current) return false;
+
+    for (const key of Object.keys(current)) {
+      if (String(current[key] ?? '') !== String(snapshot[key] ?? '')) {
+        return true;
+      }
+    }
+    return false;
+  },
+
+  updateTopicEditorActionState() {
+    const fields = this.topicEditorFields;
+    if (!fields) return;
+
+    const hasChanges = this.hasTopicEditorChanges();
+    if (fields.saveButton) fields.saveButton.disabled = !hasChanges;
+    this.topicEditorEl?.classList.toggle('is-dirty', hasChanges);
+  },
+
+  updateTopicEditorInheritedPlaceholders() {
+    const fields = this.topicEditorFields;
+    const inherited = this.topicEditorInheritedValues;
+    if (!fields || !inherited) return;
+
+    const setPlaceholder = (input, inheritedValue, fallbackValue = '') => {
+      if (!input) return;
+
+      const text = String(inheritedValue ?? '').trim();
+      input.placeholder = text || fallbackValue;
+    };
+
+    setPlaceholder(
+      fields.colorField?._textInput,
+      inherited.color,
+      DEFAULT_MIND_CONFIG.topic.defaultColor || TOPIC_EDITOR_DEFAULT_COLOR
+    );
+    setPlaceholder(
+      fields.fontFamilyField?._customInput,
+      inherited.fontFamily,
+      this.t('topicEditor.fontCustomPlaceholder')
+    );
+    setPlaceholder(fields.fontSize, inherited.fontSize, DEFAULT_MIND_CONFIG.font.size);
+    setPlaceholder(fields.fontWeight, inherited.fontWeight, DEFAULT_MIND_CONFIG.font.weight);
+    setPlaceholder(fields.lineHeight, inherited.lineHeight, DEFAULT_MIND_CONFIG.font.lineHeight);
+    setPlaceholder(fields.maxWidth, inherited.maxWidth, DEFAULT_MIND_CONFIG.topic.maxWidth);
   },
 
   resolveTopicEditorInheritedValues(topic) {
@@ -93,9 +182,9 @@ export const topicEditorStateMethods = {
     const topic = this.topicById.get(this.editingTopicId);
     if (!topic || !this.topicEditorFields) return false;
 
-    const text = normalizeTopicTextForStorage(this.topicEditorFields.text.value);
+    const text = normalizeTopicTextForStorage(this.topicEditorFields.content.value);
     if (!text) {
-      new Notice(this.t('notice.topicTextRequired'));
+      new Notice(this.t('notice.topicContentRequired'));
       return false;
     }
 
