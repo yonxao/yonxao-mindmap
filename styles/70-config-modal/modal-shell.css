@@ -63,25 +63,63 @@
 }
 
 .yonxao-mindmap-config-info-button {
+  position: relative;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 26px;
-  height: 26px;
-  min-width: 26px;
+  width: 22px;
+  height: 22px;
+  min-width: 22px;
   padding: 0;
-  color: var(--text-muted);
+  color: var(--interactive-accent);
   cursor: pointer;
   background: transparent;
   border: 0;
+  border-radius: 50%;
   box-shadow: none;
+  appearance: none;
+  transition:
+    color 120ms ease,
+    opacity 120ms ease,
+    transform 120ms ease,
+    box-shadow 120ms ease;
+}
+
+.yonxao-mindmap-config-info-button svg {
+  width: 18px;
+  height: 18px;
+  color: var(--interactive-accent);
+  stroke: var(--interactive-accent);
+  stroke-width: 2;
+}
+
+.yonxao-mindmap-config-info-button svg * {
+  stroke: var(--interactive-accent);
 }
 
 .yonxao-mindmap-config-info-button:hover,
-.yonxao-mindmap-config-info-button:focus-visible,
 .yonxao-mindmap-config-info.is-open .yonxao-mindmap-config-info-button {
-  color: var(--text-accent);
-  background: var(--background-modifier-hover);
+  opacity: 0.82;
+  background: transparent;
+  transform: scale(1.04);
+}
+
+.yonxao-mindmap-config-info-button:focus-visible {
+  outline: none;
+  background: transparent;
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--interactive-accent) 34%, transparent);
+}
+
+.yonxao-mindmap-config-info-label {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  border: 0;
+  margin: -1px;
+  white-space: nowrap;
 }
 
 .yonxao-mindmap-config-info-popover {

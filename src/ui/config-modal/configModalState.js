@@ -85,7 +85,6 @@ export const configModalStateMethods = {
     const buttonEl = wrapperEl.createEl('button', {
       cls: 'yonxao-mindmap-config-info-button',
       attr: {
-        'aria-label': this.t('configModal.info.label'),
         'aria-expanded': 'false',
       },
     });
@@ -98,9 +97,16 @@ export const configModalStateMethods = {
       },
     });
     const popoverId = `yonxao-mindmap-config-info-${Date.now().toString(36)}`;
+    const labelId = `${popoverId}-label`;
     popoverEl.id = popoverId;
-    buttonEl.setAttribute('aria-describedby', popoverId);
     setIcon(buttonEl, 'info');
+    const labelEl = buttonEl.createSpan({
+      cls: 'yonxao-mindmap-config-info-label',
+      text: this.t('configModal.info.label'),
+    });
+    labelEl.id = labelId;
+    buttonEl.setAttribute('aria-labelledby', labelId);
+    buttonEl.setAttribute('aria-describedby', popoverId);
 
     buttonEl.addEventListener('pointerdown', (event) => {
       event.stopPropagation();
