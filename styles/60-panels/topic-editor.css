@@ -52,9 +52,6 @@
  * 主题编辑面板主体。
  */
 .yonxao-mindmap-topic-editor {
-  --yonxao-mindmap-mono-font:
-    'Sarasa Mono SC', 'Noto Sans Mono CJK SC', 'Source Han Mono SC', 'Cascadia Mono',
-    'JetBrains Mono', 'Liberation Mono', monospace;
   position: fixed;
   z-index: 1000;
   left: 12px;

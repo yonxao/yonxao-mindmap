@@ -27,17 +27,21 @@ export const advancedTabMethods = {
     this.createSection(this.t('configModal.advanced.section'));
     this.advancedInputEl = document.createElement('textarea');
     this.advancedInputEl.className =
-      'yonxao-mindmap-source-input yonxao-mindmap-config-yaml is-active';
+      'yonxao-mindmap-source-input yonxao-mindmap-source-config-input is-active';
     this.advancedInputEl.spellcheck = false;
     this.advancedInputEl.wrap = 'off';
     this.advancedInputEl.value = stringifyDraftConfig(this.draftConfig);
     const advancedEditor = createSourceCodeEditor(this.advancedInputEl, {
-      className: 'yonxao-mindmap-config-yaml-editor is-active',
+      className: 'yonxao-mindmap-source-config-editor is-active',
     });
+    const advancedEditorShellEl = document.createElement('div');
+    // 高级页直接复用源码模式配置区的外壳，避免再维护一套 textarea 边框、焦点和字体度量样式。
+    advancedEditorShellEl.className = 'yonxao-mindmap-source-editor';
     this.advancedEditorEl = advancedEditor.editorEl;
     this.advancedHighlightEl = advancedEditor.highlightEl;
     this.advancedLineNumbersEl = advancedEditor.lineNumbersEl;
-    this.formEl.appendChild(this.advancedEditorEl);
+    advancedEditorShellEl.appendChild(this.advancedEditorEl);
+    this.formEl.appendChild(advancedEditorShellEl);
     this.updateAdvancedEditor();
 
     this.advancedInputEl.addEventListener('input', () => {

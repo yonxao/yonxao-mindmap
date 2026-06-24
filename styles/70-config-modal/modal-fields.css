@@ -84,9 +84,7 @@
  * 输入控件铺满右侧列，保证长配置值可编辑。
  */
 .yonxao-mindmap-config-field input,
-.yonxao-mindmap-config-field select,
-.yonxao-mindmap-config-yaml,
-.yonxao-mindmap-config-yaml-editor {
+.yonxao-mindmap-config-field select {
   width: 100%;
 }
 

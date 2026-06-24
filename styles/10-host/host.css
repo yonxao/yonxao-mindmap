@@ -15,12 +15,9 @@
  * 插件最外层宿主元素，承接 Obsidian Markdown 渲染区域。
  *
  * 关键点：
- * overflow: visible 允许工具栏和面板越过外层边界显示；字体变量提供全插件统一等宽字体。
+ * overflow: visible 允许工具栏和面板越过外层边界显示。
  */
 .yonxao-mindmap-host {
-  --yonxao-mindmap-mono-font:
-    'Sarasa Mono SC', 'Noto Sans Mono CJK SC', 'Source Han Mono SC', 'Cascadia Mono',
-    'JetBrains Mono', 'Liberation Mono', monospace;
   position: relative;
   display: block;
   width: 100%;

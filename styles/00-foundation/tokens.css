@@ -2,3 +2,16 @@
  * 文件作用：
  * 共享样式变量预留层。当前变量主要复用 Obsidian 主题变量。
  */
+
+/*
+ * 等宽字体会被源码编辑器和挂在 body 层的编辑浮层共同使用。
+ * 变量放在各自宿主上，保证透明 textarea 的光标层和高亮文本层使用同一套字符宽度。
+ */
+.yonxao-mindmap-host,
+.yonxao-mindmap-config-modal-host,
+.yonxao-mindmap-topic-editor,
+.yonxao-mindmap-topic-content-editor {
+  --yonxao-mindmap-mono-font:
+    'Sarasa Mono SC', 'Noto Sans Mono CJK SC', 'Source Han Mono SC', 'Cascadia Mono',
+    'JetBrains Mono', 'Liberation Mono', monospace;
+}

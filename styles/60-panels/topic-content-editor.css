@@ -3,9 +3,6 @@
  * 长内容编辑浮层，独立悬浮在视口中，避免被幕布裁切。
  */
 .yonxao-mindmap-topic-content-editor {
-  --yonxao-mindmap-mono-font:
-    'Sarasa Mono SC', 'Noto Sans Mono CJK SC', 'Source Han Mono SC', 'Cascadia Mono',
-    'JetBrains Mono', 'Liberation Mono', monospace;
   position: fixed;
   z-index: 1001;
   left: 12px;
