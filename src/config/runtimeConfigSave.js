@@ -106,9 +106,6 @@ export const runtimeConfigSaveMethods = {
 
   documentConfigForSave(config) {
     let next = pruneInactiveMindConfig(config || {});
-    next = deleteMindConfigPath(next, ['view', 'mode']);
-    next = deleteMindConfigPath(next, ['toolbar', 'x']);
-    next = deleteMindConfigPath(next, ['toolbar', 'y']);
     next = this.pruneDocumentConfigDefaults(next);
     return next;
   },
@@ -136,7 +133,7 @@ export const runtimeConfigSaveMethods = {
   documentConfigDefaultPrunePaths(config) {
     const paths = [...DOCUMENT_CONFIG_DEFAULT_PRUNE_PATHS];
     const font = config?.font;
-    const topicMaxWidth = config?.layout?.topicMaxWidth;
+    const topicMaxWidth = config?.structure?.topicMaxWidth;
 
     if (this.isPlainConfigObject(font)) {
       for (const levelKey of ['level1', 'level2', 'level3']) {
@@ -153,7 +150,7 @@ export const runtimeConfigSaveMethods = {
     if (this.isPlainConfigObject(topicMaxWidth)) {
       for (const levelKey of ['level1', 'level2', 'level3']) {
         if (topicMaxWidth[levelKey] !== undefined) {
-          paths.push(['layout', 'topicMaxWidth', levelKey]);
+          paths.push(['structure', 'topicMaxWidth', levelKey]);
         }
       }
     }
@@ -164,19 +161,19 @@ export const runtimeConfigSaveMethods = {
   shouldKeepDefaultConfigPath(config, path, normalizedDocument, normalizedGlobal) {
     const key = path.join('.');
 
-    if (key === 'basic.viewFit') {
+    if (key === 'display.viewFit') {
       return this.hasMeaningfulFitViewChild(config, normalizedDocument, normalizedGlobal);
     }
 
-    if (key === 'basic.fitViewNoUpscale') {
+    if (key === 'display.fitViewNoUpscale') {
       return this.hasMeaningfulFitViewMaxScale(config, normalizedDocument, normalizedGlobal);
     }
 
-    if (key === 'layout.type') {
+    if (key === 'structure.layout') {
       return this.hasMeaningfulBranchExpansion(config, normalizedDocument, normalizedGlobal);
     }
 
-    if (key === 'layout.connectorStyle') {
+    if (key === 'structure.connectorStyle') {
       if (!CONNECTOR_STYLE_CONFIGURABLE_LAYOUTS.includes(normalizedDocument.layout)) return false;
       return this.hasMeaningfulBranchExpansion(config, normalizedDocument, normalizedGlobal);
     }
@@ -185,10 +182,10 @@ export const runtimeConfigSaveMethods = {
   },
 
   hasMeaningfulFitViewChild(config, normalizedDocument, normalizedGlobal) {
-    const basic = this.isPlainConfigObject(config?.basic) ? config.basic : {};
+    const display = this.isPlainConfigObject(config?.display) ? config.display : {};
 
     if (
-      basic.fitViewNoUpscale !== undefined &&
+      display.fitViewNoUpscale !== undefined &&
       !this.areConfigValuesEqual(
         normalizedDocument.view?.fitNoUpscale,
         normalizedGlobal.view?.fitNoUpscale
@@ -201,8 +198,8 @@ export const runtimeConfigSaveMethods = {
   },
 
   hasMeaningfulFitViewMaxScale(config, normalizedDocument, normalizedGlobal) {
-    const basic = this.isPlainConfigObject(config?.basic) ? config.basic : {};
-    if (basic.fitViewMaxScale === undefined) return false;
+    const display = this.isPlainConfigObject(config?.display) ? config.display : {};
+    if (display.fitViewMaxScale === undefined) return false;
 
     return !this.areConfigValuesEqual(
       normalizedDocument.view?.fitMaxScale,
@@ -211,8 +208,8 @@ export const runtimeConfigSaveMethods = {
   },
 
   hasMeaningfulBranchExpansion(config, normalizedDocument, normalizedGlobal) {
-    const layout = this.isPlainConfigObject(config?.layout) ? config.layout : {};
-    if (layout.branchExpansion === undefined) return false;
+    const structure = this.isPlainConfigObject(config?.structure) ? config.structure : {};
+    if (structure.branchExpansion === undefined) return false;
 
     return !this.areConfigValuesEqual(
       normalizedDocument.branch?.expansion,
@@ -231,7 +228,7 @@ export const runtimeConfigSaveMethods = {
       return config.font?.[key];
     }
 
-    if (path[0] === 'layout' && path[1] === 'topicMaxWidth' && /^level[123]$/.test(path[2])) {
+    if (path[0] === 'structure' && path[1] === 'topicMaxWidth' && /^level[123]$/.test(path[2])) {
       const level = path[2].replace('level', '');
       const levelConfig = config.topic?.levels?.[level];
       if (this.isPlainConfigObject(levelConfig) && levelConfig.maxWidth !== undefined) {
@@ -241,22 +238,24 @@ export const runtimeConfigSaveMethods = {
     }
 
     const normalizedPathMap = {
-      'basic.canvasHeight': ['canvas', 'height'],
-      'basic.sourceHeight': ['source', 'height'],
-      'basic.topicControlVisibility': ['button', 'topicControlVisibility'],
-      'basic.tabIndent': ['source', 'enableTabIndent'],
-      'basic.toolbar.corner': ['toolbar', 'corner'],
-      'basic.toolbar.placement': ['toolbar', 'placement'],
-      'basic.viewFit': ['view', 'fit'],
-      'basic.fitViewNoUpscale': ['view', 'fitNoUpscale'],
-      'basic.fitViewMaxScale': ['view', 'fitMaxScale'],
-      'basic.wheelZoom': ['interaction', 'wheelZoom'],
-      'theme.scheme': ['theme'],
-      'theme.defaultTopicColor': ['topic', 'defaultColor'],
-      'layout.type': ['layout'],
-      'layout.connectorStyle': ['connector', 'style'],
-      'layout.branchExpansion': ['branch', 'expansion'],
-      'layout.topicMaxWidth.global': ['topic', 'maxWidth'],
+      'display.canvasHeight': ['canvas', 'height'],
+      'display.sourceHeight': ['source', 'height'],
+      'display.viewFit': ['view', 'fit'],
+      'display.fitViewNoUpscale': ['view', 'fitNoUpscale'],
+      'display.fitViewMaxScale': ['view', 'fitMaxScale'],
+      'structure.layout': ['layout'],
+      'structure.connectorStyle': ['connector', 'style'],
+      'structure.branchExpansion': ['branch', 'expansion'],
+      'structure.topicMaxWidth.global': ['topic', 'maxWidth'],
+      'color.scheme': ['theme'],
+      'color.defaultTopicColor': ['topic', 'defaultColor'],
+      'color.buttonColorMode': ['button', 'colorMode'],
+      'color.buttonColor': ['button', 'color'],
+      'interaction.topicControlVisibility': ['button', 'topicControlVisibility'],
+      'interaction.tabIndent': ['source', 'enableTabIndent'],
+      'interaction.toolbar.corner': ['toolbar', 'corner'],
+      'interaction.toolbar.placement': ['toolbar', 'placement'],
+      'interaction.wheelZoom': ['interaction', 'wheelZoom'],
     };
     const mappedPath = normalizedPathMap[path.join('.')];
     if (mappedPath) return this.configValueAtPath(config, mappedPath);

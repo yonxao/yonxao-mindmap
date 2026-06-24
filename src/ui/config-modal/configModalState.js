@@ -35,24 +35,24 @@ function readConfigPath(config, path, fallback = '') {
 function runtimePathForDraftPath(path) {
   const key = path.join('.');
   const directPaths = {
-    'basic.canvasHeight': ['canvas', 'height'],
-    'basic.sourceHeight': ['source', 'height'],
-    'basic.topicControlVisibility': ['button', 'topicControlVisibility'],
-    'basic.viewFit': ['view', 'fit'],
-    'basic.fitViewNoUpscale': ['view', 'fitNoUpscale'],
-    'basic.fitViewMaxScale': ['view', 'fitMaxScale'],
-    'basic.toolbar.corner': ['toolbar', 'corner'],
-    'basic.toolbar.placement': ['toolbar', 'placement'],
-    'basic.tabIndent': ['source', 'enableTabIndent'],
-    'basic.wheelZoom': ['interaction', 'wheelZoom'],
-    'theme.scheme': ['theme'],
-    'theme.defaultTopicColor': ['topic', 'defaultColor'],
-    'theme.buttonColorMode': ['button', 'colorMode'],
-    'theme.buttonColor': ['button', 'color'],
-    'layout.type': ['layout'],
-    'layout.connectorStyle': ['connector', 'style'],
-    'layout.branchExpansion': ['branch', 'expansion'],
-    'layout.topicMaxWidth.global': ['topic', 'maxWidth'],
+    'display.canvasHeight': ['canvas', 'height'],
+    'display.sourceHeight': ['source', 'height'],
+    'display.viewFit': ['view', 'fit'],
+    'display.fitViewNoUpscale': ['view', 'fitNoUpscale'],
+    'display.fitViewMaxScale': ['view', 'fitMaxScale'],
+    'structure.layout': ['layout'],
+    'structure.connectorStyle': ['connector', 'style'],
+    'structure.branchExpansion': ['branch', 'expansion'],
+    'structure.topicMaxWidth.global': ['topic', 'maxWidth'],
+    'color.scheme': ['theme'],
+    'color.defaultTopicColor': ['topic', 'defaultColor'],
+    'color.buttonColorMode': ['button', 'colorMode'],
+    'color.buttonColor': ['button', 'color'],
+    'interaction.toolbar.corner': ['toolbar', 'corner'],
+    'interaction.toolbar.placement': ['toolbar', 'placement'],
+    'interaction.topicControlVisibility': ['button', 'topicControlVisibility'],
+    'interaction.tabIndent': ['source', 'enableTabIndent'],
+    'interaction.wheelZoom': ['interaction', 'wheelZoom'],
     'font.family': ['font', 'family'],
     'font.size': ['font', 'size'],
     'font.weight': ['font', 'weight'],
@@ -63,7 +63,7 @@ function runtimePathForDraftPath(path) {
   const fontLevelMatch = key.match(/^font\.level([123])\.(family|size|weight|lineHeight)$/);
   if (fontLevelMatch) return ['font', 'levels', fontLevelMatch[1], fontLevelMatch[2]];
 
-  const topicLevelMatch = key.match(/^layout\.topicMaxWidth\.level([123])$/);
+  const topicLevelMatch = key.match(/^structure\.topicMaxWidth\.level([123])$/);
   if (topicLevelMatch) return ['topic', 'levels', topicLevelMatch[1], 'maxWidth'];
 
   return null;
@@ -73,7 +73,7 @@ function inheritedRuntimeFallback(normalized, path, fallback) {
   const key = path.join('.');
   const fontLevelMatch = key.match(/^font\.level[123]\.(family|size|weight|lineHeight)$/);
   if (fontLevelMatch) return readConfigPath(normalized, ['font', fontLevelMatch[1]], fallback);
-  if (/^layout\.topicMaxWidth\.level[123]$/.test(key)) {
+  if (/^structure\.topicMaxWidth\.level[123]$/.test(key)) {
     return readConfigPath(normalized, ['topic', 'maxWidth'], fallback);
   }
   return fallback;
@@ -239,10 +239,6 @@ export const configModalStateMethods = {
       current = current[key];
     }
     return true;
-  },
-
-  applyInheritedValueStyle(controlEl, path) {
-    this.syncInheritedValueStyle(controlEl, path);
   },
 
   syncInheritedValueStyle(controlEl, path) {

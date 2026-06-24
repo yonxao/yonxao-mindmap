@@ -1,6 +1,15 @@
 /*
  * 文件作用：
  * 将用户输入配置清理成当前 yxmm 配置区结构。
+ *
+ * 当前配置区按用户在配置面板中的操作心智分组：
+ * - display：显示区域和初始视图。
+ * - structure：导图结构、连线和主题宽度。
+ * - color：配色方案、默认主题色和按钮颜色。
+ * - font：全局字体和按主题级别字体覆盖。
+ * - interaction：工具栏、主题按钮和鼠标键盘交互。
+ *
+ * 项目仍处开发阶段，不保留旧 basic/theme/layout 聚合结构兼容。
  */
 
 import { isPlainObject, setConfigValueIfPresent } from './configAccessors.js';
@@ -9,34 +18,44 @@ export function canonicalizeMindConfig(rawConfig) {
   const raw = isPlainObject(rawConfig) ? rawConfig : {};
   const next = {};
 
-  const basic = isPlainObject(raw.basic) ? raw.basic : {};
-  setConfigValueIfPresent(next, ['basic', 'canvasHeight'], basic.canvasHeight);
-  setConfigValueIfPresent(next, ['basic', 'sourceHeight'], basic.sourceHeight);
-  const basicToolbar = isPlainObject(basic.toolbar) ? basic.toolbar : {};
-  setConfigValueIfPresent(next, ['basic', 'toolbar', 'corner'], basicToolbar.corner);
-  setConfigValueIfPresent(next, ['basic', 'toolbar', 'placement'], basicToolbar.placement);
-  setConfigValueIfPresent(next, ['basic', 'topicControlVisibility'], basic.topicControlVisibility);
-  setConfigValueIfPresent(next, ['basic', 'viewFit'], basic.viewFit);
-  setConfigValueIfPresent(next, ['basic', 'fitViewNoUpscale'], basic.fitViewNoUpscale);
-  setConfigValueIfPresent(next, ['basic', 'fitViewMaxScale'], basic.fitViewMaxScale);
-  setConfigValueIfPresent(next, ['basic', 'tabIndent'], basic.tabIndent);
-  setConfigValueIfPresent(next, ['basic', 'wheelZoom'], basic.wheelZoom);
+  const display = isPlainObject(raw.display) ? raw.display : {};
+  setConfigValueIfPresent(next, ['display', 'canvasHeight'], display.canvasHeight);
+  setConfigValueIfPresent(next, ['display', 'sourceHeight'], display.sourceHeight);
+  setConfigValueIfPresent(next, ['display', 'viewFit'], display.viewFit);
+  setConfigValueIfPresent(next, ['display', 'fitViewNoUpscale'], display.fitViewNoUpscale);
+  setConfigValueIfPresent(next, ['display', 'fitViewMaxScale'], display.fitViewMaxScale);
 
-  const theme = isPlainObject(raw.theme) ? raw.theme : {};
-  setConfigValueIfPresent(next, ['theme', 'scheme'], theme.scheme);
-  setConfigValueIfPresent(next, ['theme', 'defaultTopicColor'], theme.defaultTopicColor);
-  setConfigValueIfPresent(next, ['theme', 'buttonColorMode'], theme.buttonColorMode);
-  setConfigValueIfPresent(next, ['theme', 'buttonColor'], theme.buttonColor);
-
-  const layout = isPlainObject(raw.layout) ? raw.layout : {};
-  const topicMaxWidth = isPlainObject(layout.topicMaxWidth) ? layout.topicMaxWidth : {};
-  setConfigValueIfPresent(next, ['layout', 'type'], layout.type);
-  setConfigValueIfPresent(next, ['layout', 'connectorStyle'], layout.connectorStyle);
-  setConfigValueIfPresent(next, ['layout', 'branchExpansion'], layout.branchExpansion);
-  setConfigValueIfPresent(next, ['layout', 'topicMaxWidth', 'global'], topicMaxWidth.global);
+  const structure = isPlainObject(raw.structure) ? raw.structure : {};
+  const topicMaxWidth = isPlainObject(structure.topicMaxWidth) ? structure.topicMaxWidth : {};
+  setConfigValueIfPresent(next, ['structure', 'layout'], structure.layout);
+  setConfigValueIfPresent(next, ['structure', 'connectorStyle'], structure.connectorStyle);
+  setConfigValueIfPresent(next, ['structure', 'branchExpansion'], structure.branchExpansion);
+  setConfigValueIfPresent(next, ['structure', 'topicMaxWidth', 'global'], topicMaxWidth.global);
   for (const levelKey of ['level1', 'level2', 'level3']) {
-    setConfigValueIfPresent(next, ['layout', 'topicMaxWidth', levelKey], topicMaxWidth[levelKey]);
+    setConfigValueIfPresent(
+      next,
+      ['structure', 'topicMaxWidth', levelKey],
+      topicMaxWidth[levelKey]
+    );
   }
+
+  const color = isPlainObject(raw.color) ? raw.color : {};
+  setConfigValueIfPresent(next, ['color', 'scheme'], color.scheme);
+  setConfigValueIfPresent(next, ['color', 'defaultTopicColor'], color.defaultTopicColor);
+  setConfigValueIfPresent(next, ['color', 'buttonColorMode'], color.buttonColorMode);
+  setConfigValueIfPresent(next, ['color', 'buttonColor'], color.buttonColor);
+
+  const interaction = isPlainObject(raw.interaction) ? raw.interaction : {};
+  const toolbar = isPlainObject(interaction.toolbar) ? interaction.toolbar : {};
+  setConfigValueIfPresent(next, ['interaction', 'toolbar', 'corner'], toolbar.corner);
+  setConfigValueIfPresent(next, ['interaction', 'toolbar', 'placement'], toolbar.placement);
+  setConfigValueIfPresent(
+    next,
+    ['interaction', 'topicControlVisibility'],
+    interaction.topicControlVisibility
+  );
+  setConfigValueIfPresent(next, ['interaction', 'tabIndent'], interaction.tabIndent);
+  setConfigValueIfPresent(next, ['interaction', 'wheelZoom'], interaction.wheelZoom);
 
   const font = isPlainObject(raw.font) ? raw.font : {};
   for (const key of ['family', 'size', 'weight', 'lineHeight']) {

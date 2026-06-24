@@ -10,7 +10,7 @@ import {
 
 test('normalizeMindConfig clamps numeric font values and keeps legal layout', () => {
   const config = normalizeMindConfig({
-    layout: { type: 'timeline-up' },
+    structure: { layout: 'timeline-up' },
     font: { size: 999, weight: 50, lineHeight: 999 },
   });
 
@@ -22,7 +22,7 @@ test('normalizeMindConfig clamps numeric font values and keeps legal layout', ()
 
 test('normalizeMindConfig keeps legal topic control visibility', () => {
   const config = normalizeMindConfig({
-    basic: { topicControlVisibility: 'hover' },
+    interaction: { topicControlVisibility: 'hover' },
   });
 
   assert.equal(config.button.topicControlVisibility, 'hover');
@@ -31,22 +31,34 @@ test('normalizeMindConfig keeps legal topic control visibility', () => {
 test('mergeMindConfigObjects recursively merges plain objects', () => {
   assert.deepEqual(
     mergeMindConfigObjects(
-      { font: { size: 16, level1: { weight: 700 } }, layout: { type: 'tree' } },
+      { font: { size: 16, level1: { weight: 700 } }, structure: { layout: 'tree' } },
       { font: { level1: { size: 24 } } }
     ),
-    { font: { size: 16, level1: { weight: 700, size: 24 } }, layout: { type: 'tree' } }
+    { font: { size: 16, level1: { weight: 700, size: 24 } }, structure: { layout: 'tree' } }
   );
 });
 
 test('simple YAML parser and stringifier round-trip nested config', () => {
-  const config = parseSimpleYaml(['theme:', '  scheme: ocean', 'font:', '  size: 18']);
+  const config = parseSimpleYaml(['color:', '  scheme: ocean', 'font:', '  size: 18']);
 
-  assert.deepEqual(config, { theme: { scheme: 'ocean' }, font: { size: 18 } });
+  assert.deepEqual(config, { color: { scheme: 'ocean' }, font: { size: 18 } });
   assert.equal(
     stringifySimpleYaml(config),
-    `theme:
+    `color:
   scheme: ocean
 font:
   size: 18`
   );
+});
+
+test('normalizeMindConfig ignores removed draft-era YAML groups', () => {
+  const config = normalizeMindConfig({
+    layout: { type: 'timeline-up' },
+    theme: { scheme: 'ocean' },
+    basic: { topicControlVisibility: 'hover' },
+  });
+
+  assert.equal(config.layout, 'mindmap-right');
+  assert.equal(config.theme, 'default');
+  assert.equal(config.button.topicControlVisibility, 'toggle-always');
 });

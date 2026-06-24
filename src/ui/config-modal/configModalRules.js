@@ -25,34 +25,36 @@ import {
 export const configModalRuleMethods = {
   tabLabel(tab) {
     return {
-      basic: this.t('configModal.tabs.basic'),
-      theme: this.t('configModal.tabs.theme'),
-      layout: this.t('configModal.tabs.layout'),
+      display: this.t('configModal.tabs.display'),
+      structure: this.t('configModal.tabs.structure'),
+      color: this.t('configModal.tabs.color'),
       font: this.t('configModal.tabs.font'),
+      interaction: this.t('configModal.tabs.interaction'),
       advanced: this.t('configModal.tabs.advanced'),
     }[tab];
   },
 
   tabOptions() {
     return [
-      ['basic', this.t('configModal.tabs.basic')],
-      ['theme', this.t('configModal.tabs.theme')],
-      ['layout', this.t('configModal.tabs.layout')],
+      ['display', this.t('configModal.tabs.display')],
+      ['structure', this.t('configModal.tabs.structure')],
+      ['color', this.t('configModal.tabs.color')],
       ['font', this.t('configModal.tabs.font')],
+      ['interaction', this.t('configModal.tabs.interaction')],
       ['advanced', this.t('configModal.tabs.advanced')],
     ];
   },
 
   themeOptions() {
     const labels = {
-      default: this.t('configModal.theme.default'),
-      ocean: this.t('configModal.theme.ocean'),
-      forest: this.t('configModal.theme.forest'),
-      sunset: this.t('configModal.theme.sunset'),
-      mono: this.t('configModal.theme.mono'),
-      rainbow: this.t('configModal.theme.rainbow'),
-      'pastel-rainbow': this.t('configModal.theme.pastelRainbow'),
-      'neon-rainbow': this.t('configModal.theme.neonRainbow'),
+      default: this.t('configModal.color.default'),
+      ocean: this.t('configModal.color.ocean'),
+      forest: this.t('configModal.color.forest'),
+      sunset: this.t('configModal.color.sunset'),
+      mono: this.t('configModal.color.mono'),
+      rainbow: this.t('configModal.color.rainbow'),
+      'pastel-rainbow': this.t('configModal.color.pastelRainbow'),
+      'neon-rainbow': this.t('configModal.color.neonRainbow'),
     };
     return THEME_SCHEMES.map((value) => [value, labels[value]]);
   },

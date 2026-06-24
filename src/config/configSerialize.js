@@ -53,23 +53,23 @@ export function pruneInactiveMindConfig(rawConfig) {
 
 /*
  * 作用：
- * layout.branchExpansion 依赖当前布局和连线线型。
+ * structure.branchExpansion 依赖当前布局和连线线型。
  *
  * 关键点：
  * 思维导图组只有显式 connectorStyle: elbow 时才保留；非思维导图布局如果支持下挂，
  * 因为实际线型固定为折线，可以保留。
  */
 function pruneInactiveBranchExpansionConfig(config) {
-  const layout = isPlainObject(config.layout) ? config.layout : {};
-  if (layout.branchExpansion === undefined) return config;
+  const structure = isPlainObject(config.structure) ? config.structure : {};
+  if (structure.branchExpansion === undefined) return config;
 
-  const layoutType = normalizeLayoutType(layout.type) || DEFAULT_MIND_CONFIG.layout;
-  const connectorStyle = normalizeConnectorStyle(layout.connectorStyle);
+  const layoutType = normalizeLayoutType(structure.layout) || DEFAULT_MIND_CONFIG.layout;
+  const connectorStyle = normalizeConnectorStyle(structure.connectorStyle);
   const isUnsupportedLayout = BRANCH_EXPANSION_UNSUPPORTED_LAYOUTS.includes(layoutType);
   const isConnectorConfigurableLayout = CONNECTOR_STYLE_CONFIGURABLE_LAYOUTS.includes(layoutType);
 
   if (isUnsupportedLayout || (isConnectorConfigurableLayout && connectorStyle !== 'elbow')) {
-    return deleteMindConfigPath(config, ['layout', 'branchExpansion']);
+    return deleteMindConfigPath(config, ['structure', 'branchExpansion']);
   }
 
   return config;
@@ -77,24 +77,24 @@ function pruneInactiveBranchExpansionConfig(config) {
 
 /*
  * 作用：
- * 适配视图子配置依赖 basic.viewFit。
+ * 适配视图子配置依赖 display.viewFit。
  *
  * 规则：
  * 只有显式 viewFit: fit 时才保留适配视图子配置；开启“不放大”时，最大放大倍数不生效，
  * 因此也会被移除。
  */
 function pruneInactiveViewFitConfig(config) {
-  const basic = isPlainObject(config.basic) ? config.basic : {};
+  const display = isPlainObject(config.display) ? config.display : {};
   let next = config;
 
-  if (basic.viewFit !== 'fit') {
-    next = deleteMindConfigPath(next, ['basic', 'fitViewNoUpscale']);
-    next = deleteMindConfigPath(next, ['basic', 'fitViewMaxScale']);
+  if (display.viewFit !== 'fit') {
+    next = deleteMindConfigPath(next, ['display', 'fitViewNoUpscale']);
+    next = deleteMindConfigPath(next, ['display', 'fitViewMaxScale']);
     return next;
   }
 
-  if (basic.fitViewNoUpscale !== false) {
-    next = deleteMindConfigPath(next, ['basic', 'fitViewMaxScale']);
+  if (display.fitViewNoUpscale !== false) {
+    next = deleteMindConfigPath(next, ['display', 'fitViewMaxScale']);
   }
 
   return next;

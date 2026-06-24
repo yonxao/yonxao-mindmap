@@ -148,7 +148,7 @@ export const viewFitMethods = {
       const currentHeight = rect.height || Number.parseFloat(this.containerEl.style.height) || 0;
       if (!options.growManualHeight || currentHeight >= nextHeight) return;
 
-      this.rawConfig = setMindConfigPath(this.rawConfig, ['basic', 'canvasHeight'], nextHeight);
+      this.rawConfig = setMindConfigPath(this.rawConfig, ['display', 'canvasHeight'], nextHeight);
       this.refreshNormalizedConfig();
     }
 
@@ -238,7 +238,7 @@ export const viewFitMethods = {
 
       this.rawConfig = setMindConfigPath(
         this.rawConfig,
-        ['basic', 'canvasHeight'],
+        ['display', 'canvasHeight'],
         Math.min(CANVAS_MAX_HEIGHT, nextHeight)
       );
       this.refreshNormalizedConfig();

@@ -15,7 +15,7 @@
 
 ```yxmm
 ---
-theme:
+color:
   buttonColorMode: topic
 ---
 
@@ -33,10 +33,10 @@ theme:
 
 ```yxmm
 ---
-theme:
-  scheme: forest
-layout:
+structure:
   connectorStyle: straight
+color:
+  scheme: forest
 ---
 
 # 直线连线
@@ -53,10 +53,10 @@ layout:
 
 ```yxmm
 ---
-theme:
-  scheme: neon-rainbow
-layout:
+structure:
   connectorStyle: elbow
+color:
+  scheme: neon-rainbow
 ---
 
 # 折线下挂
@@ -75,11 +75,11 @@ layout:
 
 ```yxmm
 ---
-theme:
-  scheme: neon-rainbow
-layout:
+structure:
   connectorStyle: elbow
   branchExpansion: hanging
+color:
+  scheme: neon-rainbow
 ---
 
 # 折线下挂
@@ -100,7 +100,7 @@ layout:
 
 ```yxmm
 ---
-theme:
+color:
   scheme: ocean
 ---
 
@@ -113,11 +113,11 @@ theme:
 
 ```yxmm
 ---
-theme:
-  scheme: ocean
-layout:
+structure:
   connectorStyle: elbow
   branchExpansion: hanging
+color:
+  scheme: ocean
 ---
 
 # 右向中图
@@ -139,14 +139,14 @@ layout:
 
 ```yxmm
 ---
-theme:
-  scheme: ocean
-layout:
+structure:
   connectorStyle: elbow
   branchExpansion: hanging
   topicMaxWidth:
     global: 260
     level2: 320
+color:
+  scheme: ocean
 font:
   lineHeight: 22
 ---
@@ -167,10 +167,10 @@ font:
 
 ```yxmm
 ---
-theme:
+structure:
+  layout: mindmap-left
+color:
   scheme: forest
-layout:
-  type: mindmap-left
 ---
 
 # 左向小图
@@ -182,12 +182,12 @@ layout:
 
 ```yxmm
 ---
-theme:
-  scheme: forest
-layout:
-  type: mindmap-left
+structure:
+  layout: mindmap-left
   connectorStyle: elbow
   branchExpansion: hanging
+color:
+  scheme: forest
 ---
 
 # 左向中图
@@ -209,15 +209,15 @@ layout:
 
 ```yxmm
 ---
-theme:
-  scheme: forest
-layout:
-  type: mindmap-left
+structure:
+  layout: mindmap-left
   connectorStyle: elbow
   branchExpansion: hanging
   topicMaxWidth:
     global: 260
     level2: 320
+color:
+  scheme: forest
 font:
   size: 16
   lineHeight: 22
@@ -239,10 +239,10 @@ font:
 
 ```yxmm
 ---
-theme:
+structure:
+  layout: mindmap-bidirectional
+color:
   scheme: pastel-rainbow
-layout:
-  type: mindmap-bidirectional
 ---
 
 # 双向小图
@@ -255,12 +255,12 @@ layout:
 
 ```yxmm
 ---
-theme:
-  scheme: pastel-rainbow
-layout:
-  type: mindmap-bidirectional
+structure:
+  layout: mindmap-bidirectional
   connectorStyle: elbow
   branchExpansion: hanging
+color:
+  scheme: pastel-rainbow
 ---
 
 # 双向中图
@@ -282,15 +282,15 @@ layout:
 
 ```yxmm
 ---
-theme:
-  scheme: pastel-rainbow
-layout:
-  type: mindmap-bidirectional
+structure:
+  layout: mindmap-bidirectional
   connectorStyle: elbow
   branchExpansion: hanging
   topicMaxWidth:
     global: 260
     level2: 340
+color:
+  scheme: pastel-rainbow
 font:
   lineHeight: 22
 ---
@@ -312,10 +312,10 @@ font:
 
 ```yxmm
 ---
-theme:
+structure:
+  layout: mindmap-down
+color:
   scheme: sunset
-layout:
-  type: mindmap-down
 ---
 
 # 下向小图
@@ -327,12 +327,12 @@ layout:
 
 ```yxmm
 ---
-theme:
-  scheme: sunset
-layout:
-  type: mindmap-down
+structure:
+  layout: mindmap-down
   connectorStyle: elbow
   branchExpansion: hanging
+color:
+  scheme: sunset
 ---
 
 # 下向中图
@@ -353,14 +353,14 @@ layout:
 
 ```yxmm
 ---
-theme:
-  scheme: sunset
-layout:
-  type: mindmap-down
+structure:
+  layout: mindmap-down
   connectorStyle: elbow
   branchExpansion: hanging
   topicMaxWidth:
     global: 260
+color:
+  scheme: sunset
 font:
   size: 16
   lineHeight: 22
@@ -382,8 +382,8 @@ font:
 
 ```yxmm
 ---
-layout:
-  type: mindmap-up
+structure:
+  layout: mindmap-up
 ---
 
 # 上向小图
@@ -395,12 +395,12 @@ layout:
 
 ```yxmm
 ---
-theme:
-  buttonColorMode: topic
-layout:
-  type: mindmap-up
+structure:
+  layout: mindmap-up
   connectorStyle: elbow
   branchExpansion: hanging
+color:
+  buttonColorMode: topic
 ---
 
 # 上向中图
@@ -421,8 +421,8 @@ layout:
 
 ```yxmm
 ---
-layout:
-  type: mindmap-up
+structure:
+  layout: mindmap-up
   connectorStyle: elbow
   branchExpansion: hanging
   topicMaxWidth:
@@ -451,10 +451,10 @@ font:
 
 ```yxmm
 ---
-theme:
+structure:
+  layout: mindmap-vertical
+color:
   scheme: neon-rainbow
-layout:
-  type: mindmap-vertical
 ---
 
 # 垂直小图
@@ -467,12 +467,12 @@ layout:
 
 ```yxmm
 ---
-theme:
-  scheme: neon-rainbow
-layout:
-  type: mindmap-vertical
+structure:
+  layout: mindmap-vertical
   connectorStyle: elbow
   branchExpansion: hanging
+color:
+  scheme: neon-rainbow
 ---
 
 # 垂直中图
@@ -494,14 +494,14 @@ layout:
 
 ```yxmm
 ---
-theme:
-  scheme: neon-rainbow
-layout:
-  type: mindmap-vertical
+structure:
+  layout: mindmap-vertical
   connectorStyle: elbow
   branchExpansion: hanging
   topicMaxWidth:
     global: 260
+color:
+  scheme: neon-rainbow
 font:
   lineHeight: 22
 ---
@@ -530,14 +530,14 @@ font:
 
 ```yxmm
 ---
-theme:
-  scheme: neon-rainbow
-layout:
-  type: mindmap-vertical
+structure:
+  layout: mindmap-vertical
   connectorStyle: elbow
   branchExpansion: hanging
   topicMaxWidth:
     global: 260
+color:
+  scheme: neon-rainbow
 font:
   lineHeight: 22
 ---
@@ -559,10 +559,10 @@ font:
 
 ```yxmm
 ---
-theme:
+structure:
+  layout: tree-right
+color:
   scheme: ocean
-layout:
-  type: tree-right
 ---
 
 # 右向树形小图
@@ -574,11 +574,11 @@ layout:
 
 ```yxmm
 ---
-theme:
-  scheme: ocean
-layout:
-  type: tree-right
+structure:
+  layout: tree-right
   branchExpansion: hanging
+color:
+  scheme: ocean
 ---
 
 # 右向树形中图
@@ -600,14 +600,14 @@ layout:
 
 ```yxmm
 ---
-theme:
-  scheme: ocean
-layout:
-  type: tree-right
+structure:
+  layout: tree-right
   branchExpansion: hanging
   topicMaxWidth:
     global: 260
     level2: 340
+color:
+  scheme: ocean
 font:
   size: 16
   lineHeight: 22
@@ -630,10 +630,10 @@ font:
 
 ```yxmm
 ---
-theme:
+structure:
+  layout: tree-left
+color:
   scheme: forest
-layout:
-  type: tree-left
 ---
 
 # 左向树形小图
@@ -645,11 +645,11 @@ layout:
 
 ```yxmm
 ---
-theme:
-  scheme: forest
-layout:
-  type: tree-left
+structure:
+  layout: tree-left
   branchExpansion: hanging
+color:
+  scheme: forest
 ---
 
 # 左向树形中图
@@ -671,14 +671,14 @@ layout:
 
 ```yxmm
 ---
-theme:
-  scheme: forest
-layout:
-  type: tree-left
+structure:
+  layout: tree-left
   branchExpansion: hanging
   topicMaxWidth:
     global: 260
     level2: 340
+color:
+  scheme: forest
 font:
   size: 16
   lineHeight: 22
@@ -701,10 +701,10 @@ font:
 
 ```yxmm
 ---
-theme:
+structure:
+  layout: tree
+color:
   scheme: pastel-rainbow
-layout:
-  type: tree
 ---
 
 # 树形小图
@@ -717,11 +717,11 @@ layout:
 
 ```yxmm
 ---
-theme:
-  scheme: pastel-rainbow
-layout:
-  type: tree
+structure:
+  layout: tree
   branchExpansion: hanging
+color:
+  scheme: pastel-rainbow
 ---
 
 # 树形中图
@@ -744,14 +744,14 @@ layout:
 
 ```yxmm
 ---
-theme:
-  scheme: pastel-rainbow
-layout:
-  type: tree
+structure:
+  layout: tree
   branchExpansion: hanging
   topicMaxWidth:
     global: 260
     level2: 340
+color:
+  scheme: pastel-rainbow
 font:
   size: 16
   lineHeight: 22
@@ -774,10 +774,10 @@ font:
 
 ```yxmm
 ---
-theme:
+structure:
+  layout: org
+color:
   scheme: ocean
-layout:
-  type: org
 ---
 
 # 组织小图
@@ -790,11 +790,11 @@ layout:
 
 ```yxmm
 ---
-theme:
-  scheme: ocean
-layout:
-  type: org
+structure:
+  layout: org
   branchExpansion: hanging
+color:
+  scheme: ocean
 ---
 
 # 组织中图
@@ -815,14 +815,14 @@ layout:
 
 ```yxmm
 ---
-theme:
-  scheme: ocean
-layout:
-  type: org
+structure:
+  layout: org
   branchExpansion: hanging
   topicMaxWidth:
     global: 260
     level2: 340
+color:
+  scheme: ocean
 font:
   lineHeight: 22
 ---
@@ -845,10 +845,10 @@ font:
 
 ```yxmm
 ---
-theme:
+structure:
+  layout: org-right
+color:
   scheme: forest
-layout:
-  type: org-right
 ---
 
 # 右向组织小图
@@ -860,11 +860,11 @@ layout:
 
 ```yxmm
 ---
-theme:
-  scheme: forest
-layout:
-  type: org-right
+structure:
+  layout: org-right
   branchExpansion: hanging
+color:
+  scheme: forest
 ---
 
 # 右向组织中图
@@ -885,14 +885,14 @@ layout:
 
 ```yxmm
 ---
-theme:
-  scheme: forest
-layout:
-  type: org-right
+structure:
+  layout: org-right
   branchExpansion: hanging
   topicMaxWidth:
     global: 260
     level2: 340
+color:
+  scheme: forest
 font:
   size: 16
   lineHeight: 22
@@ -914,10 +914,10 @@ font:
 
 ```yxmm
 ---
-theme:
+structure:
+  layout: timeline-up
+color:
   scheme: sunset
-layout:
-  type: timeline-up
 ---
 
 # 上侧时间轴小图
@@ -930,11 +930,11 @@ layout:
 
 ```yxmm
 ---
-theme:
-  scheme: sunset
-layout:
-  type: timeline-up
+structure:
+  layout: timeline-up
   branchExpansion: hanging
+color:
+  scheme: sunset
 ---
 
 # 上侧时间轴中图
@@ -956,14 +956,14 @@ layout:
 
 ```yxmm
 ---
-theme:
-  scheme: sunset
-layout:
-  type: timeline-up
+structure:
+  layout: timeline-up
   branchExpansion: hanging
   topicMaxWidth:
     global: 260
     level2: 340
+color:
+  scheme: sunset
 font:
   size: 16
   lineHeight: 22
@@ -985,8 +985,8 @@ font:
 
 ```yxmm
 ---
-layout:
-  type: timeline-down
+structure:
+  layout: timeline-down
 ---
 
 # 下侧时间轴小图
@@ -999,8 +999,8 @@ layout:
 
 ```yxmm
 ---
-layout:
-  type: timeline-down
+structure:
+  layout: timeline-down
   branchExpansion: hanging
 ---
 
@@ -1023,14 +1023,14 @@ layout:
 
 ```yxmm
 ---
-theme:
-  scheme: grape
-layout:
-  type: timeline-down
+structure:
+  layout: timeline-down
   branchExpansion: hanging
   topicMaxWidth:
     global: 260
     level2: 340
+color:
+  scheme: grape
 font:
   size: 16
   lineHeight: 22
@@ -1052,10 +1052,10 @@ font:
 
 ```yxmm
 ---
-theme:
+structure:
+  layout: timeline
+color:
   scheme: neon-rainbow
-layout:
-  type: timeline
 ---
 
 # 双侧时间轴小图
@@ -1068,11 +1068,11 @@ layout:
 
 ```yxmm
 ---
-theme:
-  scheme: neon-rainbow
-layout:
-  type: timeline
+structure:
+  layout: timeline
   branchExpansion: hanging
+color:
+  scheme: neon-rainbow
 ---
 
 # 双侧时间轴中图
@@ -1096,14 +1096,14 @@ layout:
 
 ```yxmm
 ---
-theme:
-  scheme: neon-rainbow
-layout:
-  type: timeline
+structure:
+  layout: timeline
   branchExpansion: hanging
   topicMaxWidth:
     global: 260
     level2: 340
+color:
+  scheme: neon-rainbow
 font:
   size: 16
   lineHeight: 22
@@ -1126,10 +1126,10 @@ font:
 
 ```yxmm
 ---
-theme:
+structure:
+  layout: radial
+color:
   scheme: pastel-rainbow
-layout:
-  type: radial
 ---
 
 # 放射小图
@@ -1142,10 +1142,10 @@ layout:
 
 ```yxmm
 ---
-theme:
+structure:
+  layout: radial
+color:
   scheme: pastel-rainbow
-layout:
-  type: radial
 ---
 
 # 放射中图
@@ -1167,12 +1167,12 @@ layout:
 
 ```yxmm
 ---
-theme:
-  scheme: pastel-rainbow
-layout:
-  type: radial
+structure:
+  layout: radial
   topicMaxWidth:
     level2: 320
+color:
+  scheme: pastel-rainbow
 font:
   lineHeight: 22
 ---
@@ -1193,10 +1193,10 @@ font:
 
 ```yxmm
 ---
-theme:
+structure:
+  layout: fishbone-left
+color:
   scheme: ocean
-layout:
-  type: fishbone-left
 ---
 
 # 左向鱼骨小图
@@ -1208,11 +1208,11 @@ layout:
 
 ```yxmm
 ---
-theme:
-  scheme: ocean
-layout:
-  type: fishbone-left
+structure:
+  layout: fishbone-left
   branchExpansion: hanging
+color:
+  scheme: ocean
 ---
 
 # 左向鱼骨中图
@@ -1233,14 +1233,14 @@ layout:
 
 ```yxmm
 ---
-theme:
-  scheme: ocean
-layout:
-  type: fishbone-left
+structure:
+  layout: fishbone-left
   branchExpansion: hanging
   topicMaxWidth:
     global: 260
     level2: 340
+color:
+  scheme: ocean
 font:
   lineHeight: 22
 ---
@@ -1261,10 +1261,10 @@ font:
 
 ```yxmm
 ---
-theme:
+structure:
+  layout: fishbone-right
+color:
   scheme: forest
-layout:
-  type: fishbone-right
 ---
 
 # 右向鱼骨小图
@@ -1276,10 +1276,10 @@ layout:
 
 ```yxmm
 ---
-theme:
+structure:
+  layout: fishbone-right
+color:
   scheme: forest
-layout:
-  type: fishbone-right
 ---
 
 # 右向鱼骨中图
@@ -1300,14 +1300,14 @@ layout:
 
 ```yxmm
 ---
-theme:
-  scheme: forest
-layout:
-  type: fishbone-right
+structure:
+  layout: fishbone-right
   branchExpansion: hanging
   topicMaxWidth:
     global: 260
     level2: 340
+color:
+  scheme: forest
 font:
   size: 16
   lineHeight: 22
@@ -1329,10 +1329,10 @@ font:
 
 ```yxmm
 ---
-theme:
+structure:
+  layout: tree-table
+color:
   scheme: ocean
-layout:
-  type: tree-table
 ---
 
 # 表格小图
@@ -1344,10 +1344,10 @@ layout:
 
 ```yxmm
 ---
-theme:
+structure:
+  layout: tree-table
+color:
   scheme: default
-layout:
-  type: tree-table
 ---
 
 # 表格中图
@@ -1367,14 +1367,14 @@ layout:
 
 ```yxmm
 ---
-theme:
-  scheme: ocean
-layout:
-  type: tree-table
+structure:
+  layout: tree-table
   branchExpansion: hanging
   topicMaxWidth:
     global: 260
     level2: 340
+color:
+  scheme: ocean
 font:
   size: 16
   lineHeight: 22
@@ -1396,10 +1396,10 @@ font:
 
 ```yxmm
 ---
-theme:
+structure:
+  layout: tree-table-stepped
+color:
   scheme: forest
-layout:
-  type: tree-table-stepped
 ---
 
 # 阶梯表格小图
@@ -1411,10 +1411,10 @@ layout:
 
 ```yxmm
 ---
-theme:
+structure:
+  layout: tree-table-stepped
+color:
   scheme: forest
-layout:
-  type: tree-table-stepped
 ---
 
 # 阶梯表格中图
@@ -1434,14 +1434,14 @@ layout:
 
 ```yxmm
 ---
-theme:
-  scheme: forest
-layout:
-  type: tree-table-stepped
+structure:
+  layout: tree-table-stepped
   branchExpansion: hanging
   topicMaxWidth:
     global: 260
     level2: 340
+color:
+  scheme: forest
 font:
   size: 16
   lineHeight: 22
@@ -1463,11 +1463,11 @@ font:
 
 ```yxmm
 ---
-theme:
-  scheme: ocean
-layout:
-  type: mindmap-right
+structure:
+  layout: mindmap-right
   connectorStyle: elbow
+color:
+  scheme: ocean
 ---
 
 # 多代码块 A
@@ -1481,11 +1481,11 @@ layout:
 
 ```yxmm
 ---
-theme:
-  scheme: forest
-layout:
-  type: mindmap-left
+structure:
+  layout: mindmap-left
   connectorStyle: elbow
+color:
+  scheme: forest
 ---
 
 # 多代码块 B
@@ -1499,17 +1499,17 @@ layout:
 
 ```yxmm
 ---
-theme:
-  scheme: ocean
-layout:
-  type: mindmap-right
+structure:
+  layout: mindmap-right
   connectorStyle: elbow
   branchExpansion: hanging
   topicMaxWidth:
     global: 260
     level2: 340
+color:
+  scheme: ocean
 font:
-  family: var(--font-text)
+  family: "var(--font-text)"
   size: 16
   weight: 400
   lineHeight: 20
@@ -1534,15 +1534,10 @@ font:
 
 ```yxmm
 ---
-basic:
+display:
   viewFit: fit
-  tabIndent: true
-  wheelZoom: false
-theme:
-  scheme: ocean
-  defaultTopicColor: "#156bf4"
-layout:
-  type: mindmap-bidirectional
+structure:
+  layout: mindmap-bidirectional
   connectorStyle: elbow
   branchExpansion: hanging
   topicMaxWidth:
@@ -1550,8 +1545,11 @@ layout:
     level1: 320
     level2: 300
     level3: 260
+color:
+  scheme: ocean
+  defaultTopicColor: "#156bf4"
 font:
-  family: var(--font-text)
+  family: "var(--font-text)"
   size: 16
   weight: 400
   lineHeight: 20
@@ -1559,6 +1557,9 @@ font:
     size: 24
     weight: 800
     lineHeight: 32
+interaction:
+  wheelZoom: false
+  tabIndent: true
 ---
 
 # 配置面板专项
@@ -1574,14 +1575,14 @@ font:
 
 ```yxmm
 ---
-basic:
+display:
   viewFit: fit
-theme:
-  scheme: ocean
-layout:
-  type: mindmap-right
+structure:
+  layout: mindmap-right
   connectorStyle: elbow
   branchExpansion: hanging
+color:
+  scheme: ocean
 ---
 
 # 移动端降级

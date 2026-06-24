@@ -109,7 +109,7 @@ export const fontTabMethods = {
     const levelFont = normalized.font.levels[level] || {};
     const groupEl = this.formEl.createDiv({ cls: 'yonxao-mindmap-config-level' });
     const titleEl = groupEl.createDiv({ cls: 'yonxao-mindmap-config-level-title' });
-    titleEl.setText(this.t('configModal.font.levelTitle', { marks: '#'.repeat(Number(level)) }));
+    titleEl.setText(this.t(`configModal.font.levelTitle${level}`));
     const clearButton = titleEl.createEl('button', {
       text: this.t('configModal.font.clearLevel'),
       cls: 'yonxao-mindmap-config-small-button',

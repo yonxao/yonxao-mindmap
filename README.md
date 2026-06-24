@@ -9,27 +9,30 @@ yonxao-mindmap renders Markdown-heading-style `yxmm` code blocks as interactive 
 ````markdown
 ```yxmm
 ---
-canvas:
-  height: 420
-toolbar:
-  corner: top-right
-  placement: outside
-layout: mindmap-right
-connector:
-  style: curve
+display:
+  canvasHeight: 420
+  sourceHeight: 520
+  viewFit: fit
+structure:
+  layout: mindmap-right
+  connectorStyle: curve
+  topicMaxWidth:
+    global: 240
+color:
+  scheme: ocean
 font:
-  size: 14
-  weight: 560
-  lineHeight: 18
-  levels:
-    1:
-      size: 16
-      weight: 700
-topic:
-  maxWidth: 240
-source:
-  enableTabIndent: true
-  height: 520
+  size: 16
+  weight: 400
+  lineHeight: 20
+  level1:
+    size: 18
+    weight: 700
+interaction:
+  toolbar:
+    corner: top-right
+    placement: outside
+  tabIndent: true
+  wheelZoom: false
 ---
 
 # AI学习 [color=#3b82f6 layout=mindmap-right]
@@ -96,23 +99,23 @@ yonxao-mindmap uses these terms consistently across docs, config, UI text, and c
 
 ### Relationship Structure
 
-| 中文术语 | English Term  | yxmm Term / Config Key | Purpose                                                          |
-| -------- | ------------- | ---------------------- | ---------------------------------------------------------------- |
-| 父主题   | parent topic  | -                      | The direct ancestor of the current topic.                        |
-| 子主题   | child topic   | -                      | The direct descendant of the current topic.                      |
-| 兄弟主题 | sibling topic | -                      | A topic with the same parent.                                    |
-| 叶子主题 | leaf topic    | -                      | A topic without children.                                        |
-| 子树     | subtree       | -                      | A topic plus all of its descendants.                             |
-| 连线     | connector     | `connector.style`      | Shows the relationship between a parent topic and a child topic. |
-| 子线出口 | child outlet  | -                      | The point where a connector exits a topic toward its children.   |
+| 中文术语 | English Term  | yxmm Term / Config Key     | Purpose                                                          |
+| -------- | ------------- | -------------------------- | ---------------------------------------------------------------- |
+| 父主题   | parent topic  | -                          | The direct ancestor of the current topic.                        |
+| 子主题   | child topic   | -                          | The direct descendant of the current topic.                      |
+| 兄弟主题 | sibling topic | -                          | A topic with the same parent.                                    |
+| 叶子主题 | leaf topic    | -                          | A topic without children.                                        |
+| 子树     | subtree       | -                          | A topic plus all of its descendants.                             |
+| 连线     | connector     | `structure.connectorStyle` | Shows the relationship between a parent topic and a child topic. |
+| 子线出口 | child outlet  | -                          | The point where a connector exits a topic toward its children.   |
 
 ### Layout Structures
 
 | 中文术语 | English Term | yxmm Term / Config Key | Purpose                                                     |
 | -------- | ------------ | ---------------------- | ----------------------------------------------------------- |
-| 布局结构 | layout       | `layout`               | The config key that directly stores the layout type.        |
+| 布局结构 | layout       | `structure.layout`     | The config key that directly stores the layout type.        |
 | 布局分组 | layout group | -                      | Groups layout types so they are easier to choose and learn. |
-| 布局类型 | layout type  | `layout`               | Controls how topics and connectors are arranged.            |
+| 布局类型 | layout type  | `structure.layout`     | Controls how topics and connectors are arranged.            |
 
 | 布局分组   | English Term       | yxmm Layout Types                                                                                               | Purpose                                                                           |
 | ---------- | ------------------ | --------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------- |

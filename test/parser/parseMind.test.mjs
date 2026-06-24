@@ -5,8 +5,8 @@ import { parseMindDocument, parseTopicLine } from '../../src/parser/parseMind.js
 
 test('parseMindDocument parses config block and multi-line topics', () => {
   const document = parseMindDocument(`---
-layout:
-  type: mindmap-left
+structure:
+  layout: mindmap-left
 font:
   size: 18
 ---
@@ -15,7 +15,7 @@ font:
 continued line
 ### Leaf`);
 
-  assert.equal(document.rawConfig.layout.type, 'mindmap-left');
+  assert.equal(document.rawConfig.structure.layout, 'mindmap-left');
   assert.equal(document.config.layout, 'mindmap-left');
   assert.equal(document.root.text, 'Root');
   assert.equal(document.root.attributes.color, '#3b82f6');

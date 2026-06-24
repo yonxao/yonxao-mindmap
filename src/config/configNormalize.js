@@ -38,16 +38,16 @@ export function normalizeMindConfig(rawConfig) {
   }
 
   const raw = canonicalizeMindConfig(rawConfig);
-  const basic = isPlainObject(raw.basic) ? raw.basic : {};
-  const theme = isPlainObject(raw.theme) ? raw.theme : {};
-  const layout = isPlainObject(raw.layout) ? raw.layout : {};
+  const display = isPlainObject(raw.display) ? raw.display : {};
+  const structure = isPlainObject(raw.structure) ? raw.structure : {};
+  const color = isPlainObject(raw.color) ? raw.color : {};
   const font = isPlainObject(raw.font) ? raw.font : {};
-  const toolbar = isPlainObject(basic.toolbar) ? basic.toolbar : {};
-  const view = isPlainObject(raw.view) ? raw.view : {};
+  const interaction = isPlainObject(raw.interaction) ? raw.interaction : {};
+  const toolbar = isPlainObject(interaction.toolbar) ? interaction.toolbar : {};
 
   return {
     canvas: {
-      height: normalizeOptionalNumber(basic.canvasHeight, CANVAS_MIN_HEIGHT, CANVAS_MAX_HEIGHT),
+      height: normalizeOptionalNumber(display.canvasHeight, CANVAS_MIN_HEIGHT, CANVAS_MAX_HEIGHT),
     },
     toolbar: {
       corner: normalizeToolbarCorner(toolbar.corner) || DEFAULT_MIND_CONFIG.toolbar.corner,
@@ -56,43 +56,43 @@ export function normalizeMindConfig(rawConfig) {
     },
     interaction: {
       wheelZoom:
-        typeof basic.wheelZoom === 'boolean'
-          ? basic.wheelZoom
+        typeof interaction.wheelZoom === 'boolean'
+          ? interaction.wheelZoom
           : DEFAULT_MIND_CONFIG.interaction.wheelZoom,
     },
     view: {
-      ...view,
-      mode: normalizeViewMode(view.mode) || DEFAULT_MIND_CONFIG.view.mode,
-      fit: normalizeViewFit(basic.viewFit) || DEFAULT_MIND_CONFIG.view.fit,
+      mode: DEFAULT_MIND_CONFIG.view.mode,
+      fit: normalizeViewFit(display.viewFit) || DEFAULT_MIND_CONFIG.view.fit,
       fitNoUpscale:
-        typeof basic.fitViewNoUpscale === 'boolean'
-          ? basic.fitViewNoUpscale
+        typeof display.fitViewNoUpscale === 'boolean'
+          ? display.fitViewNoUpscale
           : DEFAULT_MIND_CONFIG.view.fitNoUpscale,
       fitMaxScale:
         normalizeOptionalNumber(
-          basic.fitViewMaxScale,
+          display.fitViewMaxScale,
           FIT_VIEW_MAX_SCALE_MIN,
           FIT_VIEW_MAX_SCALE_MAX
         ) || DEFAULT_MIND_CONFIG.view.fitMaxScale,
     },
-    theme: normalizeMindThemeName(theme.scheme),
-    layout: normalizeLayoutType(layout.type) || DEFAULT_MIND_CONFIG.layout,
+    theme: normalizeMindThemeName(color.scheme),
+    layout: normalizeLayoutType(structure.layout) || DEFAULT_MIND_CONFIG.layout,
     connector: {
-      style: normalizeConnectorStyle(layout.connectorStyle) || DEFAULT_MIND_CONFIG.connector.style,
+      style:
+        normalizeConnectorStyle(structure.connectorStyle) || DEFAULT_MIND_CONFIG.connector.style,
     },
     branch: {
       expansion:
-        normalizeBranchExpansion(layout.branchExpansion) || DEFAULT_MIND_CONFIG.branch.expansion,
+        normalizeBranchExpansion(structure.branchExpansion) || DEFAULT_MIND_CONFIG.branch.expansion,
     },
     font: normalizeFontConfig(font),
-    topic: normalizeTopicConfig(theme, layout),
-    button: normalizeButtonConfig(theme, basic),
+    topic: normalizeTopicConfig(color, structure),
+    button: normalizeButtonConfig(color, interaction),
     source: {
       enableTabIndent:
-        typeof basic.tabIndent === 'boolean'
-          ? basic.tabIndent
+        typeof interaction.tabIndent === 'boolean'
+          ? interaction.tabIndent
           : DEFAULT_MIND_CONFIG.source.enableTabIndent,
-      height: normalizeOptionalNumber(basic.sourceHeight, CANVAS_MIN_HEIGHT, CANVAS_MAX_HEIGHT),
+      height: normalizeOptionalNumber(display.sourceHeight, CANVAS_MIN_HEIGHT, CANVAS_MAX_HEIGHT),
     },
   };
 }
@@ -201,9 +201,9 @@ function normalizeRuntimeTopicConfig(rawTopic) {
 }
 
 export function normalizeTopicConfig(rawTheme, rawLayout) {
-  const theme = isPlainObject(rawTheme) ? rawTheme : {};
-  const layout = isPlainObject(rawLayout) ? rawLayout : {};
-  const topicMaxWidth = isPlainObject(layout.topicMaxWidth) ? layout.topicMaxWidth : {};
+  const color = isPlainObject(rawTheme) ? rawTheme : {};
+  const structure = isPlainObject(rawLayout) ? rawLayout : {};
+  const topicMaxWidth = isPlainObject(structure.topicMaxWidth) ? structure.topicMaxWidth : {};
   const normalizedLevels = {};
 
   for (const level of ['1', '2', '3']) {
@@ -216,7 +216,7 @@ export function normalizeTopicConfig(rawTheme, rawLayout) {
   }
 
   return {
-    defaultColor: normalizeText(theme.defaultTopicColor),
+    defaultColor: normalizeText(color.defaultTopicColor),
     maxWidth:
       normalizeOptionalNumber(topicMaxWidth.global, TOPIC_MAX_WIDTH_MIN, TOPIC_MAX_WIDTH_MAX) ||
       DEFAULT_MIND_CONFIG.topic.maxWidth,
@@ -229,24 +229,24 @@ export function normalizeTopicConfig(rawTheme, rawLayout) {
  * 解析 YAML 配置区中的按钮配色配置。
  *
  * 输入来源：
- * - theme.buttonColorMode：配色模式，可选 inherit-accent/subtle/topic/custom
- * - theme.buttonColor：自定义颜色值，仅在 buttonColorMode 为 custom 时使用
+ * - color.buttonColorMode：配色模式，可选 inherit-accent/subtle/topic/custom
+ * - color.buttonColor：自定义颜色值，仅在 buttonColorMode 为 custom 时使用
  *
  * 输出结构：
  * - colorMode：规范化的配色模式，默认 inherit-accent
  * - color：自定义颜色字符串，可能为空
  */
 export function normalizeButtonConfig(rawTheme, rawBasic = {}) {
-  const theme = isPlainObject(rawTheme) ? rawTheme : {};
-  const basic = isPlainObject(rawBasic) ? rawBasic : {};
-  const colorMode = normalizeText(theme.buttonColorMode).toLowerCase();
+  const color = isPlainObject(rawTheme) ? rawTheme : {};
+  const interaction = isPlainObject(rawBasic) ? rawBasic : {};
+  const colorMode = normalizeText(color.buttonColorMode).toLowerCase();
   return {
     colorMode: BUTTON_COLOR_MODES.includes(colorMode)
       ? colorMode
       : DEFAULT_MIND_CONFIG.button.colorMode,
-    color: normalizeText(theme.buttonColor),
+    color: normalizeText(color.buttonColor),
     topicControlVisibility:
-      normalizeTopicControlVisibility(basic.topicControlVisibility) ||
+      normalizeTopicControlVisibility(interaction.topicControlVisibility) ||
       DEFAULT_MIND_CONFIG.button.topicControlVisibility,
   };
 }

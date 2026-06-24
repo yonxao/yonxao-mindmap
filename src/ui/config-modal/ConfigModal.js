@@ -11,10 +11,11 @@ import {
   createTranslator,
   normalizeMindConfig,
 } from './configModalShared.js';
-import { basicTabMethods } from './BasicTab.js';
-import { themeTabMethods } from './ThemeTab.js';
-import { layoutTabMethods } from './LayoutTab.js';
+import { displayTabMethods } from './DisplayTab.js';
+import { structureTabMethods } from './StructureTab.js';
+import { colorTabMethods } from './ColorTab.js';
 import { fontTabMethods } from './FontTab.js';
+import { interactionTabMethods } from './InteractionTab.js';
 import { advancedTabMethods } from './AdvancedTab.js';
 import { configFieldMethods } from './configFields.js';
 import { configModalStateMethods } from './configModalState.js';
@@ -35,7 +36,7 @@ export class ConfigModal extends Modal {
     this.initialConfig = cloneConfig(canonicalizeMindConfig(options.rawConfig));
     this.draftConfig = cloneConfig(canonicalizeMindConfig(options.rawConfig));
     this.onApply = options.onApply;
-    this.activeTab = 'basic';
+    this.activeTab = 'display';
     this.formEl = null;
     this.advancedInputEl = null;
     this.advancedEditorEl = null;
@@ -126,17 +127,15 @@ export class ConfigModal extends Modal {
     this.formEl.classList.toggle('is-advanced', this.activeTab === 'advanced');
     const normalized = normalizeMindConfig(this.effectiveDraftConfig());
 
-    if (this.activeTab === 'basic') {
-      this.renderBasicTab(normalized);
-    } else if (this.activeTab === 'theme') {
-      this.renderThemeTab(normalized);
-    } else if (this.activeTab === 'layout') {
-      this.renderLayoutTab(normalized);
-    } else if (this.activeTab === 'font') {
-      this.renderFontTab(normalized);
-    } else {
-      this.renderAdvancedTab();
-    }
+    const tabRenderers = {
+      display: () => this.renderDisplayTab(normalized),
+      structure: () => this.renderStructureTab(normalized),
+      color: () => this.renderColorTab(normalized),
+      font: () => this.renderFontTab(normalized),
+      interaction: () => this.renderInteractionTab(normalized),
+      advanced: () => this.renderAdvancedTab(),
+    };
+    tabRenderers[this.activeTab]?.();
 
     this.updateTabs();
     this.updateActionButtons();
@@ -146,10 +145,11 @@ export class ConfigModal extends Modal {
 
 Object.assign(
   ConfigModal.prototype,
-  basicTabMethods,
-  themeTabMethods,
-  layoutTabMethods,
+  displayTabMethods,
+  structureTabMethods,
+  colorTabMethods,
   fontTabMethods,
+  interactionTabMethods,
   advancedTabMethods,
   configFieldMethods,
   configModalStateMethods,

@@ -1,35 +1,30 @@
 /*
  * 文件作用：
- * 配置面板布局页方法集合，负责布局类型、连线线型、下挂展开和主题最大宽度。
- *
- * 实现逻辑：
- * 布局类型变化会影响连线和下挂展开是否可编辑，因此相关字段变更后立即重绘布局页。
- *
- * 调用链：
- * ConfigModal.render() -> layoutTabMethods -> configModalRules/configFields。
+ * 配置面板结构页方法集合，负责布局类型、连线线型、下挂展开和主题最大宽度。
  */
 
 import { TOPIC_MAX_WIDTH_MAX, TOPIC_MAX_WIDTH_MIN } from './configModalShared.js';
 
-export const layoutTabMethods = {
-  renderLayoutTab(normalized) {
-    this.createSection(this.t('configModal.layout.section'));
+export const structureTabMethods = {
+  renderStructureTab(normalized) {
+    this.createSection(this.t('configModal.structure.layoutSection'));
     const layoutSelect = this.createSelectField(
-      this.t('configModal.layout.type'),
-      ['layout', 'type'],
+      this.t('configModal.structure.layout'),
+      ['structure', 'layout'],
       normalized.layout,
       this.layoutOptionGroups()
     );
     layoutSelect.addEventListener('change', () => {
-      // 布局类型会影响后续字段是否可编辑，因此切换布局后立刻重绘结构页，避免保留已经不适用的线型控件。
+      // 布局类型会影响后续字段是否可编辑，因此切换布局后立刻重绘结构页。
       this.render();
     });
 
     let connectorSelect = null;
+    this.createSection(this.t('configModal.structure.connectorSection'));
     if (this.isConnectorStyleConfigurable(normalized.layout)) {
       connectorSelect = this.createSelectField(
-        this.t('configModal.layout.connectorStyle'),
-        ['layout', 'connectorStyle'],
+        this.t('configModal.structure.connectorStyle'),
+        ['structure', 'connectorStyle'],
         normalized.connector.style,
         this.connectorOptions()
       );
@@ -42,26 +37,29 @@ export const layoutTabMethods = {
 
     if (this.isBranchExpansionConfigurable(normalized.layout, normalized.connector.style)) {
       const branchExpansionSelect = this.createSelectField(
-        this.t('configModal.layout.branchExpansion'),
-        ['layout', 'branchExpansion'],
+        this.t('configModal.structure.branchExpansion'),
+        ['structure', 'branchExpansion'],
         normalized.branch.expansion,
-        this.branchExpansionOptions()
+        this.branchExpansionOptions(),
+        {
+          help: this.t('configModal.structure.branchExpansion.elbowOnlyHelp'),
+        }
       );
       branchExpansionSelect.addEventListener('change', () => {
         this.setConfigValueOrDeleteInherited(
-          ['layout', 'type'],
+          ['structure', 'layout'],
           normalized.layout,
           layoutSelect._yonxaoMindmapInheritedValue
         );
-        this.syncInheritedValueStyle(layoutSelect._yonxaoMindmapControlEl, ['layout', 'type']);
+        this.syncInheritedValueStyle(layoutSelect._yonxaoMindmapControlEl, ['structure', 'layout']);
         if (!this.isConnectorStyleConfigurable(normalized.layout)) return;
         this.setConfigValueOrDeleteInherited(
-          ['layout', 'connectorStyle'],
+          ['structure', 'connectorStyle'],
           'elbow',
           connectorSelect._yonxaoMindmapInheritedValue
         );
         this.syncInheritedValueStyle(connectorSelect._yonxaoMindmapControlEl, [
-          'layout',
+          'structure',
           'connectorStyle',
         ]);
       });
@@ -71,7 +69,7 @@ export const layoutTabMethods = {
   },
 
   createTopicMaxWidthGroup(normalized) {
-    this.createSection(this.t('configModal.layout.topicMaxWidthSection'));
+    this.createSection(this.t('configModal.structure.topicMaxWidthSection'));
     const inputOptions = {
       min: TOPIC_MAX_WIDTH_MIN,
       max: TOPIC_MAX_WIDTH_MAX,
@@ -81,12 +79,12 @@ export const layoutTabMethods = {
     const globalMaxWidth = normalized.topic.maxWidth;
 
     this.createNumberField(
-      this.t('configModal.layout.topicMaxWidthGlobal'),
-      ['layout', 'topicMaxWidth', 'global'],
+      this.t('configModal.structure.topicMaxWidthGlobal'),
+      ['structure', 'topicMaxWidth', 'global'],
       globalMaxWidth,
       {
         ...inputOptions,
-        help: this.t('configModal.layout.topicMaxWidth.help'),
+        help: this.t('configModal.structure.topicMaxWidth.help'),
       }
     );
 
@@ -94,8 +92,8 @@ export const layoutTabMethods = {
       const levelKey = `level${level}`;
       const levelTopic = normalized.topic.levels[level] || {};
       this.createNumberField(
-        this.t(`configModal.layout.topicMaxWidthLevel${level}`),
-        ['layout', 'topicMaxWidth', levelKey],
+        this.t(`configModal.structure.topicMaxWidthLevel${level}`),
+        ['structure', 'topicMaxWidth', levelKey],
         levelTopic.maxWidth || globalMaxWidth,
         {
           ...inputOptions,

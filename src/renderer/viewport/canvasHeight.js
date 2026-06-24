@@ -3,7 +3,7 @@
  * 幕布高度方法集合，负责自动高度、手动高度和高度拖拽保存。
  *
  * 实现逻辑：
- * 根据布局 bounds、视口和配置计算显示高度；用户拖拽后写入 basic.canvasHeight。
+ * 根据布局 bounds、视口和配置计算显示高度；用户拖拽后写入 display.canvasHeight。
  *
  * 调用链：
  * 渲染/拖拽事件 -> canvasHeightMethods -> runtimeConfigSaveMethods。
@@ -115,7 +115,7 @@ export const canvasHeightMethods = {
       const height = Math.round(this.containerEl.getBoundingClientRect().height);
       this.rawConfig = setMindConfigPath(
         this.rawConfig,
-        this.isSourceMode ? ['basic', 'sourceHeight'] : ['basic', 'canvasHeight'],
+        this.isSourceMode ? ['display', 'sourceHeight'] : ['display', 'canvasHeight'],
         height
       );
       this.rememberViewModeConfig();
@@ -138,7 +138,7 @@ export const canvasHeightMethods = {
     this.containerEl.style.height = '';
     this.rawConfig = deleteMindConfigPath(
       this.rawConfig,
-      this.isSourceMode ? ['basic', 'sourceHeight'] : ['basic', 'canvasHeight']
+      this.isSourceMode ? ['display', 'sourceHeight'] : ['display', 'canvasHeight']
     );
     this.rememberViewModeConfig();
     Promise.resolve(this.saveRuntimeConfigToFile()).catch((error) => {

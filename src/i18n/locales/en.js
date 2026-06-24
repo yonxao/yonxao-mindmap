@@ -125,11 +125,11 @@ export const enMessages = Object.freeze({
   'configModal.info.label': 'Config rules',
   'configModal.info.tooltip':
     'Config priority:\nTopic attributes > Code block config > Plugin global default value config > Plugin built-in defaults\n\nColor priority:\nTopic attribute color > Default topic color > Theme scheme\n\nSave cleanup logic:\nWhen a config value is the same as the effective default value from the plugin global default value config or plugin built-in defaults, it is removed to keep the config concise.',
-  'configModal.tabs.basic': 'Basic',
-  'configModal.tabs.theme': 'Theme',
-  'configModal.tabs.layout': 'Layout',
+  'configModal.tabs.display': 'Display',
+  'configModal.tabs.structure': 'Structure',
+  'configModal.tabs.color': 'Color',
   'configModal.tabs.font': 'Font',
-  'configModal.tabs.source': 'Source',
+  'configModal.tabs.interaction': 'Interaction',
   'configModal.tabs.advanced': 'Advanced',
   'configModal.actions.apply': 'Apply',
   'configModal.actions.saveAndClose': 'Save and close',
@@ -139,41 +139,46 @@ export const enMessages = Object.freeze({
   'configModal.status.valid': 'Config syntax is valid.',
   'configModal.status.invalid': 'Config syntax error: {message}',
 
-  'configModal.basic.section': 'Basic config',
-  'configModal.basic.canvasHeight': 'Map height',
-  'configModal.basic.canvasHeight.help':
+  'configModal.placeholder.auto': 'Auto',
+  'configModal.placeholder.default': 'Default',
+
+  'configModal.display.mapSection': 'Map area',
+  'configModal.display.canvasHeight': 'Map height',
+  'configModal.display.canvasHeight.help':
     'Leave empty for automatic height. Dragging the bottom canvas handle also writes this value.',
-  'configModal.basic.viewFit': 'View fit',
-  'configModal.basic.viewFit.help':
+  'configModal.display.viewFit': 'View fit',
+  'configModal.display.viewFit.help':
     'Controls the initial zoom when the map opens. Original size keeps text visually stable; fit view tries to show the whole map.',
-  'configModal.basic.fitViewNoUpscale': 'Do not enlarge in fit view',
-  'configModal.basic.fitViewNoUpscale.help':
+  'configModal.display.fitViewNoUpscale': 'Do not enlarge in fit view',
+  'configModal.display.fitViewNoUpscale.help':
     'When enabled, fit view only shrinks maps that are too large; small maps keep their original scale.',
-  'configModal.basic.fitViewMaxScale': 'Fit view max scale',
-  'configModal.basic.fitViewMaxScale.help':
+  'configModal.display.fitViewMaxScale': 'Fit view max scale',
+  'configModal.display.fitViewMaxScale.help':
     'Maximum enlargement used by fit view when "Do not enlarge" is disabled.',
-  'configModal.basic.sourceHeight': 'Source height',
-  'configModal.basic.sourceHeight.help':
+  'configModal.display.sourceSection': 'Source area',
+  'configModal.display.sourceHeight': 'Source height',
+  'configModal.display.sourceHeight.help':
     'Source mode has an independent height and does not affect map height.',
-  'configModal.basic.topicControlVisibility': 'Topic button visibility',
-  'configModal.basic.topicControlVisibility.help':
-    'Controls when edit, collapse, and add-topic buttons are shown on the map. Edit buttons remain disabled in reading view.',
-  'configModal.basic.toolbarCorner': 'Toolbar corner',
-  'configModal.basic.toolbarPlacement': 'Toolbar placement',
+
+  'configModal.interaction.toolbarSection': 'Toolbar',
+  'configModal.interaction.toolbarCorner': 'Toolbar corner',
+  'configModal.interaction.toolbarPlacement': 'Toolbar placement',
   'configModal.toolbarCorner.topLeft': 'Top left',
   'configModal.toolbarCorner.topRight': 'Top right',
   'configModal.toolbarCorner.bottomLeft': 'Bottom left',
   'configModal.toolbarCorner.bottomRight': 'Bottom right',
   'configModal.toolbarPlacement.inside': 'Inside',
   'configModal.toolbarPlacement.outside': 'Outside',
-  'configModal.basic.placeholder.auto': 'Auto',
-  'configModal.basic.placeholder.default': 'Default',
-  'configModal.basic.featureSection': 'Features',
-  'configModal.basic.wheelZoom': 'Mouse wheel zoom',
-  'configModal.basic.wheelZoom.help':
+  'configModal.interaction.topicButtonSection': 'Topic buttons',
+  'configModal.interaction.topicControlVisibility': 'Topic button visibility',
+  'configModal.interaction.topicControlVisibility.help':
+    'Controls when edit, collapse, and add-topic buttons are shown on the map. Edit buttons remain disabled in reading view.',
+  'configModal.interaction.inputSection': 'Mouse and keyboard',
+  'configModal.interaction.wheelZoom': 'Mouse wheel zoom',
+  'configModal.interaction.wheelZoom.help':
     'When disabled, the wheel keeps scrolling the Obsidian page. When enabled, the wheel zooms the current map.',
-  'configModal.basic.tabIndent': 'Tab key changes topic level',
-  'configModal.basic.tabIndent.help':
+  'configModal.interaction.tabIndent': 'Tab key changes topic level',
+  'configModal.interaction.tabIndent.help':
     'When enabled, Tab and Shift+Tab in source mode adjust the current line topic level.',
   'configModal.viewFit.original': 'Original size',
   'configModal.viewFit.fit': 'Fit view',
@@ -181,40 +186,41 @@ export const enMessages = Object.freeze({
   'configModal.topicControlVisibility.toggle-always': 'Always show collapse; show others on hover',
   'configModal.topicControlVisibility.hover': 'Show all buttons on hover',
 
-  'configModal.theme.section': 'Theme',
-  'configModal.theme.scheme': 'Theme scheme',
-  'configModal.theme.defaultTopicColor': 'Default topic color',
-  'configModal.theme.defaultTopicColor.help':
+  'configModal.color.schemeSection': 'Color scheme',
+  'configModal.color.scheme': 'Color scheme',
+  'configModal.color.defaultTopicColor': 'Default topic color',
+  'configModal.color.defaultTopicColor.help':
     'Leave empty to use the current theme auto colors. When filled, it overrides theme auto colors, while topic attribute color still has priority.',
-  'configModal.theme.overrideWarning':
+  'configModal.color.overrideWarning':
     'The current theme assigns colors by branch. Setting a default topic color hides those branch colors.',
-  'configModal.theme.buttonColorMode': 'Button color',
-  'configModal.theme.buttonColorMode.help': 'Color mode for toggle, edit, and add buttons.',
-  'configModal.theme.buttonColor.inherit-accent': 'Inherit Accent',
-  'configModal.theme.buttonColor.subtle': 'Subtle',
-  'configModal.theme.buttonColor.topic': 'Topic color',
-  'configModal.theme.buttonColor.custom': 'Custom',
-  'configModal.theme.buttonColor': 'Custom button color',
-  'configModal.theme.buttonColor.help':
+  'configModal.color.buttonSection': 'Button color',
+  'configModal.color.buttonColorMode': 'Button color',
+  'configModal.color.buttonColorMode.help': 'Color mode for toggle, edit, and add buttons.',
+  'configModal.color.buttonColor.inherit-accent': 'Inherit Accent',
+  'configModal.color.buttonColor.subtle': 'Subtle',
+  'configModal.color.buttonColor.topic': 'Topic color',
+  'configModal.color.buttonColor.custom': 'Custom',
+  'configModal.color.buttonColor': 'Custom button color',
+  'configModal.color.buttonColor.help':
     'Custom color for buttons, only applies when mode is Custom.',
 
-  'configModal.layout.section': 'Layout',
-  'configModal.layout.type': 'Layout type',
-  'configModal.layout.topicMaxWidth': 'Topic max width',
-  'configModal.layout.topicMaxWidthSection': 'Topic max width',
-  'configModal.layout.topicMaxWidth.help': 'Range: 120-800 px.',
-  'configModal.layout.topicMaxWidthGlobal': 'Global',
-  'configModal.layout.topicMaxWidthLevel1': 'Level 1 topic',
-  'configModal.layout.topicMaxWidthLevel2': 'Level 2 topic',
-  'configModal.layout.topicMaxWidthLevel3': 'Level 3 topic',
-  'configModal.layout.connectorStyle': 'Connector style',
-  'configModal.layout.connectorStyle.fixedHelp':
+  'configModal.structure.layoutSection': 'Layout',
+  'configModal.structure.layout': 'Layout type',
+  'configModal.structure.connectorSection': 'Connector and expansion',
+  'configModal.structure.connectorStyle': 'Connector style',
+  'configModal.structure.connectorStyle.fixedHelp':
     'Only mind map layouts can choose connector style. Other layouts use a fixed elbow line to preserve their structure.',
-  'configModal.layout.branchExpansion': 'Subtopic expansion',
-  'configModal.layout.branchExpansion.elbowOnlyHelp':
+  'configModal.structure.branchExpansion': 'Subtopic expansion',
+  'configModal.structure.branchExpansion.elbowOnlyHelp':
     'Subtopic expansion only applies when the actual connector style is elbow.',
-  'configModal.layout.branchExpansion.unsupportedHelp':
+  'configModal.structure.branchExpansion.unsupportedHelp':
     'The current layout does not support subtopic expansion.',
+  'configModal.structure.topicMaxWidthSection': 'Topic max width',
+  'configModal.structure.topicMaxWidth.help': 'Range: 120-800 px.',
+  'configModal.structure.topicMaxWidthGlobal': 'Global',
+  'configModal.structure.topicMaxWidthLevel1': 'Level 1 topic',
+  'configModal.structure.topicMaxWidthLevel2': 'Level 2 topic',
+  'configModal.structure.topicMaxWidthLevel3': 'Level 3 topic',
   'configModal.branchExpansion.side': 'Natural expansion',
   'configModal.branchExpansion.hanging': 'Hanging expansion',
 
@@ -229,15 +235,13 @@ export const enMessages = Object.freeze({
   'configModal.font.lineHeight': 'Topic line height',
   'configModal.font.lineHeight.help':
     'Line height is the SVG text line spacing in px. A practical value is usually 1.3-1.5 times the font size.',
-  'configModal.font.levelSection': 'Per-level overrides',
-  'configModal.font.levelTitle': '{marks} level',
+  'configModal.font.levelSection': 'Per-topic-level overrides',
+  'configModal.font.levelTitle1': 'Level 1 topic',
+  'configModal.font.levelTitle2': 'Level 2 topic',
+  'configModal.font.levelTitle3': 'Level 3 topic',
   'configModal.font.clearLevel': 'Clear this level',
 
-  'configModal.source.section': 'Source mode',
-  'configModal.source.tabIndent': 'Tab key changes topic level',
-  'configModal.source.height': 'Source height',
-
-  'configModal.advanced.section': 'Advanced config',
+  'configModal.advanced.section': 'Config source',
 
   'configModal.layout.group.mindmap': 'Mind map',
   'configModal.layout.group.tree': 'Tree diagram',
@@ -269,14 +273,14 @@ export const enMessages = Object.freeze({
   'configModal.connector.straight': 'Straight line',
   'configModal.connector.elbow': 'Elbow line',
 
-  'configModal.theme.default': 'Default: follow Obsidian',
-  'configModal.theme.ocean': 'Ocean: blue-cyan tech',
-  'configModal.theme.forest': 'Forest: green learning',
-  'configModal.theme.sunset': 'Sunset: orange-red creative',
-  'configModal.theme.mono': 'Mono: formal documents',
-  'configModal.theme.rainbow': 'Rainbow: vivid standard',
-  'configModal.theme.pastelRainbow': 'Pastel rainbow: long reading',
-  'configModal.theme.neonRainbow': 'Neon rainbow: dark presentation',
+  'configModal.color.default': 'Default: follow Obsidian',
+  'configModal.color.ocean': 'Ocean: blue-cyan tech',
+  'configModal.color.forest': 'Forest: green learning',
+  'configModal.color.sunset': 'Sunset: orange-red creative',
+  'configModal.color.mono': 'Mono: formal documents',
+  'configModal.color.rainbow': 'Rainbow: vivid standard',
+  'configModal.color.pastelRainbow': 'Pastel rainbow: long reading',
+  'configModal.color.neonRainbow': 'Neon rainbow: dark presentation',
 
   'font.group.inherit': 'Inherit and custom',
   'font.group.obsidian': 'Obsidian',

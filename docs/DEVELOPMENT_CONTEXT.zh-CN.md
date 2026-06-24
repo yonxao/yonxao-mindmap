@@ -115,10 +115,10 @@ package license 字段：
 
 ```markdown
 ---
-theme:
+color:
   scheme: rainbow
-layout:
-  type: mindmap-right
+structure:
+  layout: mindmap-right
 ---
 
 # 中心主题/一级主题
@@ -134,10 +134,10 @@ layout:
 
 ```markdown
 ---
-theme:
+color:
   scheme: pastel-rainbow
-layout:
-  type: fishbone-left
+structure:
+  layout: fishbone-left
   connectorStyle: straight
   branchExpansion: hanging
 font:
@@ -228,31 +228,30 @@ src/config/defaultMindConfig.js
 
 核心配置项：
 
-- `basic.canvasHeight`：导图幕布高度。
-- `basic.sourceHeight`：源码模式高度，和导图幕布高度分开保存。
-- `basic.toolbar.corner` / `basic.toolbar.placement`：悬浮工具栏吸附位置，角落可选四角，位置可选内侧或外侧。
-- `basic.viewFit`：打开导图时的视图适配方式，可选 `original`、`fit`，默认 `fit`。
-- `basic.fitViewNoUpscale`：适配视图是否禁止放大小图，默认开启。
-- `basic.fitViewMaxScale`：关闭 `basic.fitViewNoUpscale` 时的适配视图最大放大倍数，默认 `1.5`。
-- `basic.tabIndent`：源码模式中是否启用 Tab 调整主题级别，默认开启。
-- `basic.wheelZoom`：是否启用鼠标滚轮缩放，默认关闭。
-- `view.mode`：当前代码块视图模式，通常为 `map` 或 `source`。
-- `theme.scheme`：主题色系。
-- `theme.defaultTopicColor`：默认主题颜色。
-- `layout.type`：布局类型。
-- `layout.connectorStyle`：连线线型，仅思维导图组布局可配置。
-- `layout.branchExpansion`：普通主题的子主题展开方式。
-- `layout.topicMaxWidth`：主题最大宽度，包含 `global`、`level1`、`level2`、`level3`。
+- `display.canvasHeight`：导图幕布高度。
+- `display.sourceHeight`：源码模式高度，和导图幕布高度分开保存。
+- `interaction.toolbar.corner` / `interaction.toolbar.placement`：悬浮工具栏吸附位置，角落可选四角，位置可选内侧或外侧。
+- `display.viewFit`：打开导图时的视图适配方式，可选 `original`、`fit`，默认 `fit`。
+- `display.fitViewNoUpscale`：适配视图是否禁止放大小图，默认开启。
+- `display.fitViewMaxScale`：关闭 `display.fitViewNoUpscale` 时的适配视图最大放大倍数，默认 `1.5`。
+- `interaction.tabIndent`：源码模式中是否启用 Tab 调整主题级别，默认开启。
+- `interaction.wheelZoom`：是否启用鼠标滚轮缩放，默认关闭。
+- `color.scheme`：主题色系。
+- `color.defaultTopicColor`：默认主题颜色。
+- `structure.layout`：布局类型。
+- `structure.connectorStyle`：连线线型，仅思维导图组布局可配置。
+- `structure.branchExpansion`：普通主题的子主题展开方式。
+- `structure.topicMaxWidth`：主题最大宽度，包含 `global`、`level1`、`level2`、`level3`。
 - `font.family` / `font.size` / `font.weight` / `font.lineHeight`：全局主题字体配置。
 - `font.level1` / `font.level2` / `font.level3`：按主题级别覆盖字体。
 
 ### 9.2 布局类型
 
-布局类型放在 `layout.type`：
+布局类型放在 `structure.layout`：
 
 ```yaml
-layout:
-  type: mindmap-right
+structure:
+  layout: mindmap-right
 ```
 
 当前布局分组和布局值：
@@ -299,7 +298,7 @@ layout:
 
 ### 9.3 连线线型规则
 
-`layout.connectorStyle` 可选值：
+`structure.connectorStyle` 可选值：
 
 - `curve`：曲线，技术上是三次贝塞尔曲线。
 - `straight`：直线。
@@ -309,12 +308,12 @@ layout:
 
 - 只有布局类型属于思维导图组的布局才允许用户设置连线线型，其他布局都只有折线。
 - 非思维导图组布局为了保持结构语义，配置界面禁止设置线型，UI 上固定显示折线。
-- 树形图、组织结构图、时间轴、鱼骨图等布局内部通常有专用的主干、支线或骨架绘制逻辑，不应简单套用 `layout.connectorStyle`。
+- 树形图、组织结构图、时间轴、鱼骨图等布局内部通常有专用的主干、支线或骨架绘制逻辑，不应简单套用 `structure.connectorStyle`。
 - 如果以后要给某个非思维导图布局开放线型，需要单独设计该布局的语义和视觉规则。
 
 #### 9.3.1 子主题展开方式规则
 
-`layout.branchExpansion` 当前可选：
+`structure.branchExpansion` 当前可选：
 
 - `side`：自然展开。
 - `hanging`：下挂展开。
@@ -324,7 +323,7 @@ layout:
 - 下挂展开只在实际连线线型为折线时生效。
 - 放射图、树形表格、阶梯树形表格不支持下挂展开。
 - 下挂展开只控制三级主题及更深主题继续展开子主题；一级、二级主题不受它影响。
-- 思维导图组只有 `layout.connectorStyle: elbow` 时，下挂展开才可配置且生效。
+- 思维导图组只有 `structure.connectorStyle: elbow` 时，下挂展开才可配置且生效。
 - 其他支持下挂的非思维导图布局因为实际线型固定为折线，默认可配置下挂展开。
 - 修改下挂布局时要同时考虑主题坐标、连线锚点、折叠按钮、增加主题按钮等，不要只改其中一个点。
 
@@ -364,7 +363,7 @@ src/theme/mindThemes.js
 颜色优先级：
 
 ```text
-主题属性 color > theme.defaultTopicColor > 主题自动配色
+主题属性 color > color.defaultTopicColor > 配色方案自动配色
 ```
 
 已确认规则：
@@ -372,7 +371,7 @@ src/theme/mindThemes.js
 - 中心主题颜色应和分支颜色区分开。
 - 主题属性 `color` 只修改当前主题的颜色，不应改变它与父主题之间的连线颜色。
 - 彩虹类主题按分支主题自动分配颜色。
-- `theme.defaultTopicColor` 会覆盖主题自动配色，但主题属性 `color` 仍然优先。
+- `color.defaultTopicColor` 会覆盖主题自动配色，但主题属性 `color` 仍然优先。
 - 配置区中的十六进制颜色建议加引号，例如 `defaultColor: '#66ed0c'`。
 
 ### 9.5 字体规则
@@ -833,7 +832,7 @@ npm run dev:obsidian
 
 ### 21.2 配置 UI 和实际渲染逻辑不一致
 
-比如 `layout.connectorStyle` 只有思维导图布局可配置。改 UI 时要确认渲染器实际是否使用该配置。
+比如 `structure.connectorStyle` 只有思维导图布局可配置。改 UI 时要确认渲染器实际是否使用该配置。
 
 ### 21.3 README 术语被误改
 

@@ -61,67 +61,75 @@ export function createAdditionalLocale(text) {
     'configModal.info.tooltip':
       text.configRulesTooltip ||
       'Config priority:\nTopic attributes > Code block config > Plugin global default value config > Plugin built-in defaults\n\nColor priority:\nTopic attribute color > Default topic color > Theme scheme\n\nSave cleanup logic:\nWhen a config value is the same as the effective default value from the plugin global default value config or plugin built-in defaults, it is removed to keep the config concise.',
-    'configModal.tabs.basic': text.basic,
-    'configModal.tabs.theme': text.theme,
-    'configModal.tabs.layout': text.layout,
+    'configModal.tabs.display': text.display || 'Display',
+    'configModal.tabs.structure': text.structure || text.layout,
+    'configModal.tabs.color': text.color || text.theme,
     'configModal.tabs.font': text.font,
-    'configModal.tabs.source': text.source,
+    'configModal.tabs.interaction': text.interaction || 'Interaction',
     'configModal.tabs.advanced': text.advanced,
     'configModal.actions.apply': text.apply,
     'configModal.actions.saveAndClose': text.saveAndClose,
     'configModal.actions.cancel': text.cancel,
     'configModal.actions.close': text.close || text.cancel || 'Close',
-    'configModal.basic.canvasHeight': text.mapHeight,
-    'configModal.basic.sourceHeight': text.sourceHeight,
-    'configModal.basic.toolbarCorner': text.toolbarCorner || 'Toolbar corner',
-    'configModal.basic.toolbarPlacement': text.toolbarPlacement || 'Toolbar placement',
+    'configModal.placeholder.auto': text.auto,
+    'configModal.placeholder.default': text.defaultValue,
+    'configModal.display.mapSection': text.mapArea || 'Map area',
+    'configModal.display.canvasHeight': text.mapHeight,
+    'configModal.display.sourceSection': text.sourceArea || 'Source area',
+    'configModal.display.sourceHeight': text.sourceHeight,
+    'configModal.interaction.toolbarSection': text.toolbar || 'Toolbar',
+    'configModal.interaction.toolbarCorner': text.toolbarCorner || 'Toolbar corner',
+    'configModal.interaction.toolbarPlacement': text.toolbarPlacement || 'Toolbar placement',
     'configModal.toolbarCorner.topLeft': text.toolbarTopLeft || 'Top left',
     'configModal.toolbarCorner.topRight': text.toolbarTopRight || 'Top right',
     'configModal.toolbarCorner.bottomLeft': text.toolbarBottomLeft || 'Bottom left',
     'configModal.toolbarCorner.bottomRight': text.toolbarBottomRight || 'Bottom right',
     'configModal.toolbarPlacement.inside': text.toolbarInside || 'Inside',
     'configModal.toolbarPlacement.outside': text.toolbarOutside || 'Outside',
-    'configModal.basic.placeholder.auto': text.auto,
-    'configModal.basic.placeholder.default': text.defaultValue,
-    'configModal.basic.viewFit': text.viewFit || 'View fit',
-    'configModal.basic.viewFit.help':
+    'configModal.display.viewFit': text.viewFit || 'View fit',
+    'configModal.display.viewFit.help':
       text.viewFitHelp ||
       'Controls the initial zoom when the map opens. Original size keeps text visually stable; fit view tries to show the whole map.',
-    'configModal.basic.fitViewNoUpscale': text.fitViewNoUpscale || 'Do not enlarge in fit view',
-    'configModal.basic.fitViewNoUpscale.help':
+    'configModal.display.fitViewNoUpscale': text.fitViewNoUpscale || 'Do not enlarge in fit view',
+    'configModal.display.fitViewNoUpscale.help':
       text.fitViewNoUpscaleHelp ||
       'When enabled, fit view only shrinks maps that are too large; small maps keep their original scale.',
-    'configModal.basic.fitViewMaxScale': text.fitViewMaxScale || 'Fit view max scale',
-    'configModal.basic.fitViewMaxScale.help':
+    'configModal.display.fitViewMaxScale': text.fitViewMaxScale || 'Fit view max scale',
+    'configModal.display.fitViewMaxScale.help':
       text.fitViewMaxScaleHelp ||
       'Maximum enlargement used by fit view when "Do not enlarge" is disabled.',
     'configModal.viewFit.original': text.originalSize || 'Original size',
     'configModal.viewFit.fit': text.fitView || 'Fit view',
-    'configModal.basic.featureSection': text.features || 'Features',
-    'configModal.basic.wheelZoom': text.wheelZoom,
-    'configModal.basic.tabIndent': text.tabIndent || 'Tab key changes topic level',
-    'configModal.basic.tabIndent.help':
+    'configModal.interaction.topicButtonSection': text.topicButtons || 'Topic buttons',
+    'configModal.interaction.topicControlVisibility':
+      text.topicControlVisibility || 'Topic button visibility',
+    'configModal.interaction.inputSection': text.input || 'Mouse and keyboard',
+    'configModal.interaction.wheelZoom': text.wheelZoom,
+    'configModal.interaction.tabIndent': text.tabIndent || 'Tab key changes topic level',
+    'configModal.interaction.tabIndent.help':
       text.tabIndentHelp ||
       'When enabled, Tab and Shift+Tab in source mode adjust the current line topic level.',
-    'configModal.theme.scheme': text.themeScheme,
-    'configModal.theme.defaultTopicColor': text.defaultTopicColor,
-    'configModal.layout.type': text.layoutType,
-    'configModal.layout.topicMaxWidth': text.topicMaxWidth,
-    'configModal.layout.topicMaxWidthSection': text.topicMaxWidth,
-    'configModal.layout.topicMaxWidth.help':
+    'configModal.color.schemeSection': text.colorSchemeSection || text.themeScheme,
+    'configModal.color.scheme': text.themeScheme,
+    'configModal.color.defaultTopicColor': text.defaultTopicColor,
+    'configModal.structure.layoutSection': text.layout || 'Layout',
+    'configModal.structure.layout': text.layoutType,
+    'configModal.structure.topicMaxWidthSection': text.topicMaxWidth,
+    'configModal.structure.topicMaxWidth.help':
       text.topicMaxWidthHelp ||
       'Range: 120-800 px. Level-specific values inherit Global when left empty.',
-    'configModal.layout.topicMaxWidthGlobal': text.global || 'Global',
-    'configModal.layout.topicMaxWidthLevel1': text.level1Topic || 'Level 1 topic',
-    'configModal.layout.topicMaxWidthLevel2': text.level2Topic || 'Level 2 topic',
-    'configModal.layout.topicMaxWidthLevel3': text.level3Topic || 'Level 3 topic',
-    'configModal.layout.topicMaxWidthInherit': text.inheritGlobal || 'Inherit global',
-    'configModal.layout.connectorStyle': text.connectorStyle,
-    'configModal.layout.branchExpansion': text.branchExpansion || 'Subtopic expansion',
-    'configModal.layout.branchExpansion.elbowOnlyHelp':
+    'configModal.structure.topicMaxWidthGlobal': text.global || 'Global',
+    'configModal.structure.topicMaxWidthLevel1': text.level1Topic || 'Level 1 topic',
+    'configModal.structure.topicMaxWidthLevel2': text.level2Topic || 'Level 2 topic',
+    'configModal.structure.topicMaxWidthLevel3': text.level3Topic || 'Level 3 topic',
+    'configModal.structure.connectorSection':
+      text.connectorAndExpansion || 'Connector and expansion',
+    'configModal.structure.connectorStyle': text.connectorStyle,
+    'configModal.structure.branchExpansion': text.branchExpansion || 'Subtopic expansion',
+    'configModal.structure.branchExpansion.elbowOnlyHelp':
       text.branchExpansionElbowOnlyHelp ||
       'Subtopic expansion only applies when the actual connector style is elbow.',
-    'configModal.layout.branchExpansion.unsupportedHelp':
+    'configModal.structure.branchExpansion.unsupportedHelp':
       text.branchExpansionUnsupportedHelp ||
       'The current layout does not support subtopic expansion.',
     'configModal.connector.curve': text.curve,

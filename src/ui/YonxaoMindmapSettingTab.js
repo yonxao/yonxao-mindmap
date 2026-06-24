@@ -15,7 +15,6 @@ import { Notice, PluginSettingTab, Setting } from 'obsidian';
 
 import {
   canonicalizeMindConfig,
-  deleteMindConfigPath,
   hasMeaningfulConfig,
   normalizeMindConfig,
 } from '../config/mindConfig.js';
@@ -128,14 +127,10 @@ export class YonxaoMindmapSettingTab extends PluginSettingTab {
 
   /*
    * 作用：
-   * 清理不适合放进插件级默认配置的临时字段。
-   *
-   * 关键点：
-   * view.mode 是单个代码块当前会话的显示状态，不应该成为全局默认值。
-   * 其余字段保持原样，让用户可以用高级 YAML 自己填写插件支持的配置项。
+   * 清理用户输入，只保留当前配置区结构支持的字段。
    */
   sanitizeGlobalDefaultValueConfig(config) {
-    return deleteMindConfigPath(canonicalizeMindConfig(config || {}), ['view', 'mode']);
+    return canonicalizeMindConfig(config || {});
   }
 
   /*

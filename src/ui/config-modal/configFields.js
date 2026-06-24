@@ -47,7 +47,7 @@ export const configFieldMethods = {
   createNumberField(label, path, normalizedValue, options = {}) {
     const inheritedValue = this.prepareConfigFieldDefault(path, normalizedValue ?? '');
     const fieldEl = this.createField(label, options.parentEl, options.help);
-    this.applyInheritedValueStyle(fieldEl, path);
+    this.syncInheritedValueStyle(fieldEl, path);
     const input = fieldEl.createEl('input');
     input.type = 'number';
     input.min = String(options.min ?? '');
@@ -75,7 +75,7 @@ export const configFieldMethods = {
   createSelectField(label, path, value, options, fieldOptions = {}) {
     const inheritedValue = this.prepareConfigFieldDefault(path, value);
     const fieldEl = this.createField(label, fieldOptions.parentEl, fieldOptions.help);
-    this.applyInheritedValueStyle(fieldEl, path);
+    this.syncInheritedValueStyle(fieldEl, path);
     const select = fieldEl.createEl('select');
     for (const optionConfig of options) {
       if (Array.isArray(optionConfig)) {
@@ -105,9 +105,9 @@ export const configFieldMethods = {
 
   createDisabledConnectorStyleField() {
     const fieldEl = this.createField(
-      this.t('configModal.layout.connectorStyle'),
+      this.t('configModal.structure.connectorStyle'),
       undefined,
-      this.t('configModal.layout.connectorStyle.fixedHelp')
+      this.t('configModal.structure.connectorStyle.fixedHelp')
     );
     fieldEl.parentElement?.classList.add('is-disabled-value');
     const select = fieldEl.createEl('select');
@@ -121,7 +121,7 @@ export const configFieldMethods = {
   createSelectTextField(label, path, value, options, fieldOptions = {}) {
     const inheritedValue = this.prepareConfigFieldDefault(path, value ?? '');
     const fieldEl = this.createField(label, fieldOptions.parentEl, fieldOptions.help);
-    this.applyInheritedValueStyle(fieldEl, path);
+    this.syncInheritedValueStyle(fieldEl, path);
     const rowEl = fieldEl.createDiv({ cls: 'yonxao-mindmap-config-combo' });
     const select = rowEl.createEl('select');
     const input = rowEl.createEl('input');
@@ -169,7 +169,7 @@ export const configFieldMethods = {
   createFontFamilyField(label, path, value, fieldOptions = {}) {
     let inheritedValue = this.prepareConfigFieldDefault(path, value ?? '');
     const fieldEl = this.createField(label, fieldOptions.parentEl, fieldOptions.help);
-    this.applyInheritedValueStyle(fieldEl, path);
+    this.syncInheritedValueStyle(fieldEl, path);
     const rowEl = fieldEl.createDiv({ cls: 'yonxao-mindmap-config-combo' });
     const select = rowEl.createEl('select');
     const input = rowEl.createEl('input');
@@ -381,7 +381,7 @@ export const configFieldMethods = {
   createColorTextField(label, path, value, help) {
     const inheritedValue = this.prepareConfigFieldDefault(path, value ?? '');
     const fieldEl = this.createField(label, undefined, help);
-    this.applyInheritedValueStyle(fieldEl, path);
+    this.syncInheritedValueStyle(fieldEl, path);
     const rowEl = fieldEl.createDiv({ cls: 'yonxao-mindmap-config-combo' });
     const colorInput = rowEl.createEl('input');
     const textInput = rowEl.createEl('input');
@@ -455,7 +455,7 @@ export const configFieldMethods = {
   createToggleField(label, path, value, options = {}) {
     const inheritedValue = Boolean(this.prepareConfigFieldDefault(path, value));
     const fieldEl = this.createField(label, undefined, options.help);
-    this.applyInheritedValueStyle(fieldEl, path);
+    this.syncInheritedValueStyle(fieldEl, path);
     fieldEl.parentElement?.classList.add('is-toggle');
     const switchEl = fieldEl.createEl('label', { cls: 'yonxao-mindmap-config-switch' });
     const input = switchEl.createEl('input');
@@ -504,19 +504,15 @@ export const configFieldMethods = {
     return defaultValue;
   },
 
-  /*
-   * 空输入框展示继承值时只更新 placeholder，不写入 value。
-   * 这样用户清空字段时能看到默认来源，保存时仍会删除当前路径以继承上层配置。
-   */
-  configInputPlaceholderText(value, fallbackValue = '') {
-    const text = String(value ?? '').trim();
-    return text || String(fallbackValue ?? '').trim();
-  },
-
   setConfigInputInheritedValue(input, inheritedValue, fallbackValue = '') {
     if (!input) return;
     input._yonxaoMindmapInheritedValue = inheritedValue;
-    input.placeholder = this.configInputPlaceholderText(inheritedValue, fallbackValue);
+    /*
+     * 空输入框展示继承值时只更新 placeholder，不写入 value。
+     * 这样用户清空字段时能看到默认来源，保存时仍会删除当前路径以继承上层配置。
+     */
+    const text = String(inheritedValue ?? '').trim();
+    input.placeholder = text || String(fallbackValue ?? '').trim();
   },
 
   restoreConfigInputInheritedValue(input, selectText = false) {

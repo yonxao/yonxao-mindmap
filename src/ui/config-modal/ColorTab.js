@@ -1,12 +1,6 @@
 /*
  * 文件作用：
- * 配置面板主题页方法集合，负责主题色系、默认主题颜色和按钮颜色配置。
- *
- * 实现逻辑：
- * 根据主题方案决定是否提示默认主题色覆盖分支颜色，并提供颜色预设快捷输入。
- *
- * 调用链：
- * ConfigModal.render() -> themeTabMethods -> configFields/configModalRules。
+ * 配置面板配色页方法集合，负责配色方案、默认主题颜色和按钮颜色配置。
  */
 
 import {
@@ -15,20 +9,20 @@ import {
   RAINBOW_THEME_NAMES,
 } from './configModalShared.js';
 
-export const themeTabMethods = {
-  renderThemeTab(normalized) {
-    this.createSection(this.t('configModal.theme.section'));
+export const colorTabMethods = {
+  renderColorTab(normalized) {
+    this.createSection(this.t('configModal.color.schemeSection'));
     const themeField = this.createSelectTextField(
-      this.t('configModal.theme.scheme'),
-      ['theme', 'scheme'],
+      this.t('configModal.color.scheme'),
+      ['color', 'scheme'],
       normalized.theme,
       this.themeOptions()
     );
     const colorField = this.createColorTextField(
-      this.t('configModal.theme.defaultTopicColor'),
-      ['theme', 'defaultTopicColor'],
+      this.t('configModal.color.defaultTopicColor'),
+      ['color', 'defaultTopicColor'],
       normalized.topic.defaultColor,
-      this.t('configModal.theme.defaultTopicColor.help')
+      this.t('configModal.color.defaultTopicColor.help')
     );
     const warningEl = this.createWarning('');
     const updateWarning = () => {
@@ -46,23 +40,24 @@ export const themeTabMethods = {
     }
     updateWarning();
 
+    this.createSection(this.t('configModal.color.buttonSection'));
     const buttonColorModeOptions = BUTTON_COLOR_MODES.map((mode) => [
       mode,
-      this.t(`configModal.theme.buttonColor.${mode}`),
+      this.t(`configModal.color.buttonColor.${mode}`),
     ]);
     const buttonColorModeSelect = this.createSelectField(
-      this.t('configModal.theme.buttonColorMode'),
-      ['theme', 'buttonColorMode'],
+      this.t('configModal.color.buttonColorMode'),
+      ['color', 'buttonColorMode'],
       normalized.button?.colorMode || 'inherit-accent',
       buttonColorModeOptions,
-      { help: this.t('configModal.theme.buttonColorMode.help') }
+      { help: this.t('configModal.color.buttonColorMode.help') }
     );
 
     const customColorField = this.createColorTextField(
-      this.t('configModal.theme.buttonColor'),
-      ['theme', 'buttonColor'],
+      this.t('configModal.color.buttonColor'),
+      ['color', 'buttonColor'],
       normalized.button?.color || '',
-      this.t('configModal.theme.buttonColor.help')
+      this.t('configModal.color.buttonColor.help')
     );
     const updateCustomColorVisibility = () => {
       const isCustom = buttonColorModeSelect.value === 'custom';
@@ -86,7 +81,7 @@ export const themeTabMethods = {
 
   updateThemeOverrideWarning(warningEl) {
     const shouldWarn = this.shouldWarnDefaultColorOverridesTheme();
-    warningEl.setText(shouldWarn ? this.t('configModal.theme.overrideWarning') : '');
+    warningEl.setText(shouldWarn ? this.t('configModal.color.overrideWarning') : '');
     warningEl.hidden = !shouldWarn;
   },
 };

@@ -76,8 +76,8 @@ export function stringifySimpleYaml(value, depth = 0, path = []) {
  * 让配置区输出保持稳定顺序。
  *
  * 关键点：
- * font/topic 下先输出全局字段，再输出 level1/2/3；每个 level 内也按固定字段排序。
- * 这样配置区读起来像“先全局、再局部覆盖”，不会出现 level 配置插在全局字段中间的情况。
+ * 配置区按配置面板心智排序；font/structure.topicMaxWidth 下先输出全局字段，
+ * 再输出 level1/2/3。这样配置区读起来像“先全局、再局部覆盖”。
  */
 function orderedConfigEntries(value, path) {
   const entries = Object.entries(value);
@@ -102,33 +102,26 @@ function orderedConfigEntries(value, path) {
 function configKeyOrder(path) {
   const keyPath = path.join('.');
   if (keyPath === '') {
-    return ['basic', 'theme', 'layout', 'font'];
+    return ['display', 'structure', 'color', 'font', 'interaction'];
   }
-  if (keyPath === 'basic') {
-    return [
-      'canvasHeight',
-      'sourceHeight',
-      'topicControlVisibility',
-      'toolbar',
-      'viewFit',
-      'fitViewNoUpscale',
-      'fitViewMaxScale',
-      'tabIndent',
-      'wheelZoom',
-    ];
+  if (keyPath === 'display') {
+    return ['canvasHeight', 'sourceHeight', 'viewFit', 'fitViewNoUpscale', 'fitViewMaxScale'];
   }
-  if (keyPath === 'basic.toolbar') return ['corner', 'placement'];
-  if (keyPath === 'theme') return ['scheme', 'defaultTopicColor', 'buttonColorMode', 'buttonColor'];
-  if (keyPath === 'layout') {
-    return ['type', 'connectorStyle', 'branchExpansion', 'topicMaxWidth'];
+  if (keyPath === 'structure') {
+    return ['layout', 'connectorStyle', 'branchExpansion', 'topicMaxWidth'];
   }
-  if (keyPath === 'layout.topicMaxWidth') return ['global', 'level1', 'level2', 'level3'];
+  if (keyPath === 'structure.topicMaxWidth') return ['global', 'level1', 'level2', 'level3'];
+  if (keyPath === 'color') return ['scheme', 'defaultTopicColor', 'buttonColorMode', 'buttonColor'];
   if (keyPath === 'font') {
     return ['family', 'size', 'weight', 'lineHeight', 'level1', 'level2', 'level3'];
   }
   if (/^font\.level[123]$/.test(keyPath)) {
     return ['family', 'size', 'weight', 'lineHeight'];
   }
+  if (keyPath === 'interaction') {
+    return ['toolbar', 'topicControlVisibility', 'wheelZoom', 'tabIndent'];
+  }
+  if (keyPath === 'interaction.toolbar') return ['corner', 'placement'];
   return [];
 }
 

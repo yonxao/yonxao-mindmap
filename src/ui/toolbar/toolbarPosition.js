@@ -12,7 +12,6 @@
 import {
   Notice,
   setIcon,
-  deleteMindConfigPath,
   TOOLBAR_CORNERS,
   TOOLBAR_PLACEMENTS,
   setMindConfigPath,
@@ -96,14 +95,16 @@ export const toolbarPositionMethods = {
     const snap = this.nearestToolbarSnap();
     if (!snap) return;
 
-    this.rawConfig = setMindConfigPath(this.rawConfig, ['basic', 'toolbar', 'corner'], snap.corner);
     this.rawConfig = setMindConfigPath(
       this.rawConfig,
-      ['basic', 'toolbar', 'placement'],
+      ['interaction', 'toolbar', 'corner'],
+      snap.corner
+    );
+    this.rawConfig = setMindConfigPath(
+      this.rawConfig,
+      ['interaction', 'toolbar', 'placement'],
       snap.placement
     );
-    this.rawConfig = deleteMindConfigPath(this.rawConfig, ['toolbar', 'x']);
-    this.rawConfig = deleteMindConfigPath(this.rawConfig, ['toolbar', 'y']);
     this.rememberViewModeConfig();
     this.refreshNormalizedConfig();
     this.scheduleApplyToolbarPosition();

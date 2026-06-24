@@ -6,12 +6,12 @@ import { parseMindDocument } from '../../src/parser/parseMind.js';
 
 test('org-right natural expansion keeps descendant subtrees from overlapping siblings', () => {
   const document = parseMindDocument(`---
-basic:
+display:
   canvasHeight: 805
-theme:
+color:
   scheme: rainbow
-layout:
-  type: org-right
+structure:
+  layout: org-right
 ---
 
 # AI学习 [color=#f97316]
