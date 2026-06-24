@@ -1,18 +1,15 @@
 .yonxao-mindmap-config-section {
   margin-top: 4px;
-  padding: 8px 0 0 8px;
+  padding: 0 0 0 8px;
   color: var(--text-accent);
   font-size: var(--font-ui-small);
   font-weight: var(--font-semibold);
   letter-spacing: 0.02em;
-  border-top: 1px solid var(--background-modifier-border);
   border-left: 3px solid var(--interactive-accent);
 }
 
 .yonxao-mindmap-config-section:first-child {
   margin-top: 0;
-  padding-top: 0;
-  border-top: 0;
 }
 
 /*
