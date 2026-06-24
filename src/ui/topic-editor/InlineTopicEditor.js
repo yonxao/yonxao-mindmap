@@ -57,8 +57,7 @@ export const inlineTopicEditorMethods = {
       });
     }
 
-    inputEl.addEventListener('keydown', (event) => {
-      event.stopPropagation();
+    this.registerDomEvent(inputEl, 'keydown', (event) => {
       if (event.key === 'Enter' && !event.shiftKey) {
         event.preventDefault();
         Promise.resolve(this.saveInlineTextEditor()).catch((error) => {
@@ -72,7 +71,7 @@ export const inlineTopicEditorMethods = {
       }
     });
 
-    inputEl.addEventListener('blur', () => {
+    this.registerDomEvent(inputEl, 'blur', () => {
       if (this.inlineTextEditorSaving) return;
       Promise.resolve(this.saveInlineTextEditor()).catch((error) => {
         new Notice(`yonxao-mindmap: ${error.message || String(error)}`);
