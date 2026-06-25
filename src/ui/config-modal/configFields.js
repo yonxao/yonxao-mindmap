@@ -492,12 +492,19 @@ export const configFieldMethods = {
   },
 
   prepareConfigFieldDefault(path, fallbackValue) {
-    const defaultValue = this.configDefaultValueForPath?.(path, fallbackValue) ?? fallbackValue;
+    /*
+     * 默认/继承值必须基于“删除当前字段后的有效配置”计算。
+     * 如果把当前 normalized 值当 fallback，导图高度这类可选字段会把用户刚输入的值误判成默认值并删除。
+     */
+    const defaultValue = this.configDefaultValueForPath
+      ? this.configDefaultValueForPath(path, '')
+      : fallbackValue;
     const explicitValue = getConfigValue(this.draftConfig, path, undefined);
     if (
       explicitValue !== undefined &&
       explicitValue !== null &&
-      configFieldValueEquals(explicitValue, defaultValue)
+      configFieldValueEquals(explicitValue, defaultValue) &&
+      (!this.isDraftConfigPathRedundant || this.isDraftConfigPathRedundant(path))
     ) {
       deleteConfigValue(this.draftConfig, path);
     }
@@ -528,6 +535,32 @@ export const configFieldMethods = {
     if (selectText && input.value && document.activeElement === input) {
       input.select?.();
     }
+  },
+
+  syncInheritedNumberInput(input, path, value, options = {}) {
+    if (!input) return;
+
+    const nextValue = value === null || value === undefined ? '' : String(value);
+    this.setConfigInputInheritedValue(input, nextValue);
+    if (this.hasDraftConfigPath(path)) {
+      if (options.preserveExplicit) {
+        this.syncInheritedValueStyle(input._yonxaoMindmapControlEl, path);
+        return;
+      }
+      if (String(input.value ?? '').trim() === nextValue) {
+        deleteConfigValue(this.draftConfig, path);
+        this.syncInheritedValueStyle(input._yonxaoMindmapControlEl, path);
+      }
+      return;
+    }
+
+    if (document.activeElement === input && !String(input.value || '').trim()) {
+      this.syncInheritedValueStyle(input._yonxaoMindmapControlEl, path);
+      return;
+    }
+
+    input.value = nextValue;
+    this.syncInheritedValueStyle(input._yonxaoMindmapControlEl, path);
   },
 
   configColorPickerValue(value, inheritedValue = '') {

@@ -44,6 +44,7 @@ export {
   TOOLBAR_PLACEMENTS,
   hasMeaningfulConfig,
   mergeMindConfigObjects,
+  mergeMindConfigSources,
   normalizeMindConfig,
   pruneInactiveMindConfig,
   resolveTopicFont,

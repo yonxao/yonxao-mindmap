@@ -21,6 +21,8 @@ import {
   normalizeFontFamilyInput,
 } from './configModalShared.js';
 
+const FONT_INHERITED_FIELD_KEYS = ['family', 'size', 'weight', 'lineHeight'];
+
 export const fontTabMethods = {
   renderFontTab(normalized) {
     this.createSection(this.t('configModal.font.globalSection'));
@@ -179,50 +181,63 @@ export const fontTabMethods = {
   },
 
   installLevelFontInheritanceSync(globalFields, levelFontGroups) {
-    const sync = () => {
-      this.syncLevelFontInheritedFields(levelFontGroups);
+    /*
+     * 全局字体项只联动同名级别字段。
+     * 例如改全局字号时不触碰级别字重/行高，避免被动同步误删用户的显式配置。
+     */
+    const bindFieldSync = (controls, fontKey) => {
+      const sync = () => {
+        this.syncLevelFontInheritedField(levelFontGroups, fontKey);
+      };
+      for (const control of controls.filter(Boolean)) {
+        control.addEventListener('input', sync);
+        control.addEventListener('change', sync);
+      }
     };
-    const controls = [
-      globalFields.family?.select,
-      globalFields.family?.input,
-      globalFields.size,
-      globalFields.weight,
-      globalFields.lineHeight,
-    ].filter(Boolean);
 
-    for (const control of controls) {
-      control.addEventListener('input', sync);
-      control.addEventListener('change', sync);
-    }
+    bindFieldSync([globalFields.family?.select, globalFields.family?.input], 'family');
+    bindFieldSync([globalFields.size], 'size');
+    bindFieldSync([globalFields.weight], 'weight');
+    bindFieldSync([globalFields.lineHeight], 'lineHeight');
   },
 
   syncLevelFontInheritedFields(levelFontGroups) {
+    for (const fontKey of FONT_INHERITED_FIELD_KEYS) {
+      this.syncLevelFontInheritedField(levelFontGroups, fontKey);
+    }
+  },
+
+  syncLevelFontInheritedField(levelFontGroups, fontKey) {
     const normalized = normalizeMindConfig(this.effectiveDraftConfig());
     for (const group of levelFontGroups) {
-      this.syncInheritedFontFamilyField(
-        group.fields.family,
-        ['font', group.levelKey, 'family'],
-        normalized.font.family
-      );
+      const level = group.levelKey.replace('level', '');
+      const levelFont = normalized.font.levels[level] || {};
+      const path = ['font', group.levelKey, fontKey];
+
+      if (fontKey === 'family') {
+        this.syncInheritedFontFamilyField(
+          group.fields.family,
+          path,
+          levelFont.family || normalized.font.family,
+          { preserveExplicit: true }
+        );
+        continue;
+      }
+
       this.syncInheritedNumberInput(
-        group.fields.size,
-        ['font', group.levelKey, 'size'],
-        normalized.font.size
-      );
-      this.syncInheritedNumberInput(
-        group.fields.weight,
-        ['font', group.levelKey, 'weight'],
-        normalized.font.weight
-      );
-      this.syncInheritedNumberInput(
-        group.fields.lineHeight,
-        ['font', group.levelKey, 'lineHeight'],
-        normalized.font.lineHeight
+        group.fields[fontKey],
+        path,
+        levelFont[fontKey] ?? normalized.font[fontKey],
+        /*
+         * 这里是全局字段变化触发的被动回显，只更新继承来源。
+         * 显式 levelN 字段是否消除，应由用户编辑该字段时决定。
+         */
+        { preserveExplicit: true }
       );
     }
   },
 
-  syncInheritedFontFamilyField(field, path, value) {
+  syncInheritedFontFamilyField(field, path, value, options = {}) {
     if (!field) return;
 
     const nextValue =
@@ -231,6 +246,10 @@ export const fontTabMethods = {
         : '';
     field.setInheritedValue?.(nextValue);
     if (this.hasDraftConfigPath(path)) {
+      if (options.preserveExplicit) {
+        this.syncInheritedValueStyle(field.controlEl, path);
+        return;
+      }
       if (normalizeFontFamilyInput(field.input.value) === nextValue) {
         deleteConfigValue(this.draftConfig, path);
         this.syncConfigFontInheritedField(field.select, field.input, nextValue, true);
@@ -247,27 +266,5 @@ export const fontTabMethods = {
     this.syncConfigFontField(field.select, field.input, '');
     if (nextValue) field.input.value = nextValue;
     this.syncInheritedValueStyle(field.controlEl, path);
-  },
-
-  syncInheritedNumberInput(input, path, value) {
-    if (!input) return;
-
-    const nextValue = value === null || value === undefined ? '' : String(value);
-    this.setConfigInputInheritedValue(input, nextValue);
-    if (this.hasDraftConfigPath(path)) {
-      if (String(input.value ?? '').trim() === nextValue) {
-        deleteConfigValue(this.draftConfig, path);
-        this.syncInheritedValueStyle(input._yonxaoMindmapControlEl, path);
-      }
-      return;
-    }
-
-    if (document.activeElement === input && !String(input.value || '').trim()) {
-      this.syncInheritedValueStyle(input._yonxaoMindmapControlEl, path);
-      return;
-    }
-
-    input.value = nextValue;
-    this.syncInheritedValueStyle(input._yonxaoMindmapControlEl, path);
   },
 };

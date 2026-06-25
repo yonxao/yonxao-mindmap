@@ -3,7 +3,7 @@
  * 配置区拆分、保存前裁剪和 yxmm 源码拼接。
  */
 
-import { deleteMindConfigPath, isPlainObject } from './configAccessors.js';
+import { deleteMindConfigPath, isPlainObject, mergeMindConfigSources } from './configAccessors.js';
 import { canonicalizeMindConfig } from './configCanonicalize.js';
 import { normalizeConnectorStyle, normalizeLayoutType } from './configNormalize.js';
 import { parseSimpleYaml, stringifySimpleYaml } from './yamlConfig.js';
@@ -44,10 +44,11 @@ export function splitMindSourceConfig(source) {
   };
 }
 
-export function pruneInactiveMindConfig(rawConfig) {
+export function pruneInactiveMindConfig(rawConfig, baseConfig = {}) {
   let next = canonicalizeMindConfig(rawConfig);
-  next = pruneInactiveBranchExpansionConfig(next);
-  next = pruneInactiveViewFitConfig(next);
+  const base = canonicalizeMindConfig(baseConfig);
+  next = pruneInactiveBranchExpansionConfig(next, base);
+  next = pruneInactiveViewFitConfig(next, base);
   return next;
 }
 
@@ -56,15 +57,17 @@ export function pruneInactiveMindConfig(rawConfig) {
  * structure.branchExpansion 依赖当前布局和连线线型。
  *
  * 关键点：
- * 思维导图组只有显式 connectorStyle: elbow 时才保留；非思维导图布局如果支持下挂，
- * 因为实际线型固定为折线，可以保留。
+ * 思维导图组只有有效 connectorStyle 为 elbow 时才保留；非思维导图布局如果支持下挂，
+ * 因为实际线型固定为折线，可以保留。有效配置由全局默认值和当前文档配置合并得出。
  */
-function pruneInactiveBranchExpansionConfig(config) {
+function pruneInactiveBranchExpansionConfig(config, baseConfig) {
   const structure = isPlainObject(config.structure) ? config.structure : {};
   if (structure.branchExpansion === undefined) return config;
 
-  const layoutType = normalizeLayoutType(structure.layout) || DEFAULT_MIND_CONFIG.layout;
-  const connectorStyle = normalizeConnectorStyle(structure.connectorStyle);
+  const effective = mergeMindConfigSources(baseConfig, config);
+  const effectiveStructure = isPlainObject(effective.structure) ? effective.structure : {};
+  const layoutType = normalizeLayoutType(effectiveStructure.layout) || DEFAULT_MIND_CONFIG.layout;
+  const connectorStyle = normalizeConnectorStyle(effectiveStructure.connectorStyle);
   const isUnsupportedLayout = BRANCH_EXPANSION_UNSUPPORTED_LAYOUTS.includes(layoutType);
   const isConnectorConfigurableLayout = CONNECTOR_STYLE_CONFIGURABLE_LAYOUTS.includes(layoutType);
 
@@ -80,11 +83,12 @@ function pruneInactiveBranchExpansionConfig(config) {
  * 适配视图子配置依赖 display.viewFit。
  *
  * 规则：
- * 只有显式 viewFit: fit 时才保留适配视图子配置；开启“不放大”时，最大放大倍数不生效，
- * 因此也会被移除。
+ * 只有有效 viewFit 为 fit 时才保留适配视图子配置；开启“不放大”时，最大放大倍数不生效，
+ * 因此也会被移除。有效配置由全局默认值和当前文档配置合并得出。
  */
-function pruneInactiveViewFitConfig(config) {
-  const display = isPlainObject(config.display) ? config.display : {};
+function pruneInactiveViewFitConfig(config, baseConfig) {
+  const effective = mergeMindConfigSources(baseConfig, config);
+  const display = isPlainObject(effective.display) ? effective.display : {};
   let next = config;
 
   if (display.viewFit !== 'fit') {

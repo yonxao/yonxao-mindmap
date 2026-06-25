@@ -46,6 +46,7 @@ export {
   deepMergePlainObjects,
   isPlainObject,
   mergeMindConfigObjects,
+  mergeMindConfigSources,
   setConfigValueIfPresent,
   setMindConfigPath,
 } from './configAccessors.js';

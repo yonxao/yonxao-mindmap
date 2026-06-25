@@ -16,6 +16,7 @@ import {
   deleteMindConfigPath,
   hasMeaningfulConfig,
   mergeMindConfigObjects,
+  mergeMindConfigSources,
   normalizeMindConfig,
   pruneInactiveMindConfig,
   serializeMindSource,
@@ -105,7 +106,8 @@ export const runtimeConfigSaveMethods = {
   },
 
   documentConfigForSave(config) {
-    let next = pruneInactiveMindConfig(config || {});
+    const globalDefaultValueConfig = this.plugin?.getGlobalDefaultValueConfig?.() || {};
+    let next = pruneInactiveMindConfig(config || {}, globalDefaultValueConfig);
     next = this.pruneDocumentConfigDefaults(next);
     return next;
   },
@@ -178,7 +180,41 @@ export const runtimeConfigSaveMethods = {
       return this.hasMeaningfulBranchExpansion(config, normalizedDocument, normalizedGlobal);
     }
 
+    if (key === 'structure.topicMaxWidth.global') {
+      return this.doesDeletingConfigPathChangeLevelValues(config, path, normalizedDocument, [
+        ['structure', 'topicMaxWidth', 'level1'],
+        ['structure', 'topicMaxWidth', 'level2'],
+        ['structure', 'topicMaxWidth', 'level3'],
+      ]);
+    }
+
+    const fontGlobalMatch = key.match(/^font\.(family|size|weight|lineHeight)$/);
+    if (fontGlobalMatch) {
+      const fontKey = fontGlobalMatch[1];
+      return this.doesDeletingConfigPathChangeLevelValues(config, path, normalizedDocument, [
+        ['font', 'level1', fontKey],
+        ['font', 'level2', fontKey],
+        ['font', 'level3', fontKey],
+      ]);
+    }
+
     return false;
+  },
+
+  doesDeletingConfigPathChangeLevelValues(config, path, normalizedDocument, dependentPaths) {
+    const configWithoutPath = deleteMindConfigPath(config, path);
+    const normalizedWithoutPath = normalizeMindConfig(
+      this.buildEffectiveRawConfig(configWithoutPath)
+    );
+
+    return dependentPaths.some((dependentPath) => {
+      const currentValue = this.normalizedConfigValueForPath(normalizedDocument, dependentPath);
+      const valueWithoutPath = this.normalizedConfigValueForPath(
+        normalizedWithoutPath,
+        dependentPath
+      );
+      return !this.areConfigValuesEqual(currentValue, valueWithoutPath);
+    });
   },
 
   hasMeaningfulFitViewChild(config, normalizedDocument, normalizedGlobal) {
@@ -286,7 +322,7 @@ export const runtimeConfigSaveMethods = {
 
   buildEffectiveRawConfig(documentConfig = this.rawConfig) {
     const globalDefaultValueConfig = this.plugin?.getGlobalDefaultValueConfig?.() || {};
-    return mergeMindConfigObjects(
+    return mergeMindConfigSources(
       canonicalizeMindConfig(globalDefaultValueConfig),
       canonicalizeMindConfig(documentConfig || {})
     );

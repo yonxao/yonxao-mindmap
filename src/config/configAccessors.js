@@ -10,6 +10,64 @@ export function mergeMindConfigObjects(baseConfig, overrideConfig) {
   );
 }
 
+/*
+ * 作用：
+ * 按“配置来源优先级”合并全局默认值配置和当前代码块配置。
+ *
+ * 关键规则：
+ * - 当前代码块的全局主题最大宽度会遮蔽全局默认值配置里的 level1/2/3 宽度。
+ * - 当前代码块的全局字体字段会按字段遮蔽全局默认值配置里的 level1/2/3 字体字段。
+ *
+ * 这样才能保证“代码块配置区 > 插件全局默认值配置”的来源优先级，
+ * 同时仍保留同一来源内部 levelN > global 的继承规则。
+ */
+export function mergeMindConfigSources(baseConfig, overrideConfig) {
+  const override = isPlainObject(overrideConfig) ? overrideConfig : {};
+  const merged = mergeMindConfigObjects(baseConfig, override);
+  applyTopicMaxWidthSourceInheritance(merged, override);
+  applyFontSourceInheritance(merged, override);
+  return merged;
+}
+
+function applyTopicMaxWidthSourceInheritance(merged, override) {
+  const overrideTopicMaxWidth = override.structure?.topicMaxWidth;
+  if (!isPlainObject(overrideTopicMaxWidth)) return;
+  if (!Object.prototype.hasOwnProperty.call(overrideTopicMaxWidth, 'global')) return;
+
+  const mergedTopicMaxWidth = merged.structure?.topicMaxWidth;
+  if (!isPlainObject(mergedTopicMaxWidth)) return;
+
+  for (const levelKey of ['level1', 'level2', 'level3']) {
+    if (!Object.prototype.hasOwnProperty.call(overrideTopicMaxWidth, levelKey)) {
+      delete mergedTopicMaxWidth[levelKey];
+    }
+  }
+}
+
+function applyFontSourceInheritance(merged, override) {
+  const overrideFont = override.font;
+  if (!isPlainObject(overrideFont) || !isPlainObject(merged.font)) return;
+
+  for (const fontKey of ['family', 'size', 'weight', 'lineHeight']) {
+    if (!Object.prototype.hasOwnProperty.call(overrideFont, fontKey)) continue;
+
+    for (const levelKey of ['level1', 'level2', 'level3']) {
+      const overrideLevel = overrideFont[levelKey];
+      if (
+        isPlainObject(overrideLevel) &&
+        Object.prototype.hasOwnProperty.call(overrideLevel, fontKey)
+      ) {
+        continue;
+      }
+
+      const mergedLevel = merged.font[levelKey];
+      if (!isPlainObject(mergedLevel)) continue;
+      delete mergedLevel[fontKey];
+      if (!Object.keys(mergedLevel).length) delete merged.font[levelKey];
+    }
+  }
+}
+
 export function setMindConfigPath(rawConfig, path, value) {
   const next = clonePlainObject(rawConfig);
   let current = next;

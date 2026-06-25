@@ -3,8 +3,10 @@ import assert from 'node:assert/strict';
 
 import {
   mergeMindConfigObjects,
+  mergeMindConfigSources,
   normalizeMindConfig,
   parseSimpleYaml,
+  pruneInactiveMindConfig,
   stringifySimpleYaml,
 } from '../../src/config/mindConfig.js';
 
@@ -38,6 +40,116 @@ test('mergeMindConfigObjects recursively merges plain objects', () => {
   );
 });
 
+test('mergeMindConfigSources lets document topic global shadow global-default levels', () => {
+  const config = normalizeMindConfig(
+    mergeMindConfigSources(
+      {
+        structure: {
+          topicMaxWidth: {
+            global: 300,
+            level2: 240,
+          },
+        },
+      },
+      {
+        structure: {
+          topicMaxWidth: {
+            global: 360,
+          },
+        },
+      }
+    )
+  );
+
+  assert.equal(config.topic.maxWidth, 360);
+  assert.deepEqual(config.topic.levels, {});
+});
+
+test('mergeMindConfigSources keeps document topic level widths over document global width', () => {
+  const config = normalizeMindConfig(
+    mergeMindConfigSources(
+      {
+        structure: {
+          topicMaxWidth: {
+            global: 300,
+            level2: 240,
+          },
+        },
+      },
+      {
+        structure: {
+          topicMaxWidth: {
+            global: 360,
+            level2: 240,
+          },
+        },
+      }
+    )
+  );
+
+  assert.equal(config.topic.maxWidth, 360);
+  assert.equal(config.topic.levels['2'].maxWidth, 240);
+});
+
+test('mergeMindConfigSources shadows global-default font level fields per document global field', () => {
+  const config = normalizeMindConfig(
+    mergeMindConfigSources(
+      {
+        font: {
+          size: 18,
+          weight: 500,
+          level2: {
+            size: 16,
+            weight: 700,
+          },
+        },
+      },
+      {
+        font: {
+          size: 20,
+        },
+      }
+    )
+  );
+
+  assert.equal(config.font.size, 20);
+  assert.equal(config.font.weight, 500);
+  assert.equal(config.font.levels['2'].size, null);
+  assert.equal(config.font.levels['2'].weight, 700);
+});
+
+test('mergeMindConfigSources keeps document font level fields over document global fields', () => {
+  const config = normalizeMindConfig(
+    mergeMindConfigSources(
+      {
+        font: {
+          size: 18,
+          weight: 500,
+          lineHeight: 24,
+          level2: {
+            size: 16,
+            weight: 700,
+            lineHeight: 28,
+          },
+        },
+      },
+      {
+        font: {
+          size: 20,
+          level2: {
+            size: 16,
+          },
+        },
+      }
+    )
+  );
+
+  assert.equal(config.font.size, 20);
+  assert.equal(config.font.levels['2'].size, 16);
+  assert.equal(config.font.levels['2'].weight, 700);
+  assert.equal(config.font.levels['2'].lineHeight, 28);
+});
+
 test('simple YAML parser and stringifier round-trip nested config', () => {
   const config = parseSimpleYaml(['color:', '  scheme: ocean', 'font:', '  size: 18']);
 
@@ -61,4 +173,109 @@ test('normalizeMindConfig ignores removed draft-era YAML groups', () => {
   assert.equal(config.layout, 'mindmap-right');
   assert.equal(config.theme, 'default');
   assert.equal(config.button.topicControlVisibility, 'toggle-always');
+});
+
+test('normalizeMindConfig lets topic max width levels inherit global unless explicitly set', () => {
+  const inheritedConfig = normalizeMindConfig({
+    structure: {
+      topicMaxWidth: {
+        global: 300,
+      },
+    },
+  });
+  const explicitConfig = normalizeMindConfig({
+    structure: {
+      topicMaxWidth: {
+        global: 300,
+        level2: 240,
+      },
+    },
+  });
+
+  assert.deepEqual(inheritedConfig.topic.levels, {});
+  assert.equal(inheritedConfig.topic.maxWidth, 300);
+  assert.equal(explicitConfig.topic.levels['2'].maxWidth, 240);
+});
+
+test('normalizeMindConfig lets font levels inherit global unless explicitly set', () => {
+  const inheritedConfig = normalizeMindConfig({
+    font: {
+      size: 18,
+    },
+  });
+  const explicitConfig = normalizeMindConfig({
+    font: {
+      size: 18,
+      level2: {
+        size: 16,
+      },
+    },
+  });
+
+  assert.deepEqual(inheritedConfig.font.levels, {});
+  assert.equal(inheritedConfig.font.size, 18);
+  assert.equal(explicitConfig.font.levels['2'].size, 16);
+});
+
+test('pruneInactiveMindConfig keeps fit view child config when fit is inherited', () => {
+  const config = pruneInactiveMindConfig(
+    {
+      display: {
+        fitViewNoUpscale: false,
+        fitViewMaxScale: 1.2,
+      },
+    },
+    {
+      display: {
+        viewFit: 'fit',
+      },
+    }
+  );
+
+  assert.deepEqual(config, {
+    display: {
+      fitViewNoUpscale: false,
+      fitViewMaxScale: 1.2,
+    },
+  });
+});
+
+test('pruneInactiveMindConfig removes fit view child config when fit is not effective', () => {
+  const config = pruneInactiveMindConfig(
+    {
+      display: {
+        fitViewNoUpscale: false,
+        fitViewMaxScale: 1.2,
+      },
+    },
+    {
+      display: {
+        viewFit: 'original',
+      },
+    }
+  );
+
+  assert.deepEqual(config, {});
+});
+
+test('pruneInactiveMindConfig keeps branch expansion when elbow connector is inherited', () => {
+  const config = pruneInactiveMindConfig(
+    {
+      structure: {
+        branchExpansion: 'hanging',
+      },
+    },
+    {
+      structure: {
+        layout: 'mindmap-right',
+        connectorStyle: 'elbow',
+      },
+    }
+  );
+
+  assert.deepEqual(config, {
+    structure: {
+      branchExpansion: 'hanging',
+    },
+  });
 });

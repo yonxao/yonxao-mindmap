@@ -3,7 +3,11 @@
  * 配置面板结构页方法集合，负责布局类型、连线线型、下挂展开和主题最大宽度。
  */
 
-import { TOPIC_MAX_WIDTH_MAX, TOPIC_MAX_WIDTH_MIN } from './configModalShared.js';
+import {
+  TOPIC_MAX_WIDTH_MAX,
+  TOPIC_MAX_WIDTH_MIN,
+  normalizeMindConfig,
+} from './configModalShared.js';
 
 export const structureTabMethods = {
   renderStructureTab(normalized) {
@@ -78,7 +82,7 @@ export const structureTabMethods = {
 
     const globalMaxWidth = normalized.topic.maxWidth;
 
-    this.createNumberField(
+    const globalMaxWidthInput = this.createNumberField(
       this.t('configModal.structure.topicMaxWidthGlobal'),
       ['structure', 'topicMaxWidth', 'global'],
       globalMaxWidth,
@@ -88,16 +92,52 @@ export const structureTabMethods = {
       }
     );
 
+    const levelMaxWidthInputs = [];
     for (const level of ['1', '2', '3']) {
       const levelKey = `level${level}`;
       const levelTopic = normalized.topic.levels[level] || {};
-      this.createNumberField(
+      const input = this.createNumberField(
         this.t(`configModal.structure.topicMaxWidthLevel${level}`),
         ['structure', 'topicMaxWidth', levelKey],
         levelTopic.maxWidth || globalMaxWidth,
         {
           ...inputOptions,
         }
+      );
+      levelMaxWidthInputs.push({ input, levelKey });
+    }
+
+    this.installTopicMaxWidthInheritanceSync(globalMaxWidthInput, levelMaxWidthInputs);
+  },
+
+  installTopicMaxWidthInheritanceSync(globalMaxWidthInput, levelMaxWidthInputs) {
+    if (!globalMaxWidthInput) return;
+
+    const sync = () => {
+      this.syncTopicMaxWidthInheritedFields(levelMaxWidthInputs);
+    };
+    globalMaxWidthInput.addEventListener('input', sync);
+    globalMaxWidthInput.addEventListener('change', sync);
+  },
+
+  syncTopicMaxWidthInheritedFields(levelMaxWidthInputs) {
+    const normalized = normalizeMindConfig(this.effectiveDraftConfig());
+    const globalMaxWidth = normalized.topic.maxWidth;
+
+    for (const { input, levelKey } of levelMaxWidthInputs) {
+      const level = levelKey.replace('level', '');
+      const levelMaxWidth = normalized.topic.levels[level]?.maxWidth;
+      const inheritedValue =
+        levelMaxWidth === null || levelMaxWidth === undefined ? globalMaxWidth : levelMaxWidth;
+      this.syncInheritedNumberInput(
+        input,
+        ['structure', 'topicMaxWidth', levelKey],
+        inheritedValue,
+        /*
+         * 全局最大宽度变化只更新级别字段的继承来源。
+         * 已显式设置的 levelN 宽度不在被动联动中消除，避免覆盖用户配置。
+         */
+        { preserveExplicit: true }
       );
     }
   },

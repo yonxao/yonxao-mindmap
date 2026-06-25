@@ -47,6 +47,7 @@ export {
   VIEW_FIT_MODES,
   canonicalizeMindConfig,
   mergeMindConfigObjects,
+  mergeMindConfigSources,
   normalizeMindConfig,
   pruneInactiveMindConfig,
 } from '../../config/mindConfig.js';

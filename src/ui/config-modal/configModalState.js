@@ -16,7 +16,7 @@ import {
   parseDraftConfigText,
   stringifyDraftConfig,
   canonicalizeMindConfig,
-  mergeMindConfigObjects,
+  mergeMindConfigSources,
   normalizeMindConfig,
   pruneInactiveMindConfig,
   clamp,
@@ -210,14 +210,14 @@ export const configModalStateMethods = {
   },
 
   effectiveDraftConfig() {
-    return mergeMindConfigObjects(this.baseConfig, this.draftConfig);
+    return mergeMindConfigSources(this.baseConfig, this.draftConfig);
   },
 
   configDefaultValueForPath(path, fallback = '') {
     const draftWithoutPath = cloneConfig(this.draftConfig);
     deleteConfigValue(draftWithoutPath, path);
     const normalized = normalizeMindConfig(
-      mergeMindConfigObjects(this.baseConfig, draftWithoutPath)
+      mergeMindConfigSources(this.baseConfig, draftWithoutPath)
     );
     const runtimePath = runtimePathForDraftPath(path);
     const inheritedFallback = inheritedRuntimeFallback(normalized, path, fallback);
@@ -260,6 +260,16 @@ export const configModalStateMethods = {
     return stringifyDraftConfig(canonicalizeMindConfig(config));
   },
 
+  isDraftConfigPathRedundant(path) {
+    const currentSnapshot = JSON.stringify(normalizeMindConfig(this.effectiveDraftConfig()));
+    const draftWithoutPath = cloneConfig(this.draftConfig);
+    deleteConfigValue(draftWithoutPath, path);
+    const withoutPathSnapshot = JSON.stringify(
+      normalizeMindConfig(mergeMindConfigSources(this.baseConfig, draftWithoutPath))
+    );
+    return currentSnapshot === withoutPathSnapshot;
+  },
+
   updateActionButtons() {
     if (!this.cancelButton) return;
     const isApplied = this.isDraftApplied();
@@ -284,7 +294,7 @@ export const configModalStateMethods = {
       this.draftConfig = canonicalizeMindConfig(parseDraftConfigText(this.advancedInputEl.value));
     }
 
-    this.draftConfig = pruneInactiveMindConfig(this.draftConfig);
+    this.draftConfig = pruneInactiveMindConfig(this.draftConfig, this.baseConfig);
     const saved = await this.onApply(cloneConfig(this.draftConfig));
     if (!saved) return;
 
