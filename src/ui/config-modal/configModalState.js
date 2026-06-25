@@ -22,6 +22,9 @@ import {
   clamp,
 } from './configModalShared.js';
 
+// 配置模态框拖动时距离视口边缘的最小间隙，防止模态框被拖到屏幕外完全看不见。
+const MODAL_POSITION_GAP = 12;
+
 function readConfigPath(config, path, fallback = '') {
   let current = config;
   for (const key of path) {
@@ -199,7 +202,7 @@ export const configModalStateMethods = {
   },
 
   clampModalPosition(left, top) {
-    const gap = 12;
+    const gap = MODAL_POSITION_GAP;
     const rect = this.modalEl.getBoundingClientRect();
     const maxLeft = Math.max(gap, window.innerWidth - rect.width - gap);
     const maxTop = Math.max(gap, window.innerHeight - rect.height - gap);
@@ -260,6 +263,24 @@ export const configModalStateMethods = {
     return stringifyDraftConfig(canonicalizeMindConfig(config));
   },
 
+  /*
+   * 作用：
+   * 判断草稿配置中的某条路径是否为"冗余"配置，
+   * 即删除该路径后归一化结果与删除前完全相同。
+   *
+   * 判断逻辑：
+   * 比较"包含当前路径的有效配置"和"删除当前路径后的有效配置"的归一化结果，
+   * 如果完全一致，说明该路径的值不影响最终渲染结果，可以安全删除。
+   *
+   * 使用场景：
+   * prepareConfigFieldDefault 中用于避免把"恰好等于默认值的显式配置"误删，
+   * 因为某些字段（如导图高度）虽然值等于默认值，但删除后行为会变化。
+   *
+   * 性能注意：
+   * 每次调用会做两次 normalizeMindConfig 和两次 JSON.stringify，
+   * 当前仅在字段初始化时调用一次，性能可接受。
+   * 不要在高频循环或 input 事件中直接调用。
+   */
   isDraftConfigPathRedundant(path) {
     const currentSnapshot = JSON.stringify(normalizeMindConfig(this.effectiveDraftConfig()));
     const draftWithoutPath = cloneConfig(this.draftConfig);

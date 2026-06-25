@@ -482,6 +482,24 @@ export const configFieldMethods = {
     return input;
   },
 
+  /*
+   * 作用：
+   * 设置配置值，或者在值等于继承值时删除配置路径（恢复继承态）。
+   *
+   * 业务规则：
+   * - 值等于继承值时删除配置路径，恢复继承态。
+   * - 值为空时委托 setConfigValue 删除路径，用户清空输入框的意图就是恢复继承默认值。
+   * - 其他情况写入配置值。
+   *
+   * 参数：
+   * - path：配置路径数组。
+   * - value：要设置的值。
+   * - inheritedValue：该路径的继承值（来自上层配置或默认值）。
+   *
+   * 边界条件：
+   * - 空字符串 ''、null、undefined 由底层 setConfigValue 统一视为"恢复继承态"。
+   * - 对于数字输入框，用户清空输入时 numberFromInput('') 返回 ''，会触发删除配置路径。
+   */
   setConfigValueOrDeleteInherited(path, value, inheritedValue) {
     if (configFieldValueEquals(value, inheritedValue)) {
       deleteConfigValue(this.draftConfig, path);
@@ -493,7 +511,7 @@ export const configFieldMethods = {
 
   prepareConfigFieldDefault(path, fallbackValue) {
     /*
-     * 默认/继承值必须基于“删除当前字段后的有效配置”计算。
+     * 默认/继承值必须基于"删除当前字段后的有效配置"计算。
      * 如果把当前 normalized 值当 fallback，导图高度这类可选字段会把用户刚输入的值误判成默认值并删除。
      */
     const defaultValue = this.configDefaultValueForPath
@@ -503,10 +521,17 @@ export const configFieldMethods = {
     if (
       explicitValue !== undefined &&
       explicitValue !== null &&
-      configFieldValueEquals(explicitValue, defaultValue) &&
-      (!this.isDraftConfigPathRedundant || this.isDraftConfigPathRedundant(path))
+      configFieldValueEquals(explicitValue, defaultValue)
     ) {
-      deleteConfigValue(this.draftConfig, path);
+      /*
+       * 性能优化：先做简单的值比较，值相等时才调用昂贵的冗余判断。
+       * isDraftConfigPathRedundant 会做两次 normalize 和两次 JSON.stringify，
+       * 只有在值恰好等于默认值的边界情况下才需要进一步确认是否真的冗余。
+       */
+      const isRedundant = !this.isDraftConfigPathRedundant || this.isDraftConfigPathRedundant(path);
+      if (isRedundant) {
+        deleteConfigValue(this.draftConfig, path);
+      }
     }
     return defaultValue;
   },
@@ -537,6 +562,24 @@ export const configFieldMethods = {
     }
   },
 
+  /*
+   * 作用：
+   * 同步数字输入框的继承值显示，并根据配置状态更新样式。
+   *
+   * 参数：
+   * - input：数字输入框 DOM 元素。
+   * - path：配置路径数组，用于判断当前字段是否为显式配置。
+   * - value：当前继承值（来自上层配置或默认值）。
+   * - options.preserveExplicit：是否保留显式配置。
+   *     - true：被动同步场景（如全局字段变化联动级别字段），只更新继承来源显示，
+   *       不删除用户已有的显式配置，避免误删用户数据。
+   *     - false/默认：主动编辑场景，如果输入值等于继承值则删除当前配置路径，
+   *       恢复为继承态。
+   *
+   * 边界条件：
+   * - 当前焦点在输入框且输入为空时，只更新样式不覆盖值，避免打断用户输入。
+   * - 输入值为空时，继承值显示在 placeholder 中，不写入 value。
+   */
   syncInheritedNumberInput(input, path, value, options = {}) {
     if (!input) return;
 

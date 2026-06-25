@@ -44,6 +44,22 @@ export function splitMindSourceConfig(source) {
   };
 }
 
+/*
+ * 作用：
+ * 裁剪当前布局/线型下不生效的配置项，保持配置区精简。
+ *
+ * 参数：
+ * - rawConfig：待裁剪的原始配置（通常是代码块配置区）。
+ * - baseConfig：基础来源配置（通常是全局默认值配置），用于判断某些依赖项的有效状态。
+ *
+ * 裁剪规则：
+ * - 思维导图非折线线型下，移除下挂展开配置。
+ * - 非适配视图模式下，移除适配视图子配置。
+ * - 开启"不放大"时，移除最大放大倍数配置。
+ *
+ * 返回：
+ * 裁剪后的新配置对象。
+ */
 export function pruneInactiveMindConfig(rawConfig, baseConfig = {}) {
   let next = canonicalizeMindConfig(rawConfig);
   const base = canonicalizeMindConfig(baseConfig);
@@ -104,8 +120,21 @@ function pruneInactiveViewFitConfig(config, baseConfig) {
   return next;
 }
 
-export function serializeMindSource(rawConfig, body, forceConfig) {
-  const config = pruneInactiveMindConfig(rawConfig);
+/*
+ * 作用：
+ * 把原始配置和正文拼接成 yxmm 源码。
+ *
+ * 参数：
+ * - rawConfig：配置区原始配置。
+ * - body：正文区文本。
+ * - forceConfig：是否强制写入配置区，即使配置为空。
+ * - baseConfig：基础来源配置（可选），传入后 prune 时会结合基础配置判断哪些配置项不生效。
+ *
+ * 返回：
+ * 拼接后的 yxmm 源码字符串。
+ */
+export function serializeMindSource(rawConfig, body, forceConfig, baseConfig) {
+  const config = pruneInactiveMindConfig(rawConfig, baseConfig);
   const bodyText = String(body || '').trim();
   const shouldWriteConfig = forceConfig || hasMeaningfulConfig(config);
 

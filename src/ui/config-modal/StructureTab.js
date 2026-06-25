@@ -6,6 +6,7 @@
 import {
   TOPIC_MAX_WIDTH_MAX,
   TOPIC_MAX_WIDTH_MIN,
+  TOPIC_MAX_WIDTH_LEVEL_KEYS,
   normalizeMindConfig,
 } from './configModalShared.js';
 
@@ -93,8 +94,8 @@ export const structureTabMethods = {
     );
 
     const levelMaxWidthInputs = [];
-    for (const level of ['1', '2', '3']) {
-      const levelKey = `level${level}`;
+    for (const levelKey of TOPIC_MAX_WIDTH_LEVEL_KEYS) {
+      const level = levelKey.replace('level', '');
       const levelTopic = normalized.topic.levels[level] || {};
       const input = this.createNumberField(
         this.t(`configModal.structure.topicMaxWidthLevel${level}`),
@@ -110,6 +111,15 @@ export const structureTabMethods = {
     this.installTopicMaxWidthInheritanceSync(globalMaxWidthInput, levelMaxWidthInputs);
   },
 
+  /*
+   * 作用：
+   * 绑定全局主题最大宽度输入框的变化事件，同步更新级别字段的继承值显示。
+   *
+   * 业务规则：
+   * 全局宽度变化时，级别字段如果是继承态（用户没有显式设置），
+   * 应立刻显示新的继承值；但如果用户已显式设置了级别宽度，
+   * 只更新内部继承来源，不改变用户输入，也不消除用户的显式配置。
+   */
   installTopicMaxWidthInheritanceSync(globalMaxWidthInput, levelMaxWidthInputs) {
     if (!globalMaxWidthInput) return;
 
@@ -120,18 +130,27 @@ export const structureTabMethods = {
     globalMaxWidthInput.addEventListener('change', sync);
   },
 
+  /*
+   * 作用：
+   * 同步所有级别主题最大宽度字段的继承值显示。
+   *
+   * 业务规则：
+   * - 级别没有显式值时，显示删除当前 level 后的真实继承值。
+   * - 级别有显式 maxWidth 时，显示显式值，但内部继承来源仍要保持为“删除后”的值。
+   * - 全局变化触发的被动同步使用 preserveExplicit，避免误删用户的级别配置。
+   */
   syncTopicMaxWidthInheritedFields(levelMaxWidthInputs) {
     const normalized = normalizeMindConfig(this.effectiveDraftConfig());
     const globalMaxWidth = normalized.topic.maxWidth;
 
     for (const { input, levelKey } of levelMaxWidthInputs) {
-      const level = levelKey.replace('level', '');
-      const levelMaxWidth = normalized.topic.levels[level]?.maxWidth;
-      const inheritedValue =
-        levelMaxWidth === null || levelMaxWidth === undefined ? globalMaxWidth : levelMaxWidth;
+      const path = ['structure', 'topicMaxWidth', levelKey];
+      const inheritedValue = this.configDefaultValueForPath
+        ? this.configDefaultValueForPath(path, globalMaxWidth)
+        : globalMaxWidth;
       this.syncInheritedNumberInput(
         input,
-        ['structure', 'topicMaxWidth', levelKey],
+        path,
         inheritedValue,
         /*
          * 全局最大宽度变化只更新级别字段的继承来源。

@@ -149,6 +149,22 @@ export const DEFAULT_FONT_FAMILY = 'var(--font-text)';
 export const CUSTOM_FONT_VALUE = '__custom_font__';
 
 /*
+ * 可按主题级别覆盖的字体字段名。
+ * 用于配置合并时按来源遮蔽全局默认值的 levelN 字段，
+ * 以及配置面板中全局字段与级别字段的联动同步。
+ */
+export const FONT_LEVEL_FIELD_KEYS = Object.freeze(['family', 'size', 'weight', 'lineHeight']);
+
+/*
+ * 支持字体/主题最大宽度覆盖的主题级别 key。
+ * 当前只支持 level1/level2/level3 三级覆盖，更深层级继承上级配置。
+ */
+export const FONT_LEVEL_KEYS = Object.freeze(['level1', 'level2', 'level3']);
+
+// 主题最大宽度支持的级别 key，与字体级别保持一致。
+export const TOPIC_MAX_WIDTH_LEVEL_KEYS = FONT_LEVEL_KEYS;
+
+/*
  * 作用：
  * 按类型分组的字体下拉选项。
  *

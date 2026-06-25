@@ -11,6 +11,7 @@
 
 import {
   deleteConfigValue,
+  FONT_LEVEL_KEYS,
   FONT_LINE_HEIGHT_MAX,
   FONT_LINE_HEIGHT_MIN,
   FONT_SIZE_MAX,
@@ -20,8 +21,6 @@ import {
   normalizeMindConfig,
   normalizeFontFamilyInput,
 } from './configModalShared.js';
-
-const FONT_INHERITED_FIELD_KEYS = ['family', 'size', 'weight', 'lineHeight'];
 
 export const fontTabMethods = {
   renderFontTab(normalized) {
@@ -82,7 +81,8 @@ export const fontTabMethods = {
 
     this.createSection(this.t('configModal.font.levelSection'));
     const levelFontGroups = [];
-    for (const level of ['1', '2', '3']) {
+    for (const levelKey of FONT_LEVEL_KEYS) {
+      const level = levelKey.replace('level', '');
       levelFontGroups.push(this.createLevelFontGroup(level, normalized));
     }
     this.installLevelFontInheritanceSync(
@@ -201,33 +201,26 @@ export const fontTabMethods = {
     bindFieldSync([globalFields.lineHeight], 'lineHeight');
   },
 
-  syncLevelFontInheritedFields(levelFontGroups) {
-    for (const fontKey of FONT_INHERITED_FIELD_KEYS) {
-      this.syncLevelFontInheritedField(levelFontGroups, fontKey);
-    }
-  },
-
   syncLevelFontInheritedField(levelFontGroups, fontKey) {
     const normalized = normalizeMindConfig(this.effectiveDraftConfig());
     for (const group of levelFontGroups) {
-      const level = group.levelKey.replace('level', '');
-      const levelFont = normalized.font.levels[level] || {};
       const path = ['font', group.levelKey, fontKey];
+      const fallbackValue = normalized.font[fontKey] ?? '';
+      const inheritedValue = this.configDefaultValueForPath
+        ? this.configDefaultValueForPath(path, fallbackValue)
+        : fallbackValue;
 
       if (fontKey === 'family') {
-        this.syncInheritedFontFamilyField(
-          group.fields.family,
-          path,
-          levelFont.family || normalized.font.family,
-          { preserveExplicit: true }
-        );
+        this.syncInheritedFontFamilyField(group.fields.family, path, inheritedValue, {
+          preserveExplicit: true,
+        });
         continue;
       }
 
       this.syncInheritedNumberInput(
         group.fields[fontKey],
         path,
-        levelFont[fontKey] ?? normalized.font[fontKey],
+        inheritedValue,
         /*
          * 这里是全局字段变化触发的被动回显，只更新继承来源。
          * 显式 levelN 字段是否消除，应由用户编辑该字段时决定。

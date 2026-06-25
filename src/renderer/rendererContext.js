@@ -314,9 +314,19 @@ export const rendererContextMethods = {
       }
 
       nextRoot = document.root;
-      nextSource = serializeMindSource(rawConfig, document.body, shouldWriteConfig);
+      nextSource = serializeMindSource(
+        rawConfig,
+        document.body,
+        shouldWriteConfig,
+        this.plugin?.getGlobalDefaultValueConfig?.() || {}
+      );
     } else {
-      nextSource = serializeMindDocument(this.root, rawConfig, shouldWriteConfig);
+      nextSource = serializeMindDocument(
+        this.root,
+        rawConfig,
+        shouldWriteConfig,
+        this.plugin?.getGlobalDefaultValueConfig?.() || {}
+      );
     }
 
     const saved = await this.saveSourceToMarkdownFile(nextSource);

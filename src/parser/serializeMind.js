@@ -41,8 +41,8 @@ export function serializeMind(root) {
  * 实现逻辑：
  * 主题树先用 serializeMind 转成标题正文，再交给 serializeMindSource 包上配置区。
  */
-export function serializeMindDocument(root, rawConfig, forceConfig) {
-  return serializeMindSource(rawConfig, serializeMind(root), forceConfig);
+export function serializeMindDocument(root, rawConfig, forceConfig, baseConfig) {
+  return serializeMindSource(rawConfig, serializeMind(root), forceConfig, baseConfig);
 }
 
 /*

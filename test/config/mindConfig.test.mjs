@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 
 import {
+  deleteMindConfigPath,
   mergeMindConfigObjects,
   mergeMindConfigSources,
   normalizeMindConfig,
@@ -91,6 +92,35 @@ test('mergeMindConfigSources keeps document topic level widths over document glo
   assert.equal(config.topic.levels['2'].maxWidth, 240);
 });
 
+test('mergeMindConfigSources resolves topic level inheritance after document level width is cleared', () => {
+  const globalDefaultConfig = {
+    structure: {
+      topicMaxWidth: {
+        global: 240,
+        level1: 260,
+      },
+    },
+  };
+  const documentConfigAfterClearingGlobal = {
+    structure: {
+      topicMaxWidth: {
+        level1: 200,
+      },
+    },
+  };
+  const documentConfigAfterClearingLevel = deleteMindConfigPath(documentConfigAfterClearingGlobal, [
+    'structure',
+    'topicMaxWidth',
+    'level1',
+  ]);
+  const config = normalizeMindConfig(
+    mergeMindConfigSources(globalDefaultConfig, documentConfigAfterClearingLevel)
+  );
+
+  assert.equal(config.topic.maxWidth, 240);
+  assert.equal(config.topic.levels['1'].maxWidth, 260);
+});
+
 test('mergeMindConfigSources shadows global-default font level fields per document global field', () => {
   const config = normalizeMindConfig(
     mergeMindConfigSources(
@@ -148,6 +178,38 @@ test('mergeMindConfigSources keeps document font level fields over document glob
   assert.equal(config.font.levels['2'].size, 16);
   assert.equal(config.font.levels['2'].weight, 700);
   assert.equal(config.font.levels['2'].lineHeight, 28);
+});
+
+test('mergeMindConfigSources resolves font level inheritance after document level field is cleared', () => {
+  const globalDefaultConfig = {
+    font: {
+      size: 16,
+      weight: 500,
+      level1: {
+        size: 18,
+        weight: 700,
+      },
+    },
+  };
+  const documentConfigAfterClearingGlobal = {
+    font: {
+      level1: {
+        size: 20,
+      },
+    },
+  };
+  const documentConfigAfterClearingLevel = deleteMindConfigPath(documentConfigAfterClearingGlobal, [
+    'font',
+    'level1',
+    'size',
+  ]);
+  const config = normalizeMindConfig(
+    mergeMindConfigSources(globalDefaultConfig, documentConfigAfterClearingLevel)
+  );
+
+  assert.equal(config.font.size, 16);
+  assert.equal(config.font.levels['1'].size, 18);
+  assert.equal(config.font.levels['1'].weight, 700);
 });
 
 test('simple YAML parser and stringifier round-trip nested config', () => {

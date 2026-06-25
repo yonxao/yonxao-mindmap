@@ -14,12 +14,16 @@ import {
   canonicalizeMindConfig,
   CONNECTOR_STYLE_CONFIGURABLE_LAYOUTS,
   deleteMindConfigPath,
+  FONT_LEVEL_FIELD_KEYS,
+  FONT_LEVEL_KEYS,
   hasMeaningfulConfig,
+  isPlainObject,
   mergeMindConfigObjects,
   mergeMindConfigSources,
   normalizeMindConfig,
   pruneInactiveMindConfig,
   serializeMindSource,
+  TOPIC_MAX_WIDTH_LEVEL_KEYS,
   assignIds,
   parseMindDocument,
   serializeMindDocument,
@@ -37,7 +41,8 @@ export const runtimeConfigSaveMethods = {
     const nextSource = serializeMindDocument(
       this.root,
       this.documentConfigForSave(this.rawConfig),
-      this.hasConfigBlock
+      this.hasConfigBlock,
+      this.plugin?.getGlobalDefaultValueConfig?.() || {}
     );
     const saved = await this.saveSourceToMarkdownFile(nextSource);
     if (!saved) return false;
@@ -64,7 +69,8 @@ export const runtimeConfigSaveMethods = {
     const nextSource = serializeMindSource(
       this.rawConfig,
       runtimeDocument.body,
-      this.hasConfigBlock
+      this.hasConfigBlock,
+      this.plugin?.getGlobalDefaultValueConfig?.() || {}
     );
     const saved = await this.saveSourceToMarkdownFile(nextSource);
     if (!saved) return false;
@@ -91,7 +97,12 @@ export const runtimeConfigSaveMethods = {
 
     return {
       root: null,
-      body: serializeMindDocument(this.root, {}, false),
+      body: serializeMindDocument(
+        this.root,
+        {},
+        false,
+        this.plugin?.getGlobalDefaultValueConfig?.() || {}
+      ),
       rawConfig: this.documentConfigForSave(this.rawConfig),
     };
   },
@@ -120,7 +131,7 @@ export const runtimeConfigSaveMethods = {
 
     for (const path of this.documentConfigDefaultPrunePaths(next)) {
       const currentValue = this.normalizedConfigValueForPath(normalizedDocument, path);
-      const defaultValue = this.normalizedDefaultValueForPath(normalizedGlobal, path);
+      const defaultValue = this.normalizedConfigValueForPath(normalizedGlobal, path);
       if (this.areConfigValuesEqual(currentValue, defaultValue)) {
         if (this.shouldKeepDefaultConfigPath(next, path, normalizedDocument, normalizedGlobal)) {
           continue;
@@ -137,20 +148,17 @@ export const runtimeConfigSaveMethods = {
     const font = config?.font;
     const topicMaxWidth = config?.structure?.topicMaxWidth;
 
-    if (this.isPlainConfigObject(font)) {
-      for (const levelKey of ['level1', 'level2', 'level3']) {
-        if (!this.isPlainConfigObject(font[levelKey])) continue;
-        paths.push(
-          ['font', levelKey, 'family'],
-          ['font', levelKey, 'size'],
-          ['font', levelKey, 'weight'],
-          ['font', levelKey, 'lineHeight']
-        );
+    if (this.isPlainObject(font)) {
+      for (const levelKey of FONT_LEVEL_KEYS) {
+        if (!this.isPlainObject(font[levelKey])) continue;
+        for (const fieldKey of FONT_LEVEL_FIELD_KEYS) {
+          paths.push(['font', levelKey, fieldKey]);
+        }
       }
     }
 
-    if (this.isPlainConfigObject(topicMaxWidth)) {
-      for (const levelKey of ['level1', 'level2', 'level3']) {
+    if (this.isPlainObject(topicMaxWidth)) {
+      for (const levelKey of TOPIC_MAX_WIDTH_LEVEL_KEYS) {
         if (topicMaxWidth[levelKey] !== undefined) {
           paths.push(['structure', 'topicMaxWidth', levelKey]);
         }
@@ -181,21 +189,23 @@ export const runtimeConfigSaveMethods = {
     }
 
     if (key === 'structure.topicMaxWidth.global') {
-      return this.doesDeletingConfigPathChangeLevelValues(config, path, normalizedDocument, [
-        ['structure', 'topicMaxWidth', 'level1'],
-        ['structure', 'topicMaxWidth', 'level2'],
-        ['structure', 'topicMaxWidth', 'level3'],
-      ]);
+      return this.doesDeletingConfigPathChangeLevelValues(
+        config,
+        path,
+        normalizedDocument,
+        TOPIC_MAX_WIDTH_LEVEL_KEYS.map((levelKey) => ['structure', 'topicMaxWidth', levelKey])
+      );
     }
 
     const fontGlobalMatch = key.match(/^font\.(family|size|weight|lineHeight)$/);
     if (fontGlobalMatch) {
       const fontKey = fontGlobalMatch[1];
-      return this.doesDeletingConfigPathChangeLevelValues(config, path, normalizedDocument, [
-        ['font', 'level1', fontKey],
-        ['font', 'level2', fontKey],
-        ['font', 'level3', fontKey],
-      ]);
+      return this.doesDeletingConfigPathChangeLevelValues(
+        config,
+        path,
+        normalizedDocument,
+        FONT_LEVEL_KEYS.map((levelKey) => ['font', levelKey, fontKey])
+      );
     }
 
     return false;
@@ -218,7 +228,7 @@ export const runtimeConfigSaveMethods = {
   },
 
   hasMeaningfulFitViewChild(config, normalizedDocument, normalizedGlobal) {
-    const display = this.isPlainConfigObject(config?.display) ? config.display : {};
+    const display = this.isPlainObject(config?.display) ? config.display : {};
 
     if (
       display.fitViewNoUpscale !== undefined &&
@@ -234,7 +244,7 @@ export const runtimeConfigSaveMethods = {
   },
 
   hasMeaningfulFitViewMaxScale(config, normalizedDocument, normalizedGlobal) {
-    const display = this.isPlainConfigObject(config?.display) ? config.display : {};
+    const display = this.isPlainObject(config?.display) ? config.display : {};
     if (display.fitViewMaxScale === undefined) return false;
 
     return !this.areConfigValuesEqual(
@@ -244,7 +254,7 @@ export const runtimeConfigSaveMethods = {
   },
 
   hasMeaningfulBranchExpansion(config, normalizedDocument, normalizedGlobal) {
-    const structure = this.isPlainConfigObject(config?.structure) ? config.structure : {};
+    const structure = this.isPlainObject(config?.structure) ? config.structure : {};
     if (structure.branchExpansion === undefined) return false;
 
     return !this.areConfigValuesEqual(
@@ -258,7 +268,7 @@ export const runtimeConfigSaveMethods = {
       const level = path[1].replace('level', '');
       const key = path[2];
       const levelConfig = config.font?.levels?.[level];
-      if (this.isPlainConfigObject(levelConfig) && levelConfig[key] !== undefined) {
+      if (this.isPlainObject(levelConfig) && levelConfig[key] !== undefined) {
         return levelConfig[key];
       }
       return config.font?.[key];
@@ -267,7 +277,7 @@ export const runtimeConfigSaveMethods = {
     if (path[0] === 'structure' && path[1] === 'topicMaxWidth' && /^level[123]$/.test(path[2])) {
       const level = path[2].replace('level', '');
       const levelConfig = config.topic?.levels?.[level];
-      if (this.isPlainConfigObject(levelConfig) && levelConfig.maxWidth !== undefined) {
+      if (this.isPlainObject(levelConfig) && levelConfig.maxWidth !== undefined) {
         return levelConfig.maxWidth;
       }
       return config.topic?.maxWidth;
@@ -299,10 +309,6 @@ export const runtimeConfigSaveMethods = {
     return this.configValueAtPath(config, path);
   },
 
-  normalizedDefaultValueForPath(config, path) {
-    return this.normalizedConfigValueForPath(config, path);
-  },
-
   configValueAtPath(config, path) {
     let current = config;
     for (const key of path) {
@@ -316,8 +322,8 @@ export const runtimeConfigSaveMethods = {
     return JSON.stringify(left) === JSON.stringify(right);
   },
 
-  isPlainConfigObject(value) {
-    return Boolean(value) && typeof value === 'object' && !Array.isArray(value);
+  isPlainObject(value) {
+    return isPlainObject(value);
   },
 
   buildEffectiveRawConfig(documentConfig = this.rawConfig) {
