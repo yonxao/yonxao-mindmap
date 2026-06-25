@@ -58,6 +58,18 @@ export const rendererContextMethods = {
       this.containerResizeObserver.disconnect();
       this.containerResizeObserver = null;
     }
+    if (this.pendingFitFrame) {
+      window.cancelAnimationFrame(this.pendingFitFrame);
+      this.pendingFitFrame = null;
+    }
+    if (this.pendingToolbarFrame) {
+      window.cancelAnimationFrame(this.pendingToolbarFrame);
+      this.pendingToolbarFrame = null;
+    }
+    if (this.pendingSourceHeightFrame) {
+      window.cancelAnimationFrame(this.pendingSourceHeightFrame);
+      this.pendingSourceHeightFrame = null;
+    }
   },
 
   mount() {

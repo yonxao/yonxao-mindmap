@@ -17,7 +17,8 @@
  */
 
 import { FALLBACK_LANGUAGE, normalizeLanguage } from '../i18n/messages.js';
-import { canonicalizeMindConfig } from './mindConfig.js';
+import { canonicalizeMindConfig } from './configCanonicalize.js';
+import { isPlainObject } from './configAccessors.js';
 
 export const DEFAULT_PLUGIN_SETTINGS = Object.freeze({
   language: FALLBACK_LANGUAGE,
@@ -40,12 +41,4 @@ export function normalizePluginSettings(rawSettings, defaultLanguage = FALLBACK_
       ? canonicalizeMindConfig(settings.defaultConfig)
       : {},
   };
-}
-
-/*
- * 作用：
- * 判断值是否为普通对象。
- */
-function isPlainObject(value) {
-  return Boolean(value) && typeof value === 'object' && !Array.isArray(value);
 }

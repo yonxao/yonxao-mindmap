@@ -255,9 +255,9 @@ export function normalizeTopicConfig(rawTheme, rawLayout) {
  * - colorMode：规范化的配色模式，默认 inherit-accent
  * - color：自定义颜色字符串，可能为空
  */
-export function normalizeButtonConfig(rawTheme, rawBasic = {}) {
+export function normalizeButtonConfig(rawTheme, rawInteraction = {}) {
   const color = isPlainObject(rawTheme) ? rawTheme : {};
-  const interaction = isPlainObject(rawBasic) ? rawBasic : {};
+  const interaction = isPlainObject(rawInteraction) ? rawInteraction : {};
   const colorMode = normalizeText(color.buttonColorMode).toLowerCase();
   return {
     colorMode: BUTTON_COLOR_MODES.includes(colorMode)

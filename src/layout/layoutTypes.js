@@ -1,29 +1,13 @@
 /*
  * 文件作用：
  * 布局类型集合、布局组判断和下挂/连线能力判断。
+ *
+ * LAYOUT_TYPES 从 defaultMindConfig.js 导入，避免和配置系统的布局列表不一致。
  */
 
-export const LAYOUT_TYPES = Object.freeze([
-  'mindmap-right',
-  'mindmap-left',
-  'mindmap-bidirectional',
-  'mindmap-down',
-  'mindmap-up',
-  'mindmap-vertical',
-  'tree-right',
-  'tree-left',
-  'tree',
-  'org',
-  'org-right',
-  'timeline-up',
-  'timeline-down',
-  'timeline',
-  'radial',
-  'fishbone-left',
-  'fishbone-right',
-  'tree-table',
-  'tree-table-stepped',
-]);
+import { LAYOUT_TYPES } from '../config/defaultMindConfig.js';
+
+export { LAYOUT_TYPES };
 
 export function isBranchExpansionSupportedLayout(layoutType) {
   return (
