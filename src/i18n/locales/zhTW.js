@@ -63,6 +63,7 @@ export const zhTWMessages = Object.freeze({
   'notice.rootCannotAddSibling': 'yonxao-mindmap: 根主題不能新增同級主題。',
   'notice.rootCannotDeleteInMap': 'yonxao-mindmap: 根主題不能在導圖視圖中刪除。',
   'notice.rootCannotDelete': 'yonxao-mindmap: 根主題不能刪除。',
+  'editorMenu.insertMindMap': '插入思維導圖',
   'confirm.deleteTopic': '確定刪除「{topic}」嗎？',
   'confirm.deleteTopicWithDescendants': '確定刪除「{topic}」及其 {count} 個子主題嗎？',
 

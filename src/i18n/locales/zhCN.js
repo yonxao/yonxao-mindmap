@@ -63,6 +63,7 @@ export const zhCNMessages = Object.freeze({
   'notice.rootCannotAddSibling': 'yonxao-mindmap: 根主题不能新增兄弟主题。',
   'notice.rootCannotDeleteInMap': 'yonxao-mindmap: 根主题不能在导图视图中删除。',
   'notice.rootCannotDelete': 'yonxao-mindmap: 根主题不能删除。',
+  'editorMenu.insertMindMap': '插入思维导图',
   'confirm.deleteTopic': '确定删除“{topic}”吗？',
   'confirm.deleteTopicWithDescendants': '确定删除“{topic}”及其 {count} 个子主题吗？',
 

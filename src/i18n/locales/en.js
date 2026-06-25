@@ -70,6 +70,7 @@ export const enMessages = Object.freeze({
   'notice.rootCannotAddSibling': 'yonxao-mindmap: The root topic cannot add sibling topics.',
   'notice.rootCannotDeleteInMap': 'yonxao-mindmap: The root topic cannot be deleted in map view.',
   'notice.rootCannotDelete': 'yonxao-mindmap: The root topic cannot be deleted.',
+  'editorMenu.insertMindMap': 'Insert mind map',
   'confirm.deleteTopic': 'Delete “{topic}”?',
   'confirm.deleteTopicWithDescendants': 'Delete “{topic}” and its {count} subtopics?',
 

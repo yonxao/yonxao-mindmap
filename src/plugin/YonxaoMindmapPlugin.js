@@ -64,17 +64,37 @@ export class YonxaoMindmapPlugin extends Plugin {
     /*
      * 这里有一个重要取舍：
      * Obsidian 的 registerMarkdownCodeBlockProcessor 不只服务阅读视图，也会参与 Live Preview
-     * 中“已渲染代码块”的显示。也就是说，编辑视图和阅读视图可以共用同一个
+     * 中"已渲染代码块"的显示。也就是说，编辑视图和阅读视图可以共用同一个
      * YonxaoMindmapRenderer。
      *
      * 之前额外注册过 CodeMirror Decoration.replace 扩展，试图直接替换编辑器里的 fenced code block。
      * 这种做法依赖 CodeMirror/Obsidian 内部 DOM 和装饰规则，版本稍有差异就可能在打开文件阶段抛错，
-     * 最糟糕的表现就是整篇 Markdown 显示“打开失败”，并且还没机会渲染插件自己的错误提示。
+     * 最糟糕的表现就是整篇 Markdown 显示"打开失败"，并且还没机会渲染插件自己的错误提示。
      *
      * 因此当前版本不再注册自定义 CodeMirror 扩展，而是走 Obsidian 官方 Markdown 代码块渲染管线。
      * 源码/导图切换、主题编辑、幕布高度调整仍然由同一个 renderer 完成。
-     * Obsidian 自带的“编辑这个块”按钮继续保留，插件工具栏按配置吸附在幕布四角内侧或外侧。
+     * Obsidian 自带的"编辑这个块"按钮继续保留，插件工具栏按配置吸附在幕布四角内侧或外侧。
      */
+
+    /*
+     * 注册编辑器右键菜单项，用于快速插入空 yxmm 代码块。
+     *
+     * 为什么不放在"插入"子菜单下？
+     * Obsidian 的 editor-menu 事件在菜单已构建完毕后触发，子菜单不暴露公共 API，
+     * 无法向已有子菜单动态添加项。因此注册为一级菜单项。
+     */
+    this.registerEvent(
+      this.app.workspace.on('editor-menu', (menu, editor) => {
+        menu.addItem((item) => {
+          item
+            .setIcon('file-plus')
+            .setTitle(this.t('editorMenu.insertMindMap'))
+            .onClick(() => {
+              editor.replaceSelection('```yxmm\n```\n');
+            });
+        });
+      })
+    );
   }
 
   /*
