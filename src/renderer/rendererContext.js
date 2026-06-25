@@ -347,6 +347,6 @@ export const rendererContextMethods = {
     }
 
     new Notice(this.t('notice.configSaved'));
-    return true;
+    return { saved: true, rawConfig };
   },
 };

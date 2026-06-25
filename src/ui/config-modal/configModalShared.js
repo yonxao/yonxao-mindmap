@@ -51,7 +51,6 @@ export {
   TOOLBAR_PLACEMENTS,
   VIEW_FIT_MODES,
   canonicalizeMindConfig,
-  mergeMindConfigObjects,
   mergeMindConfigSources,
   normalizeMindConfig,
   pruneInactiveMindConfig,

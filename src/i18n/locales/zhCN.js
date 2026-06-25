@@ -150,6 +150,9 @@ export const zhCNMessages = Object.freeze({
   'configModal.display.sourceSection': '源码区域',
   'configModal.display.sourceHeight': '源码高度',
   'configModal.display.sourceHeight.help': '源码模式独立高度，不影响导图高度。',
+  'configModal.display.saveFullConfig': '保存全部配置项',
+  'configModal.display.saveFullConfig.help':
+    '开启后保存所有配置值（包括默认值），便于分享或迁移后保持样式一致；关闭时只保存与默认值不同的配置，保持配置区精简。',
 
   'configModal.interaction.toolbarSection': '工具栏',
   'configModal.interaction.toolbarCorner': '工具栏角落',

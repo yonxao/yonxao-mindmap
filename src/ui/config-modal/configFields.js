@@ -524,6 +524,15 @@ export const configFieldMethods = {
       configFieldValueEquals(explicitValue, defaultValue)
     ) {
       /*
+       * "保存全部配置项"启用时，不要自动删除与默认值相等的路径。
+       * 否则切换到其他选项卡再切回来时，draft 中的默认值会被清掉，
+       * 高级选项卡中的 YAML 内容就会逐渐"缩水"。
+       */
+      if (getConfigValue(this.draftConfig, ['display', 'saveFullConfig'], false)) {
+        return defaultValue;
+      }
+
+      /*
        * 性能优化：先做简单的值比较，值相等时才调用昂贵的冗余判断。
        * isDraftConfigPathRedundant 会做两次 normalize 和两次 JSON.stringify，
        * 只有在值恰好等于默认值的边界情况下才需要进一步确认是否真的冗余。

@@ -104,5 +104,13 @@ export const displayTabMethods = {
         help: this.t('configModal.display.sourceHeight.help'),
       }
     );
+    this.createToggleField(
+      this.t('configModal.display.saveFullConfig'),
+      ['display', 'saveFullConfig'],
+      normalized.view.saveFullConfig,
+      {
+        help: this.t('configModal.display.saveFullConfig.help'),
+      }
+    );
   },
 };

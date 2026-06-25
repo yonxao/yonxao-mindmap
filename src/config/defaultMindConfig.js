@@ -287,8 +287,10 @@ export const DEFAULT_MIND_CONFIG = Object.freeze({
     fit: 'fit',
     // 默认适配视图不放大小图，避免少量主题被过度放大。
     fitNoUpscale: true,
-    // 关闭“不放大”时，适配视图最多放大到 1.5 倍。
+    // 关闭"不放大"时，适配视图最多放大到 1.5 倍。
     fitMaxScale: 1.5,
+    // 默认裁剪保存，只写非默认值的配置项；开启后写入全部配置，便于分享。
+    saveFullConfig: false,
   }),
   // 默认主题色系名称。
   theme: DEFAULT_THEME_NAME,
@@ -341,5 +343,58 @@ export const DEFAULT_MIND_CONFIG = Object.freeze({
     enableTabIndent: true,
     // null 表示源码编辑区高度跟随自动高度。
     height: null,
+  }),
+});
+
+/*
+ * 作用：
+ * DEFAULT_MIND_CONFIG 的配置区规范结构等价形式，用于"保存全部配置项"时补齐默认值。
+ *
+ * 关键点：
+ * canonicalizeMindConfig() 只识别 display/structure/color/font/interaction 规范分组，
+ * 而 DEFAULT_MIND_CONFIG 是运行时结构（canvas/toolbar/view/theme/layout 等分组）。
+ * 因此不能在 applyDraft 中直接 canonicalizeMindConfig(DEFAULT_MIND_CONFIG)，
+ * 需要预先定义一份配置区规范结构下的默认值。
+ *
+ * 维护说明：
+ * 当新增可写入配置区的默认项时，需要同步更新这两个对象。
+ */
+export const CANONICAL_DEFAULT_CONFIG = Object.freeze({
+  display: Object.freeze({
+    canvasHeight: null,
+    sourceHeight: null,
+    viewFit: 'fit',
+    fitViewNoUpscale: true,
+    fitViewMaxScale: 1.5,
+    saveFullConfig: false,
+  }),
+  structure: Object.freeze({
+    layout: 'mindmap-right',
+    connectorStyle: 'curve',
+    branchExpansion: 'side',
+    topicMaxWidth: Object.freeze({
+      global: TOPIC_MAX_WIDTH,
+    }),
+  }),
+  color: Object.freeze({
+    scheme: DEFAULT_THEME_NAME,
+    defaultTopicColor: '',
+    buttonColorMode: 'inherit-accent',
+    buttonColor: '',
+  }),
+  font: Object.freeze({
+    family: DEFAULT_FONT_FAMILY,
+    size: 16,
+    weight: 400,
+    lineHeight: 20,
+  }),
+  interaction: Object.freeze({
+    toolbar: Object.freeze({
+      corner: 'top-right',
+      placement: 'outside',
+    }),
+    topicControlVisibility: 'toggle-always',
+    tabIndent: true,
+    wheelZoom: false,
   }),
 });

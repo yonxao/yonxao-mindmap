@@ -150,6 +150,9 @@ export const zhTWMessages = Object.freeze({
   'configModal.display.sourceSection': '原始碼區域',
   'configModal.display.sourceHeight': '原始碼高度',
   'configModal.display.sourceHeight.help': '原始碼模式有獨立高度，不影響導圖高度。',
+  'configModal.display.saveFullConfig': '儲存全部設定項',
+  'configModal.display.saveFullConfig.help':
+    '開啟後儲存所有設定值（包括預設值），便於分享或遷移後保持樣式一致；關閉時只儲存與預設值不同的設定，保持精簡。',
 
   'configModal.interaction.toolbarSection': '工具列',
   'configModal.interaction.toolbarCorner': '工具列角落',

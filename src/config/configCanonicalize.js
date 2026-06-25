@@ -24,6 +24,7 @@ export function canonicalizeMindConfig(rawConfig) {
   setConfigValueIfPresent(next, ['display', 'viewFit'], display.viewFit);
   setConfigValueIfPresent(next, ['display', 'fitViewNoUpscale'], display.fitViewNoUpscale);
   setConfigValueIfPresent(next, ['display', 'fitViewMaxScale'], display.fitViewMaxScale);
+  setConfigValueIfPresent(next, ['display', 'saveFullConfig'], display.saveFullConfig);
 
   const structure = isPlainObject(raw.structure) ? raw.structure : {};
   const topicMaxWidth = isPlainObject(structure.topicMaxWidth) ? structure.topicMaxWidth : {};

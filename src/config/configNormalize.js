@@ -73,6 +73,10 @@ export function normalizeMindConfig(rawConfig) {
           FIT_VIEW_MAX_SCALE_MIN,
           FIT_VIEW_MAX_SCALE_MAX
         ) || DEFAULT_MIND_CONFIG.view.fitMaxScale,
+      saveFullConfig:
+        typeof display.saveFullConfig === 'boolean'
+          ? display.saveFullConfig
+          : DEFAULT_MIND_CONFIG.view.saveFullConfig,
     },
     theme: normalizeMindThemeName(color.scheme),
     layout: normalizeLayoutType(structure.layout) || DEFAULT_MIND_CONFIG.layout,
@@ -150,6 +154,10 @@ function normalizeRuntimeMindConfig(config) {
       fitMaxScale:
         normalizeOptionalNumber(view.fitMaxScale, FIT_VIEW_MAX_SCALE_MIN, FIT_VIEW_MAX_SCALE_MAX) ||
         DEFAULT_MIND_CONFIG.view.fitMaxScale,
+      saveFullConfig:
+        typeof view.saveFullConfig === 'boolean'
+          ? view.saveFullConfig
+          : DEFAULT_MIND_CONFIG.view.saveFullConfig,
     },
     theme: normalizeMindThemeName(config.theme),
     layout: normalizeLayoutType(config.layout) || DEFAULT_MIND_CONFIG.layout,

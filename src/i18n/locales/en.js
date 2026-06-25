@@ -159,6 +159,9 @@ export const enMessages = Object.freeze({
   'configModal.display.sourceHeight': 'Source height',
   'configModal.display.sourceHeight.help':
     'Source mode has an independent height and does not affect map height.',
+  'configModal.display.saveFullConfig': 'Save all config items',
+  'configModal.display.saveFullConfig.help':
+    'When enabled, saves all config values including defaults for consistent styling when shared or migrated. When disabled, only saves configs that differ from defaults to keep it concise.',
 
   'configModal.interaction.toolbarSection': 'Toolbar',
   'configModal.interaction.toolbarCorner': 'Toolbar corner',

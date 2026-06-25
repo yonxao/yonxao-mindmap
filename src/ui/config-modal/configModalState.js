@@ -14,6 +14,7 @@ import {
   cloneConfig,
   deleteConfigValue,
   parseDraftConfigText,
+  setConfigValue,
   stringifyDraftConfig,
   canonicalizeMindConfig,
   mergeMindConfigSources,
@@ -21,6 +22,7 @@ import {
   pruneInactiveMindConfig,
   clamp,
 } from './configModalShared.js';
+import { CANONICAL_DEFAULT_CONFIG } from '../../config/defaultMindConfig.js';
 
 // 配置模态框拖动时距离视口边缘的最小间隙，防止模态框被拖到屏幕外完全看不见。
 const MODAL_POSITION_GAP = 12;
@@ -43,6 +45,7 @@ function runtimePathForDraftPath(path) {
     'display.viewFit': ['view', 'fit'],
     'display.fitViewNoUpscale': ['view', 'fitNoUpscale'],
     'display.fitViewMaxScale': ['view', 'fitMaxScale'],
+    'display.saveFullConfig': ['view', 'saveFullConfig'],
     'structure.layout': ['layout'],
     'structure.connectorStyle': ['connector', 'style'],
     'structure.branchExpansion': ['branch', 'expansion'],
@@ -252,8 +255,14 @@ export const configModalStateMethods = {
 
   isDraftApplied() {
     if (this.activeTab === 'advanced' && this.advancedInputEl) {
-      const normalizedDraftText = stringifyDraftConfig(this.draftConfig);
-      if (this.advancedInputEl.value.trim() !== normalizedDraftText.trim()) return false;
+      /*
+       * 渲染高级页时 YAML 编辑器中显示的是裁剪后的 draftConfig，
+       * 所以比较时应使用裁剪后的版本，避免因 textarea 显示值与
+       * 原始 draftConfig 不一致导致按钮状态错误。
+       */
+      const prunedConfig = pruneInactiveMindConfig(this.draftConfig, this.baseConfig);
+      const trimmedDraftText = stringifyDraftConfig(prunedConfig).trim();
+      if (this.advancedInputEl.value.trim() !== trimmedDraftText) return false;
     }
 
     return this.configSnapshot(this.draftConfig) === this.configSnapshot(this.initialConfig);
@@ -315,10 +324,46 @@ export const configModalStateMethods = {
       this.draftConfig = canonicalizeMindConfig(parseDraftConfigText(this.advancedInputEl.value));
     }
 
-    this.draftConfig = pruneInactiveMindConfig(this.draftConfig, this.baseConfig);
-    const saved = await this.onApply(cloneConfig(this.draftConfig));
-    if (!saved) return;
+    let configToSave = this.draftConfig;
+    const effectiveConfig = this.effectiveDraftConfig();
+    const shouldSaveFull = Boolean(effectiveConfig.display?.saveFullConfig);
 
+    if (shouldSaveFull) {
+      // 完整保存：用配置区规范默认配置兜底，再叠加全局默认值，最后叠加代码块配置，
+      // 保证所有字段都被写入，方便分享给他人时样式一致。
+      configToSave = mergeMindConfigSources(
+        CANONICAL_DEFAULT_CONFIG,
+        mergeMindConfigSources(this.baseConfig, this.draftConfig)
+      );
+    }
+
+    configToSave = pruneInactiveMindConfig(configToSave, this.baseConfig);
+
+    if (shouldSaveFull) {
+      setConfigValue(configToSave, ['display', 'saveFullConfig'], true);
+    }
+
+    const result = await this.onApply(cloneConfig(configToSave));
+    if (!result || !result.saved) return;
+
+    /*
+     * 使用 renderer 保存后的裁剪配置更新草稿，保证后续显示与写入文件的配置一致。
+     *
+     * 为什么优先用 result.rawConfig 而不是本地 configToSave：
+     * configToSave 只经过了 pruneInactiveMindConfig（移除当前布局/线型不生效的字段），
+     * 而 renderer 的 documentConfigForSave 在此基础上还会调用
+     * serializeMindSource -> pruneInactiveMindConfig（合并 baseConfig 后再次裁剪），
+     * 移除更多与全局默认值重复的字段，使配置区更精简。
+     * 用其返回值更新 draftConfig 可以让高级选项卡 YAML 立即反映最终写入的配置。
+     */
+    if (result.rawConfig) {
+      this.draftConfig = canonicalizeMindConfig(result.rawConfig);
+    } else {
+      // applyConfigFromModal 返回 { saved: true, rawConfig } 或 false。
+      // 走 else 分支意味着 onApply 未实现 rawConfig 返回（如全局默认值面板），
+      // 此时直接使用本地裁剪后的 configToSave。
+      this.draftConfig = configToSave;
+    }
     this.initialConfig = cloneConfig(this.draftConfig);
     if (this.activeTab === 'advanced' && this.advancedInputEl) {
       this.advancedInputEl.value = stringifyDraftConfig(this.draftConfig);

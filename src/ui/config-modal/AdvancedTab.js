@@ -13,6 +13,7 @@ import {
   parseDraftConfigText,
   stringifyDraftConfig,
   canonicalizeMindConfig,
+  pruneInactiveMindConfig,
 } from './configModalShared.js';
 import {
   appendConfigHighlightedLine,
@@ -30,7 +31,9 @@ export const advancedTabMethods = {
       'yonxao-mindmap-source-input yonxao-mindmap-source-config-input is-active';
     this.advancedInputEl.spellcheck = false;
     this.advancedInputEl.wrap = 'off';
-    this.advancedInputEl.value = stringifyDraftConfig(this.draftConfig);
+    this.advancedInputEl.value = stringifyDraftConfig(
+      pruneInactiveMindConfig(this.draftConfig, this.baseConfig)
+    );
     const advancedEditor = createSourceCodeEditor(this.advancedInputEl, {
       className: 'yonxao-mindmap-source-config-editor is-active',
     });
