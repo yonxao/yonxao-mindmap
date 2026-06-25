@@ -65,6 +65,7 @@ export function pruneInactiveMindConfig(rawConfig, baseConfig = {}) {
   const base = canonicalizeMindConfig(baseConfig);
   next = pruneInactiveBranchExpansionConfig(next, base);
   next = pruneInactiveViewFitConfig(next, base);
+  next = pruneInactiveButtonColorConfig(next, base);
   return next;
 }
 
@@ -105,9 +106,10 @@ function pruneInactiveBranchExpansionConfig(config, baseConfig) {
 function pruneInactiveViewFitConfig(config, baseConfig) {
   const effective = mergeMindConfigSources(baseConfig, config);
   const display = isPlainObject(effective.display) ? effective.display : {};
+  const viewFit = display.viewFit ?? DEFAULT_MIND_CONFIG.view.fit;
   let next = config;
 
-  if (display.viewFit !== 'fit') {
+  if (viewFit !== 'fit') {
     next = deleteMindConfigPath(next, ['display', 'fitViewNoUpscale']);
     next = deleteMindConfigPath(next, ['display', 'fitViewMaxScale']);
     return next;
@@ -118,6 +120,26 @@ function pruneInactiveViewFitConfig(config, baseConfig) {
   }
 
   return next;
+}
+
+/*
+ * 作用：
+ * buttonColor 只有在 buttonColorMode 为 custom 时才生效。
+ *
+ * 规则：
+ * 只有有效 buttonColorMode 为 custom 时才保留 buttonColor；
+ * 否则移除 buttonColor，避免残留自定义颜色值。
+ */
+function pruneInactiveButtonColorConfig(config, baseConfig) {
+  const effective = mergeMindConfigSources(baseConfig, config);
+  const color = isPlainObject(effective.color) ? effective.color : {};
+  const buttonColorMode = String(color.buttonColorMode || '').toLowerCase();
+
+  if (buttonColorMode !== 'custom') {
+    return deleteMindConfigPath(config, ['color', 'buttonColor']);
+  }
+
+  return config;
 }
 
 /*
