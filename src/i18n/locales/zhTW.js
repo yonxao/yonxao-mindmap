@@ -112,6 +112,7 @@ export const zhTWMessages = Object.freeze({
   'contextMenu.copyConfig': '複製配置區',
   'contextMenu.exportPng': '匯出圖片',
   'contextMenu.copyPng': '複製圖片',
+  'contextMenu.deleteMindMap': '刪除思維導圖',
 
   'configModal.title': '配置面板',
   'configModal.globalDefaultValueTitle': '全域預設值配置面板',

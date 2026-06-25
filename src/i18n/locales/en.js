@@ -119,6 +119,7 @@ export const enMessages = Object.freeze({
   'contextMenu.copyConfig': 'Copy config',
   'contextMenu.exportPng': 'Export image',
   'contextMenu.copyPng': 'Copy image',
+  'contextMenu.deleteMindMap': 'Delete mind map',
 
   'configModal.title': 'Config Panel',
   'configModal.globalDefaultValueTitle': 'Global Default Value Config Panel',

@@ -59,7 +59,7 @@ export {
 export { ICON_PATHS } from '../icons/iconPaths.js';
 export { normalizeIcon, renderIcon } from '../icons/renderIcon.js';
 export { layoutTree } from '../layout/layoutTree.js';
-export { replaceCodeBlockSource } from '../markdown/codeBlock.js';
+export { findFenceBySection, replaceCodeBlockSource } from '../markdown/codeBlock.js';
 export {
   containsTopicId,
   countTopicDescendants,

@@ -112,6 +112,7 @@ export const zhCNMessages = Object.freeze({
   'contextMenu.copyConfig': '复制配置区',
   'contextMenu.exportPng': '导出图片',
   'contextMenu.copyPng': '复制图片',
+  'contextMenu.deleteMindMap': '删除思维导图',
 
   'configModal.title': '配置面板',
   'configModal.globalDefaultValueTitle': '全局默认值配置面板',
