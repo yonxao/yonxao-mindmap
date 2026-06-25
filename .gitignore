@@ -36,6 +36,12 @@ coverage/
 *.swp
 *.swo
 
+# AI Agent
+.claude/
+.trae/
+.cursor/
+.windsurf/
+
 # macOS and Windows metadata
 .DS_Store
 ._*
