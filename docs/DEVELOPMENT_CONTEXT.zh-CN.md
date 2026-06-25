@@ -497,6 +497,46 @@ src/ui/config-modal/configModalState.js
 - 保存代码块配置时，如果某项值和当前全局默认值配置一致，应从代码块配置区删除该项，让配置区保持精简。
 - 全局默认值配置面板和单个代码块配置面板的默认值、下拉框回填、禁用态和说明文案应保持一致。
 
+### 12.1 配置联动模式
+
+配置面板中的字段并非彼此独立，存在三种联动关系：
+
+#### 12.1.1 层级继承
+
+一个全局值下挂多组级别值，级别字段未显式设置时自动继承全局值。继承值在 UI 上用灰色 placeholder 展示；全局变化时级别字段的继承来源同步更新，但不覆盖用户已显式设置的级别值（`preserveExplicit` 机制）。
+
+涉及字段：
+
+- `font.size` → `font.levelN.size`
+- `font.weight` → `font.levelN.weight`
+- `font.lineHeight` → `font.levelN.lineHeight`
+- `font.family` → `font.levelN.family`
+- `topicMaxWidth.global` → `topicMaxWidth.levelN`
+
+代码定位：`syncTopicMaxWidthInheritanceSync()` 和 `installLevelFontInheritanceSync()` 分别是主题最大宽度和字体层级继承的联动入口。
+
+#### 12.1.2 条件分支
+
+父选项取特定值时，子选项显隐或出现。分两种实现力度：
+
+- **轻量显隐**：子选项始终在 DOM 中，只切换 CSS `display: none/block`。用于 `viewFit='fit'` 时显示 `fitViewNoUpscale` 和 `fitViewMaxScale`，以及 `fitViewNoUpscale=true` 时隐藏 `fitViewMaxScale`。代码定位：`syncFitViewSubControls()`。
+- **重度重绘**：父选项变化后整个 tab 重渲染，字段销毁重建。用于 `layout` 和 `connectorStyle` 切换时决定 `branchExpansion` 等字段是否出现。代码定位：`this.render()` 的 `StructureTab` 段落。
+
+#### 12.1.3 布局绑定
+
+字段是否可用由当前布局类型固有约束决定，用户不能主动改变。UI 上固定显示禁用态选择器，只有切到特定布局类型才能解除。
+
+当前实例：`connectorStyle` 在非思维导图组布局下不可配置，固定显示折线。代码定位：`createDisabledConnectorStyleField()`。
+
+#### 12.1.4 引用规范
+
+新功能需要处理配置联动时，应在此基础上扩展而非自创新机制：
+
+- 新增层级继承字段时，同步实现 `syncInheritedNumberInput` 或对应的继承同步方法。
+- 新增条件分支字段时，优先评估能否用轻量显隐完成；只有字段结构差异较大时再走重度重绘。
+- 判断布局类型固有约束优先通过 `isConnectorStyleConfigurableLayout()` 这类规则方法，不要在每个 Tab 里重复判断。
+- 这三种模式的交互命名即术语：层级继承、条件分支（含轻量显隐/重度重绘）、布局绑定。
+
 ## 13 阅读视图和编辑视图规则
 
 Obsidian 阅读视图：
