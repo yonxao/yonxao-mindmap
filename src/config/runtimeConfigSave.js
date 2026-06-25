@@ -119,13 +119,13 @@ export const runtimeConfigSaveMethods = {
   documentConfigForSave(config) {
     const globalDefaultValueConfig = this.plugin?.getGlobalDefaultValueConfig?.() || {};
     const configObj = config || {};
-    let next = pruneInactiveMindConfig(configObj, globalDefaultValueConfig);
 
-    // 开启"保存全部配置项"时跳过裁剪与默认值相同的配置，保留完整配置区便于分享。
+    // 开启"保存全部配置项"时不裁剪不活跃配置和默认值配置，保留完整配置区便于分享。
     if (configObj.display?.saveFullConfig) {
-      return next;
+      return configObj;
     }
 
+    let next = pruneInactiveMindConfig(configObj, globalDefaultValueConfig);
     next = this.pruneDocumentConfigDefaults(next);
     return next;
   },

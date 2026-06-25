@@ -72,7 +72,7 @@ export function normalizeMindConfig(rawConfig) {
           display.fitViewMaxScale,
           FIT_VIEW_MAX_SCALE_MIN,
           FIT_VIEW_MAX_SCALE_MAX
-        ) || DEFAULT_MIND_CONFIG.display.fitMaxScale,
+        ) || DEFAULT_MIND_CONFIG.display.fitViewMaxScale,
       saveFullConfig:
         typeof display.saveFullConfig === 'boolean'
           ? display.saveFullConfig
@@ -153,7 +153,7 @@ function normalizeRuntimeMindConfig(config) {
           : DEFAULT_MIND_CONFIG.display.fitViewNoUpscale,
       fitMaxScale:
         normalizeOptionalNumber(view.fitMaxScale, FIT_VIEW_MAX_SCALE_MIN, FIT_VIEW_MAX_SCALE_MAX) ||
-        DEFAULT_MIND_CONFIG.display.fitMaxScale,
+        DEFAULT_MIND_CONFIG.display.fitViewMaxScale,
       saveFullConfig:
         typeof view.saveFullConfig === 'boolean'
           ? view.saveFullConfig

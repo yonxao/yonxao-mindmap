@@ -282,7 +282,7 @@ export const DEFAULT_MIND_CONFIG = Object.freeze({
     // 默认适配视图不放大小图，避免少量主题被过度放大。
     fitViewNoUpscale: true,
     // 关闭"不放大"时，适配视图最多放大到 1.5 倍。
-    fitMaxScale: 1.5,
+    fitViewMaxScale: 1.5,
     // 默认裁剪保存，只写非默认值的配置项；开启后写入全部配置，便于分享。
     saveFullConfig: false,
   }),

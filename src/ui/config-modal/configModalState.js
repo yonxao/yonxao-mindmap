@@ -335,9 +335,10 @@ export const configModalStateMethods = {
         DEFAULT_MIND_CONFIG,
         mergeMindConfigSources(this.baseConfig, this.draftConfig)
       );
+    } else {
+      // 裁剪保存：只保留当前布局/线型下生效且非默认值的配置项，保持配置区精简。
+      configToSave = pruneInactiveMindConfig(configToSave, this.baseConfig);
     }
-
-    configToSave = pruneInactiveMindConfig(configToSave, this.baseConfig);
 
     if (shouldSaveFull) {
       setConfigValue(configToSave, ['display', 'saveFullConfig'], true);
