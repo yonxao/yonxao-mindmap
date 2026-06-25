@@ -1,3 +1,15 @@
+/*
+ * 文件作用：
+ * 源码模式语法高亮层的样式。
+ *
+ * 执行逻辑：
+ * sourceHighlight.js 通过遍历 yxmm 源码行，给不同 token 类型包裹 <span> 并赋予
+ * .yonxao-mindmap-source-token-* class。本文件控制每种 token 的颜色和字体。
+ * 行号层 .yonxao-mindmap-source-line-number 不参与高亮显示，只显示行编号。
+ *
+ * 调用链位置：
+ * sourceCodeEditor -> sourceHighlight.js 生成高亮 HTML -> 本文件控制颜色。
+ */
 .yonxao-mindmap-source-highlight {
   box-sizing: border-box;
   min-width: max-content;

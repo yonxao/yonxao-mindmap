@@ -16,6 +16,8 @@ import {
   TOPIC_SIBLING_BUTTON_RADIUS,
   TOPIC_SUBTOPIC_BUTTON_RADIUS,
   DEFAULT_TOPIC_BUTTON_COLOR,
+  EDIT_BUTTON_SIZE,
+  EDIT_BUTTON_BORDER_RADIUS,
 } from '../../shared/rendererShared.js';
 
 export const topicControlDrawMethods = {
@@ -167,9 +169,9 @@ export const topicControlDrawMethods = {
     edit.appendChild(title);
     edit.appendChild(
       svg('rect', {
-        width: 20,
-        height: 20,
-        rx: 5,
+        width: EDIT_BUTTON_SIZE,
+        height: EDIT_BUTTON_SIZE,
+        rx: EDIT_BUTTON_BORDER_RADIUS,
       })
     );
     edit.appendChild(

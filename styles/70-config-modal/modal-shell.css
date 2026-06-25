@@ -40,7 +40,7 @@
   position: relative;
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--yonxao-mindmap-gap-md);
   cursor: move;
   user-select: none;
   touch-action: none;
@@ -138,7 +138,7 @@
   user-select: text;
   background: var(--background-primary);
   border: 1px solid var(--background-modifier-border);
-  border-radius: 8px;
+  border-radius: var(--yonxao-mindmap-radius-lg);
   box-shadow: var(--shadow-s);
 }
 
@@ -154,7 +154,7 @@
 .yonxao-mindmap-config-body {
   display: grid;
   flex: 1 1 auto;
-  gap: 10px;
+  gap: var(--yonxao-mindmap-gap-lg);
   align-content: start;
   grid-auto-rows: max-content;
   min-height: 0;

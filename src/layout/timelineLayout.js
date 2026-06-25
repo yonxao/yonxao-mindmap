@@ -5,6 +5,7 @@
 
 import {
   BRANCH_GAP,
+  HANGING_EXPANSION_LEVEL_THRESHOLD,
   LEVEL_GAP,
   TIMELINE_AXIS_DETAIL_GAP,
   TIMELINE_DETAIL_LEVEL_GAP,
@@ -97,12 +98,18 @@ export function placeTimelineDetails(parent, branchSide, collapsedIds, branchExp
   const subtopics = visibleSubtopics(parent, collapsedIds);
   if (!subtopics.length) return;
 
-  if (Number(parent?.level || 1) >= 3 && branchExpansion === 'side') {
+  if (
+    Number(parent?.level || 1) >= HANGING_EXPANSION_LEVEL_THRESHOLD &&
+    branchExpansion === 'side'
+  ) {
     placeTimelineNaturalDetails(parent, branchSide, collapsedIds, branchExpansion);
     return;
   }
 
-  if (Number(parent?.level || 1) >= 3 && branchExpansion === 'hanging') {
+  if (
+    Number(parent?.level || 1) >= HANGING_EXPANSION_LEVEL_THRESHOLD &&
+    branchExpansion === 'hanging'
+  ) {
     placeTimelineHangingDetails(parent, branchSide, collapsedIds, branchExpansion);
     return;
   }
@@ -262,7 +269,10 @@ function timelineDetailSubtreeExtent(topic, branchSide, collapsedIds, branchExpa
     timelineDetailSubtreeExtent(subtopic, branchSide, collapsedIds, branchExpansion)
   );
 
-  if (Number(topic?.level || 1) >= 3 && branchExpansion === 'hanging') {
+  if (
+    Number(topic?.level || 1) >= HANGING_EXPANSION_LEVEL_THRESHOLD &&
+    branchExpansion === 'hanging'
+  ) {
     const subtopicHeight = verticalExtentGroupHeight(subtopicExtents, gap);
     return normalizeVerticalExtent({
       above: ownAbove,

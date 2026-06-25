@@ -4,18 +4,33 @@
  */
 
 import {
+  TEXT_Y_CENTER_RATIO,
   TOPIC_MIN_HEIGHT,
   TOPIC_MIN_WIDTH,
   TOPIC_PADDING_Y,
   visibleSubtopics,
 } from './layoutShared.js';
 
+/*
+ * 树形表格的最小列宽度。
+ * 即使所有主题文本都很短，列的宽度也不会低于此值，保证表格有基本的可读性。
+ */
+const TREE_TABLE_MIN_COLUMN_WIDTH = 120;
+/*
+ * 树形表格表头高度相对于 TOPIC_MIN_HEIGHT 的最小乘数。
+ * 表头需要比正文行更高以保持视觉层次感。
+ */
+const TREE_TABLE_HEADER_HEIGHT_MULTIPLIER = 1.6;
+
 export function layoutTreeTable(root, collapsedIds, options = {}) {
   const fillLeafRemainderColumns = options.fillLeafRemainderColumns !== false;
   const rootBox = root._layout;
   const columnWidths = treeTableColumnWidths(root, collapsedIds);
   const tableWidth = columnWidths.reduce((sum, width) => sum + width, 0);
-  const headerHeight = Math.max(rootBox.height + TOPIC_PADDING_Y * 2, TOPIC_MIN_HEIGHT * 1.6);
+  const headerHeight = Math.max(
+    rootBox.height + TOPIC_PADDING_Y * 2,
+    TOPIC_MIN_HEIGHT * TREE_TABLE_HEADER_HEIGHT_MULTIPLIER
+  );
 
   rootBox.side = 'tree-table-root';
   rootBox.width = Math.max(rootBox.width, tableWidth);
@@ -61,7 +76,7 @@ export function layoutTreeTable(root, collapsedIds, options = {}) {
  */
 export function treeTableColumnWidths(root, collapsedIds) {
   const columnWidths = [];
-  const minColumnWidth = Math.max(TOPIC_MIN_WIDTH, 120);
+  const minColumnWidth = Math.max(TOPIC_MIN_WIDTH, TREE_TABLE_MIN_COLUMN_WIDTH);
 
   const visit = (topic, columnIndex) => {
     const box = topic._layout;
@@ -188,5 +203,6 @@ export function placeTreeTableTopic(
  */
 export function recenterTopicText(box) {
   box.textY =
-    (box.height - (box.lines.length - 1) * box.font.lineHeight) / 2 + box.font.size * 0.36;
+    (box.height - (box.lines.length - 1) * box.font.lineHeight) / 2 +
+    box.font.size * TEXT_Y_CENTER_RATIO;
 }

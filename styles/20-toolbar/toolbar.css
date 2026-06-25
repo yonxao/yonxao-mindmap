@@ -29,7 +29,7 @@
   gap: 4px;
   padding: 4px;
   border: 1px solid var(--background-modifier-border);
-  border-radius: 8px;
+  border-radius: var(--yonxao-mindmap-radius-lg);
   background: var(--background-primary);
   background: color-mix(in srgb, var(--background-primary) 30%, transparent);
   box-shadow: var(--shadow-s);
@@ -68,7 +68,7 @@
   padding: 0;
   color: var(--text-muted);
   border: 0;
-  border-radius: 6px;
+  border-radius: var(--yonxao-mindmap-radius-md);
   background: transparent;
   cursor: pointer;
   opacity: 0.5;

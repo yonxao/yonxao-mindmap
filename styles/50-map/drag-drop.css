@@ -1,4 +1,8 @@
 /*
  * 文件作用：
- * 主题拖拽样式目前保守保留在 topics.css 中，后续可继续细分。
+ * 主题拖拽样式已随 topics.css 保守迁移。
+ *
+ * 预留说明：
+ * 当前无实际规则。拖拽相关样式（.is-dragging / .is-drop-subtopic / .yonxao-mindmap-drop-indicator）
+ * 定义位于：50-map/topics.css。
  */

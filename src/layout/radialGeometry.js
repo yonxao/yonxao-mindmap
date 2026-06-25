@@ -3,6 +3,11 @@
  * 放射图边界、碰撞和平移几何辅助。
  */
 
+/*
+ * 碰撞推离时额外增加的最小像素，确保两个矩形不再紧贴或仍有 1px 重叠。
+ */
+const RADIAL_PUSH_EXTRA_PX = 1;
+
 export function radialSubtreeBounds(topic, collapsedIds, margin = 0) {
   const topics = radialVisibleSubtreeTopics(topic, collapsedIds);
   const left = Math.min(...topics.map((item) => item._layout.x - item._layout.width / 2));
@@ -51,10 +56,10 @@ export function radialCollisionPush(fixedBounds, movingBounds) {
   const signY = movingBounds.y >= fixedBounds.y ? 1 : -1;
 
   if (overlapX < overlapY) {
-    return { dx: signX * (overlapX + 1), dy: 0 };
+    return { dx: signX * (overlapX + RADIAL_PUSH_EXTRA_PX), dy: 0 };
   }
 
-  return { dx: 0, dy: signY * (overlapY + 1) };
+  return { dx: 0, dy: signY * (overlapY + RADIAL_PUSH_EXTRA_PX) };
 }
 
 /*

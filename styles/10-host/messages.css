@@ -1,4 +1,8 @@
 /*
  * 文件作用：
- * 消息样式已随面板层保守迁移，后续可继续细分。
+ * 消息和提示样式已随 topic-editor.css 保守迁移。
+ *
+ * 预留说明：
+ * 当前无实际规则。消息块（.yonxao-mindmap-message）和错误提示（.yonxao-mindmap-plugin-error）
+ * 样式定义位于：60-panels/topic-editor.css。
  */

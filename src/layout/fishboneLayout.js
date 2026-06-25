@@ -17,6 +17,21 @@ import {
   clamp,
 } from './layoutShared.js';
 
+/*
+ * 鱼骨图上下两侧大分支斜骨起点在水平方向上的错开比例，
+ * 使上下分支的斜骨根部不重叠，阅读时更容易区分上下两侧的内容。
+ */
+const FISHBONE_SIDE_CURSOR_STAGGER_RATIO = 0.45;
+/*
+ * 大分支斜骨末端（主骨到分支主题）的安全余量乘数，
+ * 在子树高度的基础上额外增加 SIBLING_GAP 的倍数，防止鱼刺扎到相邻分支。
+ */
+const FISHBONE_PRIMARY_BONE_EDGE_MULTIPLIER = 2.5;
+/*
+ * 鱼刺主题在斜骨线上的可用区间中，除去父主题自身高度后的安全边距倍数。
+ */
+const FISHBONE_USABLE_HEIGHT_MARGIN = 2;
+
 export function layoutFishbone(
   root,
   collapsedIds,
@@ -31,7 +46,7 @@ export function layoutFishbone(
   const firstAttachX = rootBox.x + direction * (rootBox.width / 2 + LEVEL_GAP);
   const sideCursors = {
     top: firstAttachX,
-    bottom: firstAttachX + direction * LEVEL_GAP * 0.45,
+    bottom: firstAttachX + direction * LEVEL_GAP * FISHBONE_SIDE_CURSOR_STAGGER_RATIO,
   };
 
   rootBox.fishboneDirection = direction;
@@ -54,7 +69,7 @@ export function layoutFishbone(
      */
     const primaryBoneEdgeOffset = Math.max(
       FISHBONE_PRIMARY_BONE_MIN_EDGE_OFFSET,
-      primaryBoneHeight + SIBLING_GAP * 2.5
+      primaryBoneHeight + SIBLING_GAP * FISHBONE_PRIMARY_BONE_EDGE_MULTIPLIER
     );
     const primaryBoneRun = primaryBoneEdgeOffset / FISHBONE_PRIMARY_BONE_SLOPE;
 
@@ -109,7 +124,10 @@ export function placeFishboneRibTopics(parent, sign, direction, collapsedIds, br
     ribTopicHeights.reduce((sum, height) => sum + height, 0) +
     Math.max(0, subtopics.length - 1) * SIBLING_GAP;
   const diagonalBoneHeight = Math.abs(diagonalBoneEndY - diagonalBoneStartY);
-  const usableHeight = Math.max(1, diagonalBoneHeight - parentBox.height - SIBLING_GAP * 2);
+  const usableHeight = Math.max(
+    1,
+    diagonalBoneHeight - parentBox.height - SIBLING_GAP * FISHBONE_USABLE_HEIGHT_MARGIN
+  );
   const contentStart = SIBLING_GAP + Math.max(0, (usableHeight - totalRibHeight) / 2);
   let offset = 0;
 

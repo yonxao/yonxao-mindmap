@@ -18,7 +18,7 @@
   padding: 12px 14px;
   color: var(--text-muted);
   border: 1px solid var(--background-modifier-border);
-  border-radius: 8px;
+  border-radius: var(--yonxao-mindmap-radius-lg);
   background: var(--background-primary);
 }
 
@@ -40,7 +40,7 @@
   padding: 10px 12px;
   color: var(--text-error);
   border: 1px solid var(--text-error);
-  border-radius: 8px;
+  border-radius: var(--yonxao-mindmap-radius-lg);
   background: var(--background-primary);
   font-family: var(--yonxao-mindmap-mono-font);
   font-size: var(--font-ui-small);
@@ -62,7 +62,7 @@
   overflow: auto;
   padding: 12px;
   border: 1px solid var(--background-modifier-border);
-  border-radius: 8px;
+  border-radius: var(--yonxao-mindmap-radius-lg);
   background: var(--background-primary);
   box-shadow: var(--shadow-l);
   overscroll-behavior: contain;
@@ -80,7 +80,7 @@
   position: relative;
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--yonxao-mindmap-gap-md);
   margin: 0 0 10px;
   color: var(--text-normal);
   font-size: var(--font-ui-large);
@@ -98,7 +98,7 @@
   display: grid;
   grid-template-columns: 58px minmax(0, 1fr);
   align-items: start;
-  gap: 8px;
+  gap: var(--yonxao-mindmap-gap-md);
   margin-bottom: 8px;
   color: var(--text-normal);
   font-size: var(--font-ui-smaller);
@@ -130,7 +130,7 @@
   padding: 6px 8px;
   color: var(--text-normal);
   border: 1px solid var(--background-modifier-border);
-  border-radius: 6px;
+  border-radius: var(--yonxao-mindmap-radius-md);
   outline: none;
   background: var(--background-secondary);
   font-family: var(--yonxao-mindmap-mono-font);
@@ -207,7 +207,7 @@
   display: grid;
   grid-template-columns: 58px minmax(0, 1fr);
   align-items: start;
-  gap: 8px;
+  gap: var(--yonxao-mindmap-gap-md);
   margin-bottom: 8px;
 }
 
@@ -264,7 +264,7 @@
 .yonxao-mindmap-topic-editor-color {
   display: grid;
   grid-template-columns: minmax(0, 1fr) 34px;
-  gap: 6px;
+  gap: var(--yonxao-mindmap-gap-sm);
   min-width: 0;
 }
 
@@ -273,7 +273,7 @@
   height: 32px;
   padding: 2px;
   border: 1px solid var(--background-modifier-border);
-  border-radius: 6px;
+  border-radius: var(--yonxao-mindmap-radius-md);
   background: var(--background-secondary);
 }
 
@@ -291,7 +291,7 @@
   flex: 0 0 22px;
   padding: 0;
   border: 1px solid var(--background-modifier-border);
-  border-radius: 4px;
+  border-radius: var(--yonxao-mindmap-radius-sm);
   cursor: pointer;
 }
 
@@ -316,7 +316,7 @@
   width: 100%;
   align-items: center;
   justify-content: flex-start;
-  gap: 8px;
+  gap: var(--yonxao-mindmap-gap-md);
   box-sizing: border-box;
   color: var(--text-normal);
   border: 1px solid var(--background-modifier-border);
@@ -328,7 +328,7 @@
   justify-content: flex-start;
   min-height: 32px;
   padding: 6px 8px;
-  border-radius: 6px;
+  border-radius: var(--yonxao-mindmap-radius-md);
 }
 
 .yonxao-mindmap-topic-editor-icon-menu {
@@ -341,7 +341,7 @@
   overflow: auto;
   padding: 4px;
   border: 1px solid var(--background-modifier-border);
-  border-radius: 6px;
+  border-radius: var(--yonxao-mindmap-radius-md);
   background: var(--background-primary);
   box-shadow: var(--shadow-s);
 }
@@ -381,7 +381,7 @@
  */
 .yonxao-mindmap-topic-editor-font-family {
   display: grid;
-  gap: 6px;
+  gap: var(--yonxao-mindmap-gap-sm);
   min-width: 0;
 }
 
@@ -401,7 +401,7 @@
   display: flex;
   flex-wrap: wrap;
   justify-content: flex-end;
-  gap: 6px;
+  gap: var(--yonxao-mindmap-gap-sm);
   margin-top: 10px;
 }
 
@@ -413,7 +413,7 @@
   padding: 5px 9px;
   color: var(--text-normal);
   border: 1px solid var(--background-modifier-border);
-  border-radius: 6px;
+  border-radius: var(--yonxao-mindmap-radius-md);
   background: var(--background-secondary);
   cursor: pointer;
 }

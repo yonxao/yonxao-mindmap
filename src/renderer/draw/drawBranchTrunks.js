@@ -14,6 +14,7 @@ import {
   connectorColor,
   svg,
   DEFAULT_CONNECTOR_STROKE,
+  GEOMETRY_EPSILON,
 } from '../../shared/rendererShared.js';
 
 export const branchTrunkDrawMethods = {
@@ -225,8 +226,8 @@ export const branchTrunkDrawMethods = {
   radialConnectorPoint(box, angle) {
     const dx = Math.cos(angle);
     const dy = Math.sin(angle);
-    const tx = Math.abs(dx) > 0.0001 ? box.width / 2 / Math.abs(dx) : Infinity;
-    const ty = Math.abs(dy) > 0.0001 ? box.height / 2 / Math.abs(dy) : Infinity;
+    const tx = Math.abs(dx) > GEOMETRY_EPSILON ? box.width / 2 / Math.abs(dx) : Infinity;
+    const ty = Math.abs(dy) > GEOMETRY_EPSILON ? box.height / 2 / Math.abs(dy) : Infinity;
     const distance = Math.min(tx, ty);
 
     return {

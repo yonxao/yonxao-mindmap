@@ -9,6 +9,11 @@
  * YonxaoMindmapRenderer -> rendererStateMethods -> toolbar/source/map 状态同步。
  */
 
+import {
+  SESSION_VIEW_MODE_EXPIRY_MS,
+  VIEW_MODE_KEY_SOURCE_TRUNCATE_LENGTH,
+} from '../shared/rendererShared.js';
+
 export const rendererStateMethods = {
   applyConfiguredViewMode() {
     const shouldUseSourceMode = this.readSessionViewMode() === 'source';
@@ -17,7 +22,7 @@ export const rendererStateMethods = {
     if (this.containerEl) {
       this.containerEl.classList.toggle('is-source-mode', this.isSourceMode);
     }
-    this.hostEl.classList.toggle('is-source-mode', this.isSourceMode);
+    this.hostEl?.classList.toggle('is-source-mode', this.isSourceMode);
 
     for (const button of this.mapActionButtons) {
       button.disabled = this.isSourceMode;
@@ -50,7 +55,7 @@ export const rendererStateMethods = {
   writeSessionViewMode(mode) {
     this.constructor.viewModeMemory.set(this.viewModeMemoryKey(), {
       mode,
-      expiresAt: Date.now() + 6000,
+      expiresAt: Date.now() + SESSION_VIEW_MODE_EXPIRY_MS,
     });
   },
 
@@ -65,7 +70,7 @@ export const rendererStateMethods = {
       return `${sourcePath}:${sectionInfo.lineStart}`;
     }
 
-    return `${sourcePath}:${String(this.source || '').slice(0, 80)}`;
+    return `${sourcePath}:${String(this.source || '').slice(0, VIEW_MODE_KEY_SOURCE_TRUNCATE_LENGTH)}`;
   },
 
   t(key, replacements) {
@@ -73,6 +78,7 @@ export const rendererStateMethods = {
   },
 
   renderMessage(message, isError) {
+    if (!this.hostEl) return;
     this.hostEl.textContent = '';
     const messageEl = document.createElement('div');
     messageEl.className = isError

@@ -9,6 +9,12 @@
  * YonxaoMindmapRenderer -> floatingToolbarMethods -> toolbarButtons/toolbarPosition。
  */
 
+const TOOLBAR_ZOOM_IN_FACTOR = 0.82;
+const TOOLBAR_ZOOM_OUT_FACTOR = 1.18;
+const TOOLBAR_HIDE_DELAY_MS = 140;
+const TOOLBAR_SCROLL_WHEEL_QUIET_MS = 260;
+const TOOLBAR_SCROLL_MIDDLE_BUTTON_QUIET_MS = 700;
+const TOOLBAR_VIEWPORT_MARGIN = 64;
 export const floatingToolbarMethods = {
   createToolbar() {
     const toolbar = document.createElement('div');
@@ -51,12 +57,12 @@ export const floatingToolbarMethods = {
     this.mapActionButtons.push(this.fullscreenButton);
     this.mapActionButtons.push(
       this.createToolbarButton(toolbar, this.t('toolbar.zoomIn'), 'zoom-in', () =>
-        this.zoomAtCenter(0.82)
+        this.zoomAtCenter(TOOLBAR_ZOOM_IN_FACTOR)
       )
     );
     this.mapActionButtons.push(
       this.createToolbarButton(toolbar, this.t('toolbar.zoomOut'), 'zoom-out', () =>
-        this.zoomAtCenter(1.18)
+        this.zoomAtCenter(TOOLBAR_ZOOM_OUT_FACTOR)
       )
     );
     this.mapActionButtons.push(
@@ -85,9 +91,11 @@ export const floatingToolbarMethods = {
     this.registerDomEvent(this.toolbarEl, 'mouseleave', scheduleHide);
     this.registerDomEvent(this.toolbarEl, 'focusin', show);
     this.registerDomEvent(this.toolbarEl, 'focusout', scheduleHide);
-    this.registerDomEvent(this.hostEl, 'wheel', () => this.handleToolbarScroll(260));
+    this.registerDomEvent(this.hostEl, 'wheel', () =>
+      this.handleToolbarScroll(TOOLBAR_SCROLL_WHEEL_QUIET_MS)
+    );
     this.registerDomEvent(this.hostEl, 'pointerdown', (event) => {
-      if (event.button === 1) this.handleToolbarScroll(700);
+      if (event.button === 1) this.handleToolbarScroll(TOOLBAR_SCROLL_MIDDLE_BUTTON_QUIET_MS);
     });
   },
 
@@ -163,7 +171,7 @@ export const floatingToolbarMethods = {
       this.pendingToolbarHideTimer = null;
       if (this.shouldKeepToolbarVisible()) return;
       this.hideToolbar();
-    }, 140);
+    }, TOOLBAR_HIDE_DELAY_MS);
   },
 
   hideToolbar() {
@@ -203,7 +211,7 @@ export const floatingToolbarMethods = {
   isToolbarHostNearViewport() {
     if (!this.hostEl) return false;
     const rect = this.hostEl.getBoundingClientRect();
-    const margin = 64;
+    const margin = TOOLBAR_VIEWPORT_MARGIN;
     return rect.bottom >= -margin && rect.top <= window.innerHeight + margin;
   },
 };

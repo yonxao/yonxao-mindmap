@@ -16,7 +16,7 @@
   font-weight: 400;
   line-height: 22px;
   border: 1px solid var(--interactive-accent);
-  border-radius: 8px;
+  border-radius: var(--yonxao-mindmap-radius-lg);
   outline: none;
   background: var(--background-primary);
   box-shadow:

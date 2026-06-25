@@ -18,6 +18,8 @@ import {
   clamp,
 } from '../../shared/rendererShared.js';
 
+const TOOLBAR_POSITION_GAP = 8;
+
 export const toolbarPositionMethods = {
   createToolbarDragHandle(toolbar) {
     const handle = document.createElement('button');
@@ -138,11 +140,16 @@ export const toolbarPositionMethods = {
       return;
     }
 
-    const gap = 8;
-    const maxLeft = Math.max(gap, window.innerWidth - toolbarRect.width - gap);
-    const maxTop = Math.max(gap, window.innerHeight - toolbarRect.height - gap);
-    const left = clamp(hostRect.left + x, gap, maxLeft);
-    const top = clamp(hostRect.top + y, gap, maxTop);
+    const maxLeft = Math.max(
+      TOOLBAR_POSITION_GAP,
+      window.innerWidth - toolbarRect.width - TOOLBAR_POSITION_GAP
+    );
+    const maxTop = Math.max(
+      TOOLBAR_POSITION_GAP,
+      window.innerHeight - toolbarRect.height - TOOLBAR_POSITION_GAP
+    );
+    const left = clamp(hostRect.left + x, TOOLBAR_POSITION_GAP, maxLeft);
+    const top = clamp(hostRect.top + y, TOOLBAR_POSITION_GAP, maxTop);
 
     this.toolbarEl.style.left = `${Math.round(left)}px`;
     this.toolbarEl.style.top = `${Math.round(top)}px`;
@@ -168,22 +175,33 @@ export const toolbarPositionMethods = {
       return null;
     }
 
-    const gap = 8;
     const [vertical, horizontal] = String(corner || '').split('-');
     const isRight = horizontal === 'right';
     const isBottom = vertical === 'bottom';
-    const left = isRight ? hostRect.right - toolbarRect.width - gap : hostRect.left + gap;
-    let top = isBottom ? hostRect.bottom - toolbarRect.height - gap : hostRect.top + gap;
+    const left = isRight
+      ? hostRect.right - toolbarRect.width - TOOLBAR_POSITION_GAP
+      : hostRect.left + TOOLBAR_POSITION_GAP;
+    let top = isBottom
+      ? hostRect.bottom - toolbarRect.height - TOOLBAR_POSITION_GAP
+      : hostRect.top + TOOLBAR_POSITION_GAP;
 
     if (placement === 'outside') {
-      top = isBottom ? hostRect.bottom + gap : hostRect.top - toolbarRect.height - gap;
+      top = isBottom
+        ? hostRect.bottom + TOOLBAR_POSITION_GAP
+        : hostRect.top - toolbarRect.height - TOOLBAR_POSITION_GAP;
     }
 
-    const maxLeft = Math.max(gap, window.innerWidth - toolbarRect.width - gap);
-    const maxTop = Math.max(gap, window.innerHeight - toolbarRect.height - gap);
+    const maxLeft = Math.max(
+      TOOLBAR_POSITION_GAP,
+      window.innerWidth - toolbarRect.width - TOOLBAR_POSITION_GAP
+    );
+    const maxTop = Math.max(
+      TOOLBAR_POSITION_GAP,
+      window.innerHeight - toolbarRect.height - TOOLBAR_POSITION_GAP
+    );
     return {
-      left: clamp(left, gap, maxLeft),
-      top: clamp(top, gap, maxTop),
+      left: clamp(left, TOOLBAR_POSITION_GAP, maxLeft),
+      top: clamp(top, TOOLBAR_POSITION_GAP, maxTop),
     };
   },
 

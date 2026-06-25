@@ -67,19 +67,9 @@ export const connectorGeometryMethods = {
       anchors.kind === 'trunk-branch' ||
       anchors.kind === 'org-right-subtopic' ||
       anchors.kind === 'timeline-detail' ||
-      anchors.kind === 'fishbone-rib-topic'
+      anchors.kind === 'fishbone-rib-topic' ||
+      anchors.kind === 'fishbone-rib-descendant'
     ) {
-      return this.trimConnectorAlongVectors(
-        anchors,
-        anchors.endX - anchors.startX,
-        0,
-        anchors.endX - anchors.startX,
-        0,
-        offset
-      );
-    }
-
-    if (anchors.kind === 'fishbone-rib-descendant') {
       return this.trimConnectorAlongVectors(
         anchors,
         anchors.endX - anchors.startX,

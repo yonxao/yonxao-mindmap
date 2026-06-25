@@ -11,6 +11,15 @@
 
 import { Notice, clamp, normalizeTopicTextForStorage } from '../../shared/rendererShared.js';
 
+const INLINE_EDITOR_GAP = 12;
+const INLINE_EDITOR_LINE_HEIGHT = 22;
+const INLINE_EDITOR_MIN_LINE_COUNT = 3;
+const INLINE_EDITOR_WIDTH_OFFSET = 120;
+const INLINE_EDITOR_MIN_WIDTH = 240;
+const INLINE_EDITOR_ABSOLUTE_MIN_WIDTH = 180;
+const INLINE_EDITOR_HEIGHT_OFFSET = 44;
+const INLINE_EDITOR_MIN_HEIGHT = 86;
+
 export const inlineTopicEditorMethods = {
   openInlineTextEditor(topic) {
     if (!this.canEditMindMap()) return;
@@ -90,27 +99,36 @@ export const inlineTopicEditorMethods = {
   positionInlineTextEditor(anchorRect, topic, box) {
     if (!this.inlineTextEditorEl) return;
 
-    const gap = 12;
-    const lineHeight = 22;
     const lineCount = Math.max(
-      3,
+      INLINE_EDITOR_MIN_LINE_COUNT,
       box?.lines?.length || String(topic?.text || '').split(/\r?\n/).length || 1
     );
     const width = clamp(
-      Math.max(anchorRect.width + 120, 240),
-      180,
-      Math.max(180, window.innerWidth - gap * 2)
+      Math.max(anchorRect.width + INLINE_EDITOR_WIDTH_OFFSET, INLINE_EDITOR_MIN_WIDTH),
+      INLINE_EDITOR_ABSOLUTE_MIN_WIDTH,
+      Math.max(INLINE_EDITOR_ABSOLUTE_MIN_WIDTH, window.innerWidth - INLINE_EDITOR_GAP * 2)
     );
     const height = clamp(
-      Math.max(anchorRect.height + 44, lineCount * lineHeight + 34),
-      86,
-      Math.max(86, window.innerHeight - gap * 2)
+      Math.max(
+        anchorRect.height + INLINE_EDITOR_HEIGHT_OFFSET,
+        lineCount * INLINE_EDITOR_LINE_HEIGHT + 34
+      ),
+      INLINE_EDITOR_MIN_HEIGHT,
+      Math.max(INLINE_EDITOR_MIN_HEIGHT, window.innerHeight - INLINE_EDITOR_GAP * 2)
     );
     const left = anchorRect.left - Math.max(0, (width - anchorRect.width) / 2);
     const top = anchorRect.top - Math.max(0, (height - anchorRect.height) / 2);
     const position = {
-      left: clamp(left, gap, Math.max(gap, window.innerWidth - width - gap)),
-      top: clamp(top, gap, Math.max(gap, window.innerHeight - height - gap)),
+      left: clamp(
+        left,
+        INLINE_EDITOR_GAP,
+        Math.max(INLINE_EDITOR_GAP, window.innerWidth - width - INLINE_EDITOR_GAP)
+      ),
+      top: clamp(
+        top,
+        INLINE_EDITOR_GAP,
+        Math.max(INLINE_EDITOR_GAP, window.innerHeight - height - INLINE_EDITOR_GAP)
+      ),
     };
     this.inlineTextEditorEl.style.width = `${Math.round(width)}px`;
     this.inlineTextEditorEl.style.height = `${Math.round(height)}px`;

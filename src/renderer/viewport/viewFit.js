@@ -21,6 +21,15 @@ import {
   AUTO_CANVAS_FALLBACK_VIEWPORT_HEIGHT,
   AUTO_CANVAS_MIN_HEIGHT,
   AUTO_CANVAS_VIEWPORT_HEIGHT_RATIO,
+  MAX_VIEW_FIT_RETRY,
+  MIN_FIT_VIEWPORT_WIDTH,
+  VIEWBOX_MIN_DIMENSION,
+  VIEWBOX_MAX_DIMENSION,
+  VIEW_FIT_REFRESH_DELAY_MS,
+  FULLSCREEN_VIEWPORT_OFFSET,
+  FOCUS_RATIO_BIAS_THRESHOLD,
+  FOCUS_RATIO_BIASED,
+  FOCUS_RATIO_CENTER,
 } from '../../shared/rendererShared.js';
 import { canvasToMapX, canvasToMapY } from './viewportMath.js';
 
@@ -56,7 +65,7 @@ export const viewFitMethods = {
 
     const rect = this.containerEl?.getBoundingClientRect();
     if (!rect?.width || !rect?.height) {
-      if (this.fitRetryCount < 5) {
+      if (this.fitRetryCount < MAX_VIEW_FIT_RETRY) {
         this.fitRetryCount += 1;
         this.scheduleFitView();
       }
@@ -129,10 +138,19 @@ export const viewFitMethods = {
     return clamp(focus - viewportSize * focusRatio, min, max - viewportSize);
   },
 
+  /*
+   * 作用：
+   * 根据导图内容在焦点两侧的分布比例，计算焦点在视口中的水平/垂直位置偏移比例。
+   *
+   * 业务规则：
+   * - 当一侧内容明显多于另一侧（超过 1.25 倍）时，焦点向对侧偏移（32% / 68%），
+   *   让内容多的一侧有更多展示空间。
+   * - 两侧相对均衡时焦点居中（50%）。
+   */
   getOriginalSizeFocusRatio(negativeSpan, positiveSpan) {
-    if (positiveSpan > negativeSpan * 1.25) return 0.32;
-    if (negativeSpan > positiveSpan * 1.25) return 0.68;
-    return 0.5;
+    if (positiveSpan > negativeSpan * FOCUS_RATIO_BIAS_THRESHOLD) return FOCUS_RATIO_BIASED;
+    if (negativeSpan > positiveSpan * FOCUS_RATIO_BIAS_THRESHOLD) return 1 - FOCUS_RATIO_BIASED;
+    return FOCUS_RATIO_CENTER;
   },
 
   updateOriginalSizeContainerHeight(bounds, options = {}) {
@@ -166,7 +184,7 @@ export const viewFitMethods = {
     const maxX = currentBounds.maxX + VIEWBOX_MARGIN_X;
     const minY = currentBounds.minY - VIEWBOX_MARGIN_Y;
     const maxY = currentBounds.maxY + VIEWBOX_MARGIN_Y;
-    const width = Math.max(240, maxX - minX);
+    const width = Math.max(MIN_FIT_VIEWPORT_WIDTH, maxX - minX);
     const height = Math.max(TOPIC_MIN_HEIGHT + VIEWBOX_MARGIN_Y * 2, maxY - minY);
     const viewBox = this.getFitViewBox({ x: minX, y: minY, width, height });
 
@@ -200,7 +218,7 @@ export const viewFitMethods = {
     const viewportHeight =
       typeof window === 'undefined' ? AUTO_CANVAS_FALLBACK_VIEWPORT_HEIGHT : window.innerHeight;
     if (this.isFullscreen) {
-      return Math.max(AUTO_CANVAS_MIN_HEIGHT, viewportHeight - 32);
+      return Math.max(AUTO_CANVAS_MIN_HEIGHT, viewportHeight - FULLSCREEN_VIEWPORT_OFFSET);
     }
 
     return Math.min(
@@ -214,7 +232,7 @@ export const viewFitMethods = {
 
     const rect = this.containerEl.getBoundingClientRect();
     if (!rect.width) {
-      if (this.fitRetryCount < 5) {
+      if (this.fitRetryCount < MAX_VIEW_FIT_RETRY) {
         this.fitRetryCount += 1;
         this.scheduleFitView();
       }
@@ -276,7 +294,7 @@ export const viewFitMethods = {
         window.setTimeout(() => {
           refresh();
           this.scheduleApplyToolbarPosition();
-        }, 80);
+        }, VIEW_FIT_REFRESH_DELAY_MS);
       });
     } else {
       this.pendingFitFrame = setTimeout(run, 0);
@@ -293,8 +311,16 @@ export const viewFitMethods = {
   },
 
   zoomViewBox(factor, centerX, centerY) {
-    const nextWidth = clamp(this.viewBox.width * factor, 120, 8000);
-    const nextHeight = clamp(this.viewBox.height * factor, 80, 8000);
+    const nextWidth = clamp(
+      this.viewBox.width * factor,
+      VIEWBOX_MIN_DIMENSION,
+      VIEWBOX_MAX_DIMENSION
+    );
+    const nextHeight = clamp(
+      this.viewBox.height * factor,
+      VIEWBOX_MIN_DIMENSION,
+      VIEWBOX_MAX_DIMENSION
+    );
     const widthRatio = nextWidth / this.viewBox.width;
     const heightRatio = nextHeight / this.viewBox.height;
 

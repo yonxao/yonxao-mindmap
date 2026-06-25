@@ -11,6 +11,8 @@
 
 import { CANVAS_MIN_HEIGHT, clamp } from '../../shared/rendererShared.js';
 
+const SOURCE_EXTRA_LINE_MULTIPLIER = 2;
+
 export const sourceStatusMethods = {
   updateSourceStatus(message) {
     if (!this.sourceStatusEl) return;
@@ -70,7 +72,7 @@ export const sourceStatusMethods = {
     const inputPadding =
       parseFloat(inputStyle.paddingTop || '0') + parseFloat(inputStyle.paddingBottom || '0');
     const inputHeight = lineCount * lineHeight + inputPadding;
-    const extraSpace = lineHeight * 2;
+    const extraSpace = lineHeight * SOURCE_EXTRA_LINE_MULTIPLIER;
     const nextHeight = clamp(
       inputHeight + sourcePadding + sourceGap + statusHeight + extraSpace,
       CANVAS_MIN_HEIGHT,

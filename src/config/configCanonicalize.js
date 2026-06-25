@@ -13,6 +13,7 @@
  */
 
 import { isPlainObject, setConfigValueIfPresent } from './configAccessors.js';
+import { FONT_LEVEL_FIELD_KEYS, FONT_LEVEL_KEYS } from './defaultMindConfig.js';
 
 export function canonicalizeMindConfig(rawConfig) {
   const raw = isPlainObject(rawConfig) ? rawConfig : {};
@@ -32,7 +33,7 @@ export function canonicalizeMindConfig(rawConfig) {
   setConfigValueIfPresent(next, ['structure', 'connectorStyle'], structure.connectorStyle);
   setConfigValueIfPresent(next, ['structure', 'branchExpansion'], structure.branchExpansion);
   setConfigValueIfPresent(next, ['structure', 'topicMaxWidth', 'global'], topicMaxWidth.global);
-  for (const levelKey of ['level1', 'level2', 'level3']) {
+  for (const levelKey of FONT_LEVEL_KEYS) {
     setConfigValueIfPresent(
       next,
       ['structure', 'topicMaxWidth', levelKey],
@@ -59,12 +60,12 @@ export function canonicalizeMindConfig(rawConfig) {
   setConfigValueIfPresent(next, ['interaction', 'wheelZoom'], interaction.wheelZoom);
 
   const font = isPlainObject(raw.font) ? raw.font : {};
-  for (const key of ['family', 'size', 'weight', 'lineHeight']) {
+  for (const key of FONT_LEVEL_FIELD_KEYS) {
     setConfigValueIfPresent(next, ['font', key], font[key]);
   }
-  for (const levelKey of ['level1', 'level2', 'level3']) {
+  for (const levelKey of FONT_LEVEL_KEYS) {
     const levelConfig = isPlainObject(font[levelKey]) ? font[levelKey] : {};
-    for (const fontKey of ['family', 'size', 'weight', 'lineHeight']) {
+    for (const fontKey of FONT_LEVEL_FIELD_KEYS) {
       setConfigValueIfPresent(next, ['font', levelKey, fontKey], levelConfig[fontKey]);
     }
   }

@@ -134,15 +134,17 @@ function normalizeHorizontalWhitespace(text) {
 }
 
 /*
+ * CJK（中日韩统一表意文字）与全角字符的范围正则，用于判断文本是否需要按字符折行。
+ * 该正则覆盖了中文、日文、韩文以及全角标点字符。
+ */
+const CJK_OR_FULLWIDTH_RE = /[\u2e80-\u9fff\uff00-\uffef]/;
+
+/*
  * 作用：
  * 只有纯英文/拉丁文本才按单词折行；中文文本里的空格不能提前截断一整行。
  */
 function shouldWrapByWords(text) {
-  return text.includes(' ') && !hasCjkOrFullWidth(text);
-}
-
-function hasCjkOrFullWidth(text) {
-  return /[\u2e80-\u9fff\uff00-\uffef]/.test(text);
+  return text.includes(' ') && !CJK_OR_FULLWIDTH_RE.test(text);
 }
 
 function pushWrappedLine(lines, line) {
@@ -227,7 +229,7 @@ export function visualUnits(text) {
   let count = 0;
   for (const char of Array.from(String(text))) {
     // CJK 与全角字符通常更宽，这里按 2 个单位估算显示宽度。
-    count += /[\u2e80-\u9fff\uff00-\uffef]/.test(char) ? 2 : 1;
+    count += CJK_OR_FULLWIDTH_RE.test(char) ? 2 : 1;
   }
   return count;
 }
@@ -248,7 +250,7 @@ export function estimateTopicTextWidth(text, font = {}) {
   let otherWidth = 0;
 
   for (const char of Array.from(String(text))) {
-    if (/[\u2e80-\u9fff\uff00-\uffef]/.test(char)) {
+    if (CJK_OR_FULLWIDTH_RE.test(char)) {
       cjkWidth += estimateTopicCharWidth(char, fontSize);
     } else {
       otherWidth += estimateTopicCharWidth(char, fontSize);
@@ -260,7 +262,7 @@ export function estimateTopicTextWidth(text, font = {}) {
 }
 
 function estimateTopicCharWidth(char, fontSize) {
-  if (/[\u2e80-\u9fff\uff00-\uffef]/.test(char)) return fontSize * 1.0;
+  if (CJK_OR_FULLWIDTH_RE.test(char)) return fontSize * 1.0;
   if (/\s/.test(char)) return fontSize * 0.36;
   if (/[mwMW@#%&]/.test(char)) return fontSize * 0.86;
   if (/[A-Z0-9]/.test(char)) return fontSize * 0.68;

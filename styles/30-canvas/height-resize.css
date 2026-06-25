@@ -1,4 +1,8 @@
 /*
  * 文件作用：
- * 高度拖拽条样式已随 canvas.css 保守迁移，后续可继续细分。
+ * 高度拖拽条样式已随 canvas.css 保守迁移。
+ *
+ * 预留说明：
+ * 当前无实际规则。高度拖拽条（.yonxao-mindmap-height-resize-handle）样式定义位于：
+ * 30-canvas/canvas.css。
  */

@@ -15,6 +15,7 @@ import {
   connectorColor,
   svg,
   DEFAULT_CONNECTOR_STROKE,
+  TIMELINE_MIN_TRUNK_X,
 } from '../../shared/rendererShared.js';
 
 export const timelineDrawMethods = {
@@ -30,7 +31,7 @@ export const timelineDrawMethods = {
     const firstSubtopicLeft = Math.min(...subtopicBoxes.map((box) => box.x - box.width / 2));
     const available = firstSubtopicLeft - parentRight;
     if (available <= TOPIC_PADDING_X) {
-      return parentRight + Math.max(6, available / 2);
+      return parentRight + Math.max(TIMELINE_MIN_TRUNK_X, available / 2);
     }
 
     return Math.min(preferredX, firstSubtopicLeft - TOPIC_PADDING_X / 2);

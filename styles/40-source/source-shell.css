@@ -20,7 +20,7 @@
   height: 100%;
   box-sizing: border-box;
   padding: 10px;
-  gap: 8px;
+  gap: var(--yonxao-mindmap-gap-md);
   flex-direction: column;
   color: var(--text-normal);
   background: var(--background-primary);
@@ -41,7 +41,7 @@
 .yonxao-mindmap-source-tabs {
   display: flex;
   flex: 0 0 auto;
-  gap: 6px;
+  gap: var(--yonxao-mindmap-gap-sm);
   align-items: center;
 }
 
@@ -57,7 +57,7 @@
   padding: 4px 12px;
   color: var(--text-muted);
   border: 0;
-  border-radius: 6px;
+  border-radius: var(--yonxao-mindmap-radius-md);
   background: var(--background-modifier-hover);
   font-size: var(--font-small);
   line-height: 1.4;
@@ -88,7 +88,7 @@
   box-sizing: border-box;
   overflow: hidden;
   border: 1px solid var(--background-modifier-border);
-  border-radius: 8px;
+  border-radius: var(--yonxao-mindmap-radius-lg);
   background: var(--background-secondary);
 }
 

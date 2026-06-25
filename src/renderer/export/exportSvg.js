@@ -16,6 +16,10 @@ import {
   layoutTree,
   svg,
   CONNECTOR_STROKE_WIDTH,
+  EXPORT_MAX_CANVAS_SIDE,
+  EXPORT_MAX_DEVICE_PIXEL_RATIO,
+  EXPORT_MIN_PIXEL_SCALE,
+  EXPORT_FILENAME_MAX_LENGTH,
 } from '../../shared/rendererShared.js';
 
 export const exportSvgMethods = {
@@ -262,16 +266,22 @@ export const exportSvgMethods = {
   },
 
   exportPixelScale(width, height) {
-    const maxCanvasSide = 8192;
     const deviceScale =
-      typeof window === 'undefined' ? 1 : Math.min(window.devicePixelRatio || 1, 2);
-    return Math.max(0.25, Math.min(deviceScale, maxCanvasSide / width, maxCanvasSide / height));
+      typeof window === 'undefined'
+        ? 1
+        : Math.min(window.devicePixelRatio || 1, EXPORT_MAX_DEVICE_PIXEL_RATIO);
+    return Math.max(
+      EXPORT_MIN_PIXEL_SCALE,
+      Math.min(deviceScale, EXPORT_MAX_CANVAS_SIDE / width, EXPORT_MAX_CANVAS_SIDE / height)
+    );
   },
 
   exportFileBaseName() {
     const rootText = String(this.root?._virtual ? 'yonxao-mindmap' : this.root?.text || 'mindmap')
       .split(/\r?\n/)[0]
       .trim();
-    return (rootText || 'mindmap').replace(/[\\/:*?"<>|]+/g, '-').slice(0, 80);
+    return (rootText || 'mindmap')
+      .replace(/[\\/:*?"<>|]+/g, '-')
+      .slice(0, EXPORT_FILENAME_MAX_LENGTH);
   },
 };

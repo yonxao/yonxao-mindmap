@@ -1,3 +1,11 @@
+/*
+ * 文件作用：
+ * 配置弹框中的开关切换控件样式。
+ *
+ * 实现逻辑：
+ * 使用隐藏 input + 自定义 track/thumb 实现纯 CSS 开关。
+ * input:checked 切换 track 背景色和 thumb translateX。
+ */
 .yonxao-mindmap-config-switch {
   position: relative;
   display: inline-flex;

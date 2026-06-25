@@ -218,11 +218,7 @@ export const FONT_FAMILY_GROUPS = Object.freeze([
       ["'PingFang SC', '苹方', sans-serif", 'font.chinese.pingFang'],
       ["'Source Han Sans SC', 'Noto Sans CJK SC', sans-serif", 'font.chinese.sourceHanSans'],
       ["'Source Han Serif SC', 'Noto Serif CJK SC', serif", 'font.chinese.sourceHanSerif'],
-      [
-        // "'LXGW WenKai GB', '霞鹜文楷 GB', 'LXGW WenKai', '霞鹜文楷', serif",
-        "'LXGW WenKai GB', 'LXGW WenKai', serif",
-        'font.chinese.lxgwWenkai',
-      ],
+      ["'LXGW WenKai GB', 'LXGW WenKai', serif", 'font.chinese.lxgwWenkai'],
     ]),
   },
 
@@ -233,16 +229,8 @@ export const FONT_FAMILY_GROUPS = Object.freeze([
         "'Sarasa Mono SC', 'Noto Sans Mono CJK SC', 'Source Han Mono SC', monospace",
         'font.monospace.cjkStack',
       ],
-      [
-        // "'Sarasa Mono SC', 'Sarasa Fixed SC', '等距更纱黑体 SC', '更纱黑体 Mono', monospace",
-        "'Sarasa Mono SC', 'Sarasa Fixed SC', monospace",
-        'font.monospace.sarasa',
-      ],
-      [
-        // "'LXGW WenKai Mono','霞鹜文楷等宽', 'LXGW WenKai Mono GB', '霞鹜文楷等宽 GB', monospace",
-        "'LXGW WenKai Mono', 'LXGW WenKai Mono GB', monospace",
-        'font.monospace.lxgwwenkai',
-      ],
+      ["'Sarasa Mono SC', 'Sarasa Fixed SC', monospace", 'font.monospace.sarasa'],
+      ["'LXGW WenKai Mono', 'LXGW WenKai Mono GB', monospace", 'font.monospace.lxgwwenkai'],
       ["'JetBrains Mono', monospace", 'font.monospace.jetbrains'],
       ["'Cascadia Mono', monospace", 'font.monospace.cascadia'],
     ]),

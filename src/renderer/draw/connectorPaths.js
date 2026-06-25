@@ -9,7 +9,11 @@
  * connectorDrawMethods -> connectorPathMethods -> SVG path。
  */
 
-import { CONNECTOR_AXIS_EPSILON } from '../../shared/rendererShared.js';
+import {
+  CONNECTOR_AXIS_EPSILON,
+  CURVE_MIN_BEND,
+  CURVE_BEND_RATIO,
+} from '../../shared/rendererShared.js';
 
 export const connectorPathMethods = {
   axisLinePath(startX, startY, endX, endY) {
@@ -115,7 +119,10 @@ export const connectorPathMethods = {
       return this.elbowPath(startX, startY, endX, endY, axis);
     }
 
-    const bend = Math.max(44, Math.abs(axis === 'y' ? endY - startY : endX - startX) * 0.46);
+    const bend = Math.max(
+      CURVE_MIN_BEND,
+      Math.abs(axis === 'y' ? endY - startY : endX - startX) * CURVE_BEND_RATIO
+    );
     if (axis === 'y') {
       return [
         'M',

@@ -9,7 +9,11 @@
  * branchTrunkDraw/timelineDraw/fishboneDraw -> trunkSegmentDrawMethods。
  */
 
-import { connectorColor, DEFAULT_CONNECTOR_STROKE } from '../../shared/rendererShared.js';
+import {
+  connectorColor,
+  DEFAULT_CONNECTOR_STROKE,
+  SEGMENT_LENGTH_EPSILON,
+} from '../../shared/rendererShared.js';
 
 export const trunkSegmentDrawMethods = {
   renderBranchColoredTrunkFromOrigin(groupEl, connectors, trunk, opacityStyle) {
@@ -79,7 +83,7 @@ export const trunkSegmentDrawMethods = {
     ) {
       return null;
     }
-    if (Math.abs(endCoord - startCoord) < 0.001) return null;
+    if (Math.abs(endCoord - startCoord) < SEGMENT_LENGTH_EPSILON) return null;
 
     const pathParts =
       axis === 'y'

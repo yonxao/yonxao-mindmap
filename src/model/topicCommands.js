@@ -18,12 +18,15 @@ import {
   createMindTopic,
 } from '../shared/rendererShared.js';
 
+// 新增主题时的默认显示文字
+const DEFAULT_NEW_TOPIC_TEXT = '新主题';
+
 export const topicCommandMethods = {
   async addSubtopicFromContextMenu(topic) {
     if (!this.canEditMindMap()) return false;
     if (!topic || topic._virtual) return false;
 
-    const subtopic = createMindTopic('新主题', {}, [], 0, (topic.level || 1) + 1);
+    const subtopic = createMindTopic(DEFAULT_NEW_TOPIC_TEXT, {}, [], 0, (topic.level || 1) + 1);
     topic.subtopics.push(subtopic);
     this.collapsedIds.delete(topic.id);
     assignIds(this.root, '0');
@@ -35,7 +38,7 @@ export const topicCommandMethods = {
     if (!this.canEditMindMap()) return false;
     if (!topic || topic === this.root || topic._virtual) return false;
 
-    const sibling = createMindTopic('新主题', {}, [], 0, topic.level || 1);
+    const sibling = createMindTopic(DEFAULT_NEW_TOPIC_TEXT, {}, [], 0, topic.level || 1);
     const inserted = insertSiblingTopic(this.root, topic.id, sibling, position);
     if (!inserted) {
       new Notice(this.t('notice.rootCannotAddSibling'));

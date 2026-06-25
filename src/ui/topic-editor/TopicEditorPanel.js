@@ -24,6 +24,10 @@ import {
   clamp,
 } from '../../shared/rendererShared.js';
 
+const TOPIC_EDITOR_GAP = 12;
+const TOPIC_EDITOR_DEFAULT_WIDTH = 300;
+const TOPIC_EDITOR_DEFAULT_HEIGHT = 320;
+
 export const topicEditorPanelMethods = {
   createTopicEditor() {
     // 这个编辑面板属于“导图视图编辑器”。
@@ -271,13 +275,12 @@ export const topicEditorPanelMethods = {
     const cardEl = topicEl ? topicEl.querySelector('.yonxao-mindmap-topic-card') : null;
     if (!cardEl) return;
 
-    const gap = 12;
     const cardRect = cardEl.getBoundingClientRect();
     const editorRect = this.topicEditorEl.getBoundingClientRect();
-    const rightLeft = cardRect.right + gap;
-    const rightFits = rightLeft + editorRect.width + gap <= window.innerWidth;
+    const rightLeft = cardRect.right + TOPIC_EDITOR_GAP;
+    const rightFits = rightLeft + editorRect.width + TOPIC_EDITOR_GAP <= window.innerWidth;
     let left = rightFits ? rightLeft : cardRect.left;
-    let top = rightFits ? cardRect.top : cardRect.bottom + gap;
+    let top = rightFits ? cardRect.top : cardRect.bottom + TOPIC_EDITOR_GAP;
 
     ({ left, top } = this.clampTopicEditorPosition(left, top, editorRect));
 
@@ -286,15 +289,14 @@ export const topicEditorPanelMethods = {
   },
 
   clampTopicEditorPosition(left, top, rect = null) {
-    const gap = 12;
     const editorRect = rect || this.topicEditorEl?.getBoundingClientRect();
-    const width = editorRect?.width || 300;
-    const height = editorRect?.height || 320;
-    const maxLeft = Math.max(gap, window.innerWidth - width - gap);
-    const maxTop = Math.max(gap, window.innerHeight - height - gap);
+    const width = editorRect?.width || TOPIC_EDITOR_DEFAULT_WIDTH;
+    const height = editorRect?.height || TOPIC_EDITOR_DEFAULT_HEIGHT;
+    const maxLeft = Math.max(TOPIC_EDITOR_GAP, window.innerWidth - width - TOPIC_EDITOR_GAP);
+    const maxTop = Math.max(TOPIC_EDITOR_GAP, window.innerHeight - height - TOPIC_EDITOR_GAP);
     return {
-      left: clamp(left, gap, maxLeft),
-      top: clamp(top, gap, maxTop),
+      left: clamp(left, TOPIC_EDITOR_GAP, maxLeft),
+      top: clamp(top, TOPIC_EDITOR_GAP, maxTop),
     };
   },
 

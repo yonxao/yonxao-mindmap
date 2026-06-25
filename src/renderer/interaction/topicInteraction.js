@@ -9,7 +9,16 @@
  * SVG 主题事件 -> topicInteractionMethods -> topicTreeActions -> 重新渲染。
  */
 
-import { Notice, containsTopicId, moveTopicInTree, svg } from '../../shared/rendererShared.js';
+import {
+  Notice,
+  containsTopicId,
+  moveTopicInTree,
+  svg,
+  DRAG_START_THRESHOLD,
+  DROP_INDICATOR_OFFSET,
+  DROP_BEFORE_THRESHOLD,
+  DROP_AFTER_THRESHOLD,
+} from '../../shared/rendererShared.js';
 
 export const topicInteractionMethods = {
   handleTopicPointerOver(event) {
@@ -161,7 +170,7 @@ export const topicInteractionMethods = {
 
     const clientDx = event.clientX - state.startClientX;
     const clientDy = event.clientY - state.startClientY;
-    if (!state.started && Math.hypot(clientDx, clientDy) < 4) return;
+    if (!state.started && Math.hypot(clientDx, clientDy) < DRAG_START_THRESHOLD) return;
 
     event.preventDefault();
     event.stopPropagation();
@@ -230,11 +239,17 @@ export const topicInteractionMethods = {
         : rect.height
           ? (event.clientY - rect.top) / rect.height
           : 0.5;
+    /*
+     * 放置区域划分规则：
+     * - 鼠标在目标主题靠近边缘的 25% 区域内 → 放置到目标主题前面/后面（作为兄弟）
+     * - 鼠标在目标主题中间的 50% 区域内 → 放置为目标主题的子主题
+     * - 根主题不可前插/后插，只能作为父主题接受子主题
+     */
     let placement = 'subtopic';
 
     if (targetTopic !== this.root) {
-      if (ratio < 0.25) placement = 'before';
-      if (ratio > 0.75) placement = 'after';
+      if (ratio < DROP_BEFORE_THRESHOLD) placement = 'before';
+      if (ratio > DROP_AFTER_THRESHOLD) placement = 'after';
     }
 
     return {
@@ -276,7 +291,10 @@ export const topicInteractionMethods = {
     if (!box) return;
 
     if (drop.axis === 'x') {
-      const x = drop.placement === 'before' ? box.x - box.width / 2 - 8 : box.x + box.width / 2 + 8;
+      const x =
+        drop.placement === 'before'
+          ? box.x - box.width / 2 - DROP_INDICATOR_OFFSET
+          : box.x + box.width / 2 + DROP_INDICATOR_OFFSET;
       this.topicDropIndicatorEl = svg('line', {
         class: 'yonxao-mindmap-drop-indicator',
         x1: x,
@@ -286,7 +304,9 @@ export const topicInteractionMethods = {
       });
     } else {
       const y =
-        drop.placement === 'before' ? box.y - box.height / 2 - 8 : box.y + box.height / 2 + 8;
+        drop.placement === 'before'
+          ? box.y - box.height / 2 - DROP_INDICATOR_OFFSET
+          : box.y + box.height / 2 + DROP_INDICATOR_OFFSET;
       this.topicDropIndicatorEl = svg('line', {
         class: 'yonxao-mindmap-drop-indicator',
         x1: box.x - box.width / 2,

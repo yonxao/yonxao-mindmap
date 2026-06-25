@@ -27,6 +27,54 @@ import {
   updateRadialRootBranchDirection,
 } from './radialGeometry.js';
 
+/*
+ * 放射图分支角度分配的权重系数。
+ * 每个系数反映一种复杂度指标对扇区大小的影响程度。
+ */
+// 每个直接子主题的权重附加值
+const RADIAL_WEIGHT_PER_DIRECT_CHILD = 0.75;
+// 每平方根后代数量的权重附加值，用平方根压缩大分支影响
+const RADIAL_WEIGHT_PER_DESCENDANT_SQRT = 0.55;
+// 每层深度的权重附加值
+const RADIAL_WEIGHT_PER_DEPTH = 0.35;
+// 每单位尺寸分的权重附加值
+const RADIAL_WEIGHT_PER_SIZE_SCORE = 0.35;
+
+/*
+ * 放射图分支面积评分的额外系数。
+ * 面积评分用于分支方向排序，系数越大该指标对排序影响越强。
+ */
+// 直接子主题数量的面积评分乘数
+const RADIAL_AREA_SCORE_DIRECT_CHILD_MULT = 1.2;
+// 后代数量的面积评分乘数
+const RADIAL_AREA_SCORE_DESCENDANT_MULT = 0.45;
+// 深度的面积评分乘数
+const RADIAL_AREA_SCORE_DEPTH_MULT = 1.1;
+// 主题尺寸分的面积评分乘数
+const RADIAL_AREA_SCORE_SIZE_MULT = 1.8;
+
+/*
+ * 主题尺寸评分中，高度除以该值归一化，
+ * 使高度对评分的影响控制在合理范围，避免高主题单方面主导方向分配。
+ */
+const RADIAL_SIZE_SCORE_HEIGHT_DIVISOR = 120;
+
+/*
+ * 一级分支半径补偿中使用的最小安全半角（弧度）。
+ * 当扇区很窄时仍保留至少该角度，防止分支被过度压缩到中心。
+ */
+const RADIAL_SAFE_HALF_ANGLE_MIN = 0.26;
+/*
+ * 扇区角度中可用于安全放置分支的比例上限。
+ * 剩余角度作为缓冲，避免相邻分支的内容互相接触。
+ */
+const RADIAL_SAFE_SLICE_RATIO = 0.48;
+/*
+ * 一级分支安全半角的上限（弧度）。
+ * 即使扇区很宽，也不让分支展开角度超过此值，保持放射聚拢感。
+ */
+const RADIAL_SAFE_HALF_ANGLE_MAX = Math.PI / 2.6;
+
 export function layoutRadial(root, collapsedIds) {
   const subtopics = visibleSubtopics(root, collapsedIds);
   const radius = Math.max(
@@ -238,7 +286,9 @@ export function radialBranchStats(topic, collapsedIds) {
     directSubtopicCount: subtopics.length,
     descendantCount,
     maxDepth,
-    sizeScore: Math.max(0, (box.width - TOPIC_MIN_WIDTH) / TOPIC_MIN_WIDTH) + box.height / 120,
+    sizeScore:
+      Math.max(0, (box.width - TOPIC_MIN_WIDTH) / TOPIC_MIN_WIDTH) +
+      box.height / RADIAL_SIZE_SCORE_HEIGHT_DIVISOR,
   };
 }
 
@@ -253,10 +303,10 @@ export function radialBranchStats(topic, collapsedIds) {
 export function radialBranchWeight(stat) {
   return (
     1 +
-    stat.directSubtopicCount * 0.75 +
-    Math.sqrt(stat.descendantCount) * 0.55 +
-    stat.maxDepth * 0.35 +
-    stat.sizeScore * 0.35
+    stat.directSubtopicCount * RADIAL_WEIGHT_PER_DIRECT_CHILD +
+    Math.sqrt(stat.descendantCount) * RADIAL_WEIGHT_PER_DESCENDANT_SQRT +
+    stat.maxDepth * RADIAL_WEIGHT_PER_DEPTH +
+    stat.sizeScore * RADIAL_WEIGHT_PER_SIZE_SCORE
   );
 }
 
@@ -271,10 +321,10 @@ export function radialBranchWeight(stat) {
 export function radialBranchAreaScore(stat) {
   return (
     radialBranchWeight(stat) +
-    stat.directSubtopicCount * 1.2 +
-    stat.descendantCount * 0.45 +
-    stat.maxDepth * 1.1 +
-    stat.sizeScore * 1.8
+    stat.directSubtopicCount * RADIAL_AREA_SCORE_DIRECT_CHILD_MULT +
+    stat.descendantCount * RADIAL_AREA_SCORE_DESCENDANT_MULT +
+    stat.maxDepth * RADIAL_AREA_SCORE_DEPTH_MULT +
+    stat.sizeScore * RADIAL_AREA_SCORE_SIZE_MULT
   );
 }
 
@@ -288,7 +338,10 @@ export function radialBranchAreaScore(stat) {
  */
 export function radialBranchRadius(baseRadius, topic, angle, slice, collapsedIds) {
   const breadth = radialSubtreeBreadth(topic, angle, collapsedIds);
-  const safeHalfAngle = Math.max(0.26, Math.min(slice * 0.48, Math.PI / 2.6));
+  const safeHalfAngle = Math.max(
+    RADIAL_SAFE_HALF_ANGLE_MIN,
+    Math.min(slice * RADIAL_SAFE_SLICE_RATIO, RADIAL_SAFE_HALF_ANGLE_MAX)
+  );
   const requiredRadius = breadth / 2 / Math.tan(safeHalfAngle);
 
   return Math.max(baseRadius, Math.min(baseRadius + RADIAL_RADIUS_EXTRA_LIMIT, requiredRadius));

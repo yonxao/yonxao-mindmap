@@ -146,7 +146,11 @@ export const topicEditorStateMethods = {
     setPlaceholder(fields.fontSize, inherited.fontSize, DEFAULT_MIND_CONFIG.font.size);
     setPlaceholder(fields.fontWeight, inherited.fontWeight, DEFAULT_MIND_CONFIG.font.weight);
     setPlaceholder(fields.lineHeight, inherited.lineHeight, DEFAULT_MIND_CONFIG.font.lineHeight);
-    setPlaceholder(fields.maxWidth, inherited.maxWidth, DEFAULT_MIND_CONFIG.structure.topicMaxWidth.global);
+    setPlaceholder(
+      fields.maxWidth,
+      inherited.maxWidth,
+      DEFAULT_MIND_CONFIG.structure.topicMaxWidth.global
+    );
   },
 
   resolveTopicEditorInheritedValues(topic) {

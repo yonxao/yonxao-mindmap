@@ -1,3 +1,13 @@
+/*
+ * 文件作用：
+ * 配置弹框中的字段（field）和控件（control）布局样式。
+ *
+ * 功能范围：
+ * - section 分组标题
+ * - 两列字段布局（标签 | 控件）
+ * - 继承值/禁用值视觉指示
+ * - 帮助文本和警告提示
+ */
 .yonxao-mindmap-config-section {
   margin-top: 4px;
   padding: 0 0 0 8px;
@@ -19,7 +29,7 @@
 .yonxao-mindmap-config-field {
   display: grid;
   grid-template-columns: 156px minmax(0, 1fr);
-  gap: 8px;
+  gap: var(--yonxao-mindmap-gap-md);
   align-items: start;
 }
 
@@ -55,7 +65,7 @@
 }
 
 /*
- * 帮助文本放在控件列内，用来解释“为什么有这个配置”。
+ * 帮助文本放在控件列内，用来解释"为什么有这个配置"。
  */
 .yonxao-mindmap-config-help {
   color: var(--text-faint);
@@ -73,7 +83,7 @@
   font-size: var(--font-ui-smaller);
   line-height: 1.45;
   border: 1px solid var(--background-modifier-border);
-  border-radius: 6px;
+  border-radius: var(--yonxao-mindmap-radius-md);
   background: var(--background-secondary);
 }
 

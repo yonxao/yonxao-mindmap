@@ -1,3 +1,14 @@
+/*
+ * 文件作用：
+ * 父子主题之间的曲线连线样式。
+ *
+ * 执行逻辑：
+ * renderer 根据 layoutTree 坐标创建 <path> 元素并赋予 .yonxao-mindmap-connector class。
+ * 本文件唯一的规则控制所有连线的描边宽度、圆角和透明度。
+ *
+ * 调用链位置：
+ * YonxaoMindmapRenderer.renderConnector() -> 本文件控制连线视觉。
+ */
 .yonxao-mindmap-connector {
   fill: none;
   stroke-width: var(--yonxao-mindmap-connector-stroke-width, 2.2);

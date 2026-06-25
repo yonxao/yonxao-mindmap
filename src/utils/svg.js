@@ -20,7 +20,6 @@ import { SVG_NS } from '../constants.js';
  * Renderer.renderTopic()/renderConnector()/renderIcon() -> svg()。
  */
 export function svg(tagName, attrs) {
-  // 小工具函数：统一创建 SVG 元素并批量设置属性，减少绘制代码的噪音。
   const element = document.createElementNS(SVG_NS, tagName);
   for (const [key, value] of Object.entries(attrs || {})) {
     if (value === undefined || value === null) continue;

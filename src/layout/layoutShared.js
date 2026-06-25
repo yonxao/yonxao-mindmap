@@ -109,12 +109,25 @@ export const FISHBONE_PRIMARY_BONE_ANGLE = Math.PI * 0.32;
 export const FISHBONE_PRIMARY_BONE_SLOPE = Math.tan(FISHBONE_PRIMARY_BONE_ANGLE);
 export const FISHBONE_PRIMARY_BONE_MIN_EDGE_OFFSET = Math.round(TOPIC_MIN_HEIGHT * 2.4);
 
+// 计算主题文本垂直居中的字体偏移比例，基于字体 ascent 经验值
+export const TEXT_Y_CENTER_RATIO = 0.36;
+// 主题可用文本区域的最小宽度，确保极短文本也能正常展示
+export const MIN_USABLE_TEXT_WIDTH = 48;
+// 图标占位相对于图标大小的最小比例，用于计算图标和文本之间的间隙
+export const ICON_GAP_MIN_RATIO = 0.35;
+// 图标和文本之间间隙的上限
+export const MAX_ICON_GAP = 16;
+// 下挂展开生效的起始层级（三级及更深）
+export const HANGING_EXPANSION_LEVEL_THRESHOLD = 3;
+
 /*
  * 作用：
- * 子主题展开方式只作用于三级及更深主题继续展开子主题。
+ * 子主题展开方式只作用于 HANGING_EXPANSION_LEVEL_THRESHOLD 及更深主题继续展开子主题。
  */
 export function shouldUseHangingExpansion(parent, branchExpansion) {
-  return branchExpansion === 'hanging' && Number(parent?.level || 1) >= 3;
+  return (
+    branchExpansion === 'hanging' && Number(parent?.level || 1) >= HANGING_EXPANSION_LEVEL_THRESHOLD
+  );
 }
 
 /*
@@ -394,9 +407,14 @@ export function measureTopic(topic, config) {
   const icon = normalizeIcon(topic.attributes.icon);
   const maxWidth = resolveTopicMaxWidth(topic, normalizedConfig) || TOPIC_MAX_WIDTH;
   const iconSize = icon ? resolveTopicIconSize(font) : 0;
-  const iconGap = icon ? Math.round(clamp(iconSize * 0.35, ICON_GAP, 16)) : 0;
+  const iconGap = icon
+    ? Math.round(clamp(iconSize * ICON_GAP_MIN_RATIO, ICON_GAP, MAX_ICON_GAP))
+    : 0;
   const iconWidth = icon ? iconSize + iconGap : 0;
-  const usableTextWidth = Math.max(48, maxWidth - TOPIC_PADDING_X * 2 - iconWidth);
+  const usableTextWidth = Math.max(
+    MIN_USABLE_TEXT_WIDTH,
+    maxWidth - TOPIC_PADDING_X * 2 - iconWidth
+  );
   const lines = wrapTopicTextByWidth(topic.text || 'Untitled', usableTextWidth, font);
   const textWidth = Math.ceil(
     lines.reduce((max, line) => Math.max(max, estimateTopicTextWidth(line, font)), 0)
@@ -412,7 +430,7 @@ export function measureTopic(topic, config) {
     iconSize,
     font,
     textX: TOPIC_PADDING_X + iconWidth,
-    textY: (height - (lines.length - 1) * font.lineHeight) / 2 + font.size * 0.36,
+    textY: (height - (lines.length - 1) * font.lineHeight) / 2 + font.size * TEXT_Y_CENTER_RATIO,
     side: 'right',
     x: 0,
     y: 0,

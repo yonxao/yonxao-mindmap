@@ -1,5 +1,10 @@
 import { normalizeMindConfig, splitMindSourceConfig } from '../config/mindConfig.js';
 
+// 虚拟根主题的默认配置常量
+const VIRTUAL_ROOT_TEXT = 'Mind';
+const VIRTUAL_ROOT_LEVEL = 0;
+const VIRTUAL_ROOT_LAYOUT = 'mindmap-bidirectional';
+
 /*
  * 文件作用：
  * 这里负责把 ```yxmm 代码块里的 主题级别标记文本解析成树形数据。
@@ -122,11 +127,11 @@ export function buildRootFromRoots(roots) {
       ? roots[0]
       : {
           id: '',
-          text: 'Mind',
-          attributes: { layout: 'mindmap-bidirectional' },
+          text: VIRTUAL_ROOT_TEXT,
+          attributes: { layout: VIRTUAL_ROOT_LAYOUT },
           subtopics: roots,
           line: 0,
-          level: 0,
+          level: VIRTUAL_ROOT_LEVEL,
           _layout: null,
           _virtual: true,
         };

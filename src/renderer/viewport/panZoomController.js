@@ -9,7 +9,11 @@
  * SVG pointer/wheel 事件 -> panZoomControllerMethods -> viewFit/canvasHeight。
  */
 
-import { Notice } from '../../shared/rendererShared.js';
+import {
+  Notice,
+  WHEEL_ZOOM_FACTOR_OUT,
+  WHEEL_ZOOM_FACTOR_IN,
+} from '../../shared/rendererShared.js';
 
 export const panZoomControllerMethods = {
   handleWheel(event) {
@@ -19,7 +23,7 @@ export const panZoomControllerMethods = {
     event.preventDefault();
 
     // SVG 缩放靠改 viewBox 完成，不使用 CSS transform；这样文字和线条始终清晰。
-    const factor = event.deltaY > 0 ? 1.12 : 0.88;
+    const factor = event.deltaY > 0 ? WHEEL_ZOOM_FACTOR_OUT : WHEEL_ZOOM_FACTOR_IN;
     const point = this.clientPointToSvg(event.clientX, event.clientY);
     this.zoomViewBox(factor, point.x, point.y);
   },

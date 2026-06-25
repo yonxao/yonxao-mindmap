@@ -40,7 +40,7 @@
   height: min(800px, 75vh);
   min-height: 96px;
   border: 1px solid var(--background-modifier-border);
-  border-radius: 8px;
+  border-radius: var(--yonxao-mindmap-radius-lg);
   background: var(--background-primary);
   overflow: hidden;
 }

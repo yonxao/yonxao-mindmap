@@ -32,6 +32,9 @@ import {
   VIEW_MODES,
 } from './defaultMindConfig.js';
 
+// 支持字体和主题最大宽度按层级覆盖的级别索引，和 FONT_LEVEL_KEYS 对应。
+const LEVEL_SUFFIXES = ['1', '2', '3'];
+
 export function normalizeMindConfig(rawConfig) {
   if (isRuntimeMindConfig(rawConfig)) {
     return normalizeRuntimeMindConfig(rawConfig);
@@ -50,9 +53,11 @@ export function normalizeMindConfig(rawConfig) {
       height: normalizeOptionalNumber(display.canvasHeight, CANVAS_MIN_HEIGHT, CANVAS_MAX_HEIGHT),
     },
     toolbar: {
-      corner: normalizeToolbarCorner(toolbar.corner) || DEFAULT_MIND_CONFIG.interaction.toolbar.corner,
+      corner:
+        normalizeToolbarCorner(toolbar.corner) || DEFAULT_MIND_CONFIG.interaction.toolbar.corner,
       placement:
-        normalizeToolbarPlacement(toolbar.placement) || DEFAULT_MIND_CONFIG.interaction.toolbar.placement,
+        normalizeToolbarPlacement(toolbar.placement) ||
+        DEFAULT_MIND_CONFIG.interaction.toolbar.placement,
     },
     interaction: {
       wheelZoom:
@@ -82,11 +87,13 @@ export function normalizeMindConfig(rawConfig) {
     layout: normalizeLayoutType(structure.layout) || DEFAULT_MIND_CONFIG.structure.layout,
     connector: {
       style:
-        normalizeConnectorStyle(structure.connectorStyle) || DEFAULT_MIND_CONFIG.structure.connectorStyle,
+        normalizeConnectorStyle(structure.connectorStyle) ||
+        DEFAULT_MIND_CONFIG.structure.connectorStyle,
     },
     branch: {
       expansion:
-        normalizeBranchExpansion(structure.branchExpansion) || DEFAULT_MIND_CONFIG.structure.branchExpansion,
+        normalizeBranchExpansion(structure.branchExpansion) ||
+        DEFAULT_MIND_CONFIG.structure.branchExpansion,
     },
     font: normalizeFontConfig(font),
     topic: normalizeTopicConfig(color, structure),
@@ -133,9 +140,11 @@ function normalizeRuntimeMindConfig(config) {
       height: normalizeOptionalNumber(canvas.height, CANVAS_MIN_HEIGHT, CANVAS_MAX_HEIGHT),
     },
     toolbar: {
-      corner: normalizeToolbarCorner(toolbar.corner) || DEFAULT_MIND_CONFIG.interaction.toolbar.corner,
+      corner:
+        normalizeToolbarCorner(toolbar.corner) || DEFAULT_MIND_CONFIG.interaction.toolbar.corner,
       placement:
-        normalizeToolbarPlacement(toolbar.placement) || DEFAULT_MIND_CONFIG.interaction.toolbar.placement,
+        normalizeToolbarPlacement(toolbar.placement) ||
+        DEFAULT_MIND_CONFIG.interaction.toolbar.placement,
     },
     interaction: {
       wheelZoom:
@@ -162,10 +171,12 @@ function normalizeRuntimeMindConfig(config) {
     theme: normalizeMindThemeName(config.theme),
     layout: normalizeLayoutType(config.layout) || DEFAULT_MIND_CONFIG.structure.layout,
     connector: {
-      style: normalizeConnectorStyle(connector.style) || DEFAULT_MIND_CONFIG.structure.connectorStyle,
+      style:
+        normalizeConnectorStyle(connector.style) || DEFAULT_MIND_CONFIG.structure.connectorStyle,
     },
     branch: {
-      expansion: normalizeBranchExpansion(branch.expansion) || DEFAULT_MIND_CONFIG.structure.branchExpansion,
+      expansion:
+        normalizeBranchExpansion(branch.expansion) || DEFAULT_MIND_CONFIG.structure.branchExpansion,
     },
     font: normalizeFontConfig(config.font),
     topic: normalizeRuntimeTopicConfig(config.topic),
@@ -189,7 +200,7 @@ function normalizeRuntimeTopicConfig(rawTopic) {
   const levels = isPlainObject(topic.levels) ? topic.levels : {};
   const normalizedLevels = {};
 
-  for (const level of ['1', '2', '3']) {
+  for (const level of LEVEL_SUFFIXES) {
     const levelConfig = isPlainObject(levels[level]) ? levels[level] : {};
     const maxWidth = normalizeOptionalNumber(
       levelConfig.maxWidth,
@@ -214,7 +225,7 @@ export function normalizeTopicConfig(rawTheme, rawLayout) {
   const topicMaxWidth = isPlainObject(structure.topicMaxWidth) ? structure.topicMaxWidth : {};
   const normalizedLevels = {};
 
-  for (const level of ['1', '2', '3']) {
+  for (const level of LEVEL_SUFFIXES) {
     const maxWidth = normalizeOptionalNumber(
       topicMaxWidth[`level${level}`],
       TOPIC_MAX_WIDTH_MIN,
@@ -288,7 +299,7 @@ export function normalizeFontConfig(rawFont) {
   const font = isPlainObject(rawFont) ? rawFont : {};
   const normalizedLevels = {};
 
-  for (const level of ['1', '2', '3']) {
+  for (const level of LEVEL_SUFFIXES) {
     const levelKey = `level${level}`;
     if (!isPlainObject(font[levelKey])) continue;
     normalizedLevels[level] = normalizePartialFont(font[levelKey]);

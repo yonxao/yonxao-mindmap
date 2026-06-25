@@ -11,6 +11,10 @@
 
 import { clamp } from '../../shared/rendererShared.js';
 
+const FLOATING_EDITOR_GAP = 12;
+const FLOATING_EDITOR_DEFAULT_WIDTH = 520;
+const FLOATING_EDITOR_DEFAULT_HEIGHT = 420;
+
 export const topicContentEditorMethods = {
   createTopicContentEditor() {
     this.topicContentEditorEl = document.createElement('div');
@@ -130,13 +134,20 @@ export const topicContentEditorMethods = {
   },
 
   clampTopicContentEditorPosition(left, top, rect = null) {
-    const gap = 12;
     const panelRect = rect || this.topicContentEditorEl?.getBoundingClientRect();
-    const width = panelRect?.width || 520;
-    const height = panelRect?.height || 420;
+    const width = panelRect?.width || FLOATING_EDITOR_DEFAULT_WIDTH;
+    const height = panelRect?.height || FLOATING_EDITOR_DEFAULT_HEIGHT;
     return {
-      left: clamp(left, gap, Math.max(gap, window.innerWidth - width - gap)),
-      top: clamp(top, gap, Math.max(gap, window.innerHeight - height - gap)),
+      left: clamp(
+        left,
+        FLOATING_EDITOR_GAP,
+        Math.max(FLOATING_EDITOR_GAP, window.innerWidth - width - FLOATING_EDITOR_GAP)
+      ),
+      top: clamp(
+        top,
+        FLOATING_EDITOR_GAP,
+        Math.max(FLOATING_EDITOR_GAP, window.innerHeight - height - FLOATING_EDITOR_GAP)
+      ),
     };
   },
 

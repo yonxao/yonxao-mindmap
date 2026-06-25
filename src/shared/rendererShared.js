@@ -147,3 +147,84 @@ export const AUTO_CANVAS_FALLBACK_VIEWPORT_HEIGHT = 800;
 export const AUTO_CANVAS_MIN_HEIGHT = 220;
 // 自动高度相对视口高度的比例，平衡完整展示和页面可滚动性。
 export const AUTO_CANVAS_VIEWPORT_HEIGHT_RATIO = 0.75;
+
+// ── 拖拽与交互 ──────────────────────────────────────────
+// 拖拽手势的最小移动像素阈值，低于此值视为点击而非拖拽。
+export const DRAG_START_THRESHOLD = 4;
+// 放置指示线相对主题边框的偏移量（像素）。
+export const DROP_INDICATOR_OFFSET = 8;
+// 放置位置判定比例：ratio < BEFORE_THRESHOLD 判定为 before，> AFTER_THRESHOLD 判定为 after。
+export const DROP_BEFORE_THRESHOLD = 0.25;
+export const DROP_AFTER_THRESHOLD = 0.75;
+
+// ── 视图适配 ────────────────────────────────────────────
+// 缩放到原始大小时的最大重试次数。
+export const MAX_VIEW_FIT_RETRY = 5;
+// 适应视图的最小视口宽度（像素）。
+export const MIN_FIT_VIEWPORT_WIDTH = 240;
+// viewBox 缩放钳制最小/最大尺寸。
+export const VIEWBOX_MIN_DIMENSION = 80;
+export const VIEWBOX_MAX_DIMENSION = 8000;
+// 适应视图重试延迟（毫秒），首次适配完成后额外调度一次修正。
+export const VIEW_FIT_REFRESH_DELAY_MS = 80;
+// 全屏时容器边缘与视口的间距（像素）。
+export const FULLSCREEN_VIEWPORT_OFFSET = 32;
+// 焦点偏移判定比例阈值，超过此值时采用偏置焦点而非居中。
+export const FOCUS_RATIO_BIAS_THRESHOLD = 1.25;
+// 焦点在视口中的位置比例（偏置/居中）。
+export const FOCUS_RATIO_BIASED = 0.32;
+export const FOCUS_RATIO_CENTER = 0.5;
+
+// ── 滚轮缩放 ────────────────────────────────────────────
+// 滚轮缩放系数：向下滚动（放大）和向上滚动（缩小）。
+export const WHEEL_ZOOM_FACTOR_OUT = 1.12;
+export const WHEEL_ZOOM_FACTOR_IN = 0.88;
+
+// ── 鱼骨图 ──────────────────────────────────────────────
+// 鱼骨图尾部翅膀尺寸（像素）。
+export const FISHBONE_TAIL_WING_X = 18;
+export const FISHBONE_TAIL_WING_Y = 10;
+// 鱼骨图尾部延长系数（相对 LEVEL_GAP 的倍数）。
+export const FISHBONE_TAIL_EXTEND_FACTOR = 1.7;
+
+// ── 几何计算 ────────────────────────────────────────────
+// 几何计算中的极小阈值，用于判断浮点数是否为零方向。
+export const GEOMETRY_EPSILON = 0.0001;
+// 连线线段截断阈值，小于该值的线段视为零长度不绘制。
+export const SEGMENT_LENGTH_EPSILON = 0.001;
+// 时间轴详情分支的最小横向偏移量（像素）。
+export const TIMELINE_MIN_TRUNK_X = 6;
+
+// ── 导出 ────────────────────────────────────────────────
+// 导出图片画布的最大边长（像素）。
+export const EXPORT_MAX_CANVAS_SIDE = 8192;
+// 导出像素比的上限和下限。
+export const EXPORT_MAX_DEVICE_PIXEL_RATIO = 2;
+export const EXPORT_MIN_PIXEL_SCALE = 0.25;
+// 导出文件名的最大字符长度。
+export const EXPORT_FILENAME_MAX_LENGTH = 80;
+
+// ── 按钮控件 ────────────────────────────────────────────
+// 编辑按钮尺寸（宽度和高度）及其圆角半径。
+export const EDIT_BUTTON_SIZE = 20;
+export const EDIT_BUTTON_BORDER_RADIUS = 5;
+
+// ── 连线路径 ────────────────────────────────────────────
+// 曲线连线的最小弯曲量（像素），确保短距离连线仍可见弯曲。
+export const CURVE_MIN_BEND = 44;
+// 曲线连线的弯曲比例（相对两端点距离的系数）。
+export const CURVE_BEND_RATIO = 0.46;
+
+// ── 手动高度 ────────────────────────────────────────────
+// 取不到真实视口高度时的手动高度兜底值。
+export const MANUAL_HEIGHT_FALLBACK_VIEWPORT = 900;
+// 手动高度计算时的视口高度倍数上限。
+export const MANUAL_HEIGHT_VIEWPORT_MULTIPLIER = 1.6;
+
+// ── 渲染器内部常量 ──────────────────────────────────────
+// 容器宽度变化判定阈值（像素），小于此值的变化不被视为有效尺寸变更。
+export const RESIZE_WIDTH_EPSILON = 1;
+// 源码/导图视图模式记忆的过期时间（毫秒）。
+export const SESSION_VIEW_MODE_EXPIRY_MS = 6000;
+// 视图模式缓存 key 中 source 文本的截断长度。
+export const VIEW_MODE_KEY_SOURCE_TRUNCATE_LENGTH = 80;

@@ -1,7 +1,15 @@
+/*
+ * 文件作用：
+ * 配置弹框中标签切换栏的样式。
+ *
+ * 设计说明：
+ * 使用 flex-wrap 实现自动换行，窄屏下 tab 行会自然折行。
+ * 激活态直接使用主题强调色，避免固定色值与主题打架。
+ */
 .yonxao-mindmap-config-tabs {
   display: flex;
   flex-wrap: wrap;
-  gap: 6px;
+  gap: var(--yonxao-mindmap-gap-sm);
   padding-bottom: 8px;
   border-bottom: 1px solid var(--background-modifier-border);
 }
@@ -12,7 +20,7 @@
 .yonxao-mindmap-config-tab {
   min-height: 30px;
   padding: 4px 10px;
-  border-radius: 6px;
+  border-radius: var(--yonxao-mindmap-radius-md);
 }
 
 /*

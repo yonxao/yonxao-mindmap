@@ -1,5 +1,13 @@
 /*
- * 状态文本预留最小高度，避免“配置已保存”出现时按钮区上下跳动。
+ * 文件作用：
+ * 配置弹框在小屏幕下的响应式调整。
+ *
+ * 规则：
+ * - 窄屏（≤640px）时弹框宽度占满视口并留出 12px 边距
+ * - 字段和组合输入改为单列布局，避免标签挤压输入框
+ */
+/*
+ * 状态文本预留最小高度，避免"配置已保存"出现时按钮区上下跳动。
  */
 .yonxao-mindmap-config-status {
   min-height: 18px;
@@ -17,7 +25,7 @@
 .yonxao-mindmap-config-actions {
   display: flex;
   justify-content: flex-end;
-  gap: 8px;
+  gap: var(--yonxao-mindmap-gap-md);
   padding-top: 8px;
   border-top: 1px solid var(--background-modifier-border);
 }

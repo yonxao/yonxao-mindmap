@@ -18,22 +18,20 @@
  * touch-action: none 避免触摸设备默认滚动手势干扰平移。
  */
 .yonxao-mindmap-svg {
-  --yonxao-mindmap-default-topic-border: var(
-    --background-modifier-border-hover,
-    var(--background-modifier-border)
-  );
+  /*
+   * 默认主题边框、连线和按钮颜色。
+   * 使用 color-mix 在浅色/深色主题中自动适配，避免固定色值。
+   */
   --yonxao-mindmap-default-topic-border: color-mix(
     in srgb,
     var(--text-normal) 24%,
     var(--background-primary)
   );
-  --yonxao-mindmap-default-connector: var(--text-muted);
   --yonxao-mindmap-default-connector: color-mix(
     in srgb,
     var(--text-normal) 36%,
     var(--background-primary)
   );
-  --yonxao-mindmap-default-button-color: var(--text-muted);
   --yonxao-mindmap-default-button-color: color-mix(
     in srgb,
     var(--text-normal) 56%,

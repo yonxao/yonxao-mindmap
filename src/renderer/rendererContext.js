@@ -21,6 +21,7 @@ import {
   parseMindDocument,
   serializeMindDocument,
   ConfigModal,
+  RESIZE_WIDTH_EPSILON,
 } from '../shared/rendererShared.js';
 
 export const rendererContextMethods = {
@@ -142,7 +143,9 @@ export const rendererContextMethods = {
       const entry = entries[0];
       const width =
         entry?.contentRect?.width || this.containerEl?.getBoundingClientRect().width || 0;
-      if (!width || Math.abs(width - this.lastObservedContainerWidth) < 1) return;
+      if (!width || Math.abs(width - this.lastObservedContainerWidth) < RESIZE_WIDTH_EPSILON) {
+        return;
+      }
 
       this.lastObservedContainerWidth = width;
       this.scheduleFitView();

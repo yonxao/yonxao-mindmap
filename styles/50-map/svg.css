@@ -1,16 +1,11 @@
 /*
  * 文件作用：
- * 这里定义思维导图 SVG 内部图形元素的样式，包括连线、主题卡片、文字、图标和折叠按钮。
+ * SVG 内部图形元素样式预留层。
  *
- * 执行逻辑：
- * renderer 会创建 path/rect/text/g 等 SVG 元素，并写入 yonxao-mindmap-* class。
- * 本文件只负责这些元素的视觉效果，不负责坐标计算，坐标来自 layoutTree。
- *
- * 调用链位置：
- * YonxaoMindmapRenderer.renderMap()/renderTopic()/renderConnector() -> 本文件控制 SVG 视觉。
- */
-
-/*
- * 作用：
- * 父子主题之间的曲线连线。
+ * 说明：
+ * 本文件为 SVG 相关样式的汇总入口预留。实际样式定义分布在以下子文件：
+ * - 50-map/topics.css：主题卡片、文本、折叠按钮
+ * - 50-map/connectors.css：父子主题连线
+ * - 50-map/topic-controls.css：编辑/新增按钮
+ * - 30-canvas/canvas.css：SVG 幕布自身（.yonxao-mindmap-svg）
  */

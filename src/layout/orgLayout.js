@@ -5,6 +5,7 @@
 
 import {
   BRANCH_GAP,
+  HANGING_EXPANSION_LEVEL_THRESHOLD,
   HANGING_SIBLING_GAP,
   LEVEL_GAP,
   ORG_RIGHT_DESCENDANT_LEVEL_GAP,
@@ -284,7 +285,10 @@ export function placeOrgRightDescendants(parent, collapsedIds, branchExpansion =
   const subtopics = visibleSubtopics(parent, collapsedIds);
   if (!subtopics.length) return;
 
-  if (Number(parent?.level || 1) >= 3 && branchExpansion === 'side') {
+  if (
+    Number(parent?.level || 1) >= HANGING_EXPANSION_LEVEL_THRESHOLD &&
+    branchExpansion === 'side'
+  ) {
     placeOrgRightNaturalDescendants(parent, collapsedIds, branchExpansion);
     return;
   }
@@ -402,7 +406,10 @@ function orgRightSubtreeExtent(topic, collapsedIds, branchExpansion = 'side') {
     ORG_RIGHT_DESCENDANT_SIBLING_GAP
   );
 
-  if (Number(topic?.level || 1) >= 3 && branchExpansion === 'side') {
+  if (
+    Number(topic?.level || 1) >= HANGING_EXPANSION_LEVEL_THRESHOLD &&
+    branchExpansion === 'side'
+  ) {
     const subtopicCenterOffset = directSubtopicGroupCenterOffset(
       subtopicExtents,
       ORG_RIGHT_DESCENDANT_SIBLING_GAP

@@ -56,6 +56,11 @@ export const fullscreenControllerMethods = {
     }
   },
 
+  /*
+   * 全屏幕状态变更处理。注意全屏幕 API 的事件可能来自本插件之外（如 Obsidian 本身
+   * 或其他插件），因此需要双重守卫：进入全屏时检查 hostEl 是否标记了 is-fullscreen，
+   * 退出全屏时检查 isFullscreen 内部状态。避免误触发其他全屏实例的状态切换。
+   */
   handleFullscreenChange() {
     if (typeof document === 'undefined') return;
 

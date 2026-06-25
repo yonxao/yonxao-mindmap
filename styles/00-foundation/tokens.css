@@ -1,6 +1,11 @@
 /*
  * 文件作用：
  * 共享样式变量预留层。当前变量主要复用 Obsidian 主题变量。
+ *
+ * 共享尺寸变量说明：
+ * --yonxao-mindmap-radius-*：统一管理弹框、面板、输入框等组件的圆角大小。
+ * --yonxao-mindmap-gap-*：统一管理组件内间距，保持视觉节奏一致。
+ * --yonxao-mindmap-shadow-*：统一管理阴影层级。
  */
 
 /*
@@ -14,4 +19,34 @@
   --yonxao-mindmap-mono-font:
     'Sarasa Mono SC', 'Noto Sans Mono CJK SC', 'Source Han Mono SC', 'Cascadia Mono',
     'JetBrains Mono', 'Liberation Mono', monospace;
+}
+
+/*
+ * 共享尺寸变量。
+ *
+ * 圆角层级：
+ * --yonxao-mindmap-radius-sm: 4px — 色块、徽标
+ * --yonxao-mindmap-radius-md: 6px — 工具栏按钮、标签、输入框
+ * --yonxao-mindmap-radius-lg: 8px — 面板、弹框、消息块
+ *
+ * 间距层级：
+ * --yonxao-mindmap-gap-sm: 6px — 紧凑排列（标签行、色块行）
+ * --yonxao-mindmap-gap-md: 8px — 组件内字段/按钮间距
+ * --yonxao-mindmap-gap-lg: 10px — 区域间距
+ *
+ * 关键点：
+ * 变量同时挂在 :root 和具体宿主类名下。:root 保证 body 级浮层（工具栏等）也能继承；
+ * 具体宿主类保证在 Obsidian 容器内也能正确解析，避免祖先 transform 破坏 CSS 变量继承。
+ */
+:root,
+.yonxao-mindmap-host,
+.yonxao-mindmap-config-modal-host,
+.yonxao-mindmap-topic-editor,
+.yonxao-mindmap-topic-content-editor {
+  --yonxao-mindmap-radius-sm: 4px;
+  --yonxao-mindmap-radius-md: 6px;
+  --yonxao-mindmap-radius-lg: 8px;
+  --yonxao-mindmap-gap-sm: 6px;
+  --yonxao-mindmap-gap-md: 8px;
+  --yonxao-mindmap-gap-lg: 10px;
 }

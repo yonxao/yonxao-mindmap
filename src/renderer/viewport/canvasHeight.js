@@ -16,6 +16,8 @@ import {
   deleteMindConfigPath,
   setMindConfigPath,
   clamp,
+  MANUAL_HEIGHT_FALLBACK_VIEWPORT,
+  MANUAL_HEIGHT_VIEWPORT_MULTIPLIER,
 } from '../../shared/rendererShared.js';
 
 export const canvasHeightMethods = {
@@ -126,8 +128,12 @@ export const canvasHeightMethods = {
   },
 
   maxManualHeight() {
-    const viewportHeight = typeof window === 'undefined' ? 900 : window.innerHeight;
-    return Math.max(CANVAS_MIN_HEIGHT, Math.min(CANVAS_MAX_HEIGHT, viewportHeight * 1.6));
+    const viewportHeight =
+      typeof window === 'undefined' ? MANUAL_HEIGHT_FALLBACK_VIEWPORT : window.innerHeight;
+    return Math.max(
+      CANVAS_MIN_HEIGHT,
+      Math.min(CANVAS_MAX_HEIGHT, viewportHeight * MANUAL_HEIGHT_VIEWPORT_MULTIPLIER)
+    );
   },
 
   resetManualHeight() {

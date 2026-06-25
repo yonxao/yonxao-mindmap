@@ -28,37 +28,19 @@ export const mapRendererMethods = {
     const topicLayer = svg('g', { class: 'yonxao-mindmap-topics' });
     const controlLayer = svg('g', { class: 'yonxao-mindmap-topic-controls-layer' });
 
-    const treeTrunk = this.renderTreeTrunk(layout);
-    if (treeTrunk) {
-      connectorLayer.appendChild(treeTrunk);
-    }
-    const orgSharedTrunks = this.renderOrgSharedTrunks(layout);
-    if (orgSharedTrunks) {
-      connectorLayer.appendChild(orgSharedTrunks);
-    }
-    const orgRightTrunk = this.renderOrgRightTrunk(layout);
-    if (orgRightTrunk) {
-      connectorLayer.appendChild(orgRightTrunk);
-    }
-    const orgRightBranchTrunks = this.renderOrgRightBranchTrunks(layout);
-    if (orgRightBranchTrunks) {
-      connectorLayer.appendChild(orgRightBranchTrunks);
-    }
-    const timelineAxis = this.renderTimelineAxis(layout);
-    if (timelineAxis) {
-      connectorLayer.appendChild(timelineAxis);
-    }
-    const fishboneMainSpine = this.renderFishboneMainSpine(layout);
-    if (fishboneMainSpine) {
-      connectorLayer.appendChild(fishboneMainSpine);
-    }
-    const timelineDetailTrunks = this.renderTimelineDetailTrunks(layout);
-    if (timelineDetailTrunks) {
-      connectorLayer.appendChild(timelineDetailTrunks);
-    }
-    const mindMapRootElbowConnectors = this.renderMindMapRootElbowConnectors(layout);
-    if (mindMapRootElbowConnectors) {
-      connectorLayer.appendChild(mindMapRootElbowConnectors);
+    // 收集所有主干/轴线绘制结果到连接层；每个方法返回 null 时自动跳过。
+    const trunkElements = [
+      this.renderTreeTrunk(layout),
+      this.renderOrgSharedTrunks(layout),
+      this.renderOrgRightTrunk(layout),
+      this.renderOrgRightBranchTrunks(layout),
+      this.renderTimelineAxis(layout),
+      this.renderFishboneMainSpine(layout),
+      this.renderTimelineDetailTrunks(layout),
+      this.renderMindMapRootElbowConnectors(layout),
+    ];
+    for (const el of trunkElements) {
+      if (el) connectorLayer.appendChild(el);
     }
 
     if (!this.isTreeTableLayoutMode(layout.mode)) {

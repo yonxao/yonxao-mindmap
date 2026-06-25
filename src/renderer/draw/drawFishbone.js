@@ -15,6 +15,9 @@ import {
   connectorColor,
   svg,
   DEFAULT_CONNECTOR_STROKE,
+  FISHBONE_TAIL_WING_X,
+  FISHBONE_TAIL_WING_Y,
+  FISHBONE_TAIL_EXTEND_FACTOR,
 } from '../../shared/rendererShared.js';
 
 export const fishboneDrawMethods = {
@@ -57,8 +60,8 @@ export const fishboneDrawMethods = {
     const tailBoundary = this.visibleSubtreeHorizontalBoundary(lastTopic, direction);
     const tailEnd =
       direction > 0
-        ? Math.max(segmentStart + LEVEL_GAP * 1.7, tailBoundary)
-        : Math.min(segmentStart - LEVEL_GAP * 1.7, tailBoundary);
+        ? Math.max(segmentStart + LEVEL_GAP * FISHBONE_TAIL_EXTEND_FACTOR, tailBoundary)
+        : Math.min(segmentStart - LEVEL_GAP * FISHBONE_TAIL_EXTEND_FACTOR, tailBoundary);
     const tailEl = this.renderBranchColoredTrunkSegment(
       'x',
       rootBox.y,
@@ -77,8 +80,8 @@ export const fishboneDrawMethods = {
 
   renderFishboneTail(x, y, direction = 1) {
     const color = connectorColor(this.root, this.config);
-    const wingX = 18;
-    const wingY = 10;
+    const wingX = FISHBONE_TAIL_WING_X;
+    const wingY = FISHBONE_TAIL_WING_Y;
     const wingEndX = x + direction * wingX;
 
     return svg('path', {
