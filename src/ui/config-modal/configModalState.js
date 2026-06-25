@@ -22,7 +22,7 @@ import {
   pruneInactiveMindConfig,
   clamp,
 } from './configModalShared.js';
-import { CANONICAL_DEFAULT_CONFIG } from '../../config/defaultMindConfig.js';
+import { DEFAULT_MIND_CONFIG } from '../../config/defaultMindConfig.js';
 
 // 配置模态框拖动时距离视口边缘的最小间隙，防止模态框被拖到屏幕外完全看不见。
 const MODAL_POSITION_GAP = 12;
@@ -332,7 +332,7 @@ export const configModalStateMethods = {
       // 完整保存：用配置区规范默认配置兜底，再叠加全局默认值，最后叠加代码块配置，
       // 保证所有字段都被写入，方便分享给他人时样式一致。
       configToSave = mergeMindConfigSources(
-        CANONICAL_DEFAULT_CONFIG,
+        DEFAULT_MIND_CONFIG,
         mergeMindConfigSources(this.baseConfig, this.draftConfig)
       );
     }

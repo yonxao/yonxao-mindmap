@@ -50,9 +50,9 @@ export function normalizeMindConfig(rawConfig) {
       height: normalizeOptionalNumber(display.canvasHeight, CANVAS_MIN_HEIGHT, CANVAS_MAX_HEIGHT),
     },
     toolbar: {
-      corner: normalizeToolbarCorner(toolbar.corner) || DEFAULT_MIND_CONFIG.toolbar.corner,
+      corner: normalizeToolbarCorner(toolbar.corner) || DEFAULT_MIND_CONFIG.interaction.toolbar.corner,
       placement:
-        normalizeToolbarPlacement(toolbar.placement) || DEFAULT_MIND_CONFIG.toolbar.placement,
+        normalizeToolbarPlacement(toolbar.placement) || DEFAULT_MIND_CONFIG.interaction.toolbar.placement,
     },
     interaction: {
       wheelZoom:
@@ -61,32 +61,32 @@ export function normalizeMindConfig(rawConfig) {
           : DEFAULT_MIND_CONFIG.interaction.wheelZoom,
     },
     view: {
-      mode: DEFAULT_MIND_CONFIG.view.mode,
-      fit: normalizeViewFit(display.viewFit) || DEFAULT_MIND_CONFIG.view.fit,
+      mode: 'map',
+      fit: normalizeViewFit(display.viewFit) || DEFAULT_MIND_CONFIG.display.viewFit,
       fitNoUpscale:
         typeof display.fitViewNoUpscale === 'boolean'
           ? display.fitViewNoUpscale
-          : DEFAULT_MIND_CONFIG.view.fitNoUpscale,
+          : DEFAULT_MIND_CONFIG.display.fitViewNoUpscale,
       fitMaxScale:
         normalizeOptionalNumber(
           display.fitViewMaxScale,
           FIT_VIEW_MAX_SCALE_MIN,
           FIT_VIEW_MAX_SCALE_MAX
-        ) || DEFAULT_MIND_CONFIG.view.fitMaxScale,
+        ) || DEFAULT_MIND_CONFIG.display.fitMaxScale,
       saveFullConfig:
         typeof display.saveFullConfig === 'boolean'
           ? display.saveFullConfig
-          : DEFAULT_MIND_CONFIG.view.saveFullConfig,
+          : DEFAULT_MIND_CONFIG.display.saveFullConfig,
     },
     theme: normalizeMindThemeName(color.scheme),
-    layout: normalizeLayoutType(structure.layout) || DEFAULT_MIND_CONFIG.layout,
+    layout: normalizeLayoutType(structure.layout) || DEFAULT_MIND_CONFIG.structure.layout,
     connector: {
       style:
-        normalizeConnectorStyle(structure.connectorStyle) || DEFAULT_MIND_CONFIG.connector.style,
+        normalizeConnectorStyle(structure.connectorStyle) || DEFAULT_MIND_CONFIG.structure.connectorStyle,
     },
     branch: {
       expansion:
-        normalizeBranchExpansion(structure.branchExpansion) || DEFAULT_MIND_CONFIG.branch.expansion,
+        normalizeBranchExpansion(structure.branchExpansion) || DEFAULT_MIND_CONFIG.structure.branchExpansion,
     },
     font: normalizeFontConfig(font),
     topic: normalizeTopicConfig(color, structure),
@@ -95,7 +95,7 @@ export function normalizeMindConfig(rawConfig) {
       enableTabIndent:
         typeof interaction.tabIndent === 'boolean'
           ? interaction.tabIndent
-          : DEFAULT_MIND_CONFIG.source.enableTabIndent,
+          : DEFAULT_MIND_CONFIG.interaction.tabIndent,
       height: normalizeOptionalNumber(display.sourceHeight, CANVAS_MIN_HEIGHT, CANVAS_MAX_HEIGHT),
     },
   };
@@ -133,9 +133,9 @@ function normalizeRuntimeMindConfig(config) {
       height: normalizeOptionalNumber(canvas.height, CANVAS_MIN_HEIGHT, CANVAS_MAX_HEIGHT),
     },
     toolbar: {
-      corner: normalizeToolbarCorner(toolbar.corner) || DEFAULT_MIND_CONFIG.toolbar.corner,
+      corner: normalizeToolbarCorner(toolbar.corner) || DEFAULT_MIND_CONFIG.interaction.toolbar.corner,
       placement:
-        normalizeToolbarPlacement(toolbar.placement) || DEFAULT_MIND_CONFIG.toolbar.placement,
+        normalizeToolbarPlacement(toolbar.placement) || DEFAULT_MIND_CONFIG.interaction.toolbar.placement,
     },
     interaction: {
       wheelZoom:
@@ -145,27 +145,27 @@ function normalizeRuntimeMindConfig(config) {
     },
     view: {
       ...view,
-      mode: normalizeViewMode(view.mode) || DEFAULT_MIND_CONFIG.view.mode,
-      fit: normalizeViewFit(view.fit) || DEFAULT_MIND_CONFIG.view.fit,
+      mode: normalizeViewMode(view.mode) || 'map',
+      fit: normalizeViewFit(view.fit) || DEFAULT_MIND_CONFIG.display.viewFit,
       fitNoUpscale:
         typeof view.fitNoUpscale === 'boolean'
           ? view.fitNoUpscale
-          : DEFAULT_MIND_CONFIG.view.fitNoUpscale,
+          : DEFAULT_MIND_CONFIG.display.fitViewNoUpscale,
       fitMaxScale:
         normalizeOptionalNumber(view.fitMaxScale, FIT_VIEW_MAX_SCALE_MIN, FIT_VIEW_MAX_SCALE_MAX) ||
-        DEFAULT_MIND_CONFIG.view.fitMaxScale,
+        DEFAULT_MIND_CONFIG.display.fitMaxScale,
       saveFullConfig:
         typeof view.saveFullConfig === 'boolean'
           ? view.saveFullConfig
-          : DEFAULT_MIND_CONFIG.view.saveFullConfig,
+          : DEFAULT_MIND_CONFIG.display.saveFullConfig,
     },
     theme: normalizeMindThemeName(config.theme),
-    layout: normalizeLayoutType(config.layout) || DEFAULT_MIND_CONFIG.layout,
+    layout: normalizeLayoutType(config.layout) || DEFAULT_MIND_CONFIG.structure.layout,
     connector: {
-      style: normalizeConnectorStyle(connector.style) || DEFAULT_MIND_CONFIG.connector.style,
+      style: normalizeConnectorStyle(connector.style) || DEFAULT_MIND_CONFIG.structure.connectorStyle,
     },
     branch: {
-      expansion: normalizeBranchExpansion(branch.expansion) || DEFAULT_MIND_CONFIG.branch.expansion,
+      expansion: normalizeBranchExpansion(branch.expansion) || DEFAULT_MIND_CONFIG.structure.branchExpansion,
     },
     font: normalizeFontConfig(config.font),
     topic: normalizeRuntimeTopicConfig(config.topic),
@@ -174,7 +174,7 @@ function normalizeRuntimeMindConfig(config) {
       enableTabIndent:
         typeof source.enableTabIndent === 'boolean'
           ? source.enableTabIndent
-          : DEFAULT_MIND_CONFIG.source.enableTabIndent,
+          : DEFAULT_MIND_CONFIG.interaction.tabIndent,
       height: normalizeOptionalNumber(source.height, CANVAS_MIN_HEIGHT, CANVAS_MAX_HEIGHT),
     },
   };
@@ -203,7 +203,7 @@ function normalizeRuntimeTopicConfig(rawTopic) {
     defaultColor: normalizeText(topic.defaultColor),
     maxWidth:
       normalizeOptionalNumber(topic.maxWidth, TOPIC_MAX_WIDTH_MIN, TOPIC_MAX_WIDTH_MAX) ||
-      DEFAULT_MIND_CONFIG.topic.maxWidth,
+      DEFAULT_MIND_CONFIG.structure.topicMaxWidth.global,
     levels: normalizedLevels,
   };
 }
@@ -227,7 +227,7 @@ export function normalizeTopicConfig(rawTheme, rawLayout) {
     defaultColor: normalizeText(color.defaultTopicColor),
     maxWidth:
       normalizeOptionalNumber(topicMaxWidth.global, TOPIC_MAX_WIDTH_MIN, TOPIC_MAX_WIDTH_MAX) ||
-      DEFAULT_MIND_CONFIG.topic.maxWidth,
+      DEFAULT_MIND_CONFIG.structure.topicMaxWidth.global,
     levels: normalizedLevels,
   };
 }
@@ -251,11 +251,11 @@ export function normalizeButtonConfig(rawTheme, rawBasic = {}) {
   return {
     colorMode: BUTTON_COLOR_MODES.includes(colorMode)
       ? colorMode
-      : DEFAULT_MIND_CONFIG.button.colorMode,
+      : DEFAULT_MIND_CONFIG.color.buttonColorMode,
     color: normalizeText(color.buttonColor),
     topicControlVisibility:
       normalizeTopicControlVisibility(interaction.topicControlVisibility) ||
-      DEFAULT_MIND_CONFIG.button.topicControlVisibility,
+      DEFAULT_MIND_CONFIG.interaction.topicControlVisibility,
   };
 }
 
@@ -272,11 +272,11 @@ export function normalizeRuntimeButtonConfig(rawButton) {
   return {
     colorMode: BUTTON_COLOR_MODES.includes(colorMode)
       ? colorMode
-      : DEFAULT_MIND_CONFIG.button.colorMode,
+      : DEFAULT_MIND_CONFIG.color.buttonColorMode,
     color: normalizeText(button.color),
     topicControlVisibility:
       normalizeTopicControlVisibility(button.topicControlVisibility) ||
-      DEFAULT_MIND_CONFIG.button.topicControlVisibility,
+      DEFAULT_MIND_CONFIG.interaction.topicControlVisibility,
   };
 }
 
@@ -378,7 +378,7 @@ export function resolveTopicMaxWidth(topic, config) {
     ) ||
     levelTopic.maxWidth ||
     safeConfig.topic.maxWidth ||
-    DEFAULT_MIND_CONFIG.topic.maxWidth
+    DEFAULT_MIND_CONFIG.structure.topicMaxWidth.global
   );
 }
 

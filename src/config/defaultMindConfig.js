@@ -255,58 +255,59 @@ export const FONT_FAMILY_OPTIONS = Object.freeze(
 
 /*
  * 作用：
- * 插件运行时使用的完整默认配置。
+ * 插件配置系统默认值，结构与 YAML 配置区一致（display/structure/color/font/interaction 五分组）。
  *
  * 关键点：
- * 这个对象不是直接写回源码的模板，而是运行时兜底值。
- * 用户源码里没有写某个配置时，渲染器读取这里的默认值；保存时只写用户已有或插件主动记录的配置。
+ * 这个对象直接映射到 canonicalizeMindConfig() 识别的规范分组，因此可以直接用于
+ * "保存全部配置项"时补齐默认值，不再需要另一份规范结构等价形式。
+ *
+ * 使用场景：
+ * - configNormalize.js 中 normalize 时作为字段级回退值
+ * - configSerialize.js 中裁剪不活跃配置时作为有效默认值判断基准
+ * - configModalState.js 中保存全部配置时补齐所有字段
+ * - topicEditorState/TopicEditorPanel 中作为 placeholder 默认值
+ *
+ * 注意：
+ * 渲染器运行时配置（normalized）的结构与这里不同（如 display.canvasHeight → canvas.height），
+ * 但 DEFAULT_MIND_CONFIG 只负责"用户配置层"的默认值，运行时映射由 normalizeMindConfig 处理。
  */
 export const DEFAULT_MIND_CONFIG = Object.freeze({
-  // 导图幕布配置。
-  canvas: Object.freeze({
+  display: Object.freeze({
     // null 表示使用自动高度，不把固定高度写入默认配置。
-    height: null,
-  }),
-  // 工具栏位置配置。
-  toolbar: Object.freeze({
-    // 默认吸附在右上角，避开多数导图从左向右的主干起点。
-    corner: 'top-right',
-    // 默认放在幕布外侧，减少遮挡主题。
-    placement: 'outside',
-  }),
-  // 交互配置。
-  interaction: Object.freeze({
-    // 默认不拦截滚轮缩放，避免影响 Obsidian 页面滚动。
-    wheelZoom: false,
-  }),
-  // 视图配置。
-  view: Object.freeze({
-    // 默认进入导图模式，而不是源码模式。
-    mode: 'map',
+    canvasHeight: null,
+    // null 表示源码编辑区高度跟随自动高度。
+    sourceHeight: null,
     // 默认打开时适配视图，尽量完整展示导图。
-    fit: 'fit',
+    viewFit: 'fit',
     // 默认适配视图不放大小图，避免少量主题被过度放大。
-    fitNoUpscale: true,
+    fitViewNoUpscale: true,
     // 关闭"不放大"时，适配视图最多放大到 1.5 倍。
     fitMaxScale: 1.5,
     // 默认裁剪保存，只写非默认值的配置项；开启后写入全部配置，便于分享。
     saveFullConfig: false,
   }),
-  // 默认主题色系名称。
-  theme: DEFAULT_THEME_NAME,
-  // 默认布局为向右思维导图。
-  layout: 'mindmap-right',
-  // 连线配置。
-  connector: Object.freeze({
+  structure: Object.freeze({
+    // 默认布局为向右思维导图。
+    layout: 'mindmap-right',
     // 传统思维导图默认使用曲线连接。
-    style: 'curve',
-  }),
-  // 普通主题分支配置。
-  branch: Object.freeze({
+    connectorStyle: 'curve',
     // 折线下的子主题默认自然展开。
-    expansion: 'side',
+    branchExpansion: 'side',
+    topicMaxWidth: Object.freeze({
+      // 默认主题最大宽度，超过后按文本换行。
+      global: TOPIC_MAX_WIDTH,
+    }),
   }),
-  // 字体配置。
+  color: Object.freeze({
+    // 默认主题色系名称。
+    scheme: DEFAULT_THEME_NAME,
+    // 空字符串表示不覆盖主题色，由当前主题色系决定。
+    defaultTopicColor: '',
+    // 默认使用继承 Obsidian 强调色作为按钮颜色。
+    buttonColorMode: 'inherit-accent',
+    // 自定义按钮颜色，仅在 buttonColorMode 为 custom 时生效。
+    buttonColor: '',
+  }),
   font: Object.freeze({
     // 默认继承 Obsidian 正文字体。
     family: DEFAULT_FONT_FAMILY,
@@ -316,85 +317,19 @@ export const DEFAULT_MIND_CONFIG = Object.freeze({
     weight: 400,
     // 默认全局行高，单位为 px。
     lineHeight: 20,
-    // 默认没有任何层级字体覆盖。
-    levels: Object.freeze({}),
-  }),
-  // 主题配置。
-  topic: Object.freeze({
-    // 空字符串表示不覆盖主题色，由当前主题色系决定。
-    defaultColor: '',
-    // 默认主题最大宽度，超过后按文本换行。
-    maxWidth: TOPIC_MAX_WIDTH,
-    // 默认没有任何层级主题宽度覆盖。
-    levels: Object.freeze({}),
-  }),
-  // 按钮配置。
-  button: Object.freeze({
-    // 默认使用继承 Obsidian 强调色作为按钮颜色。
-    colorMode: 'inherit-accent',
-    // 自定义按钮颜色，仅在 colorMode 为 custom 时生效。
-    color: '',
-    // 默认保留折叠按钮常显，其余编辑/新增按钮在主题悬浮时显示。
-    topicControlVisibility: 'toggle-always',
-  }),
-  // 源码模式配置。
-  source: Object.freeze({
-    // 默认允许 Tab/Shift+Tab 调整源码主题级别。
-    enableTabIndent: true,
-    // null 表示源码编辑区高度跟随自动高度。
-    height: null,
-  }),
-});
-
-/*
- * 作用：
- * DEFAULT_MIND_CONFIG 的配置区规范结构等价形式，用于"保存全部配置项"时补齐默认值。
- *
- * 关键点：
- * canonicalizeMindConfig() 只识别 display/structure/color/font/interaction 规范分组，
- * 而 DEFAULT_MIND_CONFIG 是运行时结构（canvas/toolbar/view/theme/layout 等分组）。
- * 因此不能在 applyDraft 中直接 canonicalizeMindConfig(DEFAULT_MIND_CONFIG)，
- * 需要预先定义一份配置区规范结构下的默认值。
- *
- * 维护说明：
- * 当新增可写入配置区的默认项时，需要同步更新这两个对象。
- */
-export const CANONICAL_DEFAULT_CONFIG = Object.freeze({
-  display: Object.freeze({
-    canvasHeight: null,
-    sourceHeight: null,
-    viewFit: 'fit',
-    fitViewNoUpscale: true,
-    fitViewMaxScale: 1.5,
-    saveFullConfig: false,
-  }),
-  structure: Object.freeze({
-    layout: 'mindmap-right',
-    connectorStyle: 'curve',
-    branchExpansion: 'side',
-    topicMaxWidth: Object.freeze({
-      global: TOPIC_MAX_WIDTH,
-    }),
-  }),
-  color: Object.freeze({
-    scheme: DEFAULT_THEME_NAME,
-    defaultTopicColor: '',
-    buttonColorMode: 'inherit-accent',
-    buttonColor: '',
-  }),
-  font: Object.freeze({
-    family: DEFAULT_FONT_FAMILY,
-    size: 16,
-    weight: 400,
-    lineHeight: 20,
   }),
   interaction: Object.freeze({
     toolbar: Object.freeze({
+      // 默认吸附在右上角，避开多数导图从左向右的主干起点。
       corner: 'top-right',
+      // 默认放在幕布外侧，减少遮挡主题。
       placement: 'outside',
     }),
+    // 默认保留折叠按钮常显，其余编辑/新增按钮在主题悬浮时显示。
     topicControlVisibility: 'toggle-always',
+    // 默认允许 Tab/Shift+Tab 调整源码主题级别。
     tabIndent: true,
+    // 默认不拦截滚轮缩放，避免影响 Obsidian 页面滚动。
     wheelZoom: false,
   }),
 });

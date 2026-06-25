@@ -136,7 +136,7 @@ export const topicEditorStateMethods = {
     setPlaceholder(
       fields.colorField?._textInput,
       inherited.color,
-      DEFAULT_MIND_CONFIG.topic.defaultColor || TOPIC_EDITOR_DEFAULT_COLOR
+      DEFAULT_MIND_CONFIG.color.defaultTopicColor || TOPIC_EDITOR_DEFAULT_COLOR
     );
     setPlaceholder(
       fields.fontFamilyField?._customInput,
@@ -146,7 +146,7 @@ export const topicEditorStateMethods = {
     setPlaceholder(fields.fontSize, inherited.fontSize, DEFAULT_MIND_CONFIG.font.size);
     setPlaceholder(fields.fontWeight, inherited.fontWeight, DEFAULT_MIND_CONFIG.font.weight);
     setPlaceholder(fields.lineHeight, inherited.lineHeight, DEFAULT_MIND_CONFIG.font.lineHeight);
-    setPlaceholder(fields.maxWidth, inherited.maxWidth, DEFAULT_MIND_CONFIG.topic.maxWidth);
+    setPlaceholder(fields.maxWidth, inherited.maxWidth, DEFAULT_MIND_CONFIG.structure.topicMaxWidth.global);
   },
 
   resolveTopicEditorInheritedValues(topic) {

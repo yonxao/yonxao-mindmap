@@ -83,7 +83,7 @@ function pruneInactiveBranchExpansionConfig(config, baseConfig) {
 
   const effective = mergeMindConfigSources(baseConfig, config);
   const effectiveStructure = isPlainObject(effective.structure) ? effective.structure : {};
-  const layoutType = normalizeLayoutType(effectiveStructure.layout) || DEFAULT_MIND_CONFIG.layout;
+  const layoutType = normalizeLayoutType(effectiveStructure.layout) || DEFAULT_MIND_CONFIG.structure.layout;
   const connectorStyle = normalizeConnectorStyle(effectiveStructure.connectorStyle);
   const isUnsupportedLayout = BRANCH_EXPANSION_UNSUPPORTED_LAYOUTS.includes(layoutType);
   const isConnectorConfigurableLayout = CONNECTOR_STYLE_CONFIGURABLE_LAYOUTS.includes(layoutType);
@@ -106,7 +106,7 @@ function pruneInactiveBranchExpansionConfig(config, baseConfig) {
 function pruneInactiveViewFitConfig(config, baseConfig) {
   const effective = mergeMindConfigSources(baseConfig, config);
   const display = isPlainObject(effective.display) ? effective.display : {};
-  const viewFit = display.viewFit ?? DEFAULT_MIND_CONFIG.view.fit;
+  const viewFit = display.viewFit ?? DEFAULT_MIND_CONFIG.display.viewFit;
   let next = config;
 
   if (viewFit !== 'fit') {

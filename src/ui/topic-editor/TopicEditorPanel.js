@@ -75,7 +75,7 @@ export const topicEditorPanelMethods = {
       min: TOPIC_MAX_WIDTH_MIN,
       max: TOPIC_MAX_WIDTH_MAX,
       step: 1,
-      placeholder: DEFAULT_MIND_CONFIG.topic.maxWidth,
+      placeholder: DEFAULT_MIND_CONFIG.structure.topicMaxWidth.global,
     });
 
     const actions = document.createElement('div');
