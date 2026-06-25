@@ -78,12 +78,43 @@ export const topicDrawMethods = {
     });
 
     for (let index = 0; index < box.lines.length; index += 1) {
-      const tspan = svg('tspan', {
-        x: box.textX,
-        dy: index === 0 ? 0 : box.font.lineHeight,
-      });
-      tspan.textContent = box.lines[index];
-      textEl.appendChild(tspan);
+      const line = box.lines[index];
+
+      if (line === 'yonxao-mindmap') {
+        // 对 "yonxao-mindmap" 中的 y、x、m、m 四个缩写字母（位置 0、3、7、11）逐个高亮
+        const HIGHLIGHT_POSITIONS = new Set([0, 3, 7, 11]);
+        const segments = [];
+        let buffer = '';
+        let isHighlighted = false;
+        for (let i = 0; i < line.length; i++) {
+          const shouldHighlight = HIGHLIGHT_POSITIONS.has(i);
+          if (shouldHighlight !== isHighlighted) {
+            if (buffer) segments.push({ text: buffer, highlight: isHighlighted });
+            buffer = '';
+            isHighlighted = shouldHighlight;
+          }
+          buffer += line[i];
+        }
+        if (buffer) segments.push({ text: buffer, highlight: isHighlighted });
+
+        for (let i = 0; i < segments.length; i++) {
+          const seg = segments[i];
+          const tspan = svg('tspan', {
+            x: i === 0 ? box.textX : undefined,
+            dy: i === 0 ? (index === 0 ? 0 : box.font.lineHeight) : undefined,
+            class: seg.highlight ? 'yonxao-mindmap-text-highlight' : undefined,
+          });
+          tspan.textContent = seg.text;
+          textEl.appendChild(tspan);
+        }
+      } else {
+        const tspan = svg('tspan', {
+          x: box.textX,
+          dy: index === 0 ? 0 : box.font.lineHeight,
+        });
+        tspan.textContent = line;
+        textEl.appendChild(tspan);
+      }
     }
 
     group.appendChild(textEl);

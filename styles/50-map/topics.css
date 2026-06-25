@@ -58,6 +58,15 @@
 
 /*
  * 作用：
+ * 主题文本中 yxmm 字母的高亮样式，使用强调色和加粗字重突出品牌标识。
+ */
+.yonxao-mindmap-text-highlight {
+  fill: var(--text-accent);
+  font-weight: 700;
+}
+
+/*
+ * 作用：
  * 标记“有子主题”的主题。
  *
  * 关键点：

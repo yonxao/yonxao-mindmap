@@ -86,8 +86,8 @@ export const rendererContextMethods = {
     }
 
     if (!this.root) {
-      parseError = parseError || '源码为空，请在源码模式中编辑后保存。';
-      this.root = createMindTopic('Mind', {}, []);
+      // 空代码块：创建兜底根主题，默认展示导图模式而非源码模式
+      this.root = createMindTopic('yonxao-mindmap', {}, []);
       assignIds(this.root, '0');
     }
 
