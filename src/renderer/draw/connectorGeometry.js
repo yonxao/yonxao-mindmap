@@ -136,6 +136,44 @@ export const connectorGeometryMethods = {
     };
   },
 
+  /*
+   * 作用：
+   * 根据连线锚点推导拐点（折线的转弯角坐标）。
+   *
+   * 使用场景：
+   * 主题控件避让偏移方向 = 子主题父线入口点 → 拐点。
+   *
+   * 返回：
+   * { x, y } | null（直线连线无拐点返回 null）。
+   */
+  connectorBendPoint(anchors) {
+    const { kind, startX, startY, endX, endY } = anchors;
+
+    if (kind === 'hanging-horizontal') {
+      // V-then-H: M startX, startY V endY H endX → 拐点 = (startX, endY)
+      return { x: startX, y: endY };
+    }
+
+    if (kind === 'hanging-vertical') {
+      // H-then-V: M startX, startY H endX V endY → 拐点 = (endX, startY)
+      return { x: endX, y: startY };
+    }
+
+    if (kind === 'fishbone-rib-descendant') {
+      // H-V-H: M startX, startY H midX V endY H endX → 入口前最后一个拐点 = (midX, endY)
+      const midX = (startX + endX) / 2;
+      return { x: midX, y: endY };
+    }
+
+    if (kind === 'org') {
+      // V-H-V: M startX, startY V midY H endX V endY → 入口前最后一个拐点 = (endX, midY)
+      const midY = (startY + endY) / 2;
+      return { x: endX, y: midY };
+    }
+
+    return null;
+  },
+
   connectorAnchors(parentBox, subtopicBox) {
     const side = subtopicBox.side;
 

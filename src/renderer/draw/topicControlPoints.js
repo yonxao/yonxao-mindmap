@@ -65,7 +65,7 @@ export const topicControlPointMethods = {
     const box = topic._layout;
     const childConnectorOutlet = this.withHangingOutletAvoidance(
       this.childConnectorOutletPoint(topic),
-      box
+      topic
     );
     const parentConnectorInlet = this.parentConnectorInletPoint(topic, childConnectorOutlet);
     const siblingPoints = this.siblingInsertionPoints(box);
@@ -100,8 +100,8 @@ export const topicControlPointMethods = {
     return this.defaultChildConnectorOutletPoint(box);
   },
 
-  withHangingOutletAvoidance(point, box) {
-    const vector = this.hangingOutletAvoidVector(box);
+  withHangingOutletAvoidance(point, topic) {
+    const vector = this.hangingOutletAvoidVector(topic);
     if (!vector) return point;
     return {
       ...point,
@@ -109,31 +109,24 @@ export const topicControlPointMethods = {
     };
   },
 
-  hangingOutletAvoidVector(box) {
-    if (box.childBranchExpansion === 'hanging-vertical') {
-      const side = String(box?.side || '');
-      if (side === 'top') {
-        return { x: 0, y: 1 };
-      }
-      if (side === 'bottom') {
-        return { x: 0, y: -1 };
-      }
-      return { x: -1, y: 0 };
-    }
+  hangingOutletAvoidVector(topic) {
+    const box = topic._layout;
+    const firstChild = topic.subtopics?.[0];
+    if (!firstChild?._layout) return null;
 
-    if (box.childBranchExpansion === 'hanging-horizontal') {
-      const direction = this.topicHorizontalGrowthDirection(box);
-      return { x: -direction, y: 0 };
-    }
+    // 取首个子主题的连线锚点，从中推导拐点和入口点。
+    // 偏移方向 = 入口点(endX/endY) → 拐点，由 connectorGeometryMethods 根据连线路径形状通用推导。
+    const anchors = this.connectorAnchors(box, firstChild._layout);
+    if (!anchors || anchors.kind === 'skip') return null;
 
-    return null;
-  },
+    const bend = this.connectorBendPoint(anchors);
+    if (!bend) return null;
 
-  topicHorizontalGrowthDirection(box) {
-    const side = String(box?.side || '');
-    if (side === 'left' || side === 'tree-left') return -1;
-    if (Number(box?.fishboneDirection) < 0) return -1;
-    return 1;
+    const dx = bend.x - anchors.endX;
+    const dy = bend.y - anchors.endY;
+    const len = Math.hypot(dx, dy);
+    if (len < 1) return null;
+    return { x: dx / len, y: dy / len };
   },
 
   visibleChildConnectorOutletPoints(topic) {
