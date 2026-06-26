@@ -1,9 +1,9 @@
 {
   "id": "yonxao-mindmap",
-  "name": "yonxao-mindmap",
+  "name": "Yonxao Mind Map",
   "version": "1.0.0",
   "minAppVersion": "1.12.7",
-  "description": "Render Markdown-heading-style mind maps from yxmm code blocks.",
+  "description": "A feature-rich mind map plugin that renders `yxmm` code blocks as interactive SVG mind maps. Supports 20+ layouts, interactive editing, multiple themes, and rich customization options.",
   "author": "yonxao",
   "isDesktopOnly": false
 }
