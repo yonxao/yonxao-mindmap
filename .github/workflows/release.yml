@@ -1,0 +1,66 @@
+# yonxao-mindmap Release Workflow
+#
+# 触发方式：推送符合 v* 模式的 tag 时自动触发。
+#
+# 流程说明：
+# 1. 检出代码。
+# 2. 安装 Node.js（从 .node-version 或 package.json engines 读取）。
+# 3. 安装依赖。
+# 4. 执行构建与发布准备（clean → build → 复制 manifest.json）。
+# 5. 将 dist/ 目录（main.js, styles.css, manifest.json）打包为 Obsidian 插件压缩包。
+# 6. 基于 tag 版本创建 GitHub Release，上传压缩包与源代码 zip。
+# 7. 若 manifests.json（BRAT）存在，则更新其中信息。
+
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    name: Build and Create Release
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: package.json
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build and prepare release artifacts
+        run: npm run release:prepare
+
+      - name: Package release artifacts
+        run: |
+          # 打包 dist/ 中的 Obsidian 三件套
+          cd dist
+          zip -r ../yonxao-mindmap-${{ github.ref_name }}.zip \
+            main.js styles.css manifest.json
+          cd ..
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          name: ${{ github.ref_name }}
+          tag_name: ${{ github.ref_name }}
+          body_path: .github/release-body.md
+          fail_on_unmatched_files: true
+          files: |
+            yonxao-mindmap-${{ github.ref_name }}.zip
+            dist/main.js
+            dist/styles.css
+            dist/manifest.json
