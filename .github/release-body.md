@@ -1,4 +1,4 @@
-## yonxao-mindmap ${{ github.ref_name }}
+## yonxao-mindmap
 
 ### 安装方式
 
