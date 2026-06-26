@@ -1,4 +1,5 @@
 export const zhCNMessages = Object.freeze({
+  // ── 插件设置页 ──
   'settings.description':
     '这里配置的是插件级别的全局默认值配置。单个 yxmm 代码块顶部的配置区仍然优先，适合给某一张导图做局部覆盖。',
   'settings.language.name': '语言',
@@ -27,6 +28,7 @@ export const zhCNMessages = Object.freeze({
   'settings.summary.fontFamily': '主题字体',
   'settings.summary.fontSize': '主题字号',
 
+  // ── 工具栏 ──
   'toolbar.showSource': '显示源码',
   'toolbar.showMap': '显示导图',
   'toolbar.sourceFallback': '码',
@@ -40,12 +42,16 @@ export const zhCNMessages = Object.freeze({
   'toolbar.zoomOut': '缩小',
   'toolbar.resetCollapse': '重置折叠状态',
   'toolbar.dragHandle': '拖动工具栏',
+
+  // ── 源码视图 ──
   'source.tab.config': '配置区',
   'source.tab.body': '正文区',
   'source.status.editable': '源码可编辑，切回导图或按 Ctrl/Cmd+S 写回 Markdown。',
   'source.status.dirty': '源码已修改，切回导图或按 Ctrl/Cmd+S 写回 Markdown。',
   'source.status.synced': '源码实时同步到当前 Markdown 代码块。',
   'canvas.resizeHandle': '拖拽调整幕布高度',
+
+  // ── 通知消息 ──
   'notice.configSaved': 'yonxao-mindmap: 配置已保存。',
   'notice.topicCopied': 'yonxao-mindmap: 内容已复制。',
   'notice.bodyCopied': 'yonxao-mindmap: 正文已复制。',
@@ -63,10 +69,15 @@ export const zhCNMessages = Object.freeze({
   'notice.rootCannotAddSibling': 'yonxao-mindmap: 根主题不能新增兄弟主题。',
   'notice.rootCannotDeleteInMap': 'yonxao-mindmap: 根主题不能在导图视图中删除。',
   'notice.rootCannotDelete': 'yonxao-mindmap: 根主题不能删除。',
+
+  // ── 编辑器菜单 ──
   'editorMenu.insertMindMap': '插入思维导图',
+
+  // ── 确认弹窗 ──
   'confirm.deleteTopic': '确定删除“{topic}”吗？',
   'confirm.deleteTopicWithDescendants': '确定删除“{topic}”及其 {count} 个子主题吗？',
 
+  // ── 主题编辑面板 ──
   'topicEditor.title': '主题编辑面板',
   'topicEditor.content': '内容',
   'topicEditor.expandText': '打开大文本编辑器',
@@ -85,15 +96,17 @@ export const zhCNMessages = Object.freeze({
     "请输入合法的 CSS font-family 列表，例如：'SimSun', 'Songti SC', serif",
   'topicEditor.editContentAria': '编辑内容',
   'topicEditor.save': '保存',
-  'topicEditor.addSubtopic': '新增子主题',
-  'topicEditor.delete': '删除',
   'topicEditor.cancel': '取消',
+
+  // ── 主题按钮 ──
   'topicButton.addSiblingLeft': '在左侧添加兄弟主题',
   'topicButton.addSiblingRight': '在右侧添加兄弟主题',
-  'topicButton.addSiblingAbove': '在上方添加兄弟主题',
-  'topicButton.addSiblingBelow': '在下方添加兄弟主题',
+  'topicButton.addSiblingBefore': '在前方添加兄弟主题',
+  'topicButton.addSiblingAfter': '在后方添加兄弟主题',
   'topicButton.addSubtopic': '添加子主题',
   'topicButton.editTopic': '编辑',
+
+  // ── 右键菜单 ──
   'contextMenu.editTopic': '编辑',
   'contextMenu.topicEditPanel': '主题编辑面板',
   'contextMenu.copyTopicContent': '复制内容',
@@ -115,6 +128,7 @@ export const zhCNMessages = Object.freeze({
   'contextMenu.copyPng': '复制图片',
   'contextMenu.deleteMindMap': '删除思维导图',
 
+  // ── 配置面板：标题、标签页、操作、状态 ──
   'configModal.title': '配置面板',
   'configModal.globalDefaultValueTitle': '全局默认值配置面板',
   'configModal.info.label': '配置规则说明',
@@ -134,9 +148,11 @@ export const zhCNMessages = Object.freeze({
   'configModal.status.valid': '配置语法有效。',
   'configModal.status.invalid': '配置语法错误：{message}',
 
+  // ── 配置面板：占位符 ──
   'configModal.placeholder.auto': '自动',
   'configModal.placeholder.default': '默认',
 
+  // ── 配置面板：显示标签页 ──
   'configModal.display.mapSection': '导图区域',
   'configModal.display.canvasHeight': '导图高度',
   'configModal.display.canvasHeight.help': '留空表示自动高度。拖动幕布底部也会写入这个值。',
@@ -148,14 +164,20 @@ export const zhCNMessages = Object.freeze({
     '开启后，适配视图只会缩小过大的导图；小图保持接近原始比例，不再放大。',
   'configModal.display.fitViewMaxScale': '适配视图最大放大倍数',
   'configModal.display.fitViewMaxScale.help':
-    '关闭“适配视图不放大”时生效，用于限制小图在适配视图中的最大放大倍数。',
+    '关闭"适配视图不放大"时生效，用于限制小图在适配视图中的最大放大倍数。',
   'configModal.display.sourceSection': '源码区域',
   'configModal.display.sourceHeight': '源码高度',
   'configModal.display.sourceHeight.help': '源码模式独立高度，不影响导图高度。',
   'configModal.display.saveFullConfig': '保存全部配置项',
   'configModal.display.saveFullConfig.help':
     '开启后保存所有配置值（包括默认值），便于分享或迁移后保持样式一致；关闭时只保存与默认值不同的配置，保持配置区精简。',
+  'configModal.viewFit.original': '原始大小',
+  'configModal.viewFit.fit': '适配视图',
+  'configModal.topicControlVisibility.always': '始终显示全部按钮',
+  'configModal.topicControlVisibility.toggle-always': '折叠按钮常显，其余悬浮显示',
+  'configModal.topicControlVisibility.hover': '全部按钮悬浮显示',
 
+  // ── 配置面板：交互标签页 ──
   'configModal.interaction.toolbarSection': '工具栏',
   'configModal.interaction.toolbarCorner': '工具栏角落',
   'configModal.interaction.toolbarPlacement': '工具栏位置',
@@ -176,12 +198,8 @@ export const zhCNMessages = Object.freeze({
   'configModal.interaction.tabIndent': 'Tab 键调整主题级别',
   'configModal.interaction.tabIndent.help':
     '开启后，源码模式中按 Tab / Shift+Tab 会调整当前行的主题级别。',
-  'configModal.viewFit.original': '原始大小',
-  'configModal.viewFit.fit': '适配视图',
-  'configModal.topicControlVisibility.always': '始终显示全部按钮',
-  'configModal.topicControlVisibility.toggle-always': '折叠按钮常显，其余悬浮显示',
-  'configModal.topicControlVisibility.hover': '全部按钮悬浮显示',
 
+  // ── 配置面板：颜色标签页 ──
   'configModal.color.schemeSection': '配色方案',
   'configModal.color.scheme': '配色方案',
   'configModal.color.defaultTopicColor': '默认主题颜色',
@@ -199,6 +217,7 @@ export const zhCNMessages = Object.freeze({
   'configModal.color.buttonColor': '自定义按钮颜色',
   'configModal.color.buttonColor.help': '按钮的自定义颜色，仅在模式为自定义时生效。',
 
+  // ── 配置面板：结构标签页 ──
   'configModal.structure.layoutSection': '布局',
   'configModal.structure.layout': '布局类型',
   'configModal.structure.connectorSection': '连线和展开',
@@ -208,7 +227,6 @@ export const zhCNMessages = Object.freeze({
   'configModal.structure.branchExpansion': '子主题展开方式',
   'configModal.structure.branchExpansion.elbowOnlyHelp':
     '子主题展开方式仅在实际连线线型为折线时生效。',
-  'configModal.structure.branchExpansion.unsupportedHelp': '当前布局不支持子主题展开方式。',
   'configModal.structure.topicMaxWidthSection': '主题最大宽度',
   'configModal.structure.topicMaxWidth.help': '范围：120-800 px。',
   'configModal.structure.topicMaxWidthGlobal': '全局',
@@ -218,10 +236,11 @@ export const zhCNMessages = Object.freeze({
   'configModal.branchExpansion.side': '自然展开',
   'configModal.branchExpansion.hanging': '下挂展开',
 
+  // ── 配置面板：字体标签页 ──
   'configModal.font.globalSection': '全局主题字体',
   'configModal.font.family': '主题字体',
   'configModal.font.family.help':
-    '默认使用 Obsidian 正文字体。可以选择内置字体预设，也可以选择“自定义”后输入 CSS 字体族。',
+    '默认使用 Obsidian 正文字体。可以选择内置字体预设，也可以选择"自定义"后输入 CSS 字体族。',
   'configModal.font.size': '主题字号',
   'configModal.font.size.help': '字号单位是像素，控制内容大小。',
   'configModal.font.weight': '主题字重',
@@ -235,8 +254,10 @@ export const zhCNMessages = Object.freeze({
   'configModal.font.levelTitle3': '三级主题',
   'configModal.font.clearLevel': '清除本层',
 
+  // ── 配置面板：高级标签页 ──
   'configModal.advanced.section': '配置源码',
 
+  // ── 配置面板：布局分组 ──
   'configModal.layout.group.mindmap': '思维导图',
   'configModal.layout.group.tree': '树形图',
   'configModal.layout.group.org': '组织结构图',
@@ -267,6 +288,7 @@ export const zhCNMessages = Object.freeze({
   'configModal.connector.straight': '直线',
   'configModal.connector.elbow': '折线',
 
+  // ── 配置面板：主题选择 ──
   'configModal.color.default': '默认：跟随 Obsidian',
   'configModal.color.ocean': '海洋：蓝青技术感',
   'configModal.color.forest': '森林：绿色学习感',
@@ -276,6 +298,7 @@ export const zhCNMessages = Object.freeze({
   'configModal.color.pastelRainbow': '柔和彩虹：长期阅读',
   'configModal.color.neonRainbow': '霓虹彩虹：深色展示',
 
+  // ── 字体下拉 ──
   'font.group.inherit': '继承与自定义',
   'font.group.obsidian': 'Obsidian',
   'font.group.chinese': '中文常用',

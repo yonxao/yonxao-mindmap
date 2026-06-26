@@ -1,4 +1,5 @@
 export const enMessages = Object.freeze({
+  // ── Plugin settings page ──
   'settings.description':
     'Configure the plugin-level global default value config here. The config block at the top of an individual yxmm code block still has priority, which is useful for per-map overrides.',
   'settings.language.name': 'Language',
@@ -30,6 +31,7 @@ export const enMessages = Object.freeze({
   'settings.summary.fontFamily': 'Topic font',
   'settings.summary.fontSize': 'Topic font size',
 
+  // ── Toolbar ──
   'toolbar.showSource': 'Show source',
   'toolbar.showMap': 'Show map',
   'toolbar.sourceFallback': 'Src',
@@ -43,6 +45,8 @@ export const enMessages = Object.freeze({
   'toolbar.zoomOut': 'Zoom out',
   'toolbar.resetCollapse': 'Reset collapse state',
   'toolbar.dragHandle': 'Drag toolbar',
+
+  // ── Source view ──
   'source.tab.config': 'Config',
   'source.tab.body': 'Body',
   'source.status.editable':
@@ -51,6 +55,8 @@ export const enMessages = Object.freeze({
     'Source changed. Switch back to map or press Ctrl/Cmd+S to write Markdown.',
   'source.status.synced': 'Source is synced to the current Markdown code block.',
   'canvas.resizeHandle': 'Drag to resize canvas height',
+
+  // ── Notices ──
   'notice.configSaved': 'yonxao-mindmap: Config saved.',
   'notice.topicCopied': 'yonxao-mindmap: Content copied.',
   'notice.bodyCopied': 'yonxao-mindmap: Body copied.',
@@ -70,10 +76,15 @@ export const enMessages = Object.freeze({
   'notice.rootCannotAddSibling': 'yonxao-mindmap: The root topic cannot add sibling topics.',
   'notice.rootCannotDeleteInMap': 'yonxao-mindmap: The root topic cannot be deleted in map view.',
   'notice.rootCannotDelete': 'yonxao-mindmap: The root topic cannot be deleted.',
-  'editorMenu.insertMindMap': 'Insert mind map',
-  'confirm.deleteTopic': 'Delete “{topic}”?',
-  'confirm.deleteTopicWithDescendants': 'Delete “{topic}” and its {count} subtopics?',
 
+  // ── Editor menu ──
+  'editorMenu.insertMindMap': 'Insert mind map',
+
+  // ── Confirm dialogs ──
+  'confirm.deleteTopic': 'Delete "{topic}"?',
+  'confirm.deleteTopicWithDescendants': 'Delete "{topic}" and its {count} subtopics?',
+
+  // ── Topic editor panel ──
   'topicEditor.title': 'Topic edit panel',
   'topicEditor.content': 'Content',
   'topicEditor.expandText': 'Open large text editor',
@@ -92,23 +103,25 @@ export const enMessages = Object.freeze({
     "Please enter a valid CSS font-family list, for example: 'SimSun', 'Songti SC', serif",
   'topicEditor.editContentAria': 'Edit content',
   'topicEditor.save': 'Save',
-  'topicEditor.addSubtopic': 'Add subtopic',
-  'topicEditor.delete': 'Delete',
   'topicEditor.cancel': 'Cancel',
+
+  // ── Topic buttons ──
   'topicButton.addSiblingLeft': 'Add sibling topic on the left',
   'topicButton.addSiblingRight': 'Add sibling topic on the right',
   'topicButton.addSiblingBefore': 'Add sibling topic before',
   'topicButton.addSiblingAfter': 'Add sibling topic after',
   'topicButton.addSubtopic': 'Add subtopic',
   'topicButton.editTopic': 'Edit',
+
+  // ── Context menu ──
   'contextMenu.editTopic': 'Edit',
   'contextMenu.topicEditPanel': 'Topic edit panel',
   'contextMenu.copyTopicContent': 'Copy content',
   'contextMenu.copySubtreeBody': 'Copy subtree',
   'contextMenu.copyIndentedSubtree': 'Copy indented subtree',
   'contextMenu.addSubtopic': 'Add subtopic',
-  'contextMenu.addSiblingAbove': 'Add sibling topic above',
-  'contextMenu.addSiblingBelow': 'Add sibling topic below',
+  'contextMenu.addSiblingBefore': 'Add sibling topic before',
+  'contextMenu.addSiblingAfter': 'Add sibling topic after',
   'contextMenu.expandSubtopics': 'Expand subtopics',
   'contextMenu.collapseSubtopics': 'Collapse subtopics',
   'contextMenu.expandAllSubtopics': 'Expand all subtopics',
@@ -120,8 +133,9 @@ export const enMessages = Object.freeze({
   'contextMenu.copyConfig': 'Copy config',
   'contextMenu.exportPng': 'Export image',
   'contextMenu.copyPng': 'Copy image',
-  'contextMenu.deleteMindMap': 'Delete mind map',
+  'contextMenu.deleteMindMap': 'Delete code block',
 
+  // ── Config panel: title, tabs, actions, status ──
   'configModal.title': 'Config Panel',
   'configModal.globalDefaultValueTitle': 'Global Default Value Config Panel',
   'configModal.info.label': 'Config rules',
@@ -141,9 +155,11 @@ export const enMessages = Object.freeze({
   'configModal.status.valid': 'Config syntax is valid.',
   'configModal.status.invalid': 'Config syntax error: {message}',
 
+  // ── Config panel: placeholders ──
   'configModal.placeholder.auto': 'Auto',
   'configModal.placeholder.default': 'Default',
 
+  // ── Config panel: display tab ──
   'configModal.display.mapSection': 'Map area',
   'configModal.display.canvasHeight': 'Map height',
   'configModal.display.canvasHeight.help':
@@ -164,7 +180,13 @@ export const enMessages = Object.freeze({
   'configModal.display.saveFullConfig': 'Save all config items',
   'configModal.display.saveFullConfig.help':
     'When enabled, saves all config values including defaults for consistent styling when shared or migrated. When disabled, only saves configs that differ from defaults to keep it concise.',
+  'configModal.viewFit.original': 'Original size',
+  'configModal.viewFit.fit': 'Fit view',
+  'configModal.topicControlVisibility.always': 'Always show all buttons',
+  'configModal.topicControlVisibility.toggle-always': 'Always show collapse; show others on hover',
+  'configModal.topicControlVisibility.hover': 'Show all buttons on hover',
 
+  // ── Config panel: interaction tab ──
   'configModal.interaction.toolbarSection': 'Toolbar',
   'configModal.interaction.toolbarCorner': 'Toolbar corner',
   'configModal.interaction.toolbarPlacement': 'Toolbar placement',
@@ -185,12 +207,8 @@ export const enMessages = Object.freeze({
   'configModal.interaction.tabIndent': 'Tab key changes topic level',
   'configModal.interaction.tabIndent.help':
     'When enabled, Tab and Shift+Tab in source mode adjust the current line topic level.',
-  'configModal.viewFit.original': 'Original size',
-  'configModal.viewFit.fit': 'Fit view',
-  'configModal.topicControlVisibility.always': 'Always show all buttons',
-  'configModal.topicControlVisibility.toggle-always': 'Always show collapse; show others on hover',
-  'configModal.topicControlVisibility.hover': 'Show all buttons on hover',
 
+  // ── Config panel: color tab ──
   'configModal.color.schemeSection': 'Color scheme',
   'configModal.color.scheme': 'Color scheme',
   'configModal.color.defaultTopicColor': 'Default topic color',
@@ -209,6 +227,7 @@ export const enMessages = Object.freeze({
   'configModal.color.buttonColor.help':
     'Custom color for buttons, only applies when mode is Custom.',
 
+  // ── Config panel: structure tab ──
   'configModal.structure.layoutSection': 'Layout',
   'configModal.structure.layout': 'Layout type',
   'configModal.structure.connectorSection': 'Connector and expansion',
@@ -218,8 +237,6 @@ export const enMessages = Object.freeze({
   'configModal.structure.branchExpansion': 'Subtopic expansion',
   'configModal.structure.branchExpansion.elbowOnlyHelp':
     'Subtopic expansion only applies when the actual connector style is elbow.',
-  'configModal.structure.branchExpansion.unsupportedHelp':
-    'The current layout does not support subtopic expansion.',
   'configModal.structure.topicMaxWidthSection': 'Topic max width',
   'configModal.structure.topicMaxWidth.help': 'Range: 120-800 px.',
   'configModal.structure.topicMaxWidthGlobal': 'Global',
@@ -229,6 +246,7 @@ export const enMessages = Object.freeze({
   'configModal.branchExpansion.side': 'Natural expansion',
   'configModal.branchExpansion.hanging': 'Hanging expansion',
 
+  // ── Config panel: font tab ──
   'configModal.font.globalSection': 'Global topic font',
   'configModal.font.family': 'Topic font',
   'configModal.font.family.help':
@@ -246,8 +264,10 @@ export const enMessages = Object.freeze({
   'configModal.font.levelTitle3': 'Level 3 topic',
   'configModal.font.clearLevel': 'Clear this level',
 
+  // ── Config panel: advanced tab ──
   'configModal.advanced.section': 'Config source',
 
+  // ── Config panel: layout groups ──
   'configModal.layout.group.mindmap': 'Mind map',
   'configModal.layout.group.tree': 'Tree diagram',
   'configModal.layout.group.org': 'Organization chart',
@@ -278,6 +298,7 @@ export const enMessages = Object.freeze({
   'configModal.connector.straight': 'Straight line',
   'configModal.connector.elbow': 'Elbow line',
 
+  // ── Config panel: theme colors ──
   'configModal.color.default': 'Default: follow Obsidian',
   'configModal.color.ocean': 'Ocean: blue-cyan tech',
   'configModal.color.forest': 'Forest: green learning',
@@ -287,6 +308,7 @@ export const enMessages = Object.freeze({
   'configModal.color.pastelRainbow': 'Pastel rainbow: long reading',
   'configModal.color.neonRainbow': 'Neon rainbow: dark presentation',
 
+  // ── Font family dropdown ──
   'font.group.inherit': 'Inherit and custom',
   'font.group.obsidian': 'Obsidian',
   'font.group.chinese': 'Chinese common fonts',
@@ -311,6 +333,7 @@ export const enMessages = Object.freeze({
   'font.system.monospace': 'System monospace',
   'font.monospace.cjkStack': 'Chinese monospace stack',
   'font.monospace.sarasa': 'Sarasa Mono SC',
+  'font.monospace.lxgwwenkai': 'LXGW WenKai Mono',
   'font.monospace.jetbrains': 'JetBrains Mono',
   'font.monospace.cascadia': 'Cascadia Mono',
 });

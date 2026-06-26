@@ -1,6 +1,7 @@
 export const zhTWMessages = Object.freeze({
+  // ── 插件設定頁 ──
   'settings.description':
-    '這裡配置的是插件級別的全域預設值配置。單個 yxmm 程式碼區塊頂部的配置區仍然優先，適合給某一張導圖做局部覆蓋。',
+    '這裡配置的是外掛級別的全域預設值配置。單個 yxmm 程式碼區塊頂部的配置區仍然優先，適合給某一張導圖做局部覆蓋。',
   'settings.language.name': '語言',
   'settings.language.desc':
     '控制 yonxao-mindmap 的介面文字。首次預設語言會跟隨 Obsidian 目前語言。',
@@ -9,10 +10,10 @@ export const zhTWMessages = Object.freeze({
     '作為所有 yxmm 程式碼區塊的基礎配置；文件配置區和主題屬性會繼續覆蓋它。',
   'settings.globalDefaultValueConfigPanel.edit': '編輯預設值配置',
   'settings.globalDefaultValueConfigPanel.reset': '恢復內建預設值',
-  'settings.globalDefaultValueConfigPanel.resetNotice': 'yonxao-mindmap: 已恢復插件內建預設配置。',
+  'settings.globalDefaultValueConfigPanel.resetNotice': 'yonxao-mindmap: 已恢復外掛內建預設配置。',
   'settings.globalDefaultValueConfigPanel.savedNotice': 'yonxao-mindmap: 全域預設值配置已儲存。',
   'settings.globalDefaultValueConfigPanel.empty':
-    '目前未設定全域預設值配置，所有導圖使用插件內建預設值。',
+    '目前未設定全域預設值配置，所有導圖使用外掛內建預設值。',
   'settings.globalDefaultValueConfigPanel.summaryTitle': '目前全域預設值配置摘要：',
   'settings.summary.theme': '主題色系',
   'settings.summary.layout': '佈局類型',
@@ -27,30 +28,35 @@ export const zhTWMessages = Object.freeze({
   'settings.summary.fontFamily': '主題字型',
   'settings.summary.fontSize': '主題字號',
 
+  // ── 工具列 ──
   'toolbar.showSource': '顯示原始碼',
   'toolbar.showMap': '顯示導圖',
   'toolbar.sourceFallback': '碼',
   'toolbar.mapFallback': '圖',
-  'toolbar.config': '配置',
-  'toolbar.fitView': '適配視圖',
+  'toolbar.config': '設定',
+  'toolbar.fitView': '適配檢視',
   'toolbar.originalSize': '原始大小',
-  'toolbar.enterFullscreen': '全螢幕查看',
+  'toolbar.enterFullscreen': '全螢幕檢視',
   'toolbar.exitFullscreen': '退出全螢幕',
   'toolbar.zoomIn': '放大',
   'toolbar.zoomOut': '縮小',
-  'toolbar.resetCollapse': '重設折疊狀態',
-  'toolbar.dragHandle': '拖動工具列',
-  'source.tab.config': '配置區',
+  'toolbar.resetCollapse': '重設摺疊狀態',
+  'toolbar.dragHandle': '拖曳工具列',
+
+  // ── 原始碼檢視 ──
+  'source.tab.config': '設定區',
   'source.tab.body': '正文區',
   'source.status.editable': '原始碼可編輯，切回導圖或按 Ctrl/Cmd+S 寫回 Markdown。',
   'source.status.dirty': '原始碼已修改，切回導圖或按 Ctrl/Cmd+S 寫回 Markdown。',
   'source.status.synced': '原始碼已同步到目前 Markdown 程式碼區塊。',
   'canvas.resizeHandle': '拖曳調整幕布高度',
-  'notice.configSaved': 'yonxao-mindmap: 配置已儲存。',
+
+  // ── 通知訊息 ──
+  'notice.configSaved': 'yonxao-mindmap: 設定已儲存。',
   'notice.topicCopied': 'yonxao-mindmap: 內容已複製。',
   'notice.bodyCopied': 'yonxao-mindmap: 正文已複製。',
   'notice.sourceCopied': 'yonxao-mindmap: 原始碼已複製。',
-  'notice.configCopied': 'yonxao-mindmap: 配置區已複製。',
+  'notice.configCopied': 'yonxao-mindmap: 設定區已複製。',
   'notice.imageExported': 'yonxao-mindmap: 圖片已匯出。',
   'notice.imageCopied': 'yonxao-mindmap: 圖片已複製。',
   'notice.imageClipboardUnsupported': 'yonxao-mindmap: 目前環境不支援複製圖片到剪貼簿。',
@@ -58,15 +64,20 @@ export const zhTWMessages = Object.freeze({
   'notice.topicContentRequired': 'yonxao-mindmap: 內容不能為空。',
   'notice.topicContentSaved': '內容已儲存。',
   'notice.subtopicAdded': '已新增子主題。',
-  'notice.siblingTopicAdded': '已新增同級主題。',
+  'notice.siblingTopicAdded': '已新增兄弟主題。',
   'notice.topicDeleted': '主題已刪除。',
-  'notice.rootCannotAddSibling': 'yonxao-mindmap: 根主題不能新增同級主題。',
-  'notice.rootCannotDeleteInMap': 'yonxao-mindmap: 根主題不能在導圖視圖中刪除。',
+  'notice.rootCannotAddSibling': 'yonxao-mindmap: 根主題不能新增兄弟主題。',
+  'notice.rootCannotDeleteInMap': 'yonxao-mindmap: 根主題不能在導圖檢視中刪除。',
   'notice.rootCannotDelete': 'yonxao-mindmap: 根主題不能刪除。',
+
+  // ── 編輯器選單 ──
   'editorMenu.insertMindMap': '插入思維導圖',
+
+  // ── 確認彈窗 ──
   'confirm.deleteTopic': '確定刪除「{topic}」嗎？',
   'confirm.deleteTopicWithDescendants': '確定刪除「{topic}」及其 {count} 個子主題嗎？',
 
+  // ── 主題編輯面板 ──
   'topicEditor.title': '主題編輯面板',
   'topicEditor.content': '內容',
   'topicEditor.expandText': '開啟大文字編輯器',
@@ -85,41 +96,44 @@ export const zhTWMessages = Object.freeze({
     "請輸入合法的 CSS font-family 清單，例如：'SimSun', 'Songti SC', serif",
   'topicEditor.editContentAria': '編輯內容',
   'topicEditor.save': '儲存',
-  'topicEditor.addSubtopic': '新增子主題',
-  'topicEditor.delete': '刪除',
   'topicEditor.cancel': '取消',
-  'topicButton.addSiblingLeft': '在左側新增同級主題',
-  'topicButton.addSiblingRight': '在右側新增同級主題',
-  'topicButton.addSiblingAbove': '在上方新增同級主題',
-  'topicButton.addSiblingBelow': '在下方新增同級主題',
+
+  // ── 主題按鈕 ──
+  'topicButton.addSiblingLeft': '在左側新增兄弟主題',
+  'topicButton.addSiblingRight': '在右側新增兄弟主題',
+  'topicButton.addSiblingBefore': '在前方新增兄弟主題',
+  'topicButton.addSiblingAfter': '在後方新增兄弟主題',
   'topicButton.addSubtopic': '新增子主題',
   'topicButton.editTopic': '編輯',
+
+  // ── 右鍵選單 ──
   'contextMenu.editTopic': '編輯',
   'contextMenu.topicEditPanel': '主題編輯面板',
   'contextMenu.copyTopicContent': '複製內容',
   'contextMenu.copySubtreeBody': '複製子樹',
   'contextMenu.copyIndentedSubtree': '複製縮排子樹',
   'contextMenu.addSubtopic': '新增子主題',
-  'contextMenu.addSiblingBefore': '在前方新增同級主題',
-  'contextMenu.addSiblingAfter': '在後方新增同級主題',
+  'contextMenu.addSiblingBefore': '在前方新增兄弟主題',
+  'contextMenu.addSiblingAfter': '在後方新增兄弟主題',
   'contextMenu.expandSubtopics': '展開子主題',
-  'contextMenu.collapseSubtopics': '折疊子主題',
+  'contextMenu.collapseSubtopics': '摺疊子主題',
   'contextMenu.expandAllSubtopics': '展開全部子主題',
-  'contextMenu.collapseAllSubtopics': '折疊全部子主題',
+  'contextMenu.collapseAllSubtopics': '摺疊全部子主題',
   'contextMenu.deleteTopic': '刪除主題',
   'contextMenu.copyBody': '複製正文',
   'contextMenu.copyIndentedBody': '複製縮排正文',
   'contextMenu.copySource': '複製原始碼',
-  'contextMenu.copyConfig': '複製配置區',
+  'contextMenu.copyConfig': '複製設定區',
   'contextMenu.exportPng': '匯出圖片',
   'contextMenu.copyPng': '複製圖片',
   'contextMenu.deleteMindMap': '刪除思維導圖',
 
-  'configModal.title': '配置面板',
-  'configModal.globalDefaultValueTitle': '全域預設值配置面板',
-  'configModal.info.label': '配置規則說明',
+  // ── 設定面板：標題、分頁、操作、狀態 ──
+  'configModal.title': '設定面板',
+  'configModal.globalDefaultValueTitle': '全域預設值設定面板',
+  'configModal.info.label': '設定規則說明',
   'configModal.info.tooltip':
-    '配置生效優先級：\n主題屬性 > 程式碼區塊配置區 > 外掛全域預設值配置 > 外掛內建預設值\n\n顏色優先級：\n主題屬性 color > 預設主題顏色 > 主題方案\n\n配置值儲存邏輯：\n當配置值與預設值（外掛全域預設值配置或外掛內建預設值中生效的值）相同，配置值會被消除以保持配置簡潔。',
+    '設定生效優先級：\n主題屬性 > 程式碼區塊設定區 > 外掛全域預設值設定 > 外掛內建預設值\n\n顏色優先級：\n主題屬性 color > 預設主題顏色 > 主題方案\n\n設定值儲存邏輯：\n當設定值與預設值（外掛全域預設值設定或外掛內建預設值中生效的值）相同，設定值會被消除以保持設定簡潔。',
   'configModal.tabs.display': '顯示',
   'configModal.tabs.structure': '結構',
   'configModal.tabs.color': '配色',
@@ -130,32 +144,40 @@ export const zhTWMessages = Object.freeze({
   'configModal.actions.saveAndClose': '儲存並關閉',
   'configModal.actions.cancel': '取消',
   'configModal.actions.close': '關閉',
-  'configModal.status.saved': '配置已儲存。',
-  'configModal.status.valid': '配置語法有效。',
-  'configModal.status.invalid': '配置語法錯誤：{message}',
+  'configModal.status.saved': '設定已儲存。',
+  'configModal.status.valid': '設定語法有效。',
+  'configModal.status.invalid': '設定語法錯誤：{message}',
 
+  // ── 設定面板：佔位符 ──
   'configModal.placeholder.auto': '自動',
   'configModal.placeholder.default': '預設',
 
+  // ── 設定面板：顯示分頁 ──
   'configModal.display.mapSection': '導圖區域',
   'configModal.display.canvasHeight': '導圖高度',
-  'configModal.display.canvasHeight.help': '留空表示自動高度。拖動幕布底部也會寫入這個值。',
-  'configModal.display.viewFit': '視圖適配',
+  'configModal.display.canvasHeight.help': '留空表示自動高度。拖曳幕布底部也會寫入這個值。',
+  'configModal.display.viewFit': '檢視適配',
   'configModal.display.viewFit.help':
-    '控制開啟導圖時的初始縮放方式。原始大小保持字號穩定；適配視圖會盡量顯示完整導圖。',
-  'configModal.display.fitViewNoUpscale': '適配視圖不放大',
+    '控制開啟導圖時的初始縮放方式。原始大小保持字號穩定；適配檢視會盡量顯示完整導圖。',
+  'configModal.display.fitViewNoUpscale': '適配檢視不放大',
   'configModal.display.fitViewNoUpscale.help':
-    '開啟後，適配視圖只會縮小過大的導圖；小圖保持接近原始比例，不再放大。',
-  'configModal.display.fitViewMaxScale': '適配視圖最大放大倍數',
+    '開啟後，適配檢視只會縮小過大的導圖；小圖保持接近原始比例，不再放大。',
+  'configModal.display.fitViewMaxScale': '適配檢視最大放大倍數',
   'configModal.display.fitViewMaxScale.help':
-    '關閉「適配視圖不放大」時生效，用於限制小圖在適配視圖中的最大放大倍數。',
+    '關閉「適配檢視不放大」時生效，用於限制小圖在適配檢視中的最大放大倍數。',
   'configModal.display.sourceSection': '原始碼區域',
   'configModal.display.sourceHeight': '原始碼高度',
   'configModal.display.sourceHeight.help': '原始碼模式有獨立高度，不影響導圖高度。',
   'configModal.display.saveFullConfig': '儲存全部設定項',
   'configModal.display.saveFullConfig.help':
-    '開啟後儲存所有設定值（包括預設值），便於分享或遷移後保持樣式一致；關閉時只儲存與預設值不同的設定，保持精簡。',
+    '開啟後儲存所有設定值（包括預設值），便於分享或遷移後保持樣式一致；關閉時只儲存與預設值不同的設定，保持設定區精簡。',
+  'configModal.viewFit.original': '原始大小',
+  'configModal.viewFit.fit': '適配檢視',
+  'configModal.topicControlVisibility.always': '始終顯示全部按鈕',
+  'configModal.topicControlVisibility.toggle-always': '摺疊按鈕常顯，其餘懸浮顯示',
+  'configModal.topicControlVisibility.hover': '全部按鈕懸浮顯示',
 
+  // ── 設定面板：互動分頁 ──
   'configModal.interaction.toolbarSection': '工具列',
   'configModal.interaction.toolbarCorner': '工具列角落',
   'configModal.interaction.toolbarPlacement': '工具列位置',
@@ -168,7 +190,7 @@ export const zhTWMessages = Object.freeze({
   'configModal.interaction.topicButtonSection': '主題按鈕',
   'configModal.interaction.topicControlVisibility': '主題按鈕顯示方式',
   'configModal.interaction.topicControlVisibility.help':
-    '控制導圖中編輯、折疊和新增主題按鈕的顯示時機。閱讀視圖仍會停用編輯類按鈕。',
+    '控制導圖中編輯、摺疊和新增主題按鈕的顯示時機。閱讀檢視仍會停用編輯類按鈕。',
   'configModal.interaction.inputSection': '滑鼠和鍵盤',
   'configModal.interaction.wheelZoom': '滑鼠滾輪縮放',
   'configModal.interaction.wheelZoom.help':
@@ -176,22 +198,18 @@ export const zhTWMessages = Object.freeze({
   'configModal.interaction.tabIndent': 'Tab 鍵調整主題級別',
   'configModal.interaction.tabIndent.help':
     '開啟後，原始碼模式中按 Tab / Shift+Tab 會調整目前行的主題級別。',
-  'configModal.viewFit.original': '原始大小',
-  'configModal.viewFit.fit': '適配視圖',
-  'configModal.topicControlVisibility.always': '始終顯示全部按鈕',
-  'configModal.topicControlVisibility.toggle-always': '折疊按鈕常顯，其餘懸浮顯示',
-  'configModal.topicControlVisibility.hover': '全部按鈕懸浮顯示',
 
+  // ── 設定面板：顏色分頁 ──
   'configModal.color.schemeSection': '配色方案',
   'configModal.color.scheme': '配色方案',
   'configModal.color.defaultTopicColor': '預設主題顏色',
   'configModal.color.defaultTopicColor.help':
     '留空則使用目前主題的自動配色。填寫後會覆蓋主題自動配色，但主題屬性 color 仍然優先。',
   'configModal.color.overrideWarning':
-    '目前主題會按分支自動配色；填寫預設主題顏色後，彩虹分支色將不會顯示。',
+    '目前主題會按分支自動配色；填寫預設主題顏色後，主題的彩虹分支色將不會顯示。',
   'configModal.color.buttonSection': '按鈕顏色',
   'configModal.color.buttonColorMode': '按鈕顏色',
-  'configModal.color.buttonColorMode.help': '折疊、編輯和新增按鈕的顏色模式。',
+  'configModal.color.buttonColorMode.help': '摺疊、編輯和新增按鈕的顏色模式。',
   'configModal.color.buttonColor.inherit-accent': '繼承Obsidian強調色',
   'configModal.color.buttonColor.subtle': '低調色',
   'configModal.color.buttonColor.topic': '主題色',
@@ -199,16 +217,16 @@ export const zhTWMessages = Object.freeze({
   'configModal.color.buttonColor': '自訂按鈕顏色',
   'configModal.color.buttonColor.help': '按鈕的自訂顏色，僅在模式為自訂時生效。',
 
+  // ── 設定面板：結構分頁 ──
   'configModal.structure.layoutSection': '佈局',
   'configModal.structure.layout': '佈局類型',
   'configModal.structure.connectorSection': '連線和展開',
   'configModal.structure.connectorStyle': '連線線型',
   'configModal.structure.connectorStyle.fixedHelp':
-    '只有心智圖佈局可以選擇連線線型；其他佈局為了保持結構語義，統一使用固定折線。',
+    '只有思維導圖佈局可以選擇連線線型；其他佈局為了保持結構語義，統一使用固定折線。',
   'configModal.structure.branchExpansion': '子主題展開方式',
   'configModal.structure.branchExpansion.elbowOnlyHelp':
     '子主題展開方式僅在實際連線線型為折線時生效。',
-  'configModal.structure.branchExpansion.unsupportedHelp': '目前佈局不支援子主題展開方式。',
   'configModal.structure.topicMaxWidthSection': '主題最大寬度',
   'configModal.structure.topicMaxWidth.help': '範圍：120-800 px。',
   'configModal.structure.topicMaxWidthGlobal': '全域',
@@ -218,6 +236,7 @@ export const zhTWMessages = Object.freeze({
   'configModal.branchExpansion.side': '自然展開',
   'configModal.branchExpansion.hanging': '下掛展開',
 
+  // ── 設定面板：字型分頁 ──
   'configModal.font.globalSection': '全域主題字型',
   'configModal.font.family': '主題字型',
   'configModal.font.family.help':
@@ -229,28 +248,29 @@ export const zhTWMessages = Object.freeze({
   'configModal.font.lineHeight': '主題行高',
   'configModal.font.lineHeight.help':
     '行高是 SVG 文字每行之間的像素距離，建議約為字號的 1.3-1.5 倍。',
-  'configModal.font.levelSection': '依層級覆蓋',
-  'configModal.font.levelTitle': '{marks} 層級',
+  'configModal.font.levelSection': '依主題級別覆蓋',
+  'configModal.font.levelTitle1': '一級主題',
+  'configModal.font.levelTitle2': '二級主題',
+  'configModal.font.levelTitle3': '三級主題',
   'configModal.font.clearLevel': '清除此層',
 
-  'configModal.source.section': '原始碼模式',
-  'configModal.source.tabIndent': 'Tab 鍵調整主題級別',
-  'configModal.source.height': '原始碼高度',
-  'configModal.advanced.section': '進階配置',
+  // ── 設定面板：進階分頁 ──
+  'configModal.advanced.section': '設定原始碼',
 
-  'configModal.layout.group.mindmap': '心智圖',
+  // ── 設定面板：佈局分組 ──
+  'configModal.layout.group.mindmap': '思維導圖',
   'configModal.layout.group.tree': '樹形圖',
   'configModal.layout.group.org': '組織結構圖',
   'configModal.layout.group.timeline': '時間軸',
   'configModal.layout.group.radial': '放射圖',
   'configModal.layout.group.fishbone': '魚骨圖',
   'configModal.layout.group.treeTable': '樹形表格',
-  'configModal.layout.mindmapRight': '右向心智圖',
-  'configModal.layout.mindmapLeft': '左向心智圖',
-  'configModal.layout.mindmapBidirectional': '雙向心智圖',
-  'configModal.layout.mindmapUp': '上向心智圖',
-  'configModal.layout.mindmapDown': '下向心智圖',
-  'configModal.layout.mindmapVertical': '垂直雙向心智圖',
+  'configModal.layout.mindmapRight': '右向思維導圖',
+  'configModal.layout.mindmapLeft': '左向思維導圖',
+  'configModal.layout.mindmapBidirectional': '雙向思維導圖',
+  'configModal.layout.mindmapUp': '上向思維導圖',
+  'configModal.layout.mindmapDown': '下向思維導圖',
+  'configModal.layout.mindmapVertical': '垂直雙向思維導圖',
   'configModal.layout.tree': '樹形圖',
   'configModal.layout.treeRight': '右向樹形圖',
   'configModal.layout.treeLeft': '左向樹形圖',
@@ -268,6 +288,7 @@ export const zhTWMessages = Object.freeze({
   'configModal.connector.straight': '直線',
   'configModal.connector.elbow': '折線',
 
+  // ── 設定面板：主題選擇 ──
   'configModal.color.default': '預設：跟隨 Obsidian',
   'configModal.color.ocean': '海洋：藍青技術感',
   'configModal.color.forest': '森林：綠色學習感',
@@ -277,6 +298,7 @@ export const zhTWMessages = Object.freeze({
   'configModal.color.pastelRainbow': '柔和彩虹：長期閱讀',
   'configModal.color.neonRainbow': '霓虹彩虹：深色展示',
 
+  // ── 字型下拉 ──
   'font.group.inherit': '繼承與自訂',
   'font.group.obsidian': 'Obsidian',
   'font.group.chinese': '中文常用',
@@ -301,6 +323,7 @@ export const zhTWMessages = Object.freeze({
   'font.system.monospace': '系統等寬字型',
   'font.monospace.cjkStack': '中文等寬字型棧',
   'font.monospace.sarasa': '更紗黑體 Mono',
+  'font.monospace.lxgwwenkai': '霞鶩文楷等寬',
   'font.monospace.jetbrains': 'JetBrains Mono',
   'font.monospace.cascadia': 'Cascadia Mono',
 });
