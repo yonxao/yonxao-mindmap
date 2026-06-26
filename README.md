@@ -1,328 +1,291 @@
 # yonxao-mindmap
 
-[中文文档](README.zh-CN.md)
+A feature-rich Obsidian mind map plugin that renders `yxmm` code blocks in Markdown documents as interactive SVG mind maps and various structural diagrams.
 
-yonxao-mindmap renders Markdown-heading-style `yxmm` code blocks as interactive SVG mind maps in Obsidian.
+[中文 README](README.zh-CN.md)
 
-## Usage
+Demo screenshot:
+
+![Demo Screenshot](./docs/assets/演示截图.png)
+
+## ✨ Core Features
+
+- 🎨 **Rich Layout Types**: 7 categories with 20 layouts, including mind maps (right/left/bidirectional/up/down/vertical), tree diagrams, organization charts, timelines, radial maps, fishbone diagrams, and tree tables
+- 🎯 **Intuitive Syntax**: Use topic-level markers (`#`, `##`, `###`) to express hierarchy naturally and fluently
+- 🖱️ **Full Interactive Editing**: Double-click editing, drag-and-drop sorting, right-click menus, collapse/expand — support complete topic tree editing
+- 🎨 **8 Theme Color Schemes**: default, ocean, forest, sunset, mono, rainbow, pastel-rainbow, neon-rainbow
+- 🔗 **Flexible Connector Styles**: Curve, straight, and elbow connectors — freely switchable in mind map layouts
+- 📐 **Custom Fonts**: Support setting font family, size, weight, and line height per topic level
+- 🖼️ **Export Functionality**: Export PNG images or copy to clipboard
+- 🌐 **Multi-language Support**: 16 languages, automatically follows Obsidian language settings
+- ⚙️ **Visual Configuration Panel**: Intuitive configuration interface supporting global defaults and per-code-block configuration
+- 📱 **Responsive Design**: Adapts to different screen sizes and Obsidian themes
+
+## 🚀 Quick Start
+
+### Basic Usage
+
+- Create a `yxmm` code block in your Markdown document:
+
+  Moving the cursor out of the code block will display it as a mind map.
+
+  ````markdown
+  ```yxmm
+
+  ```
+  ````
+
+- Right-click menu
+
+  Right-click in an Obsidian note: click `Insert Mind Map`.
+
+  ![Right-click Menu Create](./docs/assets/右键菜单创建.png)
+
+### Complete Example
+
+````markdown
+```yxmm
+---
+structure:
+  layout: mindmap-right
+  connectorStyle: curve
+color:
+  scheme: ocean
+---
+
+# Central Topic
+## Branch Topic A
+### Subtopic A1
+### Subtopic A2
+## Branch Topic B
+### Subtopic B1
+```
+````
+
+## 📝 Syntax Reference
+
+### Topic Hierarchy
+
+- Use topic-level markers to represent hierarchy: `#` is a level-1 topic, `##` is a level-2 topic, `###` is a level-3 topic, and so on.
+- Only topic-level marker lines like `#`, `##`, `###` create new topics; ordinary text lines merge into the nearest previous topic as multi-line content.
+
+| Marker | Meaning                           |
+| ------ | --------------------------------- |
+| `#`    | Level-1 topic (central / root)    |
+| `##`   | Level-2 topic (branch topic)      |
+| `###`  | Normal topic (level-3 and deeper) |
+
+### Multi-line Topics
+
+Ordinary text lines merge into the nearest previous topic as multi-line content:
+
+````markdown
+```yxmm
+# Central Topic
+## Multi-line Topic Example
+This is the second line
+This is the third line
+### Subtopic
+```
+````
+
+### Topic Attributes
+
+Add attributes in `[key=value]` format at the end of a topic-level marker line:
+
+````markdown
+```yxmm
+# Central Topic [color=#3b82f6]
+## Branch Topic [icon=book layout=mindmap-right]
+### Subtopic [fontSize=14 fontWeight=700]
+```
+````
+
+Supported attributes:
+
+- `color=#3b82f6`: Topic color
+- `icon=book`: Topic icon
+- `layout=mindmap-right`: Local layout type
+- `fontSize=16`, `fontWeight=700`, `fontFamily="..."`, `lineHeight=20`: Font overrides
+
+### Config Block
+
+Add a YAML config block wrapped in `---` at the top of the code block:
 
 ````markdown
 ```yxmm
 ---
 display:
-  canvasHeight: 420
-  sourceHeight: 520
   viewFit: fit
+  fitViewNoUpscale: true
+  saveFullConfig: true
 structure:
   layout: mindmap-right
   connectorStyle: curve
   topicMaxWidth:
     global: 240
 color:
-  scheme: ocean
+  scheme: rainbow
+  buttonColorMode: topic
 font:
+  family: "var(--font-text)"
   size: 16
   weight: 400
   lineHeight: 20
-  level1:
-    size: 18
-    weight: 700
 interaction:
   toolbar:
     corner: top-right
     placement: outside
-  tabIndent: true
+  topicControlVisibility: toggle-always
   wheelZoom: false
+  tabIndent: true
 ---
 
-# AI学习 [color=#3b82f6 layout=mindmap-right]
-
-## 基础 [icon=book]
-
-### 计算机网络
-
-### 操作系统
-
-## AI [color=#10b981]
-
-### Transformer
-
-### RAG
+# Central Topic
+## Branch Topic
 ```
 ````
 
-## Syntax
+## 🎨 Layout Types
 
-- Markdown headings define hierarchy: `#` is the center topic, `##` is level 2, `###` is level 3, and so on.
-- Non-empty lines inside `yxmm` blocks must use Markdown headings.
-- Attributes are written at the end of a line with `[key=value]`.
-- Supported attributes:
-  - `color=#3b82f6`
-  - `layout=mindmap-right`, `layout=mindmap-left`, `layout=mindmap-bidirectional`
-  - `icon=book`
-  - `fontSize=16`, `fontWeight=700`, `fontFamily="..."`, `lineHeight=20`
+### Mind Maps
 
-## Glossary
+- `mindmap-right`: Rightward mind map (default)
+- `mindmap-left`: Leftward mind map
+- `mindmap-bidirectional`: Bidirectional mind map
+- `mindmap-up`: Upward mind map
+- `mindmap-down`: Downward mind map
+- `mindmap-vertical`: Vertical bidirectional mind map
 
-yonxao-mindmap uses these terms consistently across docs, config, UI text, and code comments.
+### Tree Diagrams
 
-### Basic Structure
+- `tree`: Tree diagram
+- `tree-right`: Rightward tree diagram
+- `tree-left`: Leftward tree diagram
 
-| 中文术语    | English Term    | yxmm Term / Config Key | Purpose                                                                                  |
-| ----------- | --------------- | ---------------------- | ---------------------------------------------------------------------------------------- |
-| yxmm 代码块 | yxmm code block | <code>```yxmm</code>   | The smallest unit the plugin reads and saves.                                            |
-| 配置区      | config block    | `--- ... ---`          | Stores global settings such as theme, layout, font, toolbar position, and canvas height. |
-| 正文区      | body            | Markdown headings      | Describes the topic tree with Markdown headings.                                         |
-| 源码模式    | source mode     | `source`               | Edits raw `yxmm` text.                                                                   |
-| 导图模式    | map mode        | -                      | Shows the visual SVG rendering of the `yxmm` block.                                      |
-| 主题级别    | heading level   | `#` / `##` / `###`     | Represents hierarchy; `#` is level 1.                                                    |
+### Organization Charts
 
-### Content Components
+- `org`: Organization chart
+- `org-right`: Rightward organization chart
 
-| 中文术语 | English Term      | yxmm Term / Config Key                | Purpose                                                  |
-| -------- | ----------------- | ------------------------------------- | -------------------------------------------------------- |
-| 主题     | topic             | heading line                          | A visual unit generated from one Markdown heading line.  |
-| 中心主题 | center topic      | `#`                                   | The root topic and core topic.                           |
-| 分支主题 | branch topic      | `##`                                  | A first-level branch under the center topic.             |
-| 子主题   | subtopic          | `###` and deeper headings             | A descendant topic under a branch topic.                 |
-| 内容     | Content           | content                               | The content displayed inside a topic.                    |
-| 主题属性 | Topic Attribute   | `[key=value]`                         | A per-topic setting written at the end of topic content. |
-| 主题颜色 | Topic Color       | `[color=#...]`                        | Sets a single topic's color.                             |
-| 主题图标 | Topic Icon        | `[icon=book]`                         | Sets a single topic's icon.                              |
-| 主题字体 | Topic Font Family | `[fontFamily="..."]` / `font.family`  | Sets the topic content font family.                      |
-| 主题字号 | Topic Font Size   | `[fontSize=16]` / `font.size`         | Sets the topic content font size.                        |
-| 主题字重 | Topic Font Weight | `[fontWeight=700]` / `font.weight`    | Sets the topic content font weight.                      |
-| 主题行高 | Topic Line Height | `[lineHeight=20]` / `font.lineHeight` | Sets line spacing for multi-line content.                |
-| 局部配置 | Local Config      | topic attribute                       | A setting that only affects a single topic.              |
-| 全局配置 | Global Config     | config block                          | A setting that affects the whole map by default.         |
-| 配置项   | Config Key        | YAML key                              | A concrete field inside the config block.                |
+### Timelines
 
-### Relationship Structure
+- `timeline`: Timeline
+- `timeline-up`: Upper-side timeline
+- `timeline-down`: Lower-side timeline
 
-| 中文术语 | English Term  | yxmm Term / Config Key     | Purpose                                                          |
-| -------- | ------------- | -------------------------- | ---------------------------------------------------------------- |
-| 父主题   | parent topic  | -                          | The direct ancestor of the current topic.                        |
-| 子主题   | child topic   | -                          | The direct descendant of the current topic.                      |
-| 兄弟主题 | sibling topic | -                          | A topic with the same parent.                                    |
-| 叶子主题 | leaf topic    | -                          | A topic without children.                                        |
-| 子树     | subtree       | -                          | A topic plus all of its descendants.                             |
-| 连线     | connector     | `structure.connectorStyle` | Shows the relationship between a parent topic and a child topic. |
-| 子线出口 | child outlet  | -                          | The point where a connector exits a topic toward its children.   |
+### Radial Maps
 
-### Layout Structures
+- `radial`: Radial map
 
-| 中文术语 | English Term | yxmm Term / Config Key | Purpose                                                     |
-| -------- | ------------ | ---------------------- | ----------------------------------------------------------- |
-| 布局结构 | layout       | `structure.layout`     | The config key that directly stores the layout type.        |
-| 布局分组 | layout group | -                      | Groups layout types so they are easier to choose and learn. |
-| 布局类型 | layout type  | `structure.layout`     | Controls how topics and connectors are arranged.            |
+### Fishbone Diagrams
 
-| 布局分组   | English Term       | yxmm Layout Types                                                                                               | Purpose                                                                           |
-| ---------- | ------------------ | --------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------- |
-| 思维导图   | mind map           | `mindmap-right` / `mindmap-left` / `mindmap-bidirectional` / `mindmap-up` / `mindmap-down` / `mindmap-vertical` | Branches from the center topic in one or more directions.                         |
-| 树形图     | tree diagram       | `tree` / `tree-right` / `tree-left`                                                                             | Emphasizes trunk and hierarchy expansion.                                         |
-| 组织结构图 | organization chart | `org` / `org-right`                                                                                             | Emphasizes parent-child hierarchy and level alignment.                            |
-| 时间轴     | timeline           | `timeline` / `timeline-up` / `timeline-down`                                                                    | Places branch topics on a horizontal axis with descendants above, below, or both. |
-| 放射图     | radial map         | `radial`                                                                                                        | Arranges first-level branches around the center topic.                            |
-| 鱼骨图     | fishbone diagram   | `fishbone-left`                                                                                                 | Renders a left-head fishbone diagram.                                             |
-|            |                    | `fishbone-right`                                                                                                | Renders a right-head fishbone diagram.                                            |
-| 树形表格   | tree table         | `tree-table` / `tree-table-stepped`                                                                             | Renders the topic tree as merged or stepped table cells.                          |
+- `fishbone-left`: Leftward fishbone diagram
+- `fishbone-right`: Rightward fishbone diagram
 
-### Fishbone-Specific Structure
+### Tree Tables
 
-| 中文术语 | English Term  | yxmm Term / Config Key | Purpose                                                                                                                      |
-| -------- | ------------- | ---------------------- | ---------------------------------------------------------------------------------------------------------------------------- |
-| 鱼头     | fish head     | `#`                    | The side where the center topic sits. The current implementation places the fish head on the left and the tail on the right. |
-| 主骨     | main spine    | -                      | The horizontal main line from fish head to fish tail.                                                                        |
-| 鱼尾     | fish tail     | -                      | The tail marker at the end of the main spine.                                                                                |
-| 大分支   | primary bone  | `##`                   | A first-level branch topic connected to the main spine by a diagonal bone.                                                   |
-| 斜骨线   | diagonal bone | -                      | The diagonal connector line between a primary bone and the main spine.                                                       |
-| 鱼刺主题 | rib topic     | `###`                  | A topic attached to a diagonal bone line.                                                                                    |
+- `tree-table`: Tree table
+- `tree-table-stepped`: Stepped tree table
 
-### Functional Components
+## 🖱️ Usage Guide
 
-| 中文术语      | English Term           | yxmm Term / Config Key                 | Purpose                                                             |
-| ------------- | ---------------------- | -------------------------------------- | ------------------------------------------------------------------- |
-| 悬浮工具栏    | floating toolbar       | `toolbar.corner` / `toolbar.placement` | Holds common action buttons and snaps to a dragged corner position. |
-| 配置面板      | config panel           | -                                      | Visually edits theme, layout, font, source, and advanced settings.  |
-| 主题编辑面板  | topic edit panel       | -                                      | Edits content, color, icon, layout, and related settings.           |
-| 编辑按钮      | edit button            | -                                      | Opens the topic editor; some compact layouts hide it.               |
-| 折叠/展开按钮 | collapse/expand button | -                                      | Hides or shows the current topic's subtree.                         |
-| 新增按钮      | add button             | -                                      | Adds a child topic or sibling topic.                                |
-| 右键菜单      | context menu           | -                                      | Provides topic actions such as add, delete, collapse, and expand.   |
-| 源码编辑区    | source editor          | -                                      | The text editing area in source mode.                               |
-| 工具栏抓手    | toolbar grip           | -                                      | Drags the floating toolbar.                                         |
-| 高度拖拽条    | height resize handle   | `canvas.height` / `source.height`      | Adjusts map canvas height or source-mode height.                    |
+### Basic Operations
 
-### Visual And Interaction Areas
+- **Double-click a topic**: Quickly edit topic content
+- **Click collapse button**: Collapse/expand subtopics
+- **Drag a topic**: Adjust sibling topic order or move to another position
+- **Right-click a topic**: Open context menu (add, delete, copy, collapse, etc.)
 
-| 中文术语     | English Term         | yxmm Term / Config Key | Purpose                                                                                                            |
-| ------------ | -------------------- | ---------------------- | ------------------------------------------------------------------------------------------------------------------ |
-| 幕布         | canvas               | `canvas.height`        | The visible area that hosts the SVG map.                                                                           |
-| 视口         | viewport             | -                      | The current SVG coordinate range being viewed; panning and zooming change it.                                      |
-| 主题卡片     | topic card           | -                      | The rectangular visual shape of a topic, including background, border, and radius.                                 |
-| 主题色系     | theme                | -                      | Controls the overall color scheme, distinct from topic.                                                            |
-| 默认主题颜色 | default topic color  | `topic.defaultColor`   | Overrides theme auto topic colors; topic attribute `color` still wins.                                             |
-| 字体         | font                 | `font.*`               | Controls topic content styling.                                                                                    |
-| 连线线型     | connector style      | `connector.style`      | Controls whether connectors are curved, straight, or orthogonal; currently configurable only for mind map layouts. |
-| 平移         | pan                  | -                      | Drags the canvas to change the viewport position.                                                                  |
-| 缩放         | zoom                 | -                      | Zooms the current viewport in or out.                                                                              |
-| 适配视图     | fit view             | -                      | Automatically adjusts the viewport so the map is shown as completely as possible.                                  |
-| 重置折叠状态 | reset collapse state | -                      | Clears current collapse records and expands all topics.                                                            |
-| 自动高度     | auto height          | -                      | Automatically calculates canvas height from map content.                                                           |
-| 手动高度     | manual height        | `canvas.height`        | The persisted canvas height after user resizing.                                                                   |
+### Toolbar Operations
 
-## Config Block
+- **Fit View**: Automatically adjust viewport to show the entire map
+- **Zoom in/out**: Adjust view zoom level
+- **Reset Collapse**: Expand all topics
+- **Config Panel**: Open visual configuration interface
+- **Source/Map Toggle**: Switch between source mode and map mode
+- **Export Image**: Export PNG image or copy to clipboard
 
-A `yxmm` block can start with a `---` config block. The config block stores global defaults, while Markdown headings continue to describe the mind map structure.
+### View Modes
 
-### Plugin Settings
+- **Reading View**: Browse only, editing functions disabled
+- **Editing View**: Full editing capability, supporting topic drag, add, delete, etc.
 
-Obsidian `Settings` -> `Community plugins` -> `yonxao-mindmap` provides a plugin-level global default value config panel.
+### Height Adjustment
 
-The settings page also includes a language option. The initial default follows the current Obsidian language; if that language is not supported yet, it falls back to English. Supported languages:
+- **Drag the bottom edge of the canvas**: Manually adjust canvas height
+- **Double-click the resize handle**: Restore auto height
 
-- English: fallback language.
-- Chinese Simplified.
-- Chinese Traditional.
-- Japanese.
-- Korean.
-- French.
-- German.
-- Spanish.
-- Portuguese (Brazil).
-- Russian.
-- Italian.
-- Indonesian.
-- Turkish.
-- Vietnamese.
-- Thai.
-- Hindi.
+## ⚙️ Configuration
 
-Global defaults are used as the base config for every `yxmm` block. A block-level config overrides global defaults, and topic attributes still override both:
+### Configuration Priority
 
-`topic attributes` > `block config` > `plugin global defaults` > `built-in defaults`
-
-This is useful for shared preferences such as theme, layout type, font, connector style, and mouse-wheel zoom. Obsidian stores these settings in the plugin's local `data.json`; they are not part of the release package and are not automatically written into every Markdown document.
-
-Supported config keys:
-
-- `canvas.height`: persisted canvas height. Drag the bottom handle to write it; double-click the handle to remove it and return to automatic height.
-- `toolbar.corner` / `toolbar.placement`: persisted floating toolbar snap position. `corner` can be `top-left`, `top-right`, `bottom-left`, or `bottom-right`; `placement` can be `inside` or `outside`. Dragging the toolbar grip snaps to the nearest position and writes it.
-- `interaction.wheelZoom`: whether the mouse wheel zooms the mind map. It is off by default; enabling it writes `true`, and disabling it can remove the key.
-- `theme`: built-in theme name: `default`, `ocean`, `forest`, `sunset`, `mono`, `rainbow`, `pastel-rainbow`, or `neon-rainbow`.
-- `layout`: layout type: `mindmap-right`, `mindmap-left`, `mindmap-bidirectional`, `mindmap-up`, `mindmap-down`, `mindmap-vertical`, `tree`, `tree-right`, `tree-left`, `org`, `org-right`, `timeline`, `timeline-up`, `timeline-down`, `radial`, `fishbone-left`, `fishbone-right`, `tree-table`, or `tree-table-stepped`.
-- `connector.style`: connector style, configurable only for mind map layouts. It can be `curve`, `straight`, or `elbow`. `curve` is a cubic Bezier curve, `straight` is a straight line, and `elbow` is an orthogonal connector. Tree diagrams, organization charts, timelines, radial maps, fishbone diagrams, and tree tables use a fixed elbow connector.
-- `font.family`, `font.size`, `font.weight`, `font.lineHeight`: global font defaults.
-- `font.levels.1`, `font.levels.2`: per-heading-level font overrides.
-- `topic.defaultColor`: unified topic color that overrides theme auto colors; topic attribute `color` still wins.
-- `topic.maxWidth`: maximum topic width before label wrapping.
-- `source.enableTabIndent`: whether Tab/Shift+Tab changes heading levels in source mode.
-- `source.height`: source-mode height, stored separately from map-mode `canvas.height`.
-
-Font priority:
-
-`topic attributes` > `font.levels[current level]` > `global font config` > `plugin defaults`
-
-Font ranges:
-
-- `size`: font size, from `9` to `96`.
-- `weight`: CSS font weight, from `100` to `900`.
-- `lineHeight`: SVG text line spacing in pixels, from `12` to `160`. A practical value is usually `1.3` to `1.5` times the font size.
-
-Theme color priority:
-
-`topic attribute color` > `topic.defaultColor` > `theme auto color`
-
-`rainbow`, `pastel-rainbow`, and `neon-rainbow` automatically assign colors by first-level branch.
-The center topic uses an independent center color from the theme. Topic attribute `color` changes only the topic itself, not the connector from its parent.
-Hex colors in the config block should be quoted, for example `defaultColor: '#66ed0c'`; the visual config panel writes quoted colors automatically.
-
-Layout types:
-
-- Mind map: `mindmap-right` right mind map, `mindmap-left` left mind map, `mindmap-bidirectional` bidirectional mind map, `mindmap-up` upward mind map, `mindmap-down` downward mind map, `mindmap-vertical` vertical bidirectional mind map.
-- Tree diagram: `tree` tree diagram, `tree-right` right tree diagram, `tree-left` left tree diagram.
-- Organization chart: `org` organization chart, `org-right` right organization chart.
-- Timeline: `timeline` timeline, `timeline-up` upper timeline, `timeline-down` lower timeline.
-- Radial map: `radial` radial map.
-- Fishbone diagram: `fishbone-left` left fishbone diagram, `fishbone-right` right fishbone diagram.
-- Tree table: `tree-table` tree table, `tree-table-stepped` stepped tree table.
-
-`mindmap-down` is still a mind-map layout focused on downward branching. `org` is an organization-chart layout focused on aligned hierarchy rows. `org-right` is a right organization-chart layout where first-level branches are arranged horizontally and deeper levels expand down-right from each branch.
-
-## Controls
-
-- The rendered mind map is available in both Reading view and editor/Live Preview.
-- Reading view is browse-focused; topic rename, add, delete, drag-sort, and topic context menus are enabled only in editor/Live Preview.
-- Click the collapse/expand dot next to a topic to collapse or expand its children.
-- Use the source/map button to switch between raw `yxmm` source and the rendered mind map.
-- In source view, edit the textarea; switching back to the mind map auto-saves, and Ctrl/Cmd+S also saves.
-- In source view, Tab/Shift+Tab promotes or demotes selected heading lines.
-- In editor/Live Preview mind map view, hover a topic and click the small edit button to edit content, color, icon, or layout.
-- Use the toolbar to fit view, zoom in, zoom out, or reset collapse state.
-- Use the toolbar settings button to open the visual config panel; common fields have select presets, and the advanced tab supports direct YAML editing.
-- Drag the toolbar grip to snap the floating toolbar to the nearest inside/outside corner position.
-- Drag the canvas to pan. By default, the mouse wheel keeps scrolling the Obsidian page; enable mouse-wheel zoom in the Basic tab of the config panel to zoom the current mind map with the wheel.
-- Drag the canvas height resize handle to set manual height. Double-click the handle to return to auto height.
-
-Edits are written back to the same `yxmm` code block in the current Markdown file.
-
-The plugin uses an open-source/commercial-friendly monospace font stack by default when those fonts are installed locally, such as Noto Sans Mono CJK SC, Source Han Mono SC, Sarasa Mono SC, Cascadia Mono, JetBrains Mono, and Liberation Mono.
-
-The visual config panel provides grouped font presets plus a custom font-family input:
-
-- Presets are grouped by inheritance/custom values, Obsidian fonts, common Chinese fonts, system fonts, and monospace fonts.
-- Common Chinese presets include Hei, Song, Kai, FangSong, Microsoft YaHei, PingFang SC, Source Han Sans, Source Han Serif, and LXGW WenKai.
-- Select `自定义` to type a CSS font-family value, for example `'LXGW WenKai', 'Source Han Sans SC', sans-serif`.
-- Browser environments cannot reliably list every installed system font, so the plugin uses curated candidates and normal CSS fallback behavior.
-
-## Built-in icons
-
-`book`, `brain`, `cpu`, `database`, `file`, `folder`, `tag`, `star`, `check`, `lightbulb`.
-
-Unknown icon names are rendered as a small text badge.
-
-## Development
-
-The maintainable source lives in `src/` and `styles/`.
-
-- Business source files under `src/` use ESM `import/export`.
-- Build scripts under `scripts/` use `.mjs`.
-- `src/main.js` is bundled by `scripts/build-js.mjs` to `dist/main.js`.
-- `styles/index.css` is merged by `scripts/build-css.mjs` to `dist/styles.css`.
-- `npm run release:prepare` creates a clean `dist/` directory with only the core files needed by Obsidian.
-- For local development with Obsidian Hot Reload, run `npm run dev:obsidian`; it runs `release:prepare` and then copies the root `.hotreload` marker to `dist/.hotreload`.
-- Edit source files first, then run `npm run release:prepare`.
-- Run `npm run validate` before committing changes.
-
-Use `dist/` for releases, manual installs, zip packaging, and local Hot Reload development.
-`package.json`, `manifest.json`, and `versions.json` are standard JSON files, so they cannot contain comments; documentation lives here and in nearby `.mjs` config files instead.
-
-### Release Directory
-
-Run:
-
-```bash
-npm run release:prepare
+```
+Topic attributes > Code block config > Plugin global defaults > Plugin built-in defaults
 ```
 
-It creates:
+### Global Default Configuration
 
-```text
-dist/
-  .hotreload  # generated only by npm run dev:obsidian for local Hot Reload development
-  main.js
-  manifest.json
-  styles.css
-```
+Set global defaults in Obsidian `Settings` → `Community plugins` → `yonxao-mindmap`. All `yxmm` code blocks will inherit these configurations.
 
-`main.js`, `manifest.json`, and `styles.css` are the core files needed in an Obsidian plugin installation directory.
-`.hotreload` is copied into `dist/` only for local development and should not be shipped in a formal release.
-A user-local `data.json` may be created by Obsidian for plugin settings and should not be shipped.
+### Language Support
 
-## License
+Language option is also available in preferences. The initial default language follows Obsidian's current language; if the Obsidian language is not yet supported, it falls back to English. Currently supported:
 
-Dual-licensed under AGPLv3 or a separate commercial license:
+- English: Fallback language.
+- 中文（简体）.
+- 中文（繁體）.
+- 日本語.
+- 한국어.
+- Français.
+- Deutsch.
+- Español.
+- Português (Brasil).
+- Русский.
+- Italiano.
+- Bahasa Indonesia.
+- Türkçe.
+- Tiếng Việt.
+- ไทย.
+- हिन्दी.
 
-- AGPLv3: see [LICENSE](LICENSE)
-- Commercial license: see [COMMERCIAL-LICENSE.md](COMMERCIAL-LICENSE.md)
+### Config Trimming
+
+When `display.saveFullConfig` is false (i.e., "Save full config" is turned off in the config panel), any config item whose value matches the global default will be trimmed to keep the config block concise.
+
+## 📦 Installation
+
+### Install from Obsidian Plugin Market
+
+1. Open Obsidian Settings
+2. Click `Community plugins`
+3. Click `Browse`
+4. Search for `yonxao-mindmap`
+5. Click `Install`, then click `Enable`
+
+### Manual Installation
+
+1. Download the latest `yonxao-mindmap.zip`
+2. Extract to your Obsidian plugins directory (`.obsidian/plugins/`)
+3. Enable the plugin in Obsidian settings
+
+## 📄 License
+
+This project uses AGPLv3 + Commercial dual licensing:
+
+- AGPLv3: See [LICENSE](LICENSE)
+- Commercial license: See [COMMERCIAL-LICENSE.md](COMMERCIAL-LICENSE.md)
+
+## 🤝 Contributing
+
+Issues and Pull Requests are welcome!
+
+## 📚 Documentation
+
+- [Development Context (Chinese)](docs/DEVELOPMENT_CONTEXT.zh-CN.md): Development collaboration memo including architecture, terminology, workflows, and FAQs
+- [Regression Test Checklist (Chinese)](docs/REGRESSION_TEST_CHECKLIST.zh-CN.md): Regression test checklist
+- [Example Gallery (Chinese)](examples/regression-layout-gallery.zh-CN.md): Collection of various layout examples
+
+---
+
+⭐ If this plugin helps you, please give it a star!

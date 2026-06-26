@@ -1,7 +1,7 @@
 # yonxao-mindmap 人工回归测试清单
 
 这份清单用于重构前后做人工回归。测试样例主要放在
-`examples/regression-layout-gallery.zh-CN.md`，建议把该文件内容放到 Obsidian 测试库中，
+`./regression-layout-gallery.zh-CN.md`，建议把该文件内容放到 Obsidian 测试库中，
 分别在 Live Preview 和阅读视图中检查。
 
 ## 测试原则
