@@ -65,6 +65,7 @@
  */
 .yonxao-mindmap-host.is-fullscreen .yonxao-mindmap-container,
 .yonxao-mindmap-host:fullscreen .yonxao-mindmap-container {
+  /* stylelint-disable-next-line declaration-no-important */
   height: calc(100vh - 32px) !important;
   max-height: none;
 }
@@ -118,6 +119,7 @@
  * 全屏保持一致的幕布高度行为。
  */
 .yonxao-mindmap-fs-overlay .yonxao-mindmap-container {
+  /* stylelint-disable-next-line declaration-no-important */
   height: calc(100vh - 32px) !important;
   max-height: none;
 }

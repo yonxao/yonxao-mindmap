@@ -30,6 +30,7 @@
   padding: 4px;
   border: 1px solid var(--background-modifier-border);
   border-radius: var(--yonxao-mindmap-radius-lg);
+  /* stylelint-disable-next-line declaration-block-no-duplicate-properties */
   background: var(--background-primary);
   background: color-mix(in srgb, var(--background-primary) 30%, transparent);
   box-shadow: var(--shadow-s);

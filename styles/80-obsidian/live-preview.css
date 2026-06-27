@@ -14,6 +14,7 @@
  * 作用：
  * 支持现代选择器的 Obsidian 环境中，解除包含导图的 cm-embed-block 裁剪。
  */
+/* stylelint-disable-next-line */
 .markdown-source-view.mod-cm6 .cm-embed-block:has(.yonxao-mindmap-host) {
   overflow: visible;
 }
