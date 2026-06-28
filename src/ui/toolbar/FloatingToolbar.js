@@ -9,6 +9,17 @@
  * YonxaoMindmapRenderer -> floatingToolbarMethods -> toolbarButtons/toolbarPosition。
  */
 
+import {
+  ICON_TOGGLE_SOURCE,
+  ICON_CONFIG,
+  ICON_FIT_VIEW,
+  ICON_WINDOW_FULLSCREEN_ENTER,
+  ICON_FULLSCREEN_ENTER,
+  ICON_ZOOM_IN,
+  ICON_ZOOM_OUT,
+  ICON_RESET_COLLAPSE,
+} from '../../icons/iconNames.js';
+
 const TOOLBAR_ZOOM_IN_FACTOR = 0.82;
 const TOOLBAR_ZOOM_OUT_FACTOR = 1.18;
 const TOOLBAR_HIDE_DELAY_MS = 140;
@@ -31,49 +42,62 @@ export const floatingToolbarMethods = {
     this.toggleViewButton = this.createToolbarButton(
       toolbar,
       this.t('toolbar.showSource'),
-      'code-2',
+      ICON_TOGGLE_SOURCE,
       async () => {
         await this.toggleSourceMode();
       }
     );
 
-    this.createToolbarButton(toolbar, this.t('toolbar.config'), 'settings', () => {
+    this.createToolbarButton(toolbar, this.t('toolbar.config'), ICON_CONFIG, () => {
       this.openConfigModal();
     });
 
     this.viewFitButton = this.createToolbarButton(
       toolbar,
       this.t('toolbar.fitView'),
-      'maximize',
+      ICON_FIT_VIEW,
       () => this.toggleViewFitMode()
     );
     this.mapActionButtons.push(this.viewFitButton);
+    this.windowFullscreenButton = this.createToolbarButton(
+      toolbar,
+      this.t('toolbar.enterWindowFullscreen'),
+      ICON_WINDOW_FULLSCREEN_ENTER,
+      () => this.toggleWindowFullscreen()
+    );
+    this.mapActionButtons.push(this.windowFullscreenButton);
     this.fullscreenButton = this.createToolbarButton(
       toolbar,
       this.t('toolbar.enterFullscreen'),
-      'maximize-2',
+      ICON_FULLSCREEN_ENTER,
       () => this.toggleFullscreen()
     );
     this.mapActionButtons.push(this.fullscreenButton);
     this.mapActionButtons.push(
-      this.createToolbarButton(toolbar, this.t('toolbar.zoomIn'), 'zoom-in', () =>
+      this.createToolbarButton(toolbar, this.t('toolbar.zoomIn'), ICON_ZOOM_IN, () =>
         this.zoomAtCenter(TOOLBAR_ZOOM_IN_FACTOR)
       )
     );
     this.mapActionButtons.push(
-      this.createToolbarButton(toolbar, this.t('toolbar.zoomOut'), 'zoom-out', () =>
+      this.createToolbarButton(toolbar, this.t('toolbar.zoomOut'), ICON_ZOOM_OUT, () =>
         this.zoomAtCenter(TOOLBAR_ZOOM_OUT_FACTOR)
       )
     );
     this.mapActionButtons.push(
-      this.createToolbarButton(toolbar, this.t('toolbar.resetCollapse'), 'refresh-cw', () => {
-        this.collapsedIds.clear();
-        this.renderMap(true);
-      })
+      this.createToolbarButton(
+        toolbar,
+        this.t('toolbar.resetCollapse'),
+        ICON_RESET_COLLAPSE,
+        () => {
+          this.collapsedIds.clear();
+          this.renderMap(true);
+        }
+      )
     );
 
     this.updateToggleViewButton();
     this.updateFullscreenButton();
+    this.updateWindowFullscreenButton();
     if (typeof document !== 'undefined') {
       this.registerDomEvent(document, 'fullscreenchange', () => this.handleFullscreenChange());
     }

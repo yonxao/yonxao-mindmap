@@ -23,6 +23,7 @@ import {
   TOPIC_EDITOR_DEFAULT_COLOR,
   TOPIC_EDITOR_COLOR_SWATCHES,
 } from '../../shared/rendererShared.js';
+import { ICON_EDITOR_EXPAND } from '../../icons/iconNames.js';
 
 export const topicEditorFieldMethods = {
   createTopicEditorContentField(contentInput) {
@@ -41,7 +42,7 @@ export const topicEditorFieldMethods = {
       'yonxao-mindmap-topic-editor-icon-button yonxao-mindmap-topic-editor-text-expand';
 
     try {
-      setIcon(expandButton, 'maximize-2');
+      setIcon(expandButton, ICON_EDITOR_EXPAND);
     } catch (_error) {
       expandButton.textContent = '...';
     }

@@ -129,9 +129,13 @@ export class YonxaoMindmapRenderer extends Component {
     this.fitRetryCount = 0;
     this.currentViewFitMode = null;
     this.isFullscreen = false;
+    this.isWindowFullscreen = false;
     this._fsOverlay = null;
     this._hostElParent = null;
     this._hostElNextSibling = null;
+    this._wfOverlay = null;
+    this._wfHostElParent = null;
+    this._wfHostElNextSibling = null;
   }
 }
 

@@ -17,6 +17,7 @@ import {
   setMindConfigPath,
   clamp,
 } from '../../shared/rendererShared.js';
+import { ICON_DRAG_HANDLE } from '../../icons/iconNames.js';
 
 const TOOLBAR_POSITION_GAP = 8;
 
@@ -28,7 +29,7 @@ export const toolbarPositionMethods = {
     handle.setAttribute('aria-label', this.t('toolbar.dragHandle'));
 
     try {
-      setIcon(handle, 'move');
+      setIcon(handle, ICON_DRAG_HANDLE);
     } catch (_error) {
       handle.textContent = '+';
     }

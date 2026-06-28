@@ -41,6 +41,8 @@ export const enMessages = Object.freeze({
   'toolbar.originalSize': 'Original size',
   'toolbar.enterFullscreen': 'Fullscreen',
   'toolbar.exitFullscreen': 'Exit fullscreen',
+  'toolbar.enterWindowFullscreen': 'Window fullscreen',
+  'toolbar.exitWindowFullscreen': 'Exit window fullscreen',
   'toolbar.zoomIn': 'Zoom in',
   'toolbar.zoomOut': 'Zoom out',
   'toolbar.resetCollapse': 'Reset collapse state',

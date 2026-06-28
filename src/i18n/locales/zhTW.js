@@ -38,6 +38,8 @@ export const zhTWMessages = Object.freeze({
   'toolbar.originalSize': '原始大小',
   'toolbar.enterFullscreen': '全螢幕檢視',
   'toolbar.exitFullscreen': '退出全螢幕',
+  'toolbar.enterWindowFullscreen': '視窗全螢幕',
+  'toolbar.exitWindowFullscreen': '退出視窗全螢幕',
   'toolbar.zoomIn': '放大',
   'toolbar.zoomOut': '縮小',
   'toolbar.resetCollapse': '重設摺疊狀態',

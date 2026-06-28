@@ -20,6 +20,7 @@ import { createTranslator, languageFromObsidianLocale } from '../i18n/messages.j
 import { renderPluginError } from '../obsidian/embed.js';
 import { YonxaoMindmapRenderer } from '../renderer/YonxaoMindmapRenderer.js';
 import { YonxaoMindmapSettingTab } from '../ui/YonxaoMindmapSettingTab.js';
+import { ICON_PLUGIN_RIBBON } from '../icons/iconNames.js';
 
 export class YonxaoMindmapPlugin extends Plugin {
   constructor(app, manifest) {
@@ -87,7 +88,7 @@ export class YonxaoMindmapPlugin extends Plugin {
       this.app.workspace.on('editor-menu', (menu, editor) => {
         menu.addItem((item) => {
           item
-            .setIcon('file-plus')
+            .setIcon(ICON_PLUGIN_RIBBON)
             .setTitle(this.t('editorMenu.insertMindMap'))
             .onClick(() => {
               editor.replaceSelection('```yxmm\n```\n');

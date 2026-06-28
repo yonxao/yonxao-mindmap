@@ -38,6 +38,8 @@ export const zhCNMessages = Object.freeze({
   'toolbar.originalSize': '原始大小',
   'toolbar.enterFullscreen': '全屏查看',
   'toolbar.exitFullscreen': '退出全屏',
+  'toolbar.enterWindowFullscreen': '窗口全屏',
+  'toolbar.exitWindowFullscreen': '退出窗口全屏',
   'toolbar.zoomIn': '放大',
   'toolbar.zoomOut': '缩小',
   'toolbar.resetCollapse': '重置折叠状态',

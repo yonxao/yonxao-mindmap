@@ -24,11 +24,23 @@ import {
   RESIZE_WIDTH_EPSILON,
 } from '../shared/rendererShared.js';
 
+import {
+  ICON_TOGGLE_SOURCE,
+  ICON_TOGGLE_MAP,
+  ICON_FIT_VIEW,
+  ICON_ORIGINAL_SIZE,
+  ICON_FULLSCREEN_ENTER,
+  ICON_FULLSCREEN_EXIT,
+  ICON_WINDOW_FULLSCREEN_ENTER,
+  ICON_WINDOW_FULLSCREEN_EXIT,
+} from '../icons/iconNames.js';
+
 export const rendererContextMethods = {
   onunload() {
     this.closeTopicEditor();
     this.closeInlineTextEditor(false);
     this.cleanupFullscreenOverlay();
+    this.cleanupWindowFullscreenOverlay();
     this.hostEl?.classList.remove('is-fullscreen');
     this.restoreToolbarToBody();
     if (this.topicEditorEl) {
@@ -246,7 +258,7 @@ export const rendererContextMethods = {
     if (!this.toggleViewButton) return;
 
     const label = this.isSourceMode ? this.t('toolbar.showMap') : this.t('toolbar.showSource');
-    const icon = this.isSourceMode ? 'git-branch' : 'code-2';
+    const icon = this.isSourceMode ? ICON_TOGGLE_MAP : ICON_TOGGLE_SOURCE;
     this.toggleViewButton.setAttribute('aria-label', label);
     this.toggleViewButton.setAttribute('aria-pressed', String(this.isSourceMode));
     this.toggleViewButton.textContent = '';
@@ -265,7 +277,7 @@ export const rendererContextMethods = {
 
     const isFit = this.currentViewFitMode === 'fit';
     const label = isFit ? this.t('toolbar.originalSize') : this.t('toolbar.fitView');
-    const icon = isFit ? 'minimize' : 'maximize';
+    const icon = isFit ? ICON_ORIGINAL_SIZE : ICON_FIT_VIEW;
     this.viewFitButton.setAttribute('aria-label', label);
     this.viewFitButton.setAttribute('aria-pressed', String(isFit));
     this.viewFitButton.textContent = '';
@@ -283,7 +295,7 @@ export const rendererContextMethods = {
     const label = this.isFullscreen
       ? this.t('toolbar.exitFullscreen')
       : this.t('toolbar.enterFullscreen');
-    const icon = this.isFullscreen ? 'minimize-2' : 'maximize-2';
+    const icon = this.isFullscreen ? ICON_FULLSCREEN_EXIT : ICON_FULLSCREEN_ENTER;
     this.fullscreenButton.setAttribute('aria-label', label);
     this.fullscreenButton.setAttribute('aria-pressed', String(this.isFullscreen));
     this.fullscreenButton.textContent = '';
@@ -292,6 +304,26 @@ export const rendererContextMethods = {
       setIcon(this.fullscreenButton, icon);
     } catch (_error) {
       this.fullscreenButton.textContent = label;
+    }
+  },
+
+  updateWindowFullscreenButton() {
+    if (!this.windowFullscreenButton) return;
+
+    const label = this.isWindowFullscreen
+      ? this.t('toolbar.exitWindowFullscreen')
+      : this.t('toolbar.enterWindowFullscreen');
+    const icon = this.isWindowFullscreen
+      ? ICON_WINDOW_FULLSCREEN_EXIT
+      : ICON_WINDOW_FULLSCREEN_ENTER;
+    this.windowFullscreenButton.setAttribute('aria-label', label);
+    this.windowFullscreenButton.setAttribute('aria-pressed', String(this.isWindowFullscreen));
+    this.windowFullscreenButton.textContent = '';
+
+    try {
+      setIcon(this.windowFullscreenButton, icon);
+    } catch (_error) {
+      this.windowFullscreenButton.textContent = label;
     }
   },
 

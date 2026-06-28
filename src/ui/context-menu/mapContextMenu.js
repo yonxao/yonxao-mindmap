@@ -10,41 +10,65 @@
  */
 
 import { Menu, Notice, CODE_BLOCK_NAME, findFenceBySection } from '../../shared/rendererShared.js';
+import {
+  ICON_COPY_BODY,
+  ICON_COPY_INDENTED_BODY,
+  ICON_COPY_SOURCE,
+  ICON_COPY_CONFIG,
+  ICON_EXPORT_PNG,
+  ICON_COPY_PNG,
+  ICON_FIT_VIEW,
+  ICON_ORIGINAL_SIZE,
+  ICON_DELETE_MINDMAP,
+} from '../../icons/iconNames.js';
 
 export const mapContextMenuMethods = {
   openMapContextMenu(event) {
+    // 复用主题菜单的菜单实例管理，关闭上一个跨实例右键菜单
+    this._closeCurrentContextMenu();
     const menu = new Menu();
+    menu.setUseNativeMenu(false);
+    this.plugin._currentContextMenu = menu;
+    this._setupMenuAutoClose(menu);
 
-    this.addTopicContextMenuItem(menu, this.t('contextMenu.copyBody'), 'copy', () =>
+    this.addTopicContextMenuItem(menu, this.t('contextMenu.copyBody'), ICON_COPY_BODY, () =>
       this.copyPlainBody()
     );
-    this.addTopicContextMenuItem(menu, this.t('contextMenu.copyIndentedBody'), 'list-tree', () =>
-      this.copyIndentedBody()
+    this.addTopicContextMenuItem(
+      menu,
+      this.t('contextMenu.copyIndentedBody'),
+      ICON_COPY_INDENTED_BODY,
+      () => this.copyIndentedBody()
     );
-    this.addTopicContextMenuItem(menu, this.t('contextMenu.copySource'), 'file-code', () =>
+    this.addTopicContextMenuItem(menu, this.t('contextMenu.copySource'), ICON_COPY_SOURCE, () =>
       this.copyFullSource()
     );
-    this.addTopicContextMenuItem(menu, this.t('contextMenu.copyConfig'), 'settings', () =>
+    this.addTopicContextMenuItem(menu, this.t('contextMenu.copyConfig'), ICON_COPY_CONFIG, () =>
       this.copyConfigSource()
     );
     menu.addSeparator();
 
-    this.addTopicContextMenuItem(menu, this.t('contextMenu.exportPng'), 'download', () =>
+    this.addTopicContextMenuItem(menu, this.t('contextMenu.exportPng'), ICON_EXPORT_PNG, () =>
       this.exportMapPng()
     );
-    this.addTopicContextMenuItem(menu, this.t('contextMenu.copyPng'), 'image', () =>
+    this.addTopicContextMenuItem(menu, this.t('contextMenu.copyPng'), ICON_COPY_PNG, () =>
       this.copyMapPng()
     );
     menu.addSeparator();
 
-    this.addTopicContextMenuItem(menu, this.t('toolbar.fitView'), 'scan', () => this.fitView());
-    this.addTopicContextMenuItem(menu, this.t('toolbar.originalSize'), 'maximize', () =>
+    this.addTopicContextMenuItem(menu, this.t('toolbar.fitView'), ICON_FIT_VIEW, () =>
+      this.fitView()
+    );
+    this.addTopicContextMenuItem(menu, this.t('toolbar.originalSize'), ICON_ORIGINAL_SIZE, () =>
       this.showOriginalSizeView()
     );
     menu.addSeparator();
 
-    this.addTopicContextMenuItem(menu, this.t('contextMenu.deleteMindMap'), 'trash-2', () =>
-      this.deleteMindMap()
+    this.addTopicContextMenuItem(
+      menu,
+      this.t('contextMenu.deleteMindMap'),
+      ICON_DELETE_MINDMAP,
+      () => this.deleteMindMap()
     );
 
     menu.showAtMouseEvent(event);

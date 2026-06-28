@@ -23,6 +23,7 @@ import {
   clamp,
 } from './configModalShared.js';
 import { DEFAULT_MIND_CONFIG } from '../../config/defaultMindConfig.js';
+import { ICON_CONFIG_INFO } from '../../icons/iconNames.js';
 
 // 配置模态框拖动时距离视口边缘的最小间隙，防止模态框被拖到屏幕外完全看不见。
 const MODAL_POSITION_GAP = 12;
@@ -105,7 +106,7 @@ export const configModalStateMethods = {
     const popoverId = `yonxao-mindmap-config-info-${Date.now().toString(36)}`;
     const labelId = `${popoverId}-label`;
     popoverEl.id = popoverId;
-    setIcon(buttonEl, 'info');
+    setIcon(buttonEl, ICON_CONFIG_INFO);
     const labelEl = buttonEl.createSpan({
       cls: 'yonxao-mindmap-config-info-label',
       text: this.t('configModal.info.label'),
