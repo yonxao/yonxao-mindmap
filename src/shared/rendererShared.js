@@ -11,7 +11,7 @@
 
 import { BUTTON_COLOR_PRESETS, DEFAULT_BUTTON_COLOR } from '../config/mindConfig.js';
 
-export { Menu, Notice, setIcon } from 'obsidian';
+export { Menu, Notice, setIcon, setTooltip } from 'obsidian';
 
 export {
   CODE_BLOCK_NAME,

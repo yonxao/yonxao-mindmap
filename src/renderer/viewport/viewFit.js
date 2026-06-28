@@ -46,10 +46,11 @@ export const viewFitMethods = {
   toggleViewFitMode() {
     if (this.currentViewFitMode === 'fit') {
       this.showOriginalSizeView();
-      return;
+    } else {
+      this.fitView();
     }
-
-    this.fitView();
+    // 兜底刷新按钮 tooltip，防止子方法因边界条件提前返回未更新
+    this.updateViewFitButton();
   },
 
   showOriginalSizeView(bounds, options = {}) {

@@ -42,7 +42,8 @@ export const sourceViewMethods = {
     this.sourceConfigInputEl.spellcheck = false;
     this.sourceConfigInputEl.wrap = 'off';
     this.sourceConfigInputEl.id = `${this.sourceViewIdPrefix}-config`;
-    this.sourceConfigInputEl.setAttribute('aria-label', this.t('source.tab.config'));
+    // 源码模式下不设置 tooltip（aria-label），用户通过 Tab 按钮文字即可区分
+    // 移除时保留 role='tabpanel' 以供屏幕阅读器识别所属区域
     this.sourceConfigInputEl.setAttribute('role', 'tabpanel');
 
     this.sourceInputEl = document.createElement('textarea');
@@ -50,7 +51,6 @@ export const sourceViewMethods = {
     this.sourceInputEl.spellcheck = false;
     this.sourceInputEl.wrap = 'off';
     this.sourceInputEl.id = `${this.sourceViewIdPrefix}-body`;
-    this.sourceInputEl.setAttribute('aria-label', this.t('source.tab.body'));
     this.sourceInputEl.setAttribute('role', 'tabpanel');
 
     const sourceConfigEditor = createSourceCodeEditor(this.sourceConfigInputEl, {

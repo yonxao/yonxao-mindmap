@@ -9,7 +9,7 @@
  * FloatingToolbar -> toolbarButtonMethods -> renderer actions。
  */
 
-import { Notice, setIcon } from '../../shared/rendererShared.js';
+import { Notice, setIcon, setTooltip } from '../../shared/rendererShared.js';
 
 export const toolbarButtonMethods = {
   createToolbarButton(toolbar, label, icon, onClick) {
@@ -17,6 +17,7 @@ export const toolbarButtonMethods = {
     button.type = 'button';
     button.className = 'yonxao-mindmap-toolbar-button';
     button.setAttribute('aria-label', label);
+    setTooltip(button, label);
 
     try {
       setIcon(button, icon);

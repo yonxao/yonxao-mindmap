@@ -12,6 +12,7 @@
 import {
   Notice,
   setIcon,
+  setTooltip,
   canonicalizeMindConfig,
   hasMeaningfulConfig,
   serializeMindSource,
@@ -261,6 +262,7 @@ export const rendererContextMethods = {
     const icon = this.isSourceMode ? ICON_TOGGLE_MAP : ICON_TOGGLE_SOURCE;
     this.toggleViewButton.setAttribute('aria-label', label);
     this.toggleViewButton.setAttribute('aria-pressed', String(this.isSourceMode));
+    setTooltip(this.toggleViewButton, label);
     this.toggleViewButton.textContent = '';
 
     try {
@@ -280,6 +282,7 @@ export const rendererContextMethods = {
     const icon = isFit ? ICON_ORIGINAL_SIZE : ICON_FIT_VIEW;
     this.viewFitButton.setAttribute('aria-label', label);
     this.viewFitButton.setAttribute('aria-pressed', String(isFit));
+    setTooltip(this.viewFitButton, label);
     this.viewFitButton.textContent = '';
 
     try {
@@ -298,6 +301,7 @@ export const rendererContextMethods = {
     const icon = this.isFullscreen ? ICON_FULLSCREEN_EXIT : ICON_FULLSCREEN_ENTER;
     this.fullscreenButton.setAttribute('aria-label', label);
     this.fullscreenButton.setAttribute('aria-pressed', String(this.isFullscreen));
+    setTooltip(this.fullscreenButton, label);
     this.fullscreenButton.textContent = '';
 
     try {
@@ -318,6 +322,7 @@ export const rendererContextMethods = {
       : ICON_WINDOW_FULLSCREEN_ENTER;
     this.windowFullscreenButton.setAttribute('aria-label', label);
     this.windowFullscreenButton.setAttribute('aria-pressed', String(this.isWindowFullscreen));
+    setTooltip(this.windowFullscreenButton, label);
     this.windowFullscreenButton.textContent = '';
 
     try {
