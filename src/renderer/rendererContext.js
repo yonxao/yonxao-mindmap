@@ -114,7 +114,8 @@ export const rendererContextMethods = {
 
     this.createToolbar();
     this.createSvg();
-    this.createSourceView();
+    // 源码视图延迟到首次切换源码模式时创建（ensureSourceViewCreated），
+    // 避免 mount 时创建大量 DOM 影响首次渲染速度。
     this.createTopicEditor();
     this.createHeightResizeHandle();
     this.applyRuntimeConfigToView();
@@ -124,7 +125,6 @@ export const rendererContextMethods = {
     if (parseError) {
       this.showSourceMode(parseError);
     }
-    this.scheduleFitView();
     this.scheduleApplyToolbarPosition();
 
     this.registerDomEvent(window, 'resize', () => {
@@ -189,6 +189,15 @@ export const rendererContextMethods = {
       this.scheduleApplyToolbarPosition();
     });
     this.containerResizeObserver.observe(this.containerEl);
+
+    // renderMap(true) 已处理首次适配，记录当前容器宽度避免 ResizeObserver
+    // 首次回调重复触发 scheduleFitView
+    if (this.containerEl) {
+      const initialWidth = this.containerEl.getBoundingClientRect().width || 0;
+      if (initialWidth) {
+        this.lastObservedContainerWidth = initialWidth;
+      }
+    }
   },
 
   installEventBoundary() {
@@ -219,7 +228,15 @@ export const rendererContextMethods = {
       });
     }
   },
-
+  /*
+   * 作用：
+   * 确保源码视图已创建。延迟创建可减少 mount 时的 DOM 创建量。
+   * 首次切换源码模式时创建，后续复用。
+   */
+  ensureSourceViewCreated() {
+    if (this.sourceEl) return;
+    this.createSourceView();
+  },
   async toggleSourceMode() {
     // 如果用户在源码模式已经改过内容，切回导图前先尝试保存。
     // 这样可以保证“导图视图看到的内容”和“Markdown 文件里的源码”是一致的。
@@ -240,6 +257,7 @@ export const rendererContextMethods = {
 
     if (this.isSourceMode) {
       this.closeTopicEditor();
+      this.ensureSourceViewCreated();
       this.syncSourceInput();
       this.scheduleSourceModeHeight();
     } else {
@@ -260,6 +278,7 @@ export const rendererContextMethods = {
     }
 
     this.closeTopicEditor();
+    this.ensureSourceViewCreated();
     this.syncSourceInput();
     this.updateSourceStatus(statusMessage);
     this.rememberViewModeConfig();

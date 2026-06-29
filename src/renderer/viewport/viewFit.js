@@ -30,6 +30,7 @@ import {
   FOCUS_RATIO_BIAS_THRESHOLD,
   FOCUS_RATIO_BIASED,
   FOCUS_RATIO_CENTER,
+  RESIZE_WIDTH_EPSILON,
 } from '../../shared/rendererShared.js';
 import { canvasToMapX, canvasToMapY } from './viewportMath.js';
 
@@ -285,18 +286,22 @@ export const viewFitMethods = {
 
     const run = () => {
       this.pendingFitFrame = null;
+      // 记录首次刷新时的容器宽度，用于判断第二次刷新是否必要
+      const containerWidth = this.containerEl?.getBoundingClientRect().width || 0;
       refresh();
+      this.scheduleApplyToolbarPosition();
+      window.setTimeout(() => {
+        // 仅当容器宽度在首次刷新后发生变化时才做第二次刷新，
+        // 避免 Live Preview 初始布局未稳定时导图显示不正确。
+        const currentWidth = this.containerEl?.getBoundingClientRect().width || 0;
+        if (Math.abs(currentWidth - containerWidth) < RESIZE_WIDTH_EPSILON) return;
+        refresh();
+        this.scheduleApplyToolbarPosition();
+      }, VIEW_FIT_REFRESH_DELAY_MS);
     };
 
     if (typeof window !== 'undefined' && typeof window.requestAnimationFrame === 'function') {
-      this.pendingFitFrame = window.requestAnimationFrame(() => {
-        run();
-        this.scheduleApplyToolbarPosition();
-        window.setTimeout(() => {
-          refresh();
-          this.scheduleApplyToolbarPosition();
-        }, VIEW_FIT_REFRESH_DELAY_MS);
-      });
+      this.pendingFitFrame = window.requestAnimationFrame(run);
     } else {
       this.pendingFitFrame = setTimeout(run, 0);
     }
