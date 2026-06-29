@@ -198,7 +198,7 @@ export const viewFitMethods = {
   },
 
   getFitViewBox(contentViewBox) {
-    if (this.isFullscreen || !this.containerEl) return contentViewBox;
+    if (this.isFullscreen || this.isWindowFullscreen || !this.containerEl) return contentViewBox;
 
     const rect = this.containerEl.getBoundingClientRect();
     if (!rect.width) return contentViewBox;
@@ -218,7 +218,7 @@ export const viewFitMethods = {
   getAutoCanvasMaxHeight() {
     const viewportHeight =
       typeof window === 'undefined' ? AUTO_CANVAS_FALLBACK_VIEWPORT_HEIGHT : window.innerHeight;
-    if (this.isFullscreen) {
+    if (this.isFullscreen || this.isWindowFullscreen) {
       return Math.max(AUTO_CANVAS_MIN_HEIGHT, viewportHeight - FULLSCREEN_VIEWPORT_OFFSET);
     }
 
@@ -242,7 +242,7 @@ export const viewFitMethods = {
     this.fitRetryCount = 0;
 
     const minHeight = TOPIC_MIN_HEIGHT + VIEWBOX_MARGIN_Y * 2;
-    if (this.isFullscreen) {
+    if (this.isFullscreen || this.isWindowFullscreen) {
       return;
     }
 

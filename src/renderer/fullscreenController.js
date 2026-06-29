@@ -87,6 +87,16 @@ export const fullscreenControllerMethods = {
   applyWindowFullscreenEntered() {
     if (!this.hostEl) return;
 
+    /*
+     * 缓存窗口全屏前的编辑能力状态。
+     *
+     * 窗口全屏会把 hostEl 移出 Obsidian 编辑器的 DOM 树（挂到 body 下的覆盖层），
+     * 导致 canEditMindMap() 通过 hostEl.closest() 无法再定位到编辑容器，
+     * 从而让添加/编辑/删除主题等操作失效。
+     * 这里提前缓存编辑能力，在窗口全屏期间覆盖 canEditMindMap() 的判断。
+     */
+    this._canEditBeforeFullscreen = this.canEditMindMap();
+
     // 统一使用 body 级覆盖层，避免编辑视图下 position: fixed 受 CodeMirror
     // 祖先容器的 transform/will-change 影响导致导图消失。
     this._wfOverlay = document.createElement('div');
@@ -107,6 +117,7 @@ export const fullscreenControllerMethods = {
 
   applyWindowFullscreenExited() {
     if (!this.hostEl) return;
+    this._canEditBeforeFullscreen = undefined;
 
     // 恢复 hostEl 到原位置
     if (this._wfHostElParent) {
@@ -158,6 +169,7 @@ export const fullscreenControllerMethods = {
 
   cleanupFullscreenOverlay() {
     if (!this._fsOverlay) return;
+    this._canEditBeforeFullscreen = undefined;
     this._restoreBodyFloatPanelsToBody();
     if (this._hostElParent) {
       if (this._hostElNextSibling && this._hostElNextSibling.parentNode === this._hostElParent) {
@@ -281,6 +293,7 @@ export const fullscreenControllerMethods = {
   },
 
   cleanupWindowFullscreenOverlay() {
+    this._canEditBeforeFullscreen = undefined;
     this._restoreBodyFloatPanelsToBody();
     if (this._wfHostElParent) {
       if (
