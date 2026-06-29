@@ -1,8 +1,16 @@
 # yonxao-mindmap
 
+[![GitHub Release](https://img.shields.io/github/v/release/yonxao/yonxao-mindmap?logo=github&logoColor=white)](https://github.com/yonxao/yonxao-mindmap/releases/latest)
+[![Obsidian](https://img.shields.io/badge/Obsidian-1.12.7%2B-7C3AED?logo=obsidian&logoColor=white)](https://community.obsidian.md/plugins/yonxao-mindmap)
+[![Platform](https://img.shields.io/badge/Platform-desktop%20%26%20mobile-5865F2)](https://github.com/yonxao/yonxao-mindmap/blob/main/manifest.json)
+[![License](https://img.shields.io/github/license/yonxao/yonxao-mindmap)](https://github.com/yonxao/yonxao-mindmap/blob/main/LICENSE)
+[![中文文档](https://img.shields.io/badge/中文文档-查看-blue?logo=readthedocs&logoColor=white)](https://github.com/yonxao/yonxao-mindmap/blob/main/README.zh-CN.md)
+
 A feature-rich Obsidian mind map plugin that renders `yxmm` code blocks in Markdown documents as interactive SVG mind maps and various structural diagrams.
 
-[中文 README](README.zh-CN.md)
+这是一个功能丰富的 Obsidian 思维导图插件，将 Markdown 文档中的 `yxmm` 代码块渲染为可交互的 SVG 思维导图及多种结构图。
+
+[中文文档](./README.zh-CN.md)
 
 Demo screenshot:
 
