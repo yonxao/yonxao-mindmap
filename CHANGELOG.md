@@ -9,7 +9,39 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [1.1.0] - 2026-06-29
+
+### Added
+
+- **Window fullscreen mode**: full-screen the mind map within the app window instead of the entire display.
+- **Tooltips** for all toolbar and view buttons.
+- README badges and localization notes for both English and Chinese documentation.
+
+### Fixed
+
+- UI element occlusion issues in fullscreen mode.
+- Mind map editing being disabled when in window fullscreen state.
+
+### Refactored
+
+- Optimized initial rendering performance and view adaptation logic for better responsiveness.
+
+### 新增
+
+- **窗口全屏功能**：在应用窗口内全屏显示导图，而非整个显示器。
+- 为工具栏和视图按钮添加 **tooltip 支持**。
+- 更新两个语言的 README 文档，添加项目徽章和本地化说明。
+
+### 修复
+
+- 修复全屏模式下各类 UI 元素遮挡问题。
+- 修复窗口全屏状态下导图无法编辑的问题。
+
+### 重构
+
+- 优化初始渲染性能与视图适配逻辑，提升响应速度。
+
+## [1.0.0] - 2026-06-15
 
 ### Added
 
