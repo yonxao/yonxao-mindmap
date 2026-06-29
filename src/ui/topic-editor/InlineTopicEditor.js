@@ -41,7 +41,6 @@ export const inlineTopicEditorMethods = {
     inputEl.className = 'yonxao-mindmap-inline-text-editor';
     inputEl.value = topic.text || '';
     inputEl.spellcheck = false;
-    inputEl.setAttribute('aria-label', this.t('topicEditor.editContentAria'));
 
     // 编辑框使用固定 UI 字号，不跟随主题字号缩放；大字号主题直接继承会让浮层过大、阅读别扭。
     if (box && box.font) {
