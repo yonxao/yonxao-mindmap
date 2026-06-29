@@ -7,9 +7,10 @@
 # 2. 安装 Node.js（从 package.json engines 读取）。
 # 3. 安装依赖。
 # 4. 执行构建与发布准备（clean → build → 复制 manifest.json）。
-# 5. 从 manifest.json 读取版本号。
-# 6. 将 dist/ 目录（main.js, styles.css, manifest.json）打包为 Obsidian 插件压缩包。
-# 7. 创建 GitHub Release，上传压缩包与三件套。
+# 5. 从 CHANGELOG.md 生成 dist/release-body.md。
+# 6. 从 manifest.json 读取版本号。
+# 7. 将 dist/ 目录（main.js, styles.css, manifest.json）打包为 Obsidian 插件压缩包。
+# 8. 创建 GitHub Release，上传压缩包与三件套。
 
 name: Release
 
@@ -60,7 +61,7 @@ jobs:
         with:
           name: ${{ steps.version.outputs.version }}
           tag_name: ${{ steps.version.outputs.version }}
-          body_path: .github/release-body.md
+          body_path: dist/release-body.md
           fail_on_unmatched_files: true
           files: |
             yonxao-mindmap-${{ steps.version.outputs.version }}.zip
