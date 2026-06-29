@@ -40,6 +40,10 @@ export const rendererContextMethods = {
   onunload() {
     this.closeTopicEditor();
     this.closeInlineTextEditor(false);
+    // 在清理全屏之前先刷写待保存数据，避免 Obsidian 重渲染导致数据丢失
+    if (this._pendingFullscreenSave) {
+      this._flushPendingFullscreenSave();
+    }
     this.cleanupFullscreenOverlay();
     this.cleanupWindowFullscreenOverlay();
     this.hostEl?.classList.remove('is-fullscreen');
@@ -332,7 +336,26 @@ export const rendererContextMethods = {
     }
   },
 
-  openConfigModal() {
+  async openConfigModal() {
+    // 防止在打开配置面板期间重复点击产生无限个不可见实例
+    if (this._configModalOpen) return;
+    this._configModalOpen = true;
+
+    // 全屏模式下 Obsidian Modal 会被浏览器 top layer 或覆盖层遮挡，
+    // 先退出全屏再打开面板，确保用户能看到配置界面。
+    if (this.isFullscreen || this.isWindowFullscreen) {
+      if (typeof document.exitFullscreen === 'function' && document.fullscreenElement) {
+        try {
+          await document.exitFullscreen();
+        } catch (_error) {
+          // 退出全屏失败时静默处理，仍然尝试打开面板
+        }
+      }
+      if (this.isWindowFullscreen) {
+        this.toggleWindowFullscreen();
+      }
+    }
+
     const modal = new ConfigModal(this.plugin.app, {
       t: this.t.bind(this),
       baseConfig: this.plugin?.getGlobalDefaultValueConfig?.() || {},
@@ -340,6 +363,13 @@ export const rendererContextMethods = {
       onApply: async (nextConfig) => this.applyConfigFromModal(nextConfig),
     });
     modal.open();
+
+    // 模态框关闭后释放锁，允许再次打开
+    const originalOnClose = modal.onClose;
+    modal.onClose = () => {
+      this._configModalOpen = false;
+      originalOnClose.call(modal);
+    };
   },
 
   async applyConfigFromModal(nextConfig) {

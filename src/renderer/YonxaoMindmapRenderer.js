@@ -136,6 +136,7 @@ export class YonxaoMindmapRenderer extends Component {
     this._wfOverlay = null;
     this._wfHostElParent = null;
     this._wfHostElNextSibling = null;
+    this._configModalOpen = false;
   }
 }
 

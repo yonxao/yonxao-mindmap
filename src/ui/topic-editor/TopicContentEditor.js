@@ -100,6 +100,15 @@ export const topicContentEditorMethods = {
     }
 
     this.topicContentEditorInput.value = this.topicEditorFields.content.value || '';
+    // 全屏时移入全屏容器避免被遮挡
+    const floatContainer = this._bodyFloatContainer?.();
+    if (
+      floatContainer &&
+      floatContainer !== document.body &&
+      this.topicContentEditorEl.parentNode !== floatContainer
+    ) {
+      floatContainer.appendChild(this.topicContentEditorEl);
+    }
     this.topicContentEditorEl.hidden = false;
     this.positionTopicContentEditor();
     this.topicContentEditorInput.focus();

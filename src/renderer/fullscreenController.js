@@ -102,6 +102,7 @@ export const fullscreenControllerMethods = {
     this.showToolbar();
     this.scheduleFitView();
     this.scheduleApplyToolbarPosition();
+    this._moveBodyFloatPanelsIntoContainer();
   },
 
   applyWindowFullscreenExited() {
@@ -130,7 +131,12 @@ export const fullscreenControllerMethods = {
     this.updateWindowFullscreenButton();
     this.scheduleFitView();
     this.scheduleApplyToolbarPosition();
+    this._restoreBodyFloatPanelsToBody();
+    // 刷写全屏期间的待保存数据
+    this._flushPendingFullscreenSave();
   },
+
+  /*
 
   /*
    * 全屏幕状态变更处理。注意全屏幕 API 的事件可能来自本插件之外（如 Obsidian 本身
@@ -152,6 +158,7 @@ export const fullscreenControllerMethods = {
 
   cleanupFullscreenOverlay() {
     if (!this._fsOverlay) return;
+    this._restoreBodyFloatPanelsToBody();
     if (this._hostElParent) {
       if (this._hostElNextSibling && this._hostElNextSibling.parentNode === this._hostElParent) {
         this._hostElParent.insertBefore(this.hostEl, this._hostElNextSibling);
@@ -171,6 +178,8 @@ export const fullscreenControllerMethods = {
     this.updateFullscreenButton();
     this.scheduleFitView();
     this.scheduleApplyToolbarPosition();
+    // 将 body 级浮动面板移入全屏元素，避免被浏览器顶层遮挡
+    this._moveBodyFloatPanelsIntoContainer();
   },
 
   applyFullscreenExited() {
@@ -180,9 +189,99 @@ export const fullscreenControllerMethods = {
     this.updateFullscreenButton();
     this.scheduleFitView();
     this.scheduleApplyToolbarPosition();
+    // 将 body 级浮动面板恢复回 document.body
+    this._restoreBodyFloatPanelsToBody();
+    // 刷写全屏期间的待保存数据
+    this._flushPendingFullscreenSave();
+  },
+
+  /*
+   * 作用：
+   * 刷写全屏期间缓存的待保存数据。
+   *
+   * 全屏模式下编辑（新增/删除/移动主题等）不会实时写入文件，而是暂存
+   * _pendingFullscreenSave。退出全屏时在此处统一写入，避免 Obsidian
+   * 重渲染导致全屏异常退出。
+   *
+   * 注意：此方法是异步的，但调用方不 await 它，因为退出全屏时无需等待
+   * 写入完成即可恢复 UI。
+   */
+  _flushPendingFullscreenSave() {
+    if (!this._pendingFullscreenSave) return;
+    const pending = this._pendingFullscreenSave;
+    this._pendingFullscreenSave = null;
+    Promise.resolve(this.saveSourceToMarkdownFile(pending))
+      .then((saved) => {
+        if (saved) {
+          new Notice('yonxao-mindmap: 配置已保存。');
+        }
+      })
+      .catch((error) => {
+        console.warn('yonxao-mindmap: 全屏待保存数据写入失败', error);
+      });
+  },
+
+  /*
+   * 作用：
+   * 返回 body 级浮动元素（右键菜单、主题编辑面板等）应挂载的容器。
+   *
+   * 全屏时这些元素必须挂在全屏元素内，否则会被浏览器顶层（top layer）
+   * 或全屏覆盖层（z-index: 9998/9999）遮挡。
+   */
+  _bodyFloatContainer() {
+    if (document.fullscreenElement) return document.fullscreenElement;
+    if (this._fsOverlay) return this._fsOverlay;
+    if (this._wfOverlay) return this._wfOverlay;
+    return document.body;
+  },
+
+  /*
+   * 作用：
+   * 进入全屏时，将 body 级浮动面板移入全屏容器，避免被遮挡。
+   *
+   * 当前处理的面板：
+   * - 主题编辑面板（topicEditorEl）
+   * - 长文本编辑浮层（topicContentEditorEl）
+   */
+  _moveBodyFloatPanelsIntoContainer() {
+    const container = this._bodyFloatContainer();
+    if (container === document.body) return;
+
+    if (
+      this.topicEditorEl &&
+      !this.topicEditorEl.hidden &&
+      this.topicEditorEl.parentNode !== container
+    ) {
+      this._topicEditorBodyParent = this.topicEditorEl.parentNode;
+      container.appendChild(this.topicEditorEl);
+    }
+    if (
+      this.topicContentEditorEl &&
+      !this.topicContentEditorEl.hidden &&
+      this.topicContentEditorEl.parentNode !== container
+    ) {
+      this._topicContentEditorBodyParent = this.topicContentEditorEl.parentNode;
+      container.appendChild(this.topicContentEditorEl);
+    }
+  },
+
+  /*
+   * 作用：
+   * 退出全屏时，将 body 级浮动面板恢复回 document.body。
+   */
+  _restoreBodyFloatPanelsToBody() {
+    if (this._topicEditorBodyParent && this.topicEditorEl) {
+      this._topicEditorBodyParent.appendChild(this.topicEditorEl);
+    }
+    this._topicEditorBodyParent = null;
+    if (this._topicContentEditorBodyParent && this.topicContentEditorEl) {
+      this._topicContentEditorBodyParent.appendChild(this.topicContentEditorEl);
+    }
+    this._topicContentEditorBodyParent = null;
   },
 
   cleanupWindowFullscreenOverlay() {
+    this._restoreBodyFloatPanelsToBody();
     if (this._wfHostElParent) {
       if (
         this._wfHostElNextSibling &&

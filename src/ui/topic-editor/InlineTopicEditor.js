@@ -87,7 +87,9 @@ export const inlineTopicEditorMethods = {
       });
     });
 
-    document.body.appendChild(inputEl);
+    // 全屏时挂到全屏容器内，避免被浏览器顶层或覆盖层遮挡
+    const floatContainer = this._bodyFloatContainer?.() || document.body;
+    floatContainer.appendChild(inputEl);
     this.inlineTextEditorEl = inputEl;
     this.inlineTextEditorInput = inputEl;
     this.inlineEditingTopicId = topic.id;

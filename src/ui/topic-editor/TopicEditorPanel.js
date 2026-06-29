@@ -258,6 +258,15 @@ export const topicEditorPanelMethods = {
       attributes.maxWidth ?? this.topicEditorInheritedValues.maxWidth,
       attributes.maxWidth !== undefined
     );
+    // 在全屏或窗口全屏模式下，将编辑面板移入全屏容器避免被遮挡
+    const floatContainer = this._bodyFloatContainer?.();
+    if (
+      floatContainer &&
+      floatContainer !== document.body &&
+      this.topicEditorEl.parentNode !== floatContainer
+    ) {
+      floatContainer.appendChild(this.topicEditorEl);
+    }
     this.topicEditorEl.hidden = false;
     this.positionTopicEditor(topic);
     this.captureTopicEditorFormSnapshot();

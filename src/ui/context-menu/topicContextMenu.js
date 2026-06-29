@@ -60,6 +60,12 @@ export const topicContextMenuMethods = {
    * 因此叠加一层手动 document level 监听。
    *
    * 同时在此处统一注册 menu.onHide，清空插件级菜单引用。
+   *
+   * 全屏修复：
+   * - 窗口全屏覆盖层 z-index: 9998/9999，菜单 z-index 需高于它们。
+   * - 物理全屏（requestFullscreen）时，document.body 上的菜单会被浏览器顶层
+   *   （top layer）遮挡，必须将菜单移入全屏元素内才能可见。
+   * - 菜单关闭时恢复原始父节点，避免残留。
    */
   _setupMenuAutoClose(menu) {
     let menuEl = null;
@@ -71,8 +77,14 @@ export const topicContextMenuMethods = {
       const el = all.length > 0 ? all[all.length - 1] : null;
       if (el && el.isConnected) {
         menuEl = el;
-        // 确保当前菜单位于工具栏（z-index: 1000）之上，只影响本实例
-        menuEl.style.zIndex = '1001';
+        // 确保当前菜单位于覆盖层（z-index: 9998/9999）之上，只影响本实例
+        menuEl.style.zIndex = '10000';
+
+        // 全屏时移入全屏元素，避免被浏览器顶层或覆盖层遮挡
+        const floatContainer = this._bodyFloatContainer?.();
+        if (floatContainer && floatContainer !== document.body) {
+          floatContainer.appendChild(menuEl);
+        }
       }
     };
     requestAnimationFrame(elevateMenu);
@@ -90,6 +102,10 @@ export const topicContextMenuMethods = {
     document.addEventListener('pointerdown', onPointerDown, true);
     menu.onHide(() => {
       document.removeEventListener('pointerdown', onPointerDown, true);
+      // 如果菜单被移入全屏元素，关闭时恢复为 document.body 的直接子节点
+      if (menuEl && menuEl.isConnected && menuEl.parentNode !== document.body) {
+        document.body.appendChild(menuEl);
+      }
       menuEl = null;
       if (this.plugin._currentContextMenu === menu) {
         this.plugin._currentContextMenu = null;
