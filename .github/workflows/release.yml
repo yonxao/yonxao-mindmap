@@ -1,6 +1,8 @@
 # yonxao-mindmap Release Workflow
 #
-# 触发方式：推送符合 *.*.* 语义化版本格式的 tag 时自动触发。
+# 触发方式：
+# 1. 推送符合 *.*.* 语义化版本格式的 tag 时自动触发。
+# 2. 需要重新同步已有 Release 正文或资产时，可在 GitHub Actions 页面手动触发。
 #
 # 流程说明：
 # 1. 检出代码。
@@ -11,6 +13,7 @@
 # 6. 从 manifest.json 读取版本号。
 # 7. 将 dist/ 目录（main.js, styles.css, manifest.json）打包为 Obsidian 插件压缩包。
 # 8. 创建 GitHub Release，上传压缩包与三件套。
+# 9. 强制同步 Release 正文，确保复用已有 Release 时正文也会更新。
 
 name: Release
 
@@ -18,6 +21,7 @@ on:
   push:
     tags:
       - '*.*.*'
+  workflow_dispatch:
 
 permissions:
   contents: write
@@ -45,6 +49,9 @@ jobs:
       - name: Build and prepare release artifacts
         run: npm run release:prepare
 
+      - name: Show generated release body
+        run: cat dist/release-body.md
+
       - name: Read version from manifest.json
         id: version
         run: echo "version=$(node -p "require('./manifest.json').version")" >> "$GITHUB_OUTPUT"
@@ -68,3 +75,41 @@ jobs:
             dist/main.js
             dist/styles.css
             dist/manifest.json
+
+      - name: Sync GitHub Release body
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          RELEASE_TAG: ${{ steps.version.outputs.version }}
+        run: |
+          node --input-type=module <<'EOF'
+          import fs from 'node:fs';
+
+          const repository = process.env.GITHUB_REPOSITORY;
+          const token = process.env.GITHUB_TOKEN;
+          const tag = process.env.RELEASE_TAG;
+          const body = fs.readFileSync('dist/release-body.md', 'utf8');
+          const headers = {
+            Accept: 'application/vnd.github+json',
+            Authorization: `Bearer ${token}`,
+            'Content-Type': 'application/json',
+            'X-GitHub-Api-Version': '2022-11-28',
+          };
+
+          const releaseResponse = await fetch(
+            `https://api.github.com/repos/${repository}/releases/tags/${tag}`,
+            { headers }
+          );
+          if (!releaseResponse.ok) {
+            throw new Error(`Failed to fetch release ${tag}: ${releaseResponse.status} ${await releaseResponse.text()}`);
+          }
+
+          const release = await releaseResponse.json();
+          const updateResponse = await fetch(release.url, {
+            method: 'PATCH',
+            headers,
+            body: JSON.stringify({ body }),
+          });
+          if (!updateResponse.ok) {
+            throw new Error(`Failed to update release body: ${updateResponse.status} ${await updateResponse.text()}`);
+          }
+          EOF
