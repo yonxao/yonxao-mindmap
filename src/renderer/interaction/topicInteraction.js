@@ -12,6 +12,7 @@
 import {
   Notice,
   containsTopicId,
+  MINDMAP_LAYOUT_TYPES,
   moveTopicInTree,
   svg,
   DRAG_START_THRESHOLD,
@@ -20,7 +21,347 @@ import {
   DROP_AFTER_THRESHOLD,
 } from '../../shared/rendererShared.js';
 
+const MAP_KEYBOARD_NAV_DIRECTIONS = {
+  ArrowLeft: { axis: 'x', sign: -1 },
+  ArrowRight: { axis: 'x', sign: 1 },
+  ArrowUp: { axis: 'y', sign: -1 },
+  ArrowDown: { axis: 'y', sign: 1 },
+};
+
+/*
+ * 这两个集合不是布局系统的新分组，而是键盘导航语义分组：
+ * 水平思维导图用左右表达父子关系，垂直思维导图用上下表达父子关系。
+ */
+const HORIZONTAL_MINDMAP_KEYBOARD_LAYOUTS = new Set([
+  'mindmap-right',
+  'mindmap-left',
+  'mindmap-bidirectional',
+]);
+const VERTICAL_MINDMAP_KEYBOARD_LAYOUTS = new Set([
+  'mindmap-up',
+  'mindmap-down',
+  'mindmap-vertical',
+]);
+const MINDMAP_KEYBOARD_LAYOUTS = new Set(MINDMAP_LAYOUT_TYPES);
+
+// 候选主题中心点必须超过这个距离，才算真正位于方向键指向的一侧。
+const MAP_KEYBOARD_NAV_MIN_PRIMARY_DISTANCE = 1;
+// 副方向偏移会放大计入分数，让方向键优先跳到同一行或同一列附近的主题。
+const MAP_KEYBOARD_NAV_SECONDARY_WEIGHT = 2;
+// 焦点主题贴近视口边缘时保留少量视觉余量，避免焦点描边贴边显示。
+const MAP_KEYBOARD_FOCUS_VIEWBOX_MARGIN_RATIO = 0.08;
+
+/*
+ * 作用：
+ * 给方向键候选主题打分。分数越低，表示越适合作为下一个焦点主题。
+ *
+ * 说明：
+ * - primaryDistance 表示候选主题是否真的位于方向键指向的一侧。
+ * - useBoxGap 只给非思维导图的空间导航使用，按主题边框间距算“最近”；
+ *   思维导图关系导航已经先限定了父子/兄弟候选，继续按中心距离会更符合结构语义。
+ */
+function keyboardNavigationCandidateScore(currentBox, candidateBox, direction, options = {}) {
+  const dx = candidateBox.x - currentBox.x;
+  const dy = candidateBox.y - currentBox.y;
+  const primaryDistance = direction.axis === 'x' ? dx * direction.sign : dy * direction.sign;
+  if (primaryDistance <= MAP_KEYBOARD_NAV_MIN_PRIMARY_DISTANCE) return null;
+
+  const secondaryDistance = direction.axis === 'x' ? Math.abs(dy) : Math.abs(dx);
+  let primaryScore = primaryDistance;
+  let secondaryScore = secondaryDistance;
+
+  if (options.useBoxGap) {
+    const primarySize =
+      direction.axis === 'x'
+        ? (currentBox.width + candidateBox.width) / 2
+        : (currentBox.height + candidateBox.height) / 2;
+    const secondarySize =
+      direction.axis === 'x'
+        ? (currentBox.height + candidateBox.height) / 2
+        : (currentBox.width + candidateBox.width) / 2;
+    primaryScore = Math.max(0, primaryDistance - primarySize);
+    secondaryScore = Math.max(0, secondaryDistance - secondarySize);
+  }
+
+  return {
+    primaryDistance,
+    score: primaryScore + secondaryScore * MAP_KEYBOARD_NAV_SECONDARY_WEIGHT,
+  };
+}
+
 export const topicInteractionMethods = {
+  handleMapFocus() {
+    if (this.isSourceMode) return;
+    // SVG 是导图模式的整体键盘入口，获得焦点时保证至少有一个可见主题可被方向键接管。
+    this.ensureFocusedTopic();
+  },
+
+  handleMapBlur() {
+    // 离开导图后清理视觉焦点，避免用户在源码、配置面板或 Obsidian 其他区域操作时仍看到高亮。
+    this.clearFocusedTopic();
+  },
+
+  handleMapKeyDown(event) {
+    if (this.isSourceMode) return;
+    // 只处理裸方向键：组合键、输入法组合态和非 SVG 自身焦点都交还给 Obsidian/浏览器。
+    if (event.altKey || event.ctrlKey || event.metaKey || event.shiftKey || event.isComposing) {
+      return;
+    }
+    if (event.target !== this.svgEl) return;
+    if (!Object.prototype.hasOwnProperty.call(MAP_KEYBOARD_NAV_DIRECTIONS, event.key)) return;
+
+    event.preventDefault();
+    event.stopPropagation();
+
+    const currentTopic = this.ensureFocusedTopic();
+    if (!currentTopic) return;
+
+    const nextTopic = this.findKeyboardNavigationTopic(currentTopic, event.key);
+    if (nextTopic) {
+      this.setFocusedTopic(nextTopic.id, { focusSvg: false, ensureInView: true });
+    }
+  },
+
+  ensureFocusedTopic() {
+    const currentTopic = this.topicById.get(this.focusedTopicId);
+    if (currentTopic && currentTopic._layout) {
+      return currentTopic;
+    }
+
+    // 初次进入导图、折叠隐藏当前主题或源码重渲染后，都需要重新选择一个可见主题。
+    const fallbackTopic = this.keyboardFocusFallbackTopic();
+    if (!fallbackTopic) {
+      this.focusedTopicId = '';
+      return null;
+    }
+
+    this.setFocusedTopic(fallbackTopic.id, { focusSvg: false, ensureInView: false });
+    return fallbackTopic;
+  },
+
+  keyboardFocusFallbackTopic() {
+    if (this.root?.id && this.topicById.has(this.root.id)) {
+      return this.topicById.get(this.root.id);
+    }
+
+    for (const topic of this.topicById.values()) {
+      if (topic?._layout) return topic;
+    }
+
+    return null;
+  },
+
+  normalizeFocusedTopicAfterLayout(topics) {
+    if (!this.focusedTopicId) return;
+    if (topics.some((topic) => topic.id === this.focusedTopicId)) return;
+
+    // 当前焦点主题可能因折叠、删除或源码重渲染消失，此时回到一级主题保持键盘入口可用。
+    const fallbackTopic =
+      topics.find((topic) => topic.id === this.root?.id) || topics.find((topic) => topic?._layout);
+    this.focusedTopicId = fallbackTopic?.id || '';
+  },
+
+  clearFocusedTopic() {
+    const previousTopicId = this.focusedTopicId;
+    this.focusedTopicId = '';
+    this.syncFocusedTopicClass(previousTopicId, '');
+  },
+
+  setFocusedTopic(topicId, options = {}) {
+    const topic = this.topicById.get(topicId);
+    if (!topic || !topic._layout) return false;
+
+    const previousTopicId = this.focusedTopicId;
+    this.focusedTopicId = topic.id;
+    this.syncFocusedTopicClass(previousTopicId, topic.id);
+
+    if (options.ensureInView) {
+      this.ensureFocusedTopicInView(topic);
+    }
+
+    if (options.focusSvg !== false && this.svgEl && document.activeElement !== this.svgEl) {
+      this.svgEl.focus({ preventScroll: true });
+    }
+
+    return true;
+  },
+
+  syncFocusedTopicClass(previousTopicId, nextTopicId) {
+    if (previousTopicId && previousTopicId !== nextTopicId) {
+      this.renderedTopicElementById(previousTopicId)?.classList.remove('is-keyboard-focused');
+    }
+    if (nextTopicId) {
+      this.renderedTopicElementById(nextTopicId)?.classList.add('is-keyboard-focused');
+    }
+  },
+
+  findKeyboardNavigationTopic(currentTopic, key) {
+    if (MINDMAP_KEYBOARD_LAYOUTS.has(this.config?.layout)) {
+      return this.findMindMapKeyboardNavigationTopic(currentTopic, key);
+    }
+
+    // 非思维导图布局的结构语义差异较大，先保留空间导航兜底，避免方向键完全不可用。
+    const direction = MAP_KEYBOARD_NAV_DIRECTIONS[key];
+    if (!direction) return null;
+
+    return this.bestTopicInKeyboardDirection(
+      currentTopic,
+      Array.from(this.topicById.values()),
+      direction,
+      { useBoxGap: true }
+    );
+  },
+
+  findMindMapKeyboardNavigationTopic(currentTopic, key) {
+    const layout = this.config?.layout;
+
+    /*
+     * 思维导图的方向键按结构关系移动，而不是单纯找空间最近主题：
+     * - 水平图：左右走父子关系，上下走兄弟关系。
+     * - 垂直图：上下走父子关系，左右走兄弟关系。
+     * 双向布局也按实际坐标方向过滤候选主题，因此根主题可以向对应方向进入某一侧分支。
+     */
+    if (HORIZONTAL_MINDMAP_KEYBOARD_LAYOUTS.has(layout)) {
+      if (key === 'ArrowLeft' || key === 'ArrowRight') {
+        return this.findMindMapParentChildNavigationTopic(currentTopic, key, 'x');
+      }
+      if (key === 'ArrowUp' || key === 'ArrowDown') {
+        return this.findMindMapSiblingNavigationTopic(currentTopic, key, 'y');
+      }
+    }
+
+    if (VERTICAL_MINDMAP_KEYBOARD_LAYOUTS.has(layout)) {
+      if (key === 'ArrowUp' || key === 'ArrowDown') {
+        return this.findMindMapParentChildNavigationTopic(currentTopic, key, 'y');
+      }
+      if (key === 'ArrowLeft' || key === 'ArrowRight') {
+        return this.findMindMapSiblingNavigationTopic(currentTopic, key, 'x');
+      }
+    }
+
+    return null;
+  },
+
+  findMindMapParentChildNavigationTopic(currentTopic, key, axis) {
+    const direction = MAP_KEYBOARD_NAV_DIRECTIONS[key];
+    const currentBox = currentTopic?._layout;
+    if (!direction || direction.axis !== axis || !currentBox) return null;
+
+    // 父子导航只在当前主题的可见父主题和可见子主题之间选择，不跨层级跳到其他分支。
+    const parentTopic = this.findVisibleParentTopic(currentTopic.id);
+    const candidates = [];
+
+    if (parentTopic?._layout) {
+      candidates.push(parentTopic);
+    }
+
+    for (const subtopic of currentTopic.subtopics || []) {
+      if (this.topicById.has(subtopic.id) && subtopic?._layout) {
+        candidates.push(subtopic);
+      }
+    }
+
+    return this.bestTopicInKeyboardDirection(currentTopic, candidates, direction);
+  },
+
+  findMindMapSiblingNavigationTopic(currentTopic, key, axis) {
+    const direction = MAP_KEYBOARD_NAV_DIRECTIONS[key];
+    if (!direction || direction.axis !== axis) return null;
+
+    // 兄弟导航只在同一个父主题的可见子主题之间移动，按当前画面方向筛选上/下或左/右。
+    const parentTopic = this.findVisibleParentTopic(currentTopic.id);
+    if (!parentTopic) return null;
+
+    const siblings = (parentTopic.subtopics || [])
+      .filter((topic) => topic.id !== currentTopic.id && this.topicById.has(topic.id))
+      .filter((topic) => topic?._layout);
+
+    return this.bestTopicInKeyboardDirection(currentTopic, siblings, direction);
+  },
+
+  findVisibleParentTopic(topicId, parentTopic = this.root) {
+    if (!topicId || !parentTopic) return null;
+
+    // 只沿可见主题递归，避免方向键进入已经折叠隐藏的子树。
+    for (const subtopic of parentTopic.subtopics || []) {
+      if (!this.topicById.has(subtopic.id)) continue;
+      if (subtopic.id === topicId) return parentTopic;
+
+      const matchedParent = this.findVisibleParentTopic(topicId, subtopic);
+      if (matchedParent) return matchedParent;
+    }
+
+    return null;
+  },
+
+  bestTopicInKeyboardDirection(currentTopic, candidates, direction, options = {}) {
+    const currentBox = currentTopic?._layout;
+    if (!currentBox) return null;
+
+    let bestTopic = null;
+    let bestScore = Infinity;
+    let bestPrimaryDistance = Infinity;
+
+    for (const candidateTopic of candidates) {
+      const candidateBox = candidateTopic?._layout;
+      if (!candidateBox || candidateTopic.id === currentTopic.id) continue;
+
+      const candidateScore = keyboardNavigationCandidateScore(currentBox, candidateBox, direction, {
+        useBoxGap: Boolean(options.useBoxGap),
+      });
+      if (!candidateScore) continue;
+
+      // 分数相同时选择主方向距离更近的主题，让同一列/同一行上的移动更稳定。
+      if (
+        candidateScore.score < bestScore ||
+        (candidateScore.score === bestScore && candidateScore.primaryDistance < bestPrimaryDistance)
+      ) {
+        bestScore = candidateScore.score;
+        bestPrimaryDistance = candidateScore.primaryDistance;
+        bestTopic = candidateTopic;
+      }
+    }
+
+    return bestTopic;
+  },
+
+  ensureFocusedTopicInView(topic) {
+    const box = topic?._layout;
+    if (!box || !this.viewBox) return;
+
+    // 方向键移动焦点时只平移当前 viewBox，不重新执行 fit view，避免用户缩放比例被重置。
+    const margin =
+      Math.min(this.viewBox.width, this.viewBox.height) * MAP_KEYBOARD_FOCUS_VIEWBOX_MARGIN_RATIO;
+    const topicMinX = box.x - box.width / 2 - margin;
+    const topicMaxX = box.x + box.width / 2 + margin;
+    const topicMinY = box.y - box.height / 2 - margin;
+    const topicMaxY = box.y + box.height / 2 + margin;
+
+    let nextX = this.viewBox.x;
+    let nextY = this.viewBox.y;
+
+    if (topicMinX < nextX) {
+      nextX = topicMinX;
+    } else if (topicMaxX > nextX + this.viewBox.width) {
+      nextX = topicMaxX - this.viewBox.width;
+    }
+
+    if (topicMinY < nextY) {
+      nextY = topicMinY;
+    } else if (topicMaxY > nextY + this.viewBox.height) {
+      nextY = topicMaxY - this.viewBox.height;
+    }
+
+    if (nextX === this.viewBox.x && nextY === this.viewBox.y) return;
+
+    this.viewBox = {
+      ...this.viewBox,
+      x: nextX,
+      y: nextY,
+    };
+    this.applyViewBox();
+  },
+
   handleTopicPointerOver(event) {
     const topicId = this.topicIdFromTarget(event.target);
     if (!topicId) return;
@@ -69,6 +410,8 @@ export const topicInteractionMethods = {
 
     const topic = this.topicById.get(id);
     if (!topic) return;
+
+    this.setFocusedTopic(id, { focusSvg: true, ensureInView: false });
 
     const canEdit = this.canEditMindMap();
 

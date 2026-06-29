@@ -97,6 +97,7 @@ export class YonxaoMindmapRenderer extends Component {
     this.inlineTextEditorSaving = false;
     this.topicDropIndicatorEl = null;
     this.hoveredTopicControlId = '';
+    this.focusedTopicId = '';
     this.topicById = new Map();
     this.collapsedIds = new Set();
     this.viewBox = null;

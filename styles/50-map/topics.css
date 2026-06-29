@@ -42,6 +42,28 @@
 
 /*
  * 作用：
+ * 导图模式的键盘焦点主题。
+ *
+ * 说明：
+ * 焦点由 Renderer 维护，不把每个 SVG 主题都加入浏览器 Tab 顺序；
+ * 这样方向键能在主题之间移动，同时避免 Tab 在大图里逐个主题跳转。
+ * 描边颜色复用主题按钮颜色变量，因此会跟随按钮配色配置。
+ */
+.yonxao-mindmap-topic.is-keyboard-focused .yonxao-mindmap-topic-card {
+  stroke: var(--yonxao-mindmap-button-color, var(--interactive-accent));
+  stroke-width: 2.6;
+  filter: drop-shadow(
+    0 0 0.35rem
+      color-mix(
+        in srgb,
+        var(--yonxao-mindmap-button-color, var(--interactive-accent)) 42%,
+        transparent
+      )
+  );
+}
+
+/*
+ * 作用：
  * 主题文本。
  *
  * 关键点：

@@ -10,12 +10,10 @@
  */
 
 import {
-  topicColor,
   svg,
   TOPIC_TOGGLE_BUTTON_RADIUS,
   TOPIC_SIBLING_BUTTON_RADIUS,
   TOPIC_SUBTOPIC_BUTTON_RADIUS,
-  DEFAULT_TOPIC_BUTTON_COLOR,
   EDIT_BUTTON_SIZE,
   EDIT_BUTTON_BORDER_RADIUS,
 } from '../../shared/rendererShared.js';
@@ -33,10 +31,7 @@ export const topicControlDrawMethods = {
       'data-topic-id': topic.id,
     });
 
-    if (this.config.button?.colorMode === 'topic') {
-      const color = topicColor(topic, this.config);
-      group.style.setProperty('--yonxao-mindmap-button-color', color || DEFAULT_TOPIC_BUTTON_COLOR);
-    }
+    this.applyTopicButtonColorVariable(group, topic);
 
     if (positions.edit) {
       group.appendChild(this.renderEditButton(positions.edit));

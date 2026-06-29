@@ -10,6 +10,7 @@
  */
 
 import {
+  DEFAULT_TOPIC_BUTTON_COLOR,
   TOPIC_PADDING_X,
   renderIcon,
   themeTopicFillAlpha,
@@ -19,6 +20,12 @@ import {
 } from '../../shared/rendererShared.js';
 
 export const topicDrawMethods = {
+  applyTopicButtonColorVariable(element, topic, color = topicColor(topic, this.config)) {
+    if (!element || this.config.button?.colorMode !== 'topic') return;
+    // topic 模式下按钮颜色来自当前主题色；主题本体也写入该变量，供键盘焦点描边复用同一配色。
+    element.style.setProperty('--yonxao-mindmap-button-color', color || DEFAULT_TOPIC_BUTTON_COLOR);
+  },
+
   renderTopic(topic) {
     const box = topic._layout;
     const canEdit = this.canEditMindMap();
@@ -37,6 +44,9 @@ export const topicDrawMethods = {
     if (this.isTreeTableRootBox(box)) {
       classNames.push('yonxao-mindmap-topic-tree-table-root');
     }
+    if (topic.id && topic.id === this.focusedTopicId) {
+      classNames.push('is-keyboard-focused');
+    }
 
     // 每个主题都是一个 <g> 分组，组上保存 data-topic-id，点击时用它反查原始树主题。
     const group = svg('g', {
@@ -44,6 +54,8 @@ export const topicDrawMethods = {
       transform: `translate(${box.x - box.width / 2} ${box.y - box.height / 2})`,
       'data-topic-id': topic.id,
     });
+
+    this.applyTopicButtonColorVariable(group, topic, color);
 
     const fill = color
       ? transparentColor(color, themeTopicFillAlpha(this.config))

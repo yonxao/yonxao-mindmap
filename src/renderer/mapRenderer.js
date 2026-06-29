@@ -24,6 +24,7 @@ export const mapRendererMethods = {
     // 渲染分两步：先把树计算成带坐标的主题/连线，再把这些数据画成 SVG。
     // 这样解析、布局、绘制互相独立，后续要替换布局算法也更容易。
     const layout = layoutTree(this.root, this.collapsedIds, this.config);
+    this.normalizeFocusedTopicAfterLayout(layout.topics);
     const connectorLayer = svg('g', { class: 'yonxao-mindmap-connectors' });
     const topicLayer = svg('g', { class: 'yonxao-mindmap-topics' });
     const controlLayer = svg('g', { class: 'yonxao-mindmap-topic-controls-layer' });
