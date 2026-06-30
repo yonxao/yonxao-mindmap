@@ -29,3 +29,7 @@ export const VIEWBOX_MARGIN_X = 36;
 export const VIEWBOX_MARGIN_Y = LINE_HEIGHT;
 export const CANVAS_MIN_HEIGHT = 96;
 export const CANVAS_MAX_HEIGHT = 1800;
+
+// 工具栏按钮和视图控制快捷键共用同一组缩放倍率，避免两种入口的手感不一致。
+export const ZOOM_IN_FACTOR = 0.82;
+export const ZOOM_OUT_FACTOR = 1.18;

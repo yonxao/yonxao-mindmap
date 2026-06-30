@@ -16,6 +16,7 @@ import { structureTabMethods } from './StructureTab.js';
 import { colorTabMethods } from './ColorTab.js';
 import { fontTabMethods } from './FontTab.js';
 import { interactionTabMethods } from './InteractionTab.js';
+import { shortcutsTabMethods } from './ShortcutsTab.js';
 import { advancedTabMethods } from './AdvancedTab.js';
 import { configFieldMethods } from './configFields.js';
 import { configModalStateMethods } from './configModalState.js';
@@ -133,6 +134,7 @@ export class ConfigModal extends Modal {
       color: () => this.renderColorTab(normalized),
       font: () => this.renderFontTab(normalized),
       interaction: () => this.renderInteractionTab(normalized),
+      shortcuts: () => this.renderShortcutsTab(),
       advanced: () => this.renderAdvancedTab(),
     };
     tabRenderers[this.activeTab]?.();
@@ -150,6 +152,7 @@ Object.assign(
   colorTabMethods,
   fontTabMethods,
   interactionTabMethods,
+  shortcutsTabMethods,
   advancedTabMethods,
   configFieldMethods,
   configModalStateMethods,

@@ -113,6 +113,7 @@ export const fullscreenControllerMethods = {
     this.scheduleFitView();
     this.scheduleApplyToolbarPosition();
     this._moveBodyFloatPanelsIntoContainer();
+    this.restoreMapFocusAfterWindowFullscreenToggle();
   },
 
   applyWindowFullscreenExited() {
@@ -145,6 +146,7 @@ export const fullscreenControllerMethods = {
     this._restoreBodyFloatPanelsToBody();
     // 刷写全屏期间的待保存数据
     this._flushPendingFullscreenSave();
+    this.restoreMapFocusAfterWindowFullscreenToggle();
   },
 
   /*
@@ -221,8 +223,13 @@ export const fullscreenControllerMethods = {
   _flushPendingFullscreenSave() {
     if (!this._pendingFullscreenSave) return;
     const pending = this._pendingFullscreenSave;
+    const pendingFocusTopicId = this.focusedTopicId;
     this._pendingFullscreenSave = null;
-    Promise.resolve(this.saveSourceToMarkdownFile(pending))
+
+    this.rememberMapFocusBeforeFullscreenSave(pendingFocusTopicId);
+
+    Promise.resolve()
+      .then(() => this.saveSourceToMarkdownFile(pending))
       .then((saved) => {
         if (saved) {
           new Notice('yonxao-mindmap: 配置已保存。');
@@ -230,7 +237,41 @@ export const fullscreenControllerMethods = {
       })
       .catch((error) => {
         console.warn('yonxao-mindmap: 全屏待保存数据写入失败', error);
+      })
+      .finally(() => {
+        this.restoreMapFocusAfterFullscreenSave(pendingFocusTopicId);
       });
+  },
+
+  rememberMapFocusBeforeFullscreenSave(topicId) {
+    if (!topicId) return;
+
+    /*
+     * 窗口全屏期间 hostEl 会被移到 body 覆盖层，此时 getSectionInfo(hostEl)
+     * 可能失效，保存主题时写入的焦点记忆会落到不稳定的源码片段 key 上。
+     * 退出窗口全屏后 hostEl 已回到原代码块位置，写文件前再记一次，保证
+     * Obsidian 重建代码块的新 renderer 能用稳定 key 找回主题焦点。
+     */
+    this.rememberTopicFocusState(topicId, { focusSvg: true });
+  },
+
+  restoreMapFocusAfterFullscreenSave(topicId) {
+    if (!this.svgEl || this.isSourceMode) return;
+
+    /*
+     * 退出全屏后的待保存写入和 Obsidian Notice 都发生在异步回调里。
+     * 如果只在退出全屏当下恢复焦点，后续保存提示仍可能让 SVG 失去 DOM 焦点。
+     * 因此保存完成后再按退出前的主题补一次“主题选中 + SVG 焦点”。
+     */
+    if (topicId && this.setFocusedTopic(topicId, { focusSvg: true, ensureInView: true })) {
+      this.scheduleMapKeyboardFocusRestore();
+      return;
+    }
+
+    const fallbackTopic = this.ensureFocusedTopic();
+    if (fallbackTopic) {
+      this.scheduleMapKeyboardFocusRestore();
+    }
   },
 
   /*
@@ -312,6 +353,24 @@ export const fullscreenControllerMethods = {
     this._wfHostElParent = null;
     this._wfHostElNextSibling = null;
     this.isWindowFullscreen = false;
+  },
+
+  restoreMapFocusAfterWindowFullscreenToggle() {
+    if (!this.svgEl || this.isSourceMode) return;
+
+    /*
+     * 窗口全屏会把 hostEl 移入/移出 body 级覆盖层，浏览器可能把 DOM 焦点落到 body。
+     * 立即和延迟各补一次 SVG 焦点，保证 Alt+2 / Option+2 能连续进入和退出窗口全屏。
+     */
+    const focusSvg = () => {
+      if (!this.svgEl || !this.hostEl?.isConnected || this.isSourceMode) return;
+      this.svgEl.focus({ preventScroll: true });
+    };
+
+    focusSvg();
+    if (typeof window !== 'undefined') {
+      window.setTimeout(focusSvg, 0);
+    }
   },
 
   moveToolbarIntoFullscreenHost() {

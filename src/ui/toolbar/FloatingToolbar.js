@@ -19,9 +19,8 @@ import {
   ICON_ZOOM_OUT,
   ICON_RESET_COLLAPSE,
 } from '../../icons/iconNames.js';
+import { ZOOM_IN_FACTOR, ZOOM_OUT_FACTOR } from '../../constants.js';
 
-const TOOLBAR_ZOOM_IN_FACTOR = 0.82;
-const TOOLBAR_ZOOM_OUT_FACTOR = 1.18;
 const TOOLBAR_HIDE_DELAY_MS = 140;
 const TOOLBAR_SCROLL_WHEEL_QUIET_MS = 260;
 const TOOLBAR_SCROLL_MIDDLE_BUTTON_QUIET_MS = 700;
@@ -75,12 +74,12 @@ export const floatingToolbarMethods = {
     this.mapActionButtons.push(this.fullscreenButton);
     this.mapActionButtons.push(
       this.createToolbarButton(toolbar, this.t('toolbar.zoomIn'), ICON_ZOOM_IN, () =>
-        this.zoomAtCenter(TOOLBAR_ZOOM_IN_FACTOR)
+        this.zoomAtCenter(ZOOM_IN_FACTOR)
       )
     );
     this.mapActionButtons.push(
       this.createToolbarButton(toolbar, this.t('toolbar.zoomOut'), ICON_ZOOM_OUT, () =>
-        this.zoomAtCenter(TOOLBAR_ZOOM_OUT_FACTOR)
+        this.zoomAtCenter(ZOOM_OUT_FACTOR)
       )
     );
     this.mapActionButtons.push(

@@ -1,17 +1,73 @@
 /*
  * 文件作用：
- * 主题键盘快捷键方法集合，负责导图 SVG 获得焦点后的快捷键匹配和命令分发。
+ * 导图键盘快捷键方法集合，负责导图 SVG 收到 keydown 后的快捷键匹配和命令分发。
  *
  * 实现逻辑：
- * 本文件只处理“按键 -> 主题命令”的分发；真正的主题树修改仍复用 model/topicCommands.js。
+ * 本文件只处理“按键 -> 命令”的分发；主题树修改仍复用 model/topicCommands.js。
  *
  * 调用链：
  * SVG keydown -> topicKeyboardShortcutMethods -> topicInteractionMethods/topicCommandMethods。
  */
 
+import { ZOOM_IN_FACTOR, ZOOM_OUT_FACTOR } from '../../constants.js';
 import { Notice } from '../../shared/rendererShared.js';
 
 const MAP_NAVIGATION_KEYS = new Set(['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown']);
+
+const MAP_CONTROL_SHORTCUTS = Object.freeze([
+  Object.freeze({
+    command: 'openConfigModal',
+    key: ',',
+    code: 'Comma',
+    altKey: true,
+    shiftKey: false,
+  }),
+]);
+
+const VIEW_CONTROL_SHORTCUTS = Object.freeze([
+  Object.freeze({
+    command: 'zoomIn',
+    key: '+',
+    code: 'Equal',
+    altKey: true,
+    allowShiftKey: true,
+  }),
+  Object.freeze({
+    command: 'zoomOut',
+    key: '-',
+    code: 'Minus',
+    altKey: true,
+    shiftKey: false,
+  }),
+  Object.freeze({
+    command: 'fitView',
+    key: '0',
+    code: 'Digit0',
+    altKey: true,
+    shiftKey: false,
+  }),
+  Object.freeze({
+    command: 'showOriginalSizeView',
+    key: '1',
+    code: 'Digit1',
+    altKey: true,
+    shiftKey: false,
+  }),
+  Object.freeze({
+    command: 'toggleWindowFullscreen',
+    key: '2',
+    code: 'Digit2',
+    altKey: true,
+    shiftKey: false,
+  }),
+  Object.freeze({
+    command: 'toggleFullscreen',
+    key: '3',
+    code: 'Digit3',
+    altKey: true,
+    shiftKey: false,
+  }),
+]);
 
 const TOPIC_COMMAND_SHORTCUTS = Object.freeze([
   Object.freeze({
@@ -55,15 +111,43 @@ const TOPIC_COMMAND_SHORTCUTS = Object.freeze([
     key: 'Spacebar',
     shiftKey: false,
   }),
+  Object.freeze({
+    command: 'toggleTopicCollapse',
+    key: '/',
+    code: 'Slash',
+    altKey: true,
+    shiftKey: false,
+    editRequired: false,
+  }),
 ]);
 
+function matchesShortcutKey(event, shortcut) {
+  if (shortcut.code && event.code === shortcut.code) return true;
+  return event.key === shortcut.key;
+}
+
 function matchesTopicCommandShortcut(event, shortcut) {
+  const requiresPrimaryModifier = shortcut.modifier === 'primary';
+  const matchesPrimaryModifier = requiresPrimaryModifier
+    ? event.metaKey !== event.ctrlKey
+    : Boolean(event.metaKey) === Boolean(shortcut.metaKey) &&
+      Boolean(event.ctrlKey) === Boolean(shortcut.ctrlKey);
+
   return (
-    event.key === shortcut.key &&
-    Boolean(event.metaKey) === Boolean(shortcut.metaKey) &&
+    matchesShortcutKey(event, shortcut) &&
+    matchesPrimaryModifier &&
     Boolean(event.shiftKey) === shortcut.shiftKey &&
-    !event.altKey &&
-    !event.ctrlKey
+    Boolean(event.altKey) === Boolean(shortcut.altKey)
+  );
+}
+
+function matchesViewControlShortcut(event, shortcut) {
+  return (
+    matchesShortcutKey(event, shortcut) &&
+    Boolean(event.altKey) === Boolean(shortcut.altKey) &&
+    !event.ctrlKey &&
+    !event.metaKey &&
+    (shortcut.allowShiftKey || Boolean(event.shiftKey) === Boolean(shortcut.shiftKey))
   );
 }
 
@@ -71,6 +155,22 @@ export const topicKeyboardShortcutMethods = {
   handleMapKeyDown(event) {
     if (this.isSourceMode) return;
     if (event.target !== this.svgEl || event.isComposing) return;
+
+    const mapControlShortcut = MAP_CONTROL_SHORTCUTS.find((shortcut) =>
+      matchesViewControlShortcut(event, shortcut)
+    );
+    if (mapControlShortcut) {
+      this.handleMapControlShortcut(event, mapControlShortcut);
+      return;
+    }
+
+    const viewControlShortcut = VIEW_CONTROL_SHORTCUTS.find((shortcut) =>
+      matchesViewControlShortcut(event, shortcut)
+    );
+    if (viewControlShortcut) {
+      this.handleViewControlShortcut(event, viewControlShortcut);
+      return;
+    }
 
     const currentTopic = this.ensureFocusedTopic();
     if (!currentTopic) return;
@@ -107,10 +207,63 @@ export const topicKeyboardShortcutMethods = {
     }
   },
 
-  handleTopicCommandShortcut(event, currentTopic, shortcut) {
-    if (!this.canEditMindMap()) return;
+  handleMapControlShortcut(event, shortcut) {
+    event.preventDefault();
+    event.stopPropagation();
 
-    // Tab/Enter/Space/Delete 在 Obsidian 或浏览器里都有原生语义；确认是主题快捷键后必须拦截外层处理。
+    Promise.resolve(this.executeMapControlShortcut(shortcut.command)).catch((error) => {
+      new Notice(`yonxao-mindmap: ${error.message || String(error)}`);
+    });
+  },
+
+  async executeMapControlShortcut(command) {
+    switch (command) {
+      case 'openConfigModal':
+        await this.openConfigModal();
+        return true;
+      default:
+        return false;
+    }
+  },
+
+  handleViewControlShortcut(event, shortcut) {
+    event.preventDefault();
+    event.stopPropagation();
+
+    Promise.resolve(this.executeViewControlShortcut(shortcut.command)).catch((error) => {
+      new Notice(`yonxao-mindmap: ${error.message || String(error)}`);
+    });
+  },
+
+  async executeViewControlShortcut(command) {
+    switch (command) {
+      case 'zoomIn':
+        this.zoomAtCenter(ZOOM_IN_FACTOR);
+        return true;
+      case 'zoomOut':
+        this.zoomAtCenter(ZOOM_OUT_FACTOR);
+        return true;
+      case 'fitView':
+        this.fitView();
+        return true;
+      case 'showOriginalSizeView':
+        this.showOriginalSizeView();
+        return true;
+      case 'toggleWindowFullscreen':
+        this.toggleWindowFullscreen();
+        return true;
+      case 'toggleFullscreen':
+        await this.toggleFullscreen();
+        return true;
+      default:
+        return false;
+    }
+  },
+
+  handleTopicCommandShortcut(event, currentTopic, shortcut) {
+    if (shortcut.editRequired !== false && !this.canEditMindMap()) return;
+
+    // 主题快捷键可能和 Obsidian 或浏览器原生快捷键冲突；确认命中后必须拦截外层处理。
     event.preventDefault();
     event.stopPropagation();
 
@@ -146,6 +299,9 @@ export const topicKeyboardShortcutMethods = {
       case 'openInlineTextEditor':
         this.openInlineTextEditorFromShortcut(currentTopic);
         return true;
+      case 'toggleTopicCollapse':
+        this.toggleTopicCollapseFromShortcut(currentTopic);
+        return true;
       default:
         return false;
     }
@@ -173,6 +329,14 @@ export const topicKeyboardShortcutMethods = {
   openInlineTextEditorFromShortcut(currentTopic) {
     this.setFocusedTopic(currentTopic.id, { focusSvg: false, ensureInView: true });
     this.openInlineTextEditor(currentTopic);
+  },
+
+  toggleTopicCollapseFromShortcut(currentTopic) {
+    if (!currentTopic?.subtopics?.length) return false;
+
+    this.toggleTopicCollapse(currentTopic);
+    this.setFocusedTopic(currentTopic.id, { focusSvg: true, ensureInView: true });
+    return true;
   },
 
   focusCreatedTopicFromShortcut(result) {

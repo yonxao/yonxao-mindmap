@@ -141,6 +141,7 @@ export const zhTWMessages = Object.freeze({
   'configModal.tabs.color': '配色',
   'configModal.tabs.font': '字型',
   'configModal.tabs.interaction': '互動',
+  'configModal.tabs.shortcuts': '快捷鍵',
   'configModal.tabs.advanced': '進階',
   'configModal.actions.apply': '套用',
   'configModal.actions.saveAndClose': '儲存並關閉',
@@ -149,6 +150,69 @@ export const zhTWMessages = Object.freeze({
   'configModal.status.saved': '設定已儲存。',
   'configModal.status.valid': '設定語法有效。',
   'configModal.status.invalid': '設定語法錯誤：{message}',
+
+  // ── 設定面板：快捷鍵分頁 ──
+  'configModal.shortcuts.help': '目前快捷鍵為唯讀展示，暫不支援修改',
+  'configModal.shortcuts.topicCreateDeleteSection': '主題建立與刪除',
+  'configModal.shortcuts.topicEditSection': '主題編輯',
+  'configModal.shortcuts.topicNavigateCollapseSection': '主題導覽與摺疊',
+  'configModal.shortcuts.mapControlSection': '導圖控制',
+  'configModal.shortcuts.viewControlSection': '檢視控制',
+  'configModal.shortcuts.header.action': '操作',
+  'configModal.shortcuts.header.windows': 'Windows',
+  'configModal.shortcuts.header.mac': 'Mac',
+  'configModal.shortcuts.header.description': '說明',
+  'configModal.shortcuts.action.addSubtopic': '插入子主題',
+  'configModal.shortcuts.action.addSiblingAfter': '插入弟主題',
+  'configModal.shortcuts.action.addSiblingBefore': '插入兄主題',
+  'configModal.shortcuts.action.deleteTopic': '刪除主題',
+
+  'configModal.shortcuts.action.openTopicEditor': '開啟主題編輯面板',
+  'configModal.shortcuts.action.openInlineEditor': '快速行內編輯',
+  'configModal.shortcuts.action.inlineNewline': '行內編輯中換行',
+  'configModal.shortcuts.action.inlineSubmit': '行內編輯中提交',
+  'configModal.shortcuts.action.inlineCancel': '行內編輯中取消',
+  'configModal.shortcuts.action.topicEditorSave': '主題編輯面板儲存',
+  'configModal.shortcuts.action.contentEditorSave': '長文字編輯浮層儲存',
+
+  'configModal.shortcuts.action.navigateTopic': '移動選中狀態',
+  'configModal.shortcuts.action.toggleCollapse': '展開/摺疊子主題',
+
+  'configModal.shortcuts.action.zoomIn': '放大檢視',
+  'configModal.shortcuts.action.zoomOut': '縮小檢視',
+  'configModal.shortcuts.action.fitView': '適配檢視',
+  'configModal.shortcuts.action.originalSize': '原始檢視',
+  'configModal.shortcuts.action.windowFullscreen': '視窗全螢幕',
+  'configModal.shortcuts.action.fullscreen': '全螢幕',
+
+  'configModal.shortcuts.action.openConfigModal': '開啟設定面板',
+
+  'configModal.shortcuts.description.addSubtopic': '給目前主題新增子主題',
+  'configModal.shortcuts.description.addSiblingAfter': '在目前主題後新增同級主題',
+  'configModal.shortcuts.description.addSiblingBefore': '在目前主題前新增同級主題',
+  'configModal.shortcuts.description.deleteTopic': '刪除目前主題',
+
+  'configModal.shortcuts.description.openTopicEditor': '開啟目前主題的編輯面板',
+  'configModal.shortcuts.description.openInlineEditor': '快速編輯目前主題文字',
+  'configModal.shortcuts.description.inlineNewline': '在主題文字內插入換行',
+  'configModal.shortcuts.description.inlineSubmit': '儲存文字並回到目前主題',
+  'configModal.shortcuts.description.inlineCancel': '放棄修改並回到目前主題',
+  'configModal.shortcuts.description.topicEditorSave': '儲存主題編輯面板中的全部改動',
+  'configModal.shortcuts.description.contentEditorSave':
+    '只儲存長文字編輯浮層，不儲存整個主題編輯面板',
+
+  'configModal.shortcuts.description.navigateTopic':
+    '移動主題選中狀態；思維導圖按父子/同級關係導覽，其他布局按空間方向導覽',
+  'configModal.shortcuts.description.toggleCollapse': '展開或摺疊子主題',
+
+  'configModal.shortcuts.description.zoomIn': '放大檢視',
+  'configModal.shortcuts.description.zoomOut': '縮小檢視',
+  'configModal.shortcuts.description.fitView': '適配檢視，以目前視口進行縮放',
+  'configModal.shortcuts.description.originalSize': '切換檢視為原始大小',
+  'configModal.shortcuts.description.windowFullscreen': '進入/退出視窗全螢幕模式',
+  'configModal.shortcuts.description.fullscreen': '進入/退出全螢幕模式',
+
+  'configModal.shortcuts.description.openConfigModal': '開啟設定面板',
 
   // ── 設定面板：佔位符 ──
   'configModal.placeholder.auto': '自動',

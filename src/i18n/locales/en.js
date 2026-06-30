@@ -148,6 +148,7 @@ export const enMessages = Object.freeze({
   'configModal.tabs.color': 'Color',
   'configModal.tabs.font': 'Font',
   'configModal.tabs.interaction': 'Interaction',
+  'configModal.tabs.shortcuts': 'Shortcuts',
   'configModal.tabs.advanced': 'Advanced',
   'configModal.actions.apply': 'Apply',
   'configModal.actions.saveAndClose': 'Save and close',
@@ -156,6 +157,73 @@ export const enMessages = Object.freeze({
   'configModal.status.saved': 'Config saved.',
   'configModal.status.valid': 'Config syntax is valid.',
   'configModal.status.invalid': 'Config syntax error: {message}',
+
+  // ── Config panel: shortcuts tab ──
+  'configModal.shortcuts.help': 'Current shortcuts are read-only and cannot be changed here yet',
+  'configModal.shortcuts.topicCreateDeleteSection': 'Topic Creation and Deletion',
+  'configModal.shortcuts.topicEditSection': 'Topic Editing',
+  'configModal.shortcuts.topicNavigateCollapseSection': 'Topic Navigation and Collapse',
+  'configModal.shortcuts.mapControlSection': 'Map Control',
+  'configModal.shortcuts.viewControlSection': 'View Control',
+  'configModal.shortcuts.header.action': 'Action',
+  'configModal.shortcuts.header.windows': 'Windows',
+  'configModal.shortcuts.header.mac': 'Mac',
+  'configModal.shortcuts.header.description': 'Description',
+  'configModal.shortcuts.action.addSubtopic': 'Insert subtopic',
+  'configModal.shortcuts.action.addSiblingAfter': 'Insert next sibling',
+  'configModal.shortcuts.action.addSiblingBefore': 'Insert previous sibling',
+  'configModal.shortcuts.action.deleteTopic': 'Delete topic',
+
+  'configModal.shortcuts.action.openTopicEditor': 'Open topic editor panel',
+  'configModal.shortcuts.action.openInlineEditor': 'Quick inline edit',
+  'configModal.shortcuts.action.inlineNewline': 'New line during inline edit',
+  'configModal.shortcuts.action.inlineSubmit': 'Submit inline edit',
+  'configModal.shortcuts.action.inlineCancel': 'Cancel inline edit',
+  'configModal.shortcuts.action.topicEditorSave': 'Save topic editor panel',
+  'configModal.shortcuts.action.contentEditorSave': 'Save long-text editor overlay',
+
+  'configModal.shortcuts.action.navigateTopic': 'Move selection',
+  'configModal.shortcuts.action.toggleCollapse': 'Expand/collapse subtopics',
+
+  'configModal.shortcuts.action.zoomIn': 'Zoom in view',
+  'configModal.shortcuts.action.zoomOut': 'Zoom out view',
+  'configModal.shortcuts.action.fitView': 'Fit view',
+  'configModal.shortcuts.action.originalSize': 'Original view',
+  'configModal.shortcuts.action.windowFullscreen': 'Window fullscreen',
+  'configModal.shortcuts.action.fullscreen': 'Fullscreen',
+
+  'configModal.shortcuts.action.openConfigModal': 'Open config panel',
+
+  'configModal.shortcuts.description.addSubtopic': 'Add a subtopic to the current topic',
+  'configModal.shortcuts.description.addSiblingAfter':
+    'Create a sibling topic after the current topic',
+  'configModal.shortcuts.description.addSiblingBefore':
+    'Create a sibling topic before the current topic',
+  'configModal.shortcuts.description.deleteTopic': 'Delete the current topic',
+
+  'configModal.shortcuts.description.openTopicEditor':
+    'Open the editor panel for the current topic',
+  'configModal.shortcuts.description.openInlineEditor': 'Quickly edit the current topic text',
+  'configModal.shortcuts.description.inlineNewline': 'Insert a line break in the topic text',
+  'configModal.shortcuts.description.inlineSubmit': 'Save the text and return to the current topic',
+  'configModal.shortcuts.description.inlineCancel':
+    'Discard changes and return to the current topic',
+  'configModal.shortcuts.description.topicEditorSave': 'Save all changes in the topic editor panel',
+  'configModal.shortcuts.description.contentEditorSave':
+    'Only save the long-text editor overlay, not the whole topic editor panel',
+
+  'configModal.shortcuts.description.navigateTopic':
+    'Move the topic selection; mind map layouts follow parent/child and sibling relationships, while other layouts use spatial direction',
+  'configModal.shortcuts.description.toggleCollapse': 'Expand or collapse subtopics',
+
+  'configModal.shortcuts.description.zoomIn': 'Zoom in view',
+  'configModal.shortcuts.description.zoomOut': 'Zoom out view',
+  'configModal.shortcuts.description.fitView': 'Fit view based on the current viewport',
+  'configModal.shortcuts.description.originalSize': 'Switch the view to original size',
+  'configModal.shortcuts.description.windowFullscreen': 'Enter/exit window fullscreen mode',
+  'configModal.shortcuts.description.fullscreen': 'Enter/exit fullscreen mode',
+
+  'configModal.shortcuts.description.openConfigModal': 'Open the config panel',
 
   // ── Config panel: placeholders ──
   'configModal.placeholder.auto': 'Auto',

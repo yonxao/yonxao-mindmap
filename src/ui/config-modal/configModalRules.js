@@ -30,6 +30,7 @@ export const configModalRuleMethods = {
       color: this.t('configModal.tabs.color'),
       font: this.t('configModal.tabs.font'),
       interaction: this.t('configModal.tabs.interaction'),
+      shortcuts: this.t('configModal.tabs.shortcuts'),
       advanced: this.t('configModal.tabs.advanced'),
     }[tab];
   },
@@ -41,6 +42,7 @@ export const configModalRuleMethods = {
       ['color', this.t('configModal.tabs.color')],
       ['font', this.t('configModal.tabs.font')],
       ['interaction', this.t('configModal.tabs.interaction')],
+      ['shortcuts', this.t('configModal.tabs.shortcuts')],
       ['advanced', this.t('configModal.tabs.advanced')],
     ];
   },

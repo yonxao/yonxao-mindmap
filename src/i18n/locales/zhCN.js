@@ -141,6 +141,7 @@ export const zhCNMessages = Object.freeze({
   'configModal.tabs.color': '配色',
   'configModal.tabs.font': '字体',
   'configModal.tabs.interaction': '交互',
+  'configModal.tabs.shortcuts': '快捷键',
   'configModal.tabs.advanced': '高级',
   'configModal.actions.apply': '应用',
   'configModal.actions.saveAndClose': '保存并关闭',
@@ -149,6 +150,69 @@ export const zhCNMessages = Object.freeze({
   'configModal.status.saved': '配置已保存。',
   'configModal.status.valid': '配置语法有效。',
   'configModal.status.invalid': '配置语法错误：{message}',
+
+  // ── 配置面板：快捷键标签页 ──
+  'configModal.shortcuts.help': '当前快捷键为只读展示，暂不支持修改',
+  'configModal.shortcuts.topicCreateDeleteSection': '主题创建与删除',
+  'configModal.shortcuts.topicEditSection': '主题编辑',
+  'configModal.shortcuts.topicNavigateCollapseSection': '主题导航与折叠',
+  'configModal.shortcuts.mapControlSection': '导图控制',
+  'configModal.shortcuts.viewControlSection': '视图控制',
+  'configModal.shortcuts.header.action': '操作',
+  'configModal.shortcuts.header.windows': 'Windows',
+  'configModal.shortcuts.header.mac': 'Mac',
+  'configModal.shortcuts.header.description': '说明',
+  'configModal.shortcuts.action.addSubtopic': '插入子主题',
+  'configModal.shortcuts.action.addSiblingAfter': '插入弟主题',
+  'configModal.shortcuts.action.addSiblingBefore': '插入兄主题',
+  'configModal.shortcuts.action.deleteTopic': '删除主题',
+
+  'configModal.shortcuts.action.openTopicEditor': '打开主题编辑面板',
+  'configModal.shortcuts.action.openInlineEditor': '快速内联编辑',
+  'configModal.shortcuts.action.inlineNewline': '内联编辑中换行',
+  'configModal.shortcuts.action.inlineSubmit': '内联编辑中提交',
+  'configModal.shortcuts.action.inlineCancel': '内联编辑中取消',
+  'configModal.shortcuts.action.topicEditorSave': '主题编辑面板保存',
+  'configModal.shortcuts.action.contentEditorSave': '长文本编辑浮层保存',
+
+  'configModal.shortcuts.action.navigateTopic': '移动选中状态',
+  'configModal.shortcuts.action.toggleCollapse': '展开/折叠子主题',
+
+  'configModal.shortcuts.action.zoomIn': '放大视图',
+  'configModal.shortcuts.action.zoomOut': '缩小视图',
+  'configModal.shortcuts.action.fitView': '适配视图',
+  'configModal.shortcuts.action.originalSize': '原始视图',
+  'configModal.shortcuts.action.windowFullscreen': '窗口全屏',
+  'configModal.shortcuts.action.fullscreen': '全屏',
+
+  'configModal.shortcuts.action.openConfigModal': '打开配置面板',
+
+  'configModal.shortcuts.description.addSubtopic': '给当前主题创建子主题',
+  'configModal.shortcuts.description.addSiblingAfter': '在当前主题后创建同级主题',
+  'configModal.shortcuts.description.addSiblingBefore': '在当前主题前创建同级主题',
+  'configModal.shortcuts.description.deleteTopic': '删除当前主题',
+
+  'configModal.shortcuts.description.openTopicEditor': '打开当前主题的编辑面板',
+  'configModal.shortcuts.description.openInlineEditor': '快速编辑当前主题文本',
+  'configModal.shortcuts.description.inlineNewline': '在主题文本内插入换行',
+  'configModal.shortcuts.description.inlineSubmit': '保存文本并回到当前主题',
+  'configModal.shortcuts.description.inlineCancel': '放弃修改并回到当前主题',
+  'configModal.shortcuts.description.topicEditorSave': '保存主题编辑面板中的全部改动',
+  'configModal.shortcuts.description.contentEditorSave':
+    '只保存长文本编辑浮层，不保存整个主题编辑面板',
+
+  'configModal.shortcuts.description.navigateTopic':
+    '移动主题选中状态；思维导图按父子/同级关系导航，其他布局按空间方向导航',
+  'configModal.shortcuts.description.toggleCollapse': '展开或折叠子主题',
+
+  'configModal.shortcuts.description.zoomIn': '放大视图',
+  'configModal.shortcuts.description.zoomOut': '缩小视图',
+  'configModal.shortcuts.description.fitView': '适配视图，以当前视口进行缩放',
+  'configModal.shortcuts.description.originalSize': '切换视图为原始大小',
+  'configModal.shortcuts.description.windowFullscreen': '进入/退出窗口全屏模式',
+  'configModal.shortcuts.description.fullscreen': '进入/退出全屏模式',
+
+  'configModal.shortcuts.description.openConfigModal': '打开配置面板',
 
   // ── 配置面板：占位符 ──
   'configModal.placeholder.auto': '自动',

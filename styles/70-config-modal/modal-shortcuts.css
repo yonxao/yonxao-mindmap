@@ -1,0 +1,121 @@
+/*
+ * 文件作用：
+ * 配置面板快捷键页样式，负责只读快捷键列表的桌面和窄屏布局。
+ */
+.yonxao-mindmap-shortcuts-tab {
+  display: grid;
+  gap: var(--yonxao-mindmap-gap-md);
+}
+
+.yonxao-mindmap-shortcuts-group {
+  display: grid;
+  gap: var(--yonxao-mindmap-gap-sm);
+}
+
+.yonxao-mindmap-shortcuts-section {
+  margin-top: 0;
+}
+
+.yonxao-mindmap-shortcuts-list {
+  display: grid;
+  overflow: hidden;
+  border: 1px solid var(--background-modifier-border);
+  border-radius: var(--yonxao-mindmap-radius-md);
+}
+
+.yonxao-mindmap-shortcuts-row {
+  display: grid;
+  grid-template-columns: minmax(116px, 1.15fr) minmax(94px, 0.8fr) minmax(112px, 0.9fr) minmax(
+      160px,
+      1.5fr
+    );
+  align-items: stretch;
+  border-top: 1px solid var(--background-modifier-border);
+}
+
+.yonxao-mindmap-shortcuts-row:first-child {
+  border-top: 0;
+}
+
+.yonxao-mindmap-shortcuts-header {
+  color: var(--text-muted);
+  font-size: var(--font-ui-smaller);
+  font-weight: 600;
+  background: var(--background-secondary);
+}
+
+.yonxao-mindmap-shortcuts-cell {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  align-items: center;
+  min-width: 0;
+  padding: 8px 10px;
+  border-left: 1px solid var(--background-modifier-border);
+  color: var(--text-normal);
+  font-size: var(--font-ui-small);
+  line-height: 1.4;
+}
+
+.yonxao-mindmap-shortcuts-cell:first-child {
+  border-left: 0;
+}
+
+.yonxao-mindmap-shortcuts-action {
+  font-weight: 600;
+}
+
+.yonxao-mindmap-shortcuts-description {
+  color: var(--text-muted);
+}
+
+.yonxao-mindmap-shortcuts-key-cell {
+  align-content: center;
+}
+
+.yonxao-mindmap-shortcuts-key {
+  display: inline-flex;
+  align-items: center;
+  min-height: 22px;
+  padding: 2px 6px;
+  border: 1px solid var(--background-modifier-border);
+  border-bottom-color: var(--background-modifier-border-hover);
+  border-radius: var(--yonxao-mindmap-radius-sm);
+  color: var(--text-normal);
+  font-family: var(--font-monospace);
+  font-size: var(--font-ui-smaller);
+  line-height: 1;
+  background: var(--background-primary);
+}
+
+@media (max-width: 620px) {
+  .yonxao-mindmap-shortcuts-header {
+    display: none;
+  }
+
+  .yonxao-mindmap-shortcuts-row {
+    grid-template-columns: 1fr;
+  }
+
+  .yonxao-mindmap-shortcuts-cell {
+    border-left: 0;
+    border-top: 1px solid var(--background-modifier-border);
+  }
+
+  .yonxao-mindmap-shortcuts-row .yonxao-mindmap-shortcuts-cell:first-child {
+    border-top: 0;
+  }
+
+  .yonxao-mindmap-shortcuts-key-cell::before,
+  .yonxao-mindmap-shortcuts-description::before {
+    flex: 0 0 78px;
+    color: var(--text-faint);
+    font-size: var(--font-ui-smaller);
+    font-weight: 600;
+  }
+
+  .yonxao-mindmap-shortcuts-key-cell::before,
+  .yonxao-mindmap-shortcuts-description::before {
+    content: attr(data-label);
+  }
+}
