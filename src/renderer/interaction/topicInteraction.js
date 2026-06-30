@@ -12,6 +12,7 @@
 import {
   Notice,
   containsTopicId,
+  findTopicContext,
   MINDMAP_LAYOUT_TYPES,
   moveTopicInTree,
   svg,
@@ -50,6 +51,14 @@ const MAP_KEYBOARD_NAV_MIN_PRIMARY_DISTANCE = 1;
 const MAP_KEYBOARD_NAV_SECONDARY_WEIGHT = 2;
 // 焦点主题贴近视口边缘时保留少量视觉余量，避免焦点描边贴边显示。
 const MAP_KEYBOARD_FOCUS_VIEWBOX_MARGIN_RATIO = 0.08;
+// 普通 Live Preview 保存后 Obsidian 可能延迟抢回焦点，稍后再补一次 SVG 焦点。
+const MAP_KEYBOARD_FOCUS_RESTORE_DELAY_MS = 80;
+
+function containsFocusTarget(containerEl, target) {
+  return Boolean(
+    target && containerEl && (target === containerEl || containerEl.contains?.(target))
+  );
+}
 
 /*
  * 作用：
@@ -96,9 +105,77 @@ export const topicInteractionMethods = {
     this.ensureFocusedTopic();
   },
 
-  handleMapBlur() {
-    // 离开导图后清理视觉焦点，避免用户在源码、配置面板或 Obsidian 其他区域操作时仍看到高亮。
-    this.clearFocusedTopic();
+  handleMapBlur(event) {
+    if (this.shouldKeepFocusedTopicAfterMapBlur(event?.relatedTarget)) return;
+
+    const blurFocusedTopicId = this.focusedTopicId;
+    const blurFocusedTopicRevision = this.focusedTopicRevision;
+
+    /*
+     * 打开 textarea/浮动编辑面板时，部分环境的 blur.relatedTarget 会短暂为空。
+     * 延迟一拍再看 document.activeElement，避免 SVG 先把当前主题焦点清掉。
+     */
+    window.setTimeout(() => {
+      if (this.shouldKeepFocusedTopicAfterMapBlur(document.activeElement)) return;
+      if (
+        this.focusedTopicRevision !== blurFocusedTopicRevision ||
+        this.focusedTopicId !== blurFocusedTopicId
+      ) {
+        return;
+      }
+      // 离开导图后清理视觉焦点，避免用户在源码、配置面板或 Obsidian 其他区域操作时仍看到高亮。
+      this.clearFocusedTopic();
+    }, 0);
+  },
+
+  shouldKeepFocusedTopicAfterMapBlur(target) {
+    if (!target) return false;
+
+    /*
+     * 主题编辑器是导图焦点的延伸区域：进入这些浮层时仍保留当前主题高亮，
+     * 这样保存、取消或删除后可以明确回到对应主题或父主题。
+     */
+    return (
+      target === this.svgEl ||
+      containsFocusTarget(this.inlineTextEditorEl, target) ||
+      containsFocusTarget(this.topicEditorEl, target) ||
+      containsFocusTarget(this.topicContentEditorEl, target)
+    );
+  },
+
+  scheduleMapKeyboardFocusRestore() {
+    const focusMap = () => {
+      if (!this.svgEl || !this.hostEl?.isConnected || this.isSourceMode || !this.focusedTopicId) {
+        return;
+      }
+      if (document.activeElement !== this.svgEl) {
+        this.svgEl.focus({ preventScroll: true });
+      }
+    };
+
+    focusMap();
+
+    if (this.pendingMapFocusFrame) {
+      window.cancelAnimationFrame(this.pendingMapFocusFrame);
+    }
+    if (this.pendingMapFocusTimer) {
+      window.clearTimeout(this.pendingMapFocusTimer);
+    }
+
+    /*
+     * 普通 Live Preview 保存后，Obsidian 可能在代码块 mount 之后又把焦点交回 CodeMirror。
+     * 延迟补一次 SVG 焦点，才能让后续方向键继续进入导图快捷键处理。
+     */
+    if (typeof window.requestAnimationFrame === 'function') {
+      this.pendingMapFocusFrame = window.requestAnimationFrame(() => {
+        this.pendingMapFocusFrame = null;
+        focusMap();
+      });
+    }
+    this.pendingMapFocusTimer = window.setTimeout(() => {
+      this.pendingMapFocusTimer = null;
+      focusMap();
+    }, MAP_KEYBOARD_FOCUS_RESTORE_DELAY_MS);
   },
 
   ensureFocusedTopic() {
@@ -110,7 +187,7 @@ export const topicInteractionMethods = {
     // 初次进入导图、折叠隐藏当前主题或源码重渲染后，都需要重新选择一个可见主题。
     const fallbackTopic = this.keyboardFocusFallbackTopic();
     if (!fallbackTopic) {
-      this.focusedTopicId = '';
+      this.updateFocusedTopicId('');
       return null;
     }
 
@@ -137,12 +214,12 @@ export const topicInteractionMethods = {
     // 当前焦点主题可能因折叠、删除或源码重渲染消失，此时回到一级主题保持键盘入口可用。
     const fallbackTopic =
       topics.find((topic) => topic.id === this.root?.id) || topics.find((topic) => topic?._layout);
-    this.focusedTopicId = fallbackTopic?.id || '';
+    this.updateFocusedTopicId(fallbackTopic?.id || '');
   },
 
   clearFocusedTopic() {
     const previousTopicId = this.focusedTopicId;
-    this.focusedTopicId = '';
+    this.updateFocusedTopicId('');
     this.syncFocusedTopicClass(previousTopicId, '');
   },
 
@@ -151,18 +228,25 @@ export const topicInteractionMethods = {
     if (!topic || !topic._layout) return false;
 
     const previousTopicId = this.focusedTopicId;
-    this.focusedTopicId = topic.id;
+    const shouldFocusSvg = options.focusSvg !== false || document.activeElement === this.svgEl;
+    this.updateFocusedTopicId(topic.id, { focusSvg: shouldFocusSvg });
     this.syncFocusedTopicClass(previousTopicId, topic.id);
 
     if (options.ensureInView) {
       this.ensureFocusedTopicInView(topic);
     }
 
-    if (options.focusSvg !== false && this.svgEl && document.activeElement !== this.svgEl) {
+    if (shouldFocusSvg && this.svgEl && document.activeElement !== this.svgEl) {
       this.svgEl.focus({ preventScroll: true });
     }
 
     return true;
+  },
+
+  updateFocusedTopicId(topicId, options = {}) {
+    this.focusedTopicId = topicId || '';
+    this.focusedTopicRevision += 1;
+    this.rememberFocusedTopic({ focusSvg: Boolean(options.focusSvg) });
   },
 
   syncFocusedTopicClass(previousTopicId, nextTopicId) {
@@ -271,6 +355,11 @@ export const topicInteractionMethods = {
     }
 
     return null;
+  },
+
+  findTopicParentInTree(topicId) {
+    // 删除后恢复焦点需要真实父主题，不能依赖当前折叠/可见状态。
+    return findTopicContext(this.root, topicId)?.parent || null;
   },
 
   bestTopicInKeyboardDirection(currentTopic, candidates, direction, options = {}) {

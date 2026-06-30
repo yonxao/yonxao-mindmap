@@ -73,6 +73,59 @@ export const rendererStateMethods = {
     return `${sourcePath}:${String(this.source || '').slice(0, VIEW_MODE_KEY_SOURCE_TRUNCATE_LENGTH)}`;
   },
 
+  topicFocusMemoryKey() {
+    const sourcePath = this.ctx?.sourcePath || 'unknown';
+    const sectionInfo =
+      this.ctx && typeof this.ctx.getSectionInfo === 'function'
+        ? this.ctx.getSectionInfo(this.hostEl)
+        : null;
+
+    if (sectionInfo) {
+      return `${sourcePath}:${sectionInfo.lineStart}`;
+    }
+
+    if (this.editorContext && Number.isFinite(this.editorContext.contentFrom)) {
+      return `${sourcePath}:editor:${this.editorContext.contentFrom}`;
+    }
+
+    return `${sourcePath}:${String(this.source || '').slice(0, VIEW_MODE_KEY_SOURCE_TRUNCATE_LENGTH)}`;
+  },
+
+  readRememberedTopicFocusState() {
+    const key = this.topicFocusMemoryKey();
+    const record = this.constructor.topicFocusMemory.get(key);
+    if (!record || record.expiresAt < Date.now()) {
+      this.constructor.topicFocusMemory.delete(key);
+      return null;
+    }
+
+    return {
+      topicId: record.topicId || '',
+      focusSvg: Boolean(record.focusSvg),
+    };
+  },
+
+  rememberFocusedTopic(options = {}) {
+    if (!this.focusedTopicId) {
+      const key = this.topicFocusMemoryKey();
+      this.constructor.topicFocusMemory.delete(key);
+      return;
+    }
+
+    this.rememberTopicFocusState(this.focusedTopicId, options);
+  },
+
+  rememberTopicFocusState(topicId, options = {}) {
+    if (!topicId) return;
+
+    const key = this.topicFocusMemoryKey();
+    this.constructor.topicFocusMemory.set(key, {
+      topicId,
+      focusSvg: Boolean(options.focusSvg),
+      expiresAt: Date.now() + SESSION_VIEW_MODE_EXPIRY_MS,
+    });
+  },
+
   t(key, replacements) {
     return this.plugin?.t?.(key, replacements) || key;
   },

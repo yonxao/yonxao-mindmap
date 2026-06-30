@@ -27,6 +27,7 @@ export const inlineTopicEditorMethods = {
 
     this.closeTopicEditor();
     this.closeInlineTextEditor(false);
+    this.inlineTextEditorCancelling = false;
 
     const topicEl = Array.from(this.mapEl.querySelectorAll('.yonxao-mindmap-topic')).find(
       (element) => element.getAttribute('data-topic-id') === topic.id
@@ -66,6 +67,13 @@ export const inlineTopicEditorMethods = {
     }
 
     this.registerDomEvent(inputEl, 'keydown', (event) => {
+      if (event.key === 'Enter' && event.shiftKey) {
+        event.preventDefault();
+        // 手动插入换行，避免 Shift+Enter 继续冒泡后被 Obsidian/外层快捷键链路抢走焦点。
+        this.insertInlineTextEditorNewline();
+        return;
+      }
+
       if (event.key === 'Enter' && !event.shiftKey) {
         event.preventDefault();
         Promise.resolve(this.saveInlineTextEditor()).catch((error) => {
@@ -75,12 +83,17 @@ export const inlineTopicEditorMethods = {
 
       if (event.key === 'Escape') {
         event.preventDefault();
+        this.inlineTextEditorCancelling = true;
         this.closeInlineTextEditor(false);
       }
     });
 
     this.registerDomEvent(inputEl, 'blur', () => {
       if (this.inlineTextEditorSaving) return;
+      if (this.inlineTextEditorCancelling) {
+        this.inlineTextEditorCancelling = false;
+        return;
+      }
       Promise.resolve(this.saveInlineTextEditor()).catch((error) => {
         new Notice(`yonxao-mindmap: ${error.message || String(error)}`);
       });
@@ -95,6 +108,17 @@ export const inlineTopicEditorMethods = {
     this.positionInlineTextEditor(cardRect, topic, box);
     inputEl.focus();
     inputEl.select();
+  },
+
+  insertInlineTextEditorNewline() {
+    const inputEl = this.inlineTextEditorInput;
+    if (!inputEl) return;
+
+    const selectionStart = inputEl.selectionStart ?? inputEl.value.length;
+    const selectionEnd = inputEl.selectionEnd ?? selectionStart;
+    inputEl.setRangeText('\n', selectionStart, selectionEnd, 'end');
+    inputEl.dispatchEvent(new Event('input', { bubbles: true }));
+    inputEl.focus();
   },
 
   positionInlineTextEditor(anchorRect, topic, box) {
@@ -141,7 +165,8 @@ export const inlineTopicEditorMethods = {
     if (!this.canEditMindMap()) return false;
 
     const inputEl = this.inlineTextEditorInput;
-    const topic = this.topicById.get(this.inlineEditingTopicId);
+    const topicId = this.inlineEditingTopicId;
+    const topic = this.topicById.get(topicId);
     if (!inputEl || !topic) return false;
 
     const nextText = normalizeTopicTextForStorage(inputEl.value);
@@ -153,18 +178,30 @@ export const inlineTopicEditorMethods = {
 
     if (nextText === (topic.text || '')) {
       this.closeInlineTextEditor(false);
+      this.restoreFocusAfterInlineTextEdit(topicId);
       return true;
     }
 
     this.inlineTextEditorSaving = true;
     topic.text = nextText;
+    // 保存可能触发 Obsidian 重建代码块；先记住当前主题，避免新实例丢失焦点。
+    this.rememberTopicFocusState(topicId, { focusSvg: true });
     this.closeInlineTextEditor(false);
 
     try {
-      return await this.saveTreeToSourceAndFile(this.t('notice.topicContentSaved'));
+      const saved = await this.saveTreeToSourceAndFile(this.t('notice.topicContentSaved'));
+      if (saved) {
+        this.restoreFocusAfterInlineTextEdit(topicId);
+      }
+      return saved;
     } finally {
       this.inlineTextEditorSaving = false;
     }
+  },
+
+  restoreFocusAfterInlineTextEdit(topicId) {
+    if (!topicId) return;
+    this.setFocusedTopic(topicId, { focusSvg: true, ensureInView: true });
   },
 
   closeInlineTextEditor(saveOnClose = false) {
@@ -176,11 +213,15 @@ export const inlineTopicEditorMethods = {
     }
 
     const editorEl = this.inlineTextEditorEl;
+    const cancelledTopicId = this.inlineTextEditorCancelling ? this.inlineEditingTopicId : '';
     this.inlineTextEditorEl = null;
     this.inlineTextEditorInput = null;
     this.inlineEditingTopicId = null;
     if (editorEl?.parentNode) {
       editorEl.parentNode.removeChild(editorEl);
+    }
+    if (cancelledTopicId) {
+      this.restoreFocusAfterInlineTextEdit(cancelledTopicId);
     }
   },
 };

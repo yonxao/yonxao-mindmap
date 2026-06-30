@@ -31,8 +31,9 @@ export const topicCommandMethods = {
     this.collapsedIds.delete(topic.id);
     assignIds(this.root, '0');
 
-    // 保存会重新渲染导图；提前记录新主题 id，供键盘快捷键在渲染后重新聚焦。
+    // 保存可能触发 Obsidian 重建代码块；先记住新主题，避免新实例恢复到旧焦点。
     const topicId = subtopic.id;
+    this.rememberTopicFocusState(topicId, { focusSvg: true });
     const saved = await this.saveTreeToSourceAndFile(this.t('notice.subtopicAdded'));
     return saved ? { saved, topicId } : false;
   },
@@ -49,8 +50,9 @@ export const topicCommandMethods = {
     }
 
     assignIds(this.root, '0');
-    // 保存会重新渲染导图；提前记录新主题 id，供键盘快捷键在渲染后重新聚焦。
+    // 保存可能触发 Obsidian 重建代码块；先记住新主题，避免新实例恢复到旧焦点。
     const topicId = sibling.id;
+    this.rememberTopicFocusState(topicId, { focusSvg: true });
     const saved = await this.saveTreeToSourceAndFile(this.t('notice.siblingTopicAdded'));
     return saved ? { saved, topicId } : false;
   },

@@ -93,7 +93,7 @@ export function createAdditionalLocale(text) {
     'topicEditor.content': text.content,
     'topicEditor.expandText': text.expandText,
     'topicEditor.contentEditorTitle': text.editContent,
-    'topicEditor.applyText': text.apply,
+    'topicEditor.applyText': text.save,
     'topicEditor.color': text.color,
     'topicEditor.icon': text.icon,
     'topicEditor.noIcon': text.noIcon,

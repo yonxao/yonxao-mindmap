@@ -84,7 +84,7 @@ export const zhCNMessages = Object.freeze({
   'topicEditor.content': '内容',
   'topicEditor.expandText': '打开大文本编辑器',
   'topicEditor.contentEditorTitle': '编辑内容',
-  'topicEditor.applyText': '应用',
+  'topicEditor.applyText': '保存',
   'topicEditor.color': '主题颜色',
   'topicEditor.icon': '主题图标',
   'topicEditor.noIcon': '无图标',

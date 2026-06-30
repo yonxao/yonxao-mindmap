@@ -87,6 +87,14 @@ export const rendererContextMethods = {
       window.cancelAnimationFrame(this.pendingSourceHeightFrame);
       this.pendingSourceHeightFrame = null;
     }
+    if (this.pendingMapFocusFrame) {
+      window.cancelAnimationFrame(this.pendingMapFocusFrame);
+      this.pendingMapFocusFrame = null;
+    }
+    if (this.pendingMapFocusTimer) {
+      window.clearTimeout(this.pendingMapFocusTimer);
+      this.pendingMapFocusTimer = null;
+    }
   },
 
   mount() {
@@ -107,6 +115,8 @@ export const rendererContextMethods = {
       this.root = createMindTopic('yonxao-mindmap', {}, []);
       assignIds(this.root, '0');
     }
+    const rememberedTopicFocus = this.readRememberedTopicFocusState();
+    this.focusedTopicId = rememberedTopicFocus?.topicId || '';
 
     this.containerEl = document.createElement('div');
     this.containerEl.className = 'yonxao-mindmap-container';
@@ -122,6 +132,9 @@ export const rendererContextMethods = {
     this.installContainerResizeObserver();
     this.installEventBoundary();
     this.renderMap(true);
+    if (rememberedTopicFocus?.focusSvg && this.focusedTopicId) {
+      this.scheduleMapKeyboardFocusRestore();
+    }
     if (parseError) {
       this.showSourceMode(parseError);
     }

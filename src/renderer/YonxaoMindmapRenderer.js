@@ -56,6 +56,7 @@ let sourceViewIdCounter = 0;
 
 export class YonxaoMindmapRenderer extends Component {
   static viewModeMemory = new Map();
+  static topicFocusMemory = new Map();
 
   constructor(plugin, source, hostEl, ctx, editorContext) {
     super();
@@ -96,9 +97,11 @@ export class YonxaoMindmapRenderer extends Component {
     this.inlineTextEditorInput = null;
     this.inlineEditingTopicId = null;
     this.inlineTextEditorSaving = false;
+    this.inlineTextEditorCancelling = false;
     this.topicDropIndicatorEl = null;
     this.hoveredTopicControlId = '';
     this.focusedTopicId = '';
+    this.focusedTopicRevision = 0;
     this.topicById = new Map();
     this.collapsedIds = new Set();
     this.viewBox = null;
@@ -125,6 +128,8 @@ export class YonxaoMindmapRenderer extends Component {
     this.pendingFitFrame = null;
     this.pendingToolbarFrame = null;
     this.pendingSourceHeightFrame = null;
+    this.pendingMapFocusFrame = null;
+    this.pendingMapFocusTimer = null;
     this.containerResizeObserver = null;
     this.lastObservedContainerWidth = 0;
     this.sourceLineCount = 1;

@@ -64,6 +64,7 @@ export { findFenceBySection, replaceCodeBlockSource } from '../markdown/codeBloc
 export {
   containsTopicId,
   countTopicDescendants,
+  findTopicContext,
   insertSiblingTopic,
   moveTopicInTree,
   removeTopicById,

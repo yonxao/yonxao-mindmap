@@ -26,6 +26,7 @@ export const topicEditorStateMethods = {
   setTopicEditorCustomState(controlEl, isCustom) {
     if (!controlEl) return;
 
+    // data-topic-editor-custom 是保存时的唯一判断来源；class 只负责视觉提示。
     controlEl.dataset.topicEditorCustom = isCustom ? 'true' : 'false';
     controlEl.classList.toggle('is-inherited-value', !isCustom);
     controlEl.classList.toggle('is-custom-value', isCustom);
@@ -50,6 +51,7 @@ export const topicEditorStateMethods = {
     const text = String(value ?? '').trim();
     if (!text) return false;
     const inheritedValue = this.topicEditorInheritedValues?.[key];
+    // 和继承值相同的输入不应保存成自定义属性，避免源码里出现冗余覆盖。
     return text !== String(inheritedValue ?? '').trim();
   },
 
@@ -59,6 +61,7 @@ export const topicEditorStateMethods = {
     const fields = this.topicEditorFields;
     const inheritedValue = this.topicEditorInheritedValues[key];
     if (key === 'color') {
+      // 颜色字段由色板、文本框和隐藏值组成，只有文本框也为空时才恢复继承色。
       if (this.isTopicEditorCustomValue(fields.colorField) || fields.colorField._textInput.value) {
         return;
       }
@@ -81,6 +84,7 @@ export const topicEditorStateMethods = {
     const fields = this.topicEditorFields;
     if (!fields) return null;
 
+    // 快照只保存会写回 yxmm 的值；继承状态统一序列化为空字符串。
     return {
       content: normalizeTopicTextForStorage(fields.content.value),
       color: this.isTopicEditorCustomValue(fields.colorField) ? fields.color.value : '',
@@ -133,6 +137,7 @@ export const topicEditorStateMethods = {
       input.placeholder = text || fallbackValue;
     };
 
+    // 继承值显示在 placeholder 中，输入框 value 保持空，保存时才能表达“继续继承”。
     setPlaceholder(
       fields.colorField?._textInput,
       inherited.color,
@@ -155,6 +160,7 @@ export const topicEditorStateMethods = {
 
   resolveTopicEditorInheritedValues(topic) {
     const attributes = { ...(topic.attributes || {}) };
+    // 临时移除当前主题的可编辑属性，再走配置解析，即可得到父级/全局继承后的有效值。
     for (const key of [
       'color',
       'icon',
@@ -210,6 +216,7 @@ export const topicEditorStateMethods = {
       return false;
     }
 
+    // 校验全部通过后才写入内存树；失败时保持原主题不变。
     topic.text = text;
     setOptionalTopicAttribute(
       topic.attributes,
@@ -254,8 +261,11 @@ export const topicEditorStateMethods = {
     );
     setOptionalTopicAttribute(topic.attributes, 'layout', '');
 
+    const topicId = topic.id;
+    // 保存可能触发 Obsidian 重建代码块；先记住当前主题，避免新实例丢失焦点。
+    this.rememberTopicFocusState(topicId, { focusSvg: true });
     const saved = await this.saveTreeToSourceAndFile('主题已保存。');
-    if (saved) this.closeTopicEditor();
+    if (saved) this.closeTopicEditor({ restoreFocusTopicId: topicId });
     return saved;
   },
 
@@ -270,12 +280,21 @@ export const topicEditorStateMethods = {
 
     if (!this.confirmDeleteTopic(topic)) return false;
 
+    const parentTopic = this.findTopicParentInTree(topic.id);
+    if (parentTopic?.id) {
+      // 删除保存可能触发代码块重建，先把父主题写入焦点记忆，避免恢复到根主题。
+      this.rememberTopicFocusState(parentTopic.id, { focusSvg: true });
+    }
+
     const removed = removeTopicById(this.root, topic.id);
     if (!removed) return false;
 
     assignIds(this.root, '0');
     const saved = await this.saveTreeToSourceAndFile(this.t('notice.topicDeleted'));
-    if (saved) this.closeTopicEditor();
+    if (saved) {
+      this.closeTopicEditor({ restoreFocusTopicId: parentTopic?.id || '' });
+      if (!parentTopic) this.ensureFocusedTopic();
+    }
     return saved;
   },
 };

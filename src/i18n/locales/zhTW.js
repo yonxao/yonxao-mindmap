@@ -84,7 +84,7 @@ export const zhTWMessages = Object.freeze({
   'topicEditor.content': '內容',
   'topicEditor.expandText': '開啟大文字編輯器',
   'topicEditor.contentEditorTitle': '編輯內容',
-  'topicEditor.applyText': '套用',
+  'topicEditor.applyText': '儲存',
   'topicEditor.color': '主題顏色',
   'topicEditor.icon': '主題圖示',
   'topicEditor.noIcon': '無圖示',

@@ -13,7 +13,7 @@ import { Notice } from '../../shared/rendererShared.js';
 
 const MAP_NAVIGATION_KEYS = new Set(['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown']);
 
-const TOPIC_CREATION_SHORTCUTS = Object.freeze([
+const TOPIC_COMMAND_SHORTCUTS = Object.freeze([
   Object.freeze({
     command: 'addSubtopic',
     key: 'Tab',
@@ -29,15 +29,41 @@ const TOPIC_CREATION_SHORTCUTS = Object.freeze([
     key: 'Enter',
     shiftKey: true,
   }),
+  Object.freeze({
+    command: 'deleteTopic',
+    key: 'Delete',
+    shiftKey: false,
+  }),
+  Object.freeze({
+    command: 'deleteTopic',
+    key: 'Backspace',
+    metaKey: true,
+    shiftKey: false,
+  }),
+  Object.freeze({
+    command: 'openTopicEditor',
+    key: '`',
+    shiftKey: false,
+  }),
+  Object.freeze({
+    command: 'openInlineTextEditor',
+    key: ' ',
+    shiftKey: false,
+  }),
+  Object.freeze({
+    command: 'openInlineTextEditor',
+    key: 'Spacebar',
+    shiftKey: false,
+  }),
 ]);
 
-function matchesTopicCreationShortcut(event, shortcut) {
+function matchesTopicCommandShortcut(event, shortcut) {
   return (
     event.key === shortcut.key &&
+    Boolean(event.metaKey) === Boolean(shortcut.metaKey) &&
     Boolean(event.shiftKey) === shortcut.shiftKey &&
     !event.altKey &&
-    !event.ctrlKey &&
-    !event.metaKey
+    !event.ctrlKey
   );
 }
 
@@ -49,11 +75,11 @@ export const topicKeyboardShortcutMethods = {
     const currentTopic = this.ensureFocusedTopic();
     if (!currentTopic) return;
 
-    const creationShortcut = TOPIC_CREATION_SHORTCUTS.find((shortcut) =>
-      matchesTopicCreationShortcut(event, shortcut)
+    const commandShortcut = TOPIC_COMMAND_SHORTCUTS.find((shortcut) =>
+      matchesTopicCommandShortcut(event, shortcut)
     );
-    if (creationShortcut) {
-      this.handleTopicCreationShortcut(event, currentTopic, creationShortcut);
+    if (commandShortcut) {
+      this.handleTopicCommandShortcut(event, currentTopic, commandShortcut);
       return;
     }
 
@@ -81,21 +107,21 @@ export const topicKeyboardShortcutMethods = {
     }
   },
 
-  handleTopicCreationShortcut(event, currentTopic, shortcut) {
+  handleTopicCommandShortcut(event, currentTopic, shortcut) {
     if (!this.canEditMindMap()) return;
 
-    // Tab/Enter 在 Obsidian 编辑器里都有原生语义；确认是主题快捷键后必须拦截外层处理。
+    // Tab/Enter/Space/Delete 在 Obsidian 或浏览器里都有原生语义；确认是主题快捷键后必须拦截外层处理。
     event.preventDefault();
     event.stopPropagation();
 
-    Promise.resolve(this.executeTopicCreationShortcut(currentTopic, shortcut.command)).catch(
+    Promise.resolve(this.executeTopicShortcutCommand(currentTopic, shortcut.command)).catch(
       (error) => {
         new Notice(`yonxao-mindmap: ${error.message || String(error)}`);
       }
     );
   },
 
-  async executeTopicCreationShortcut(currentTopic, command) {
+  async executeTopicShortcutCommand(currentTopic, command) {
     switch (command) {
       case 'addSubtopic': {
         const result = await this.addSubtopicFromContextMenu(currentTopic);
@@ -112,9 +138,41 @@ export const topicKeyboardShortcutMethods = {
         this.focusCreatedTopicFromShortcut(result);
         return result;
       }
+      case 'deleteTopic':
+        return this.deleteTopicFromShortcut(currentTopic);
+      case 'openTopicEditor':
+        this.openTopicEditorFromShortcut(currentTopic);
+        return true;
+      case 'openInlineTextEditor':
+        this.openInlineTextEditorFromShortcut(currentTopic);
+        return true;
       default:
         return false;
     }
+  },
+
+  async deleteTopicFromShortcut(currentTopic) {
+    const parentTopic = this.findTopicParentInTree(currentTopic?.id);
+    if (parentTopic?.id) {
+      this.rememberTopicFocusState(parentTopic.id, { focusSvg: true });
+    }
+    const deleted = await this.deleteTopicFromContextMenu(currentTopic);
+    if (!deleted) return false;
+
+    if (!this.setFocusedTopic(parentTopic?.id, { focusSvg: true, ensureInView: true })) {
+      this.ensureFocusedTopic();
+    }
+    return true;
+  },
+
+  openTopicEditorFromShortcut(currentTopic) {
+    this.setFocusedTopic(currentTopic.id, { focusSvg: false, ensureInView: true });
+    this.openTopicEditor(currentTopic);
+  },
+
+  openInlineTextEditorFromShortcut(currentTopic) {
+    this.setFocusedTopic(currentTopic.id, { focusSvg: false, ensureInView: true });
+    this.openInlineTextEditor(currentTopic);
   },
 
   focusCreatedTopicFromShortcut(result) {
@@ -124,6 +182,6 @@ export const topicKeyboardShortcutMethods = {
      * 新增主题保存后会触发 renderMap()，因此 topicById 已经刷新。
      * 这里只把焦点移到新主题，不自动打开编辑框，避免创建动作强制进入文本编辑状态。
      */
-    this.setFocusedTopic(result.topicId, { focusSvg: false, ensureInView: true });
+    this.setFocusedTopic(result.topicId, { focusSvg: true, ensureInView: true });
   },
 };

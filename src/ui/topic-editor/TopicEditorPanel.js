@@ -89,7 +89,7 @@ export const topicEditorPanelMethods = {
       await this.saveTopicEditor();
     });
     const cancelButton = this.createPanelButton(this.t('topicEditor.cancel'), () => {
-      this.closeTopicEditor();
+      this.closeTopicEditor({ restoreFocusTopicId: this.editingTopicId });
     });
 
     actions.appendChild(saveButton);
@@ -119,6 +119,7 @@ export const topicEditorPanelMethods = {
 
     this.topicEditorFields = {
       content: contentInput,
+      // color/icon 的可视控件是组合组件，实际保存值统一落到隐藏 input，便于状态序列化复用。
       color: colorInput,
       colorField,
       icon: iconInput,
@@ -150,6 +151,17 @@ export const topicEditorPanelMethods = {
         event.stopPropagation();
       });
     }
+    /*
+     * Cmd/Ctrl+S 可能被 Obsidian 在外层捕获阶段处理。
+     * 这里挂到 window capture，只在焦点位于主题编辑器浮层内部时拦截。
+     */
+    const topicEditorShortcutListener = (event) => {
+      this.handleTopicEditorGlobalKeyDown(event);
+    };
+    window.addEventListener('keydown', topicEditorShortcutListener, true);
+    this.register(() => {
+      window.removeEventListener('keydown', topicEditorShortcutListener, true);
+    });
 
     this.registerDomEvent(titleEl, 'pointerdown', (event) => {
       this.startTopicEditorDrag(event);
@@ -167,15 +179,20 @@ export const topicEditorPanelMethods = {
     this.registerDomEvent(contentInput, 'keydown', (event) => {
       if (event.key === 'Enter' && (event.metaKey || event.ctrlKey)) {
         event.preventDefault();
-        Promise.resolve(this.saveTopicEditor()).catch((error) => {
-          new Notice(`yonxao-mindmap: ${error.message || String(error)}`);
-        });
+        this.saveTopicEditorFromShortcut();
       }
     });
     this.registerDomEvent(this.topicEditorEl, 'keydown', (event) => {
-      if (event.key !== 'Escape') return;
-      event.preventDefault();
-      this.closeTopicEditor();
+      if ((event.metaKey || event.ctrlKey) && !event.altKey && event.key?.toLowerCase() === 's') {
+        event.preventDefault();
+        this.saveTopicEditorFromShortcut();
+        return;
+      }
+
+      if (event.key === 'Escape') {
+        event.preventDefault();
+        this.closeTopicEditor({ restoreFocusTopicId: this.editingTopicId });
+      }
     });
     this.registerDomEvent(this.topicEditorEl, 'input', () => {
       this.updateTopicEditorActionState();
@@ -187,10 +204,58 @@ export const topicEditorPanelMethods = {
     this.createTopicContentEditor();
   },
 
+  handleTopicEditorGlobalKeyDown(event) {
+    if (!this.isTopicEditorSaveShortcut(event)) return;
+    if (!this.isTopicEditorShortcutTarget(event.target)) return;
+
+    event.preventDefault();
+    event.stopPropagation();
+
+    if (this.topicContentEditorEl && !this.topicContentEditorEl.hidden) {
+      // 长文本弹框是面板里的局部编辑层，快捷保存只应用文本，不直接保存整个主题。
+      this.closeTopicContentEditor(true);
+      return;
+    }
+
+    if (this.topicEditorFields?.saveButton?.disabled) return;
+
+    this.saveTopicEditorFromShortcut();
+  },
+
+  saveTopicEditorFromShortcut() {
+    if (this.topicEditorFields?.saveButton?.disabled) return;
+
+    Promise.resolve(this.saveTopicEditor()).catch((error) => {
+      new Notice(`yonxao-mindmap: ${error.message || String(error)}`);
+    });
+  },
+
+  isTopicEditorSaveShortcut(event) {
+    return (
+      (event.metaKey || event.ctrlKey) &&
+      !event.altKey &&
+      !event.shiftKey &&
+      event.key?.toLowerCase() === 's'
+    );
+  },
+
+  isTopicEditorShortcutTarget(target) {
+    if (!target) return false;
+    if (this.topicEditorEl && !this.topicEditorEl.hidden && this.topicEditorEl.contains(target)) {
+      return true;
+    }
+    return Boolean(
+      this.topicContentEditorEl &&
+      !this.topicContentEditorEl.hidden &&
+      this.topicContentEditorEl.contains(target)
+    );
+  },
+
   installTopicEditorInheritanceEvents() {
     const fields = this.topicEditorFields;
     if (!fields) return;
 
+    // 数值字段为空时表示继承；失焦后恢复继承占位值，避免把空字符串误显示成自定义值。
     for (const [key, input] of [
       ['fontSize', fields.fontSize],
       ['fontWeight', fields.fontWeight],
@@ -222,6 +287,7 @@ export const topicEditorPanelMethods = {
 
     this.closeInlineTextEditor(false);
     this.editingTopicId = topic.id;
+    // 先计算“去掉当前主题自定义属性后的有效值”，面板才能区分继承和显式覆盖。
     this.topicEditorInheritedValues = this.resolveTopicEditorInheritedValues(topic);
     this.updateTopicEditorInheritedPlaceholders();
     const attributes = topic.attributes || {};
@@ -363,7 +429,8 @@ export const topicEditorPanelMethods = {
     this.topicEditorEl?.classList.remove('is-dragging');
   },
 
-  closeTopicEditor() {
+  closeTopicEditor(options = {}) {
+    const restoreFocusTopicId = options.restoreFocusTopicId || '';
     this.editingTopicId = null;
     this.topicEditorInheritedValues = null;
     this.topicEditorFormSnapshot = null;
@@ -382,6 +449,10 @@ export const topicEditorPanelMethods = {
     if (this.topicEditorFields?.iconPicker?._menu) {
       this.topicEditorFields.iconPicker._menu.hidden = true;
       this.topicEditorFields.iconPicker._button.setAttribute('aria-expanded', 'false');
+    }
+    if (restoreFocusTopicId) {
+      // 取消或保存后回到主题焦点，保证用户可以继续用方向键/快捷键操作导图。
+      this.setFocusedTopic(restoreFocusTopicId, { focusSvg: true, ensureInView: true });
     }
   },
 };

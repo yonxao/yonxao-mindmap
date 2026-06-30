@@ -91,7 +91,7 @@ export const enMessages = Object.freeze({
   'topicEditor.content': 'Content',
   'topicEditor.expandText': 'Open large text editor',
   'topicEditor.contentEditorTitle': 'Edit content',
-  'topicEditor.applyText': 'Apply',
+  'topicEditor.applyText': 'Save',
   'topicEditor.color': 'Topic color',
   'topicEditor.icon': 'Topic icon',
   'topicEditor.noIcon': 'No icon',
