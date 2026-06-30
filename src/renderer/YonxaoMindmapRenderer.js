@@ -27,6 +27,7 @@ import { copyTextMethods } from './export/copyText.js';
 import { exportSvgMethods } from './export/exportSvg.js';
 import { fullscreenControllerMethods } from './fullscreenController.js';
 import { topicInteractionMethods } from './interaction/topicInteraction.js';
+import { topicKeyboardShortcutMethods } from './interaction/topicKeyboardShortcuts.js';
 import { mapRendererMethods } from './mapRenderer.js';
 import { rendererContextMethods } from './rendererContext.js';
 import { topicPointGeometryMethods } from './draw/topicPointGeometry.js';
@@ -176,6 +177,7 @@ Object.assign(
   topicControlPointMethods,
   topicPointGeometryMethods,
   topicInteractionMethods,
+  topicKeyboardShortcutMethods,
   topicContextMenuMethods,
   mapContextMenuMethods,
   exportSvgMethods,

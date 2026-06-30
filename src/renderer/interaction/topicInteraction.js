@@ -101,27 +101,6 @@ export const topicInteractionMethods = {
     this.clearFocusedTopic();
   },
 
-  handleMapKeyDown(event) {
-    if (this.isSourceMode) return;
-    // 只处理裸方向键：组合键、输入法组合态和非 SVG 自身焦点都交还给 Obsidian/浏览器。
-    if (event.altKey || event.ctrlKey || event.metaKey || event.shiftKey || event.isComposing) {
-      return;
-    }
-    if (event.target !== this.svgEl) return;
-    if (!Object.prototype.hasOwnProperty.call(MAP_KEYBOARD_NAV_DIRECTIONS, event.key)) return;
-
-    event.preventDefault();
-    event.stopPropagation();
-
-    const currentTopic = this.ensureFocusedTopic();
-    if (!currentTopic) return;
-
-    const nextTopic = this.findKeyboardNavigationTopic(currentTopic, event.key);
-    if (nextTopic) {
-      this.setFocusedTopic(nextTopic.id, { focusSvg: false, ensureInView: true });
-    }
-  },
-
   ensureFocusedTopic() {
     const currentTopic = this.topicById.get(this.focusedTopicId);
     if (currentTopic && currentTopic._layout) {
