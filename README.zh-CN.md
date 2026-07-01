@@ -1,10 +1,6 @@
 # yonxao-mindmap
 
-[![GitHub Release](https://img.shields.io/github/v/release/yonxao/yonxao-mindmap?logo=github&logoColor=white)](https://github.com/yonxao/yonxao-mindmap/releases/latest)
-[![Obsidian](https://img.shields.io/badge/Obsidian-1.12.7%2B-7C3AED?logo=obsidian&logoColor=white)](https://community.obsidian.md/plugins/yonxao-mindmap)
-[![Platform](https://img.shields.io/badge/Platform-desktop%20%26%20mobile-5865F2)](https://github.com/yonxao/yonxao-mindmap/blob/main/manifest.json)
-[![License](https://img.shields.io/github/license/yonxao/yonxao-mindmap)](https://github.com/yonxao/yonxao-mindmap/blob/main/LICENSE)
-[![English Docs](https://img.shields.io/badge/English-View-blue?logo=readthedocs&logoColor=white)](https://github.com/yonxao/yonxao-mindmap/blob/main/README.md)
+[![GitHub Release](https://img.shields.io/github/v/release/yonxao/yonxao-mindmap?logo=github&logoColor=white)](https://github.com/yonxao/yonxao-mindmap/releases/latest) [![Obsidian](https://img.shields.io/badge/Obsidian-1.12.7%2B-7C3AED?logo=obsidian&logoColor=white)](https://community.obsidian.md/plugins/yonxao-mindmap) [![Platform](https://img.shields.io/badge/Platform-desktop%20%26%20mobile-5865F2)](https://github.com/yonxao/yonxao-mindmap/blob/main/manifest.json) [![License](https://img.shields.io/badge/License-AGPL--3.0-green)](https://github.com/yonxao/yonxao-mindmap/blob/main/LICENSE) [![English Docs](https://img.shields.io/badge/English-View-blue?logo=readthedocs&logoColor=white)](https://github.com/yonxao/yonxao-mindmap/blob/main/README.md)
 
 这是一个功能丰富的 Obsidian 思维导图插件，将 Markdown 文档中的 `yxmm` 代码块渲染为可交互的 SVG 思维导图及多种结构图。
 
@@ -295,4 +291,4 @@ interaction:
 
 ---
 
-⭐ 如果这个插件对你有帮助，请给它一个星标！
+⭐ 如果这个插件对你有帮助，请给它一个星标！ [![Stars](https://img.shields.io/github/stars/yonxao/yonxao-mindmap)](https://github.com/yonxao/yonxao-mindmap)
