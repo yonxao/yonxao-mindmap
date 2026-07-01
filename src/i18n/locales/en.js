@@ -75,6 +75,14 @@ export const enMessages = Object.freeze({
   'notice.subtopicAdded': 'Subtopic added.',
   'notice.siblingTopicAdded': 'Sibling topic added.',
   'notice.topicDeleted': 'Topic deleted.',
+  'notice.topicCut': 'Topic cut.',
+  'notice.topicPasted': 'Topic pasted.',
+  'notice.topicWithAttributesCopied': 'Topic and attributes copied.',
+  'notice.topicClipboardEmpty': 'yonxao-mindmap: Clipboard is empty.',
+  'notice.undoApplied': 'Undo applied.',
+  'notice.redoApplied': 'Redo applied.',
+  'notice.undoUnavailable': 'yonxao-mindmap: Nothing to undo.',
+  'notice.redoUnavailable': 'yonxao-mindmap: Nothing to redo.',
   'notice.rootCannotAddSibling': 'yonxao-mindmap: The root topic cannot add sibling topics.',
   'notice.rootCannotDeleteInMap': 'yonxao-mindmap: The root topic cannot be deleted in map view.',
   'notice.rootCannotDelete': 'yonxao-mindmap: The root topic cannot be deleted.',
@@ -175,6 +183,7 @@ export const enMessages = Object.freeze({
   'configModal.shortcuts.topicCreateDeleteSection': 'Topic Creation and Deletion',
   'configModal.shortcuts.topicEditSection': 'Topic Editing',
   'configModal.shortcuts.topicNavigateCollapseSection': 'Topic Navigation and Collapse',
+  'configModal.shortcuts.topicClipboardHistorySection': 'Copy, Paste, Undo and Redo',
   'configModal.shortcuts.mapControlSection': 'Map Control',
   'configModal.shortcuts.viewControlSection': 'View Control',
   'configModal.shortcuts.header.action': 'Action',
@@ -196,6 +205,14 @@ export const enMessages = Object.freeze({
 
   'configModal.shortcuts.action.navigateTopic': 'Move selection',
   'configModal.shortcuts.action.toggleCollapse': 'Expand/collapse subtopics',
+
+  'configModal.shortcuts.action.copyTopicContent': 'Copy topic',
+  'configModal.shortcuts.action.cutTopicContent': 'Cut topic',
+  'configModal.shortcuts.action.pasteTopicContent': 'Paste topic',
+  'configModal.shortcuts.action.copyTopicWithAttributes': 'Copy topic and attributes',
+  'configModal.shortcuts.action.pasteTopicWithAttributes': 'Paste topic and attributes',
+  'configModal.shortcuts.action.undoTopicChange': 'Undo',
+  'configModal.shortcuts.action.redoTopicChange': 'Redo',
 
   'configModal.shortcuts.action.zoomIn': 'Zoom in view',
   'configModal.shortcuts.action.zoomOut': 'Zoom out view',
@@ -227,6 +244,14 @@ export const enMessages = Object.freeze({
   'configModal.shortcuts.description.navigateTopic':
     'Move the topic selection; mind map layouts follow parent/child and sibling relationships, while other layouts use spatial direction',
   'configModal.shortcuts.description.toggleCollapse': 'Expand or collapse subtopics',
+
+  'configModal.shortcuts.description.copyTopicContent': 'Copy the current topic content',
+  'configModal.shortcuts.description.cutTopicContent': 'Cut the current topic content',
+  'configModal.shortcuts.description.pasteTopicContent': 'Paste as a subtopic of the current topic',
+  'configModal.shortcuts.description.copyTopicWithAttributes': 'Copy the current topic',
+  'configModal.shortcuts.description.pasteTopicWithAttributes': 'Paste the copied topic',
+  'configModal.shortcuts.description.undoTopicChange': 'Undo the previous operation',
+  'configModal.shortcuts.description.redoTopicChange': 'Restore the undone operation',
 
   'configModal.shortcuts.description.zoomIn': 'Zoom in view',
   'configModal.shortcuts.description.zoomOut': 'Zoom out view',

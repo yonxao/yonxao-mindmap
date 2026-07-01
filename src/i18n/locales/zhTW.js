@@ -68,6 +68,14 @@ export const zhTWMessages = Object.freeze({
   'notice.subtopicAdded': '已新增子主題。',
   'notice.siblingTopicAdded': '已新增兄弟主題。',
   'notice.topicDeleted': '主題已刪除。',
+  'notice.topicCut': '主題已剪下。',
+  'notice.topicPasted': '主題已貼上。',
+  'notice.topicWithAttributesCopied': '主題及屬性已複製。',
+  'notice.topicClipboardEmpty': 'yonxao-mindmap: 剪貼簿為空。',
+  'notice.undoApplied': '已復原。',
+  'notice.redoApplied': '已重做。',
+  'notice.undoUnavailable': 'yonxao-mindmap: 沒有可復原的操作。',
+  'notice.redoUnavailable': 'yonxao-mindmap: 沒有可重做的操作。',
   'notice.rootCannotAddSibling': 'yonxao-mindmap: 根主題不能新增兄弟主題。',
   'notice.rootCannotDeleteInMap': 'yonxao-mindmap: 根主題不能在導圖檢視中刪除。',
   'notice.rootCannotDelete': 'yonxao-mindmap: 根主題不能刪除。',
@@ -168,6 +176,7 @@ export const zhTWMessages = Object.freeze({
   'configModal.shortcuts.topicCreateDeleteSection': '主題建立與刪除',
   'configModal.shortcuts.topicEditSection': '主題編輯',
   'configModal.shortcuts.topicNavigateCollapseSection': '主題導覽與摺疊',
+  'configModal.shortcuts.topicClipboardHistorySection': '複製貼上與重做',
   'configModal.shortcuts.mapControlSection': '導圖控制',
   'configModal.shortcuts.viewControlSection': '檢視控制',
   'configModal.shortcuts.header.action': '操作',
@@ -189,6 +198,14 @@ export const zhTWMessages = Object.freeze({
 
   'configModal.shortcuts.action.navigateTopic': '移動選中狀態',
   'configModal.shortcuts.action.toggleCollapse': '展開/摺疊子主題',
+
+  'configModal.shortcuts.action.copyTopicContent': '複製主題',
+  'configModal.shortcuts.action.cutTopicContent': '剪下主題',
+  'configModal.shortcuts.action.pasteTopicContent': '貼上主題',
+  'configModal.shortcuts.action.copyTopicWithAttributes': '複製主題及屬性',
+  'configModal.shortcuts.action.pasteTopicWithAttributes': '貼上主題及屬性',
+  'configModal.shortcuts.action.undoTopicChange': '復原',
+  'configModal.shortcuts.action.redoTopicChange': '重做',
 
   'configModal.shortcuts.action.zoomIn': '放大檢視',
   'configModal.shortcuts.action.zoomOut': '縮小檢視',
@@ -216,6 +233,14 @@ export const zhTWMessages = Object.freeze({
   'configModal.shortcuts.description.navigateTopic':
     '移動主題選中狀態；思維導圖按父子/同級關係導覽，其他布局按空間方向導覽',
   'configModal.shortcuts.description.toggleCollapse': '展開或摺疊子主題',
+
+  'configModal.shortcuts.description.copyTopicContent': '複製選中主題內容',
+  'configModal.shortcuts.description.cutTopicContent': '剪下選中主題內容',
+  'configModal.shortcuts.description.pasteTopicContent': '貼上為目前主題的子主題',
+  'configModal.shortcuts.description.copyTopicWithAttributes': '複製主題',
+  'configModal.shortcuts.description.pasteTopicWithAttributes': '貼上主題',
+  'configModal.shortcuts.description.undoTopicChange': '復原上一步操作',
+  'configModal.shortcuts.description.redoTopicChange': '恢復已復原的操作',
 
   'configModal.shortcuts.description.zoomIn': '放大檢視',
   'configModal.shortcuts.description.zoomOut': '縮小檢視',

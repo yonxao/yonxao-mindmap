@@ -12,14 +12,73 @@
 import {
   Notice,
   countTopicDescendants,
+  cloneTopicSubtree,
   insertSiblingTopic,
   removeTopicById,
   assignIds,
   createMindTopic,
+  parseMindDocument,
+  refreshTreeLevels,
+  serializeTopic,
 } from '../shared/rendererShared.js';
 
 // 新增主题时的默认显示文字
 const DEFAULT_NEW_TOPIC_TEXT = '新主题';
+
+let sharedTopicClipboard = null;
+
+async function writeSystemClipboardText(text) {
+  if (!navigator.clipboard?.writeText) return false;
+
+  try {
+    await navigator.clipboard.writeText(text);
+    return true;
+  } catch (_error) {
+    return false;
+  }
+}
+
+async function readSystemClipboardText() {
+  if (!navigator.clipboard?.readText) return '';
+
+  try {
+    return await navigator.clipboard.readText();
+  } catch (_error) {
+    return '';
+  }
+}
+
+function cloneClipboardTopicSnapshot(options = {}) {
+  if (!sharedTopicClipboard?.topicSnapshot) return null;
+  return cloneTopicSubtree(sharedTopicClipboard.topicSnapshot, {
+    includeAttributes: Boolean(options.includeAttributes),
+    includeSubtopics: Boolean(options.includeSubtopics),
+  });
+}
+
+function createTopicFromText(text, level) {
+  return createMindTopic(String(text || '').trim(), {}, [], 0, level);
+}
+
+function parseTopicsFromClipboardText(text, options = {}) {
+  const source = String(text || '').trim();
+  if (!source) return [];
+
+  try {
+    const document = parseMindDocument(source);
+    const topics = document.root?._virtual ? document.root.subtopics : [document.root];
+    return topics
+      .map((topic) =>
+        cloneTopicSubtree(topic, {
+          includeAttributes: Boolean(options.includeAttributes),
+          includeSubtopics: Boolean(options.includeSubtopics),
+        })
+      )
+      .filter(Boolean);
+  } catch (_error) {
+    return [];
+  }
+}
 
 export const topicCommandMethods = {
   async addSubtopicFromContextMenu(topic) {
@@ -87,5 +146,138 @@ export const topicCommandMethods = {
         : this.t('confirm.deleteTopic', { topic: topic.text });
 
     return window.confirm(message);
+  },
+
+  async copyTopicContentForShortcut(topic) {
+    if (!topic || topic._virtual) return false;
+
+    const text = topic.text || '';
+    sharedTopicClipboard = {
+      mode: 'content',
+      text,
+      topicSnapshot: createTopicFromText(text, topic.level || 1),
+    };
+    await writeSystemClipboardText(text);
+    new Notice(this.t('notice.topicCopied'));
+    return true;
+  },
+
+  async cutTopicContentForShortcut(topic) {
+    if (!this.canEditMindMap()) return false;
+    if (!topic || topic === this.root || topic._virtual) {
+      new Notice(this.t('notice.rootCannotDelete'));
+      return false;
+    }
+    if (!this.confirmDeleteTopic(topic)) return false;
+
+    const parentTopic = this.findTopicParentInTree(topic.id);
+    sharedTopicClipboard = {
+      mode: 'content',
+      text: topic.text || '',
+      topicSnapshot: createTopicFromText(topic.text || '', topic.level || 1),
+    };
+    await writeSystemClipboardText(topic.text || '');
+
+    this.closeTopicEditor();
+    this.closeInlineTextEditor(false);
+    const removed = removeTopicById(this.root, topic.id);
+    if (!removed) return false;
+
+    assignIds(this.root, '0');
+    if (parentTopic?.id) {
+      this.rememberTopicFocusState(parentTopic.id, { focusSvg: true });
+    }
+    const saved = await this.saveTreeToSourceAndFile(this.t('notice.topicCut'));
+    if (saved && parentTopic?.id) {
+      this.setFocusedTopic(parentTopic.id, { focusSvg: true, ensureInView: true });
+    }
+    return saved;
+  },
+
+  async pasteTopicContentForShortcut(topic) {
+    if (!this.canEditMindMap()) return false;
+    if (!topic || topic._virtual) return false;
+
+    let text = sharedTopicClipboard?.text || '';
+    if (!text) {
+      text = await readSystemClipboardText();
+    }
+    text = String(text || '').trim();
+    if (!text) {
+      new Notice(this.t('notice.topicClipboardEmpty'));
+      return false;
+    }
+
+    const pastedTopic = createTopicFromText(text, (topic.level || 1) + 1);
+    topic.subtopics.push(pastedTopic);
+    this.collapsedIds.delete(topic.id);
+    assignIds(this.root, '0');
+    refreshTreeLevels(this.root);
+
+    const topicId = pastedTopic.id;
+    this.rememberTopicFocusState(topicId, { focusSvg: true });
+    const saved = await this.saveTreeToSourceAndFile(this.t('notice.topicPasted'));
+    return saved ? { saved, topicId } : false;
+  },
+
+  async copyTopicWithAttributesForShortcut(topic) {
+    if (!topic || topic._virtual) return false;
+
+    const topicSnapshot = cloneTopicSubtree(topic, {
+      includeAttributes: true,
+      includeSubtopics: true,
+    });
+    sharedTopicClipboard = {
+      mode: 'topic',
+      text: topic.text || '',
+      topicSnapshot,
+    };
+    await writeSystemClipboardText(serializeTopic(topicSnapshot, 0));
+    new Notice(this.t('notice.topicWithAttributesCopied'));
+    return true;
+  },
+
+  async pasteTopicWithAttributesForShortcut(topic) {
+    if (!this.canEditMindMap()) return false;
+    if (!topic || topic._virtual) return false;
+
+    const snapshot = cloneClipboardTopicSnapshot({
+      includeAttributes: true,
+      includeSubtopics: true,
+    });
+    const pastedTopics = snapshot
+      ? [snapshot]
+      : await this.createTopicsFromSystemClipboardForPaste(topic);
+
+    if (!pastedTopics.length) {
+      new Notice(this.t('notice.topicClipboardEmpty'));
+      return false;
+    }
+
+    for (const pastedTopic of pastedTopics) {
+      topic.subtopics.push(pastedTopic);
+    }
+    this.collapsedIds.delete(topic.id);
+    assignIds(this.root, '0');
+    refreshTreeLevels(this.root);
+
+    const topicId = pastedTopics[0].id;
+    this.rememberTopicFocusState(topicId, { focusSvg: true });
+    const saved = await this.saveTreeToSourceAndFile(this.t('notice.topicPasted'));
+    return saved ? { saved, topicId } : false;
+  },
+
+  async createTopicsFromSystemClipboardForPaste(topic) {
+    const clipboardText = await readSystemClipboardText();
+    const pastedTopics = parseTopicsFromClipboardText(clipboardText, {
+      includeAttributes: true,
+      includeSubtopics: true,
+    });
+
+    if (!pastedTopics.length && String(clipboardText || '').trim()) {
+      return [createTopicFromText(clipboardText, (topic.level || 1) + 1)];
+    }
+
+    return pastedTopics;
   },
 };

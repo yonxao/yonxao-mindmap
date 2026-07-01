@@ -115,6 +115,7 @@ export const rendererContextMethods = {
       this.root = createMindTopic('yonxao-mindmap', {}, []);
       assignIds(this.root, '0');
     }
+    this.initializeTopicHistoryMemory();
     const rememberedTopicFocus = this.readRememberedTopicFocusState();
     this.focusedTopicId = rememberedTopicFocus?.topicId || '';
     this.initializeFullscreenDraftRecovery();

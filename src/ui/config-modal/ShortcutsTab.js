@@ -38,6 +38,15 @@ const SHORTCUT_GROUPS = Object.freeze([
     shortcutRow('navigateTopic', ['↑', '↓', '←', '→'], ['↑', '↓', '←', '→']),
     shortcutRow('toggleCollapse', ['Alt+/'], ['Option+/']),
   ]),
+  shortcutGroup('topicClipboardHistorySection', [
+    shortcutRow('copyTopicContent', ['Ctrl+C'], ['Cmd+C']),
+    shortcutRow('cutTopicContent', ['Ctrl+X'], ['Cmd+X']),
+    shortcutRow('pasteTopicContent', ['Ctrl+V'], ['Cmd+V']),
+    shortcutRow('copyTopicWithAttributes', ['Ctrl+Alt+C'], ['Cmd+Option+C']),
+    shortcutRow('pasteTopicWithAttributes', ['Ctrl+Alt+V'], ['Cmd+Option+V']),
+    shortcutRow('undoTopicChange', ['Ctrl+Z'], ['Cmd+Z']),
+    shortcutRow('redoTopicChange', ['Ctrl+Y'], ['Cmd+Shift+Z']),
+  ]),
   shortcutGroup('viewControlSection', [
     shortcutRow('zoomIn', ['Alt++'], ['Option++']),
     shortcutRow('zoomOut', ['Alt+-'], ['Option+-']),

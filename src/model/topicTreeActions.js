@@ -112,6 +112,37 @@ export function insertSiblingTopic(root, targetId, sibling, position = 'after') 
 
 /*
  * 作用：
+ * 复制一棵主题子树，并按选项决定是否保留主题属性和子主题。
+ *
+ * 调用场景：
+ * 主题剪贴板和粘贴都需要创建全新的主题对象，不能复用原对象引用。
+ */
+export function cloneTopicSubtree(topic, options = {}) {
+  if (!topic) return null;
+
+  const includeAttributes = Boolean(options.includeAttributes);
+  const includeSubtopics = Boolean(options.includeSubtopics);
+  const attributes = includeAttributes ? { ...(topic.attributes || {}) } : {};
+  const subtopics = includeSubtopics
+    ? (topic.subtopics || [])
+        .map((subtopic) => cloneTopicSubtree(subtopic, options))
+        .filter(Boolean)
+    : [];
+
+  return {
+    id: '',
+    text: topic.text || '',
+    attributes,
+    subtopics,
+    line: 0,
+    level: topic.level || 1,
+    _layout: null,
+    _virtual: false,
+  };
+}
+
+/*
+ * 作用：
  * 判断 parentTopic 的子树里是否包含 targetId。
  *
  * 调用场景：

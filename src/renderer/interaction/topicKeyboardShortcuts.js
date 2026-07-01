@@ -119,6 +119,64 @@ const TOPIC_COMMAND_SHORTCUTS = Object.freeze([
     shiftKey: false,
     editRequired: false,
   }),
+  Object.freeze({
+    command: 'copyTopicContent',
+    key: 'c',
+    code: 'KeyC',
+    modifier: 'primary',
+    shiftKey: false,
+  }),
+  Object.freeze({
+    command: 'cutTopicContent',
+    key: 'x',
+    code: 'KeyX',
+    modifier: 'primary',
+    shiftKey: false,
+  }),
+  Object.freeze({
+    command: 'pasteTopicContent',
+    key: 'v',
+    code: 'KeyV',
+    modifier: 'primary',
+    shiftKey: false,
+  }),
+  Object.freeze({
+    command: 'copyTopicWithAttributes',
+    key: 'c',
+    code: 'KeyC',
+    modifier: 'primary',
+    altKey: true,
+    shiftKey: false,
+  }),
+  Object.freeze({
+    command: 'pasteTopicWithAttributes',
+    key: 'v',
+    code: 'KeyV',
+    modifier: 'primary',
+    altKey: true,
+    shiftKey: false,
+  }),
+  Object.freeze({
+    command: 'undoTopicChange',
+    key: 'z',
+    code: 'KeyZ',
+    modifier: 'primary',
+    shiftKey: false,
+  }),
+  Object.freeze({
+    command: 'redoTopicChange',
+    key: 'y',
+    code: 'KeyY',
+    modifier: 'primary',
+    shiftKey: false,
+  }),
+  Object.freeze({
+    command: 'redoTopicChange',
+    key: 'z',
+    code: 'KeyZ',
+    modifier: 'primary',
+    shiftKey: true,
+  }),
 ]);
 
 function matchesShortcutKey(event, shortcut) {
@@ -302,6 +360,26 @@ export const topicKeyboardShortcutMethods = {
       case 'toggleTopicCollapse':
         this.toggleTopicCollapseFromShortcut(currentTopic);
         return true;
+      case 'copyTopicContent':
+        return this.copyTopicContentForShortcut(currentTopic);
+      case 'cutTopicContent':
+        return this.cutTopicContentForShortcut(currentTopic);
+      case 'pasteTopicContent': {
+        const result = await this.pasteTopicContentForShortcut(currentTopic);
+        this.focusCreatedTopicFromShortcut(result);
+        return result;
+      }
+      case 'copyTopicWithAttributes':
+        return this.copyTopicWithAttributesForShortcut(currentTopic);
+      case 'pasteTopicWithAttributes': {
+        const result = await this.pasteTopicWithAttributesForShortcut(currentTopic);
+        this.focusCreatedTopicFromShortcut(result);
+        return result;
+      }
+      case 'undoTopicChange':
+        return this.undoTopicChange();
+      case 'redoTopicChange':
+        return this.redoTopicChange();
       default:
         return false;
     }

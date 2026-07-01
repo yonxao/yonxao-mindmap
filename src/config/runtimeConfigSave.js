@@ -44,6 +44,9 @@ export const runtimeConfigSaveMethods = {
       this.hasConfigBlock,
       this.plugin?.getGlobalDefaultValueConfig?.() || {}
     );
+    if (nextSource !== this.source) {
+      this.pushTopicUndoSnapshot(this.source);
+    }
 
     // 全屏模式下跳过文件保存，避免触发 Obsidian 重渲染导致全屏退出。
     // 仅在内存中更新并重新渲染导图，退出全屏时再统一写入文件。

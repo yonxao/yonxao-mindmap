@@ -68,6 +68,14 @@ export const zhCNMessages = Object.freeze({
   'notice.subtopicAdded': '已新增子主题。',
   'notice.siblingTopicAdded': '已新增兄弟主题。',
   'notice.topicDeleted': '主题已删除。',
+  'notice.topicCut': '主题已剪切。',
+  'notice.topicPasted': '主题已粘贴。',
+  'notice.topicWithAttributesCopied': '主题及属性已复制。',
+  'notice.topicClipboardEmpty': 'yonxao-mindmap: 剪贴板为空。',
+  'notice.undoApplied': '已撤销。',
+  'notice.redoApplied': '已重做。',
+  'notice.undoUnavailable': 'yonxao-mindmap: 没有可撤销的操作。',
+  'notice.redoUnavailable': 'yonxao-mindmap: 没有可重做的操作。',
   'notice.rootCannotAddSibling': 'yonxao-mindmap: 根主题不能新增兄弟主题。',
   'notice.rootCannotDeleteInMap': 'yonxao-mindmap: 根主题不能在导图视图中删除。',
   'notice.rootCannotDelete': 'yonxao-mindmap: 根主题不能删除。',
@@ -168,6 +176,7 @@ export const zhCNMessages = Object.freeze({
   'configModal.shortcuts.topicCreateDeleteSection': '主题创建与删除',
   'configModal.shortcuts.topicEditSection': '主题编辑',
   'configModal.shortcuts.topicNavigateCollapseSection': '主题导航与折叠',
+  'configModal.shortcuts.topicClipboardHistorySection': '复制粘贴与重做',
   'configModal.shortcuts.mapControlSection': '导图控制',
   'configModal.shortcuts.viewControlSection': '视图控制',
   'configModal.shortcuts.header.action': '操作',
@@ -189,6 +198,14 @@ export const zhCNMessages = Object.freeze({
 
   'configModal.shortcuts.action.navigateTopic': '移动选中状态',
   'configModal.shortcuts.action.toggleCollapse': '展开/折叠子主题',
+
+  'configModal.shortcuts.action.copyTopicContent': '复制主题',
+  'configModal.shortcuts.action.cutTopicContent': '剪切主题',
+  'configModal.shortcuts.action.pasteTopicContent': '粘贴主题',
+  'configModal.shortcuts.action.copyTopicWithAttributes': '复制主题及属性',
+  'configModal.shortcuts.action.pasteTopicWithAttributes': '粘贴主题及属性',
+  'configModal.shortcuts.action.undoTopicChange': '撤销',
+  'configModal.shortcuts.action.redoTopicChange': '重做',
 
   'configModal.shortcuts.action.zoomIn': '放大视图',
   'configModal.shortcuts.action.zoomOut': '缩小视图',
@@ -216,6 +233,14 @@ export const zhCNMessages = Object.freeze({
   'configModal.shortcuts.description.navigateTopic':
     '移动主题选中状态；思维导图按父子/同级关系导航，其他布局按空间方向导航',
   'configModal.shortcuts.description.toggleCollapse': '展开或折叠子主题',
+
+  'configModal.shortcuts.description.copyTopicContent': '复制选中主题内容',
+  'configModal.shortcuts.description.cutTopicContent': '剪切选中主题内容',
+  'configModal.shortcuts.description.pasteTopicContent': '粘贴为当前主题的子主题',
+  'configModal.shortcuts.description.copyTopicWithAttributes': '复制主题',
+  'configModal.shortcuts.description.pasteTopicWithAttributes': '粘贴主题',
+  'configModal.shortcuts.description.undoTopicChange': '撤销上一步操作',
+  'configModal.shortcuts.description.redoTopicChange': '恢复已撤销的操作',
 
   'configModal.shortcuts.description.zoomIn': '放大视图',
   'configModal.shortcuts.description.zoomOut': '缩小视图',

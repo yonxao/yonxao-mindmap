@@ -655,7 +655,7 @@ src/ui/config-modal/
 - 结构（StructureTab）：布局类型、连线线型、下挂展开、主题最大宽度等结构配置。
 - 字体（FontTab）：全局字体和按主题级别覆盖的字体配置。
 - 交互（InteractionTab）：滚轮缩放、Tab 缩进、主题按钮显示方式等交互配置。
-- 快捷键（ShortcutsTab）：按“主题创建与删除、主题编辑、主题导航与折叠、视图控制、导图控制”只读展示当前快捷键。
+- 快捷键（ShortcutsTab）：按“主题创建与删除、主题编辑、主题导航与折叠、复制粘贴与重做、视图控制、导图控制”只读展示当前快捷键。
 - 高级（AdvancedTab）：直接编辑 YAML 配置文本。
 
 设计原则：
@@ -976,7 +976,7 @@ src/obsidian/embed.js
 
 主题快捷键只应在按键事件来自导图 SVG、且当前有选中主题时生效。`Tab`、`Enter`、`Space`、`Delete` 等按键在 Obsidian 或浏览器中有原生语义，确认命中主题快捷键后必须 `preventDefault()` 和 `stopPropagation()`。
 
-当前已确认快捷键按配置面板快捷键页分为五组：
+当前已确认快捷键按配置面板快捷键页分为六组：
 
 主题创建与删除：
 
@@ -1006,6 +1006,18 @@ src/obsidian/embed.js
 | 移动选中状态    | `↑` `↓` `←` `→` | `↑` `↓` `←` `→` | 移动主题选中状态；思维导图按父子/同级关系导航，其他布局按空间方向导航。 |
 | 展开/折叠子主题 | `Alt+/`         | `Option+/`      | 展开或折叠子主题。                                                      |
 
+复制粘贴与重做：
+
+| 操作           | Windows      | Mac            | 行为说明                       |
+| -------------- | ------------ | -------------- | ------------------------------ |
+| 复制主题       | `Ctrl+C`     | `Cmd+C`        | 复制当前主题内容。             |
+| 剪切主题       | `Ctrl+X`     | `Cmd+X`        | 剪切当前主题内容并删除该主题。 |
+| 粘贴主题       | `Ctrl+V`     | `Cmd+V`        | 粘贴为当前主题的子主题。       |
+| 复制主题及属性 | `Ctrl+Alt+C` | `Cmd+Option+C` | 复制当前主题及其属性和子主题。 |
+| 粘贴主题及属性 | `Ctrl+Alt+V` | `Cmd+Option+V` | 粘贴主题及其属性和子主题。     |
+| 撤销           | `Ctrl+Z`     | `Cmd+Z`        | 撤销上一步主题树操作。         |
+| 重做           | `Ctrl+Y`     | `Cmd+Shift+Z`  | 恢复已撤销的主题树操作。       |
+
 视图控制（View Control）快捷键只要求按键事件来自导图 SVG，不要求当前有选中主题：
 
 | 操作     | Windows | Mac        | 行为说明                |
@@ -1031,6 +1043,10 @@ src/obsidian/embed.js
 - 主题创建快捷键完成后只移动焦点，不打开编辑框。
 - 创建、编辑、删除类主题快捷键不应在源码模式、阅读视图编辑禁用场景、输入法组合输入中触发。
 - 主题导航与折叠属于查看/浏览行为，不要求导图可编辑，但仍只响应来自导图 SVG 的按键事件。
+- 复制主题写入插件内部共享剪贴板和系统剪贴板；同一 Obsidian 会话内，从一个 yxmm 代码块复制后可以粘贴到另一个 yxmm 代码块。系统剪贴板读取失败时不应阻断内部剪贴板粘贴。
+- 撤销/重做只覆盖经 `saveTreeToSourceAndFile()` 进入保存流程的主题树操作。源码模式直接编辑、配置保存和非主题树修改不纳入这组历史。
+- 撤销/重做历史按当前 yxmm 代码块身份短期保存在 renderer 类级共享 Map 中，用于抵抗 Obsidian 保存后重建代码块导致的实例内存丢失；它不是持久化历史，过期后提示无可撤销/重做是预期行为。
+- 全屏期间撤销/重做不能直接写 Markdown，否则 Obsidian 重建代码块会打断全屏；应只更新当前实例内存、写入 `_pendingFullscreenSave` 和全屏草稿快照，退出全屏后再统一落盘。
 
 ### 16.7 主题编辑与焦点恢复
 
@@ -1192,6 +1208,7 @@ src/
 ├── model/
 │   ├── topicTreeActions.js                  # 主题树底层操作：增删改移、查找上下文、防循环
 │   ├── topicCommands.js                     # 面向 UI 的主题命令：新增子/兄弟主题、删除确认、复制、折叠后保存
+│   ├── topicHistory.js                      # 主题树撤销/重做历史、代码块重建后的短期历史恢复
 │   └── collapseState.js                     # 折叠状态集合读写、后代折叠/展开、重置折叠
 │
 ├── config/
@@ -1342,6 +1359,7 @@ src/
 
 要改主题快捷键   → src/renderer/interaction/topicKeyboardShortcuts.js
                    src/model/topicCommands.js
+                   src/model/topicHistory.js
 
 要改配置面板     → src/ui/config-modal/{TabName}Tab.js
                    入口: src/ui/config-modal/ConfigModal.js

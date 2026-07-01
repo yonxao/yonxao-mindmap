@@ -14,6 +14,7 @@ import { normalizeMindConfig } from '../config/mindConfig.js';
 import { runtimeConfigSaveMethods } from '../config/runtimeConfigSave.js';
 import { collapseStateMethods } from '../model/collapseState.js';
 import { topicCommandMethods } from '../model/topicCommands.js';
+import { topicHistoryMethods } from '../model/topicHistory.js';
 import { branchTrunkDrawMethods } from './draw/drawBranchTrunks.js';
 import { connectorDrawMethods } from './draw/drawConnector.js';
 import { fishboneDrawMethods } from './draw/drawFishbone.js';
@@ -58,6 +59,7 @@ let sourceViewIdCounter = 0;
 export class YonxaoMindmapRenderer extends Component {
   static viewModeMemory = new Map();
   static topicFocusMemory = new Map();
+  static topicHistoryMemory = new Map();
 
   constructor(plugin, source, hostEl, ctx, editorContext) {
     super();
@@ -148,6 +150,9 @@ export class YonxaoMindmapRenderer extends Component {
     this.pendingFullscreenDraftSnapshot = null;
     this.fullscreenDraftRecoveryEl = null;
     this._configModalOpen = false;
+    this.topicUndoStack = [];
+    this.topicRedoStack = [];
+    this.suppressTopicHistorySnapshot = false;
   }
 }
 
@@ -172,6 +177,7 @@ Object.assign(
   inlineTopicEditorMethods,
   topicEditorStateMethods,
   topicCommandMethods,
+  topicHistoryMethods,
   collapseStateMethods,
   runtimeConfigSaveMethods,
   mapRendererMethods,

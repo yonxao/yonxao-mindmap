@@ -62,17 +62,19 @@ export { normalizeIcon, renderIcon } from '../icons/renderIcon.js';
 export { layoutTree } from '../layout/layoutTree.js';
 export { findFenceBySection, replaceCodeBlockSource } from '../markdown/codeBlock.js';
 export {
+  cloneTopicSubtree,
   containsTopicId,
   countTopicDescendants,
   findTopicContext,
   insertSiblingTopic,
   moveTopicInTree,
   removeTopicById,
+  refreshTreeLevels,
   setOptionalTopicAttribute,
 } from '../model/topicTreeActions.js';
 export { markYonxaoMindmapEmbedWrapper } from '../obsidian/embed.js';
 export { assignIds, createMindTopic, parseMindDocument } from '../parser/parseMind.js';
-export { serializeMindDocument } from '../parser/serializeMind.js';
+export { serializeMindDocument, serializeTopic } from '../parser/serializeMind.js';
 export { applyTopicLevelKey } from '../source/topicLevelKeys.js';
 export { themeConnectorOpacity, themeTopicFillAlpha } from '../theme/mindThemes.js';
 export { ConfigModal } from '../ui/ConfigModal.js';
