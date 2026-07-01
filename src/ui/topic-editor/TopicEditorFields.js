@@ -12,6 +12,7 @@
 import {
   Notice,
   setIcon,
+  setTooltip,
   ICON_PATHS,
   normalizeIcon,
   CUSTOM_FONT_VALUE,
@@ -24,6 +25,45 @@ import {
   TOPIC_EDITOR_COLOR_SWATCHES,
 } from '../../shared/rendererShared.js';
 import { ICON_EDITOR_EXPAND } from '../../icons/iconNames.js';
+import { INLINE_TOPIC_COLOR_OPTIONS, topicRichTextToPlainText } from '../../utils/richText.js';
+
+const RICH_TEXT_PLACEHOLDER_KEY = 'topicEditor.richText.placeholder';
+const RICH_TEXT_FALLBACK_PLACEHOLDER = 'Text';
+const RICH_TEXT_DEFAULT_COLOR = '#ef4444';
+const RICH_TEXT_COLOR_MENU_VIEWPORT_GAP = 8;
+const RICH_TEXT_COLOR_MENU_TRIGGER_GAP = 4;
+const RICH_TEXT_STYLE_CONTROLS = Object.freeze([
+  {
+    label: 'B',
+    className: 'is-bold',
+    titleKey: 'topicEditor.richText.bold',
+    marker: '**',
+  },
+  {
+    label: 'I',
+    className: 'is-italic',
+    titleKey: 'topicEditor.richText.italic',
+    marker: '*',
+  },
+  {
+    label: 'S',
+    className: 'is-strike',
+    titleKey: 'topicEditor.richText.strike',
+    marker: '~~',
+  },
+  {
+    label: 'U',
+    className: 'is-underline',
+    titleKey: 'topicEditor.richText.underline',
+    marker: '++',
+  },
+]);
+const RICH_TEXT_CLEAR_CONTROL = Object.freeze({
+  fallbackLabel: 'C',
+  className: 'is-clear',
+  titleKey: 'topicEditor.richText.clear',
+  icon: 'eraser',
+});
 
 export const topicEditorFieldMethods = {
   createTopicEditorContentField(contentInput) {
@@ -56,6 +96,7 @@ export const topicEditorFieldMethods = {
 
     const inputColumn = document.createElement('div');
     inputColumn.className = 'yonxao-mindmap-topic-editor-text-input-column';
+    inputColumn.appendChild(this.createTopicRichTextToolbar(contentInput));
     inputColumn.appendChild(contentInput);
 
     field.appendChild(labelColumn);
@@ -69,6 +110,285 @@ export const topicEditorFieldMethods = {
     });
 
     return field;
+  },
+
+  createTopicRichTextToolbar(input) {
+    const toolbar = document.createElement('div');
+    toolbar.className = 'yonxao-mindmap-topic-rich-text-toolbar';
+
+    for (const control of RICH_TEXT_STYLE_CONTROLS) {
+      const button = document.createElement('button');
+      button.type = 'button';
+      button.className = `yonxao-mindmap-topic-rich-text-button ${control.className}`;
+      button.textContent = control.label;
+      this.setTopicRichTextControlTooltip(button, this.t(control.titleKey));
+      this.registerDomEvent(button, 'click', (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        this.applyTopicRichTextFormat(input, control.marker, control.marker);
+      });
+      toolbar.appendChild(button);
+    }
+
+    toolbar.appendChild(this.createTopicRichTextColorDropdown(input));
+    toolbar.appendChild(this.createTopicRichTextClearButton(input));
+
+    return toolbar;
+  },
+
+  createTopicRichTextClearButton(input) {
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.className = `yonxao-mindmap-topic-rich-text-button ${RICH_TEXT_CLEAR_CONTROL.className}`;
+    try {
+      setIcon(button, RICH_TEXT_CLEAR_CONTROL.icon);
+    } catch (_error) {
+      button.textContent = RICH_TEXT_CLEAR_CONTROL.fallbackLabel;
+    }
+    this.setTopicRichTextControlTooltip(button, this.t(RICH_TEXT_CLEAR_CONTROL.titleKey));
+    this.registerDomEvent(button, 'click', (event) => {
+      event.preventDefault();
+      event.stopPropagation();
+      this.clearTopicRichTextStyles(input);
+    });
+    return button;
+  },
+
+  createTopicRichTextColorDropdown(input) {
+    const dropdown = document.createElement('div');
+    dropdown.className = 'yonxao-mindmap-topic-rich-text-color-dropdown';
+
+    const trigger = document.createElement('button');
+    trigger.type = 'button';
+    trigger.className = 'yonxao-mindmap-topic-rich-text-color-trigger';
+    trigger.setAttribute('aria-haspopup', 'true');
+    trigger.setAttribute('aria-expanded', 'false');
+    this.setTopicRichTextControlTooltip(trigger, this.t('topicEditor.richText.colorCustom'));
+
+    const letter = document.createElement('span');
+    letter.className = 'yonxao-mindmap-topic-rich-text-color-letter';
+    letter.textContent = 'A';
+
+    const arrow = document.createElement('span');
+    arrow.className = 'yonxao-mindmap-topic-rich-text-color-arrow';
+    arrow.textContent = 'v';
+
+    trigger.appendChild(letter);
+    trigger.appendChild(arrow);
+
+    const menu = document.createElement('div');
+    menu.className = 'yonxao-mindmap-topic-rich-text-color-menu';
+    menu.hidden = true;
+
+    const swatches = document.createElement('div');
+    swatches.className = 'yonxao-mindmap-topic-rich-text-color-swatches';
+    for (const [name, color] of INLINE_TOPIC_COLOR_OPTIONS) {
+      const button = document.createElement('button');
+      button.type = 'button';
+      button.className = 'yonxao-mindmap-topic-rich-text-color';
+      button.style.backgroundColor = color;
+      button.dataset.color = name;
+      this.setTopicRichTextControlTooltip(
+        button,
+        this.t('topicEditor.richText.colorNamed', { color: name })
+      );
+      this.registerDomEvent(button, 'click', (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        this.applyTopicRichTextColor(input, button.dataset.color || name);
+        this.setTopicRichTextColorDropdownValue(dropdown, color);
+        this.closeTopicRichTextColorDropdown(dropdown);
+      });
+      swatches.appendChild(button);
+    }
+
+    const picker = document.createElement('input');
+    picker.type = 'color';
+    picker.className = 'yonxao-mindmap-topic-rich-text-color-picker';
+    picker.value = RICH_TEXT_DEFAULT_COLOR;
+    this.setTopicRichTextControlTooltip(picker, this.t('topicEditor.richText.colorCustom'));
+    this.registerDomEvent(picker, 'change', (event) => {
+      event.stopPropagation();
+      this.applyTopicRichTextColor(input, picker.value);
+      this.setTopicRichTextColorDropdownValue(dropdown, picker.value);
+      this.closeTopicRichTextColorDropdown(dropdown);
+    });
+
+    const customButton = document.createElement('button');
+    customButton.type = 'button';
+    customButton.className = 'yonxao-mindmap-topic-rich-text-color-custom';
+    this.setTopicRichTextControlTooltip(customButton, this.t('topicEditor.richText.colorCustom'));
+    this.registerDomEvent(customButton, 'click', (event) => {
+      event.preventDefault();
+      event.stopPropagation();
+      picker.click();
+    });
+
+    menu.appendChild(swatches);
+    menu.appendChild(customButton);
+    menu.appendChild(picker);
+    dropdown.appendChild(trigger);
+    dropdown.appendChild(menu);
+
+    this.registerDomEvent(trigger, 'click', (event) => {
+      event.preventDefault();
+      event.stopPropagation();
+      this.toggleTopicRichTextColorDropdown(dropdown);
+    });
+    this.registerDomEvent(dropdown, 'keydown', (event) => {
+      if (event.key !== 'Escape') return;
+      event.preventDefault();
+      event.stopPropagation();
+      this.closeTopicRichTextColorDropdown(dropdown);
+      trigger.focus();
+    });
+    this.registerDomEvent(dropdown, 'focusout', (event) => {
+      this.scheduleTopicRichTextColorDropdownBlurClose(dropdown, input, event.relatedTarget);
+    });
+    this.registerDomEvent(document, 'click', (event) => {
+      if (dropdown.contains(event.target)) return;
+      this.closeTopicRichTextColorDropdown(dropdown);
+    });
+
+    return dropdown;
+  },
+
+  toggleTopicRichTextColorDropdown(dropdown) {
+    const menu = dropdown?.querySelector?.('.yonxao-mindmap-topic-rich-text-color-menu');
+    if (!menu) return;
+    const shouldOpen = menu.hidden;
+    menu.hidden = !shouldOpen;
+    dropdown
+      .querySelector?.('.yonxao-mindmap-topic-rich-text-color-trigger')
+      ?.setAttribute('aria-expanded', String(shouldOpen));
+    if (shouldOpen) {
+      // 色板使用 fixed 定位，打开后按按钮视口坐标计算，避免被主题编辑面板滚动区域裁切。
+      this.positionTopicRichTextColorDropdown(dropdown);
+    }
+  },
+
+  closeTopicRichTextColorDropdown(dropdown) {
+    const menu = dropdown?.querySelector?.('.yonxao-mindmap-topic-rich-text-color-menu');
+    if (!menu) return;
+    menu.hidden = true;
+    menu.style.left = '';
+    menu.style.top = '';
+    dropdown
+      .querySelector?.('.yonxao-mindmap-topic-rich-text-color-trigger')
+      ?.setAttribute('aria-expanded', 'false');
+  },
+
+  positionTopicRichTextColorDropdown(dropdown) {
+    const trigger = dropdown?.querySelector?.('.yonxao-mindmap-topic-rich-text-color-trigger');
+    const menu = dropdown?.querySelector?.('.yonxao-mindmap-topic-rich-text-color-menu');
+    if (!trigger || !menu) return;
+
+    const triggerRect = trigger.getBoundingClientRect();
+    const menuRect = menu.getBoundingClientRect();
+    const menuWidth = menuRect.width || 132;
+    const menuHeight = menuRect.height || 76;
+    const maxLeft = Math.max(
+      RICH_TEXT_COLOR_MENU_VIEWPORT_GAP,
+      window.innerWidth - menuWidth - RICH_TEXT_COLOR_MENU_VIEWPORT_GAP
+    );
+    const left = Math.min(Math.max(triggerRect.left, RICH_TEXT_COLOR_MENU_VIEWPORT_GAP), maxLeft);
+    const belowTop = triggerRect.bottom + RICH_TEXT_COLOR_MENU_TRIGGER_GAP;
+    const aboveTop = triggerRect.top - menuHeight - RICH_TEXT_COLOR_MENU_TRIGGER_GAP;
+    const hasRoomBelow =
+      belowTop + menuHeight + RICH_TEXT_COLOR_MENU_VIEWPORT_GAP <= window.innerHeight;
+    // 优先向下展开；只有下方放不下时才向上，避免菜单默认盖住工具条。
+    const top = hasRoomBelow ? belowTop : Math.max(RICH_TEXT_COLOR_MENU_VIEWPORT_GAP, aboveTop);
+
+    menu.style.left = `${Math.round(left)}px`;
+    menu.style.top = `${Math.round(top)}px`;
+  },
+
+  setTopicRichTextColorDropdownValue(dropdown, color) {
+    dropdown?.style?.setProperty('--yonxao-mindmap-topic-rich-text-current-color', color);
+  },
+
+  clearTopicRichTextStyles(input) {
+    if (!input) return;
+
+    const start = Number(input.selectionStart) || 0;
+    const end = Number(input.selectionEnd) || start;
+    const hasSelection = end > start;
+    const source = hasSelection ? input.value.slice(start, end) : input.value;
+    const plainText = topicRichTextToPlainText(source);
+
+    if (hasSelection) {
+      input.value = `${input.value.slice(0, start)}${plainText}${input.value.slice(end)}`;
+      input.focus();
+      input.setSelectionRange(start, start + plainText.length);
+    } else {
+      input.value = plainText;
+      input.focus();
+      input.setSelectionRange(Math.min(start, plainText.length), Math.min(start, plainText.length));
+    }
+
+    input.dispatchEvent(new Event('input', { bubbles: true }));
+  },
+
+  applyTopicRichTextFormat(input, open, close) {
+    const fallback = this.topicRichTextPlaceholder();
+    this.replaceTopicRichTextSelection(input, open, close, fallback);
+  },
+
+  applyTopicRichTextColor(input, color) {
+    const fallback = this.topicRichTextPlaceholder();
+    this.replaceTopicRichTextSelection(input, `{${color}|`, '}', fallback);
+  },
+
+  topicRichTextPlaceholder() {
+    const translated = this.t(RICH_TEXT_PLACEHOLDER_KEY);
+    return translated && translated !== RICH_TEXT_PLACEHOLDER_KEY
+      ? translated
+      : RICH_TEXT_FALLBACK_PLACEHOLDER;
+  },
+
+  scheduleTopicRichTextColorDropdownBlurClose(dropdown, input, nextFocusTarget) {
+    const schedule = window.requestAnimationFrame || ((callback) => window.setTimeout(callback, 0));
+    // 点击色块会先触发焦点变化再触发 click；延后一帧判断，避免菜单提前关闭吞掉点击。
+    schedule(() => {
+      if (dropdown.contains(document.activeElement)) return;
+      this.closeTopicRichTextColorDropdown(dropdown);
+      if (nextFocusTarget && this.topicEditorEl && !this.topicEditorEl.contains(nextFocusTarget)) {
+        return;
+      }
+      // 色板本身只是内容编辑器的辅助控件，收起后把焦点交回文本框，保持主题编辑面板活跃。
+      if (!this.isTopicEditorShortcutTarget(document.activeElement)) {
+        input?.focus?.({ preventScroll: true });
+      }
+    });
+  },
+
+  replaceTopicRichTextSelection(input, open, close, fallbackText) {
+    if (!input) return;
+
+    const start = Number(input.selectionStart) || 0;
+    const end = Number(input.selectionEnd) || start;
+    const selected = input.value.slice(start, end);
+    const innerText = selected || fallbackText;
+    const replacement = `${open}${innerText}${close}`;
+    input.value = `${input.value.slice(0, start)}${replacement}${input.value.slice(end)}`;
+
+    const selectionStart = start + open.length;
+    const selectionEnd = selectionStart + innerText.length;
+    input.focus();
+    input.setSelectionRange(selectionStart, selectionEnd);
+    input.dispatchEvent(new Event('input', { bubbles: true }));
+  },
+
+  setTopicRichTextControlTooltip(element, text) {
+    const label = String(text || '').trim();
+    if (!label) return;
+    element.setAttribute('aria-label', label);
+    element.title = label;
+    try {
+      setTooltip(element, label);
+    } catch (_error) {
+      // Obsidian tooltip 在测试环境可能不可用，保留原生 title 作为兜底。
+    }
   },
 
   createTopicEditorFontFamilyField() {

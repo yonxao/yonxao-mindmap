@@ -93,6 +93,28 @@ This is the third line
 ```
 ````
 
+### Inline Topic Content Styles
+
+Topic content supports lightweight inline style markers:
+
+````markdown
+```yxmm
+# Central Topic
+## **Bold**, *italic*, ~~strikethrough~~, ++underline++
+## {red|Semantic color text} and {#3b82f6|Hex color text}
+```
+````
+
+Supported inline styles:
+
+- `**Text**`: Bold
+- `*Text*`: Italic
+- `~~Text~~`: Strikethrough
+- `++Text++`: Underline
+- `{red|Text}`, `{#3b82f6|Text}`: Text color
+
+Semantic colors: `red`, `green`, `blue`, `yellow`, `orange`, `purple`, `pink`, `gray`, `black`, `white`. The topic edit panel and large text editor include visual style buttons and can clear inline styles from the selection or the whole content field. These markers are part of topic content, not topic attributes.
+
 ### Topic Attributes
 
 Add attributes in `[key=value]` format at the end of a topic-level marker line:

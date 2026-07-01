@@ -34,6 +34,7 @@ export const topicEditorPanelMethods = {
     // 它不直接编辑 SVG 文本，而是编辑内存中的树主题；保存后再把整棵树序列化回 yxmm 源码。
     this.topicEditorEl = document.createElement('div');
     this.topicEditorEl.className = 'yonxao-mindmap-topic-editor';
+    this.topicEditorEl.tabIndex = -1;
     this.topicEditorEl.hidden = true;
 
     const titleEl = document.createElement('div');
@@ -200,6 +201,9 @@ export const topicEditorPanelMethods = {
     this.registerDomEvent(this.topicEditorEl, 'change', () => {
       this.updateTopicEditorActionState();
     });
+    this.registerDomEvent(this.topicEditorEl, 'pointerdown', (event) => {
+      this.focusTopicEditorPanelFromPointer(event);
+    });
 
     this.createTopicContentEditor();
   },
@@ -249,6 +253,16 @@ export const topicEditorPanelMethods = {
       !this.topicContentEditorEl.hidden &&
       this.topicContentEditorEl.contains(target)
     );
+  },
+
+  focusTopicEditorPanelFromPointer(event) {
+    if (!this.topicEditorEl || this.topicEditorEl.hidden) return;
+    const interactiveTarget = event.target?.closest?.(
+      'button, input, select, textarea, [contenteditable="true"]'
+    );
+    if (interactiveTarget) return;
+    // 点击面板空白区域时让浮层本身成为快捷键目标，但不抢输入控件和按钮的焦点。
+    this.topicEditorEl.focus({ preventScroll: true });
   },
 
   installTopicEditorInheritanceEvents() {

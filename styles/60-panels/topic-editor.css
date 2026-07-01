@@ -222,6 +222,182 @@
   min-width: 0;
   flex-direction: column;
   align-items: flex-start;
+  gap: 6px;
+}
+
+/*
+ * 作用：
+ * 主题内容局部样式工具条，提供加粗、斜体、中划线、下划线和文字颜色快捷插入。
+ */
+.yonxao-mindmap-topic-rich-text-toolbar {
+  display: flex;
+  width: 100%;
+  min-width: 0;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px;
+}
+
+.yonxao-mindmap-topic-rich-text-button,
+.yonxao-mindmap-topic-rich-text-color-trigger,
+.yonxao-mindmap-topic-rich-text-color {
+  box-sizing: border-box;
+  border: 1px solid var(--background-modifier-border);
+  background: var(--background-secondary);
+  cursor: pointer;
+}
+
+.yonxao-mindmap-topic-rich-text-button {
+  display: inline-flex;
+  width: 24px;
+  height: 24px;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  color: var(--text-normal);
+  border-radius: 5px;
+  font-family: var(--font-interface);
+  font-size: var(--font-ui-smaller);
+  line-height: 1;
+}
+
+.yonxao-mindmap-topic-rich-text-button.is-bold {
+  font-weight: 800;
+}
+
+.yonxao-mindmap-topic-rich-text-button.is-italic {
+  font-style: italic;
+}
+
+.yonxao-mindmap-topic-rich-text-button.is-strike {
+  text-decoration: line-through;
+}
+
+.yonxao-mindmap-topic-rich-text-button.is-underline {
+  text-decoration: underline;
+}
+
+.yonxao-mindmap-topic-rich-text-button.is-clear {
+  width: 24px;
+  color: var(--text-muted);
+}
+
+.yonxao-mindmap-topic-rich-text-button.is-clear svg {
+  width: 14px;
+  height: 14px;
+}
+
+.yonxao-mindmap-topic-rich-text-color-dropdown {
+  position: relative;
+  flex: 0 0 auto;
+  --yonxao-mindmap-topic-rich-text-current-color: #ef4444;
+}
+
+.yonxao-mindmap-topic-rich-text-color-trigger {
+  display: inline-flex;
+  min-width: 38px;
+  height: 24px;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  padding: 0 5px;
+  color: var(--text-normal);
+  border-radius: 5px;
+  font-family: var(--font-interface);
+  font-size: var(--font-ui-smaller);
+  line-height: 1;
+}
+
+.yonxao-mindmap-topic-rich-text-color-letter {
+  position: relative;
+  display: inline-flex;
+  min-width: 11px;
+  justify-content: center;
+  font-weight: 700;
+}
+
+.yonxao-mindmap-topic-rich-text-color-letter::after {
+  position: absolute;
+  right: 0;
+  bottom: -3px;
+  left: 0;
+  height: 2px;
+  border-radius: 999px;
+  background: var(--yonxao-mindmap-topic-rich-text-current-color);
+  content: '';
+}
+
+.yonxao-mindmap-topic-rich-text-color-arrow {
+  color: var(--text-muted);
+  font-size: 9px;
+  transform: translateY(1px);
+}
+
+.yonxao-mindmap-topic-rich-text-color-menu {
+  position: fixed;
+  z-index: 5;
+  display: grid;
+  width: 132px;
+  box-sizing: border-box;
+  gap: 6px;
+  padding: 6px;
+  border: 1px solid var(--background-modifier-border);
+  border-radius: var(--yonxao-mindmap-radius-md);
+  background: var(--background-primary);
+  box-shadow: var(--shadow-s);
+}
+
+.yonxao-mindmap-topic-rich-text-color-menu[hidden] {
+  display: none;
+}
+
+.yonxao-mindmap-topic-rich-text-color-swatches {
+  display: grid;
+  grid-template-columns: repeat(5, 18px);
+  gap: 5px;
+}
+
+.yonxao-mindmap-topic-rich-text-color {
+  width: 18px;
+  height: 18px;
+  flex: 0 0 18px;
+  padding: 0;
+  border-radius: 50%;
+}
+
+.yonxao-mindmap-topic-rich-text-color-picker {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  overflow: hidden;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.yonxao-mindmap-topic-rich-text-color-custom {
+  width: 100%;
+  height: 20px;
+  box-sizing: border-box;
+  padding: 0;
+  border: 1px solid var(--background-modifier-border);
+  border-radius: 5px;
+  background:
+    linear-gradient(90deg, #ef4444, #f97316, #eab308, #22c55e, #3b82f6, #a855f7, #ec4899),
+    var(--background-secondary);
+  cursor: pointer;
+}
+
+.yonxao-mindmap-topic-rich-text-button:hover,
+.yonxao-mindmap-topic-rich-text-button:focus-visible,
+.yonxao-mindmap-topic-rich-text-color-trigger:hover,
+.yonxao-mindmap-topic-rich-text-color-trigger:focus-visible,
+.yonxao-mindmap-topic-rich-text-color:hover,
+.yonxao-mindmap-topic-rich-text-color:focus-visible,
+.yonxao-mindmap-topic-rich-text-color-custom:hover,
+.yonxao-mindmap-topic-rich-text-color-custom:focus-visible {
+  outline: 2px solid var(--interactive-accent);
+  outline-offset: 1px;
 }
 
 .yonxao-mindmap-topic-editor-icon-button.yonxao-mindmap-topic-editor-text-expand {

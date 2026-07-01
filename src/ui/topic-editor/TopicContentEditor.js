@@ -30,6 +30,7 @@ export const topicContentEditorMethods = {
       'yonxao-mindmap-topic-editor-input yonxao-mindmap-topic-content-editor-input';
     inputEl.placeholder = this.t('topicEditor.content');
     inputEl.spellcheck = false;
+    const richTextToolbar = this.createTopicRichTextToolbar(inputEl);
 
     const actions = document.createElement('div');
     actions.className = 'yonxao-mindmap-topic-editor-actions';
@@ -43,6 +44,7 @@ export const topicContentEditorMethods = {
     actions.appendChild(cancelButton);
 
     this.topicContentEditorEl.appendChild(titleEl);
+    this.topicContentEditorEl.appendChild(richTextToolbar);
     this.topicContentEditorEl.appendChild(inputEl);
     this.topicContentEditorEl.appendChild(actions);
     document.body.appendChild(this.topicContentEditorEl);

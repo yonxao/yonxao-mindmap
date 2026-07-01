@@ -22,7 +22,11 @@ import {
 } from '../config/mindConfig.js';
 import { normalizeIcon, resolveTopicIconSize } from '../icons/renderIcon.js';
 import { clamp } from '../utils/math.js';
-import { estimateTopicTextWidth, wrapTopicTextByWidth } from '../utils/text.js';
+import {
+  estimateRichLineWidth,
+  richLineToPlainText,
+  wrapTopicRichTextByWidth,
+} from '../utils/richText.js';
 
 export {
   BRANCH_GAP,
@@ -415,9 +419,11 @@ export function measureTopic(topic, config) {
     MIN_USABLE_TEXT_WIDTH,
     maxWidth - TOPIC_PADDING_X * 2 - iconWidth
   );
-  const lines = wrapTopicTextByWidth(topic.text || 'Untitled', usableTextWidth, font);
+  // richLines 保存局部样式片段供 SVG 渲染使用；lines 保留纯文本，给布局、表格和旧逻辑读取。
+  const richLines = wrapTopicRichTextByWidth(topic.text || 'Untitled', usableTextWidth, font);
+  const lines = richLines.map((line) => richLineToPlainText(line));
   const textWidth = Math.ceil(
-    lines.reduce((max, line) => Math.max(max, estimateTopicTextWidth(line, font)), 0)
+    richLines.reduce((max, line) => Math.max(max, estimateRichLineWidth(line, font)), 0)
   );
   const width = clamp(textWidth + TOPIC_PADDING_X * 2 + iconWidth, TOPIC_MIN_WIDTH, maxWidth);
   const height = Math.max(TOPIC_MIN_HEIGHT, lines.length * font.lineHeight + TOPIC_PADDING_Y * 2);
@@ -426,6 +432,7 @@ export function measureTopic(topic, config) {
     width,
     height,
     lines,
+    richLines,
     icon,
     iconSize,
     font,

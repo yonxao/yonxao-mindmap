@@ -117,6 +117,14 @@ export const zhCNMessages = Object.freeze({
   'topicEditor.fontFamily.invalid':
     "请输入合法的 CSS font-family 列表，例如：'SimSun', 'Songti SC', serif",
   'topicEditor.editContentAria': '编辑内容',
+  'topicEditor.richText.bold': '加粗选中文字',
+  'topicEditor.richText.italic': '倾斜选中文字',
+  'topicEditor.richText.strike': '给选中文字加中划线',
+  'topicEditor.richText.underline': '给选中文字加下划线',
+  'topicEditor.richText.clear': '清除内容样式',
+  'topicEditor.richText.colorNamed': '把选中文字设为 {color}',
+  'topicEditor.richText.colorCustom': '给选中文字设置颜色',
+  'topicEditor.richText.placeholder': '文本',
   'topicEditor.save': '保存',
   'topicEditor.cancel': '取消',
 

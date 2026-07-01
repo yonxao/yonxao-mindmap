@@ -91,8 +91,9 @@ export const topicDrawMethods = {
 
     for (let index = 0; index < box.lines.length; index += 1) {
       const line = box.lines[index];
+      const richLine = box.richLines?.[index];
 
-      if (line === 'yonxao-mindmap') {
+      if (this.isPlainYonxaoMindmapLine(line, richLine)) {
         // 对 "yonxao-mindmap" 中的 y、x、m、m 四个缩写字母（位置 0、3、7、11）逐个高亮
         const HIGHLIGHT_POSITIONS = new Set([0, 3, 7, 11]);
         const segments = [];
@@ -119,6 +120,8 @@ export const topicDrawMethods = {
           tspan.textContent = seg.text;
           textEl.appendChild(tspan);
         }
+      } else if (Array.isArray(richLine) && richLine.length) {
+        this.appendRichTopicTextLine(textEl, richLine, box, index);
       } else {
         const tspan = svg('tspan', {
           x: box.textX,
@@ -132,6 +135,51 @@ export const topicDrawMethods = {
     group.appendChild(textEl);
 
     return group;
+  },
+
+  appendRichTopicTextLine(textEl, richLine, box, lineIndex) {
+    for (let index = 0; index < richLine.length; index += 1) {
+      const segment = richLine[index];
+      const attributes = {
+        x: index === 0 ? box.textX : undefined,
+        dy: index === 0 ? (lineIndex === 0 ? 0 : box.font.lineHeight) : undefined,
+      };
+      if (segment.bold) {
+        attributes['font-weight'] = Math.max(Number(box.font.weight) || 400, 700);
+      }
+      if (segment.italic) {
+        attributes['font-style'] = 'italic';
+      }
+      if (segment.underline || segment.strike) {
+        attributes['text-decoration'] = [
+          segment.underline ? 'underline' : '',
+          segment.strike ? 'line-through' : '',
+        ]
+          .filter(Boolean)
+          .join(' ');
+      }
+      if (segment.color) {
+        attributes.fill = segment.color;
+      }
+
+      // SVG text 不能像 HTML 一样嵌套样式节点；每段样式独立生成 tspan。
+      const tspan = svg('tspan', attributes);
+      tspan.textContent = segment.text;
+      textEl.appendChild(tspan);
+    }
+  },
+
+  isPlainYonxaoMindmapLine(line, richLine) {
+    if (line !== 'yonxao-mindmap') return false;
+    if (!Array.isArray(richLine) || richLine.length !== 1) return true;
+    const segment = richLine[0];
+    return !(
+      segment.bold ||
+      segment.italic ||
+      segment.underline ||
+      segment.strike ||
+      segment.color
+    );
   },
 
   isTreeTableBox(box) {

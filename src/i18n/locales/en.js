@@ -124,6 +124,14 @@ export const enMessages = Object.freeze({
   'topicEditor.fontFamily.invalid':
     "Please enter a valid CSS font-family list, for example: 'SimSun', 'Songti SC', serif",
   'topicEditor.editContentAria': 'Edit content',
+  'topicEditor.richText.bold': 'Bold selected text',
+  'topicEditor.richText.italic': 'Italicize selected text',
+  'topicEditor.richText.strike': 'Strike through selected text',
+  'topicEditor.richText.underline': 'Underline selected text',
+  'topicEditor.richText.clear': 'Clear content styles',
+  'topicEditor.richText.colorNamed': 'Color selected text {color}',
+  'topicEditor.richText.colorCustom': 'Color selected text',
+  'topicEditor.richText.placeholder': 'Text',
   'topicEditor.save': 'Save',
   'topicEditor.cancel': 'Cancel',
 
