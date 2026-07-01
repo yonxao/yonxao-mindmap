@@ -9,6 +9,54 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.2.0] - 2026-07-01
+
+### Added
+
+- **Keyboard focus and navigation in map mode**: SVG maps can now keep an independent focused topic with visible focus highlighting.
+- **Topic navigation shortcuts**: use arrow keys to move topic focus. Mind map layouts use structural navigation between parent/child and sibling topics; other layouts keep spatial direction navigation.
+- **Topic creation and editing shortcuts**: add subtopics with `Tab`, add sibling topics with `Enter` / `Shift+Enter`, delete topics with `Delete` / `Cmd+Backspace`, open the topic editor with `Backtick` and start inline editing with `Space`.
+- **Topic collapse and view shortcuts**: toggle subtopics with `Alt+/` / `Option+/`, zoom and switch views with `Alt/Option` view shortcuts, and open the config panel with `Alt+,` / `Option+,`.
+- **Topic copy, cut, and paste shortcuts**: copy or cut the current topic content and paste it as a subtopic of the focused topic.
+- **Copy and paste with attributes**: copy the current topic together with attributes and subtopics, then paste the copied topic structure into another branch.
+- **Cross-map topic clipboard** within the same Obsidian session, with system clipboard text fallback when available.
+- **Undo and redo for topic-tree edits**: undo and redo map-mode topic operations with `Ctrl/Cmd+Z`, `Ctrl+Y`, and `Cmd+Shift+Z`.
+- **Shortcuts tab** in the config panel, listing the current read-only shortcut groups.
+- **Fullscreen draft recovery**: if fullscreen editing exits unexpectedly before pending edits are written back, the plugin offers recovery actions for the leftover source.
+
+### Changed
+
+- Undo/redo history is kept briefly per `yxmm` code block so it can survive Obsidian rebuilding the code block after a save.
+- Undo/redo in fullscreen and window fullscreen follows the existing fullscreen pending-save flow and writes back to Markdown after exiting fullscreen.
+- Keyboard shortcut documentation and labels now use the same topic terminology as the rest of the plugin.
+
+### Documentation
+
+- Updated the development context with the current shortcut groups, keyboard focus behavior, clipboard behavior, undo/redo boundaries, fullscreen save rules, and relevant code map entries.
+
+### 新增
+
+- 新增 **导图模式主题焦点与键盘导航**：SVG 导图可维护独立的当前主题焦点，并显示焦点高亮。
+- 新增 **主题导航快捷键**：方向键可移动主题焦点；思维导图布局按父子/同级关系导航，其他布局按空间方向导航。
+- 新增 **主题创建与编辑快捷键**：`Tab` 新增子主题，`Enter` / `Shift+Enter` 新增同级主题，`Delete` / `Cmd+Backspace` 删除主题，`Backtick` 打开主题编辑面板，`Space` 开始内联编辑。
+- 新增 **主题折叠与视图控制快捷键**：`Alt+/` / `Option+/` 展开或折叠子主题，`Alt/Option` 组合键控制缩放、适配视图、原始视图、窗口全屏、全屏和配置面板。
+- 新增 **主题复制、剪切与粘贴快捷键**：可复制或剪切当前主题内容，并粘贴为当前焦点主题的子主题。
+- 新增 **复制主题及属性 / 粘贴主题及属性**：可复制当前主题的属性和子主题结构，并粘贴到其他分支。
+- 支持同一 Obsidian 会话内 **跨导图主题剪贴板**，并在系统剪贴板文本可用时作为兜底来源。
+- 新增 **主题树撤销与重做**：导图模式主题操作可通过 `Ctrl/Cmd+Z`、`Ctrl+Y` 和 `Cmd+Shift+Z` 撤销或重做。
+- 配置面板新增 **快捷键页**，只读展示当前快捷键分组。
+- 新增 **全屏草稿恢复**：全屏编辑异常退出且存在未写回内容时，提供残留源码恢复入口。
+
+### 调整
+
+- 撤销/重做历史按 `yxmm` 代码块短期保存，避免 Obsidian 保存后重建代码块导致历史立即丢失。
+- 全屏和窗口全屏中的撤销/重做复用全屏待保存流程，退出全屏后再写回 Markdown。
+- 快捷键说明和界面文案统一使用当前项目的主题术语。
+
+### 文档
+
+- 更新开发上下文，记录当前快捷键分组、主题焦点行为、剪贴板行为、撤销/重做边界、全屏保存规则和相关代码地图。
+
 ## [1.1.0] - 2026-06-29
 
 ### Added
