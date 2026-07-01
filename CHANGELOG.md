@@ -9,6 +9,18 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.2.1] - 2026-07-02
+
+### Fixed
+
+- Fixed timeline detail branches where the upper and lower timeline layouts could let a later detail trunk pass through a previous detail subtree.
+- Fixed fishbone layouts where same-side primary bones could place trailing topic cards too close and overlap in both left and right directions.
+
+### 修复
+
+- 修复上侧时间轴和下侧时间轴中，后续详情分支主干可能穿过前一棵详情子树的问题。
+- 修复左向鱼骨图和右向鱼骨图中，同侧大分支末端主题卡片距离过近导致重叠的问题。
+
 ## [1.2.0] - 2026-07-01
 
 ### Added
