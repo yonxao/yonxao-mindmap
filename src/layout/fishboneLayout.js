@@ -4,6 +4,7 @@
  */
 
 import {
+  BRANCH_GAP,
   FISHBONE_PRIMARY_BONE_MIN_EDGE_OFFSET,
   FISHBONE_PRIMARY_BONE_SLOPE,
   HANGING_SIBLING_GAP,
@@ -31,6 +32,11 @@ const FISHBONE_PRIMARY_BONE_EDGE_MULTIPLIER = 2.5;
  * 鱼刺主题在斜骨线上的可用区间中，除去父主题自身高度后的安全边距倍数。
  */
 const FISHBONE_USABLE_HEIGHT_MARGIN = 2;
+/*
+ * 同侧相邻大分支沿主骨推进时的安全水平间距。
+ * 它作用在上一棵可见子树的鱼尾方向边界之后，防止下一条大分支的主题卡片压住前一分支末端。
+ */
+const FISHBONE_PRIMARY_BONE_SAFE_RUN_GAP = Math.max(BRANCH_GAP, Math.round(LEVEL_GAP * 0.55));
 
 export function layoutFishbone(
   root,
@@ -92,11 +98,9 @@ export function layoutFishbone(
      * 同侧下一条大分支的挂点，落在上一条大分支可见子树末端垂线与主骨的交点上。
      * 这比使用“预估宽度 + 安全间距”更贴近鱼骨图语义，也避免主骨上出现过大的空白段。
      */
-    sideCursors[sideKey] = fishboneVisibleSubtreeHorizontalBoundary(
-      subtopic,
-      direction,
-      collapsedIds
-    );
+    sideCursors[sideKey] =
+      fishboneVisibleSubtreeHorizontalBoundary(subtopic, direction, collapsedIds) +
+      direction * FISHBONE_PRIMARY_BONE_SAFE_RUN_GAP;
   });
 }
 

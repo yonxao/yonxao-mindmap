@@ -69,7 +69,11 @@ export function layoutTimeline(
 
     placeTimelineDetails(subtopic, branchSide, collapsedIds, branchExpansion);
     pointCursorX = subtopicBox.x + subtopicBox.width / 2 + BRANCH_GAP;
-    sideCursors[branchSide] = blockLeftX + width + BRANCH_GAP;
+    sideCursors[branchSide] =
+      Math.max(
+        blockLeftX + width,
+        timelineVisibleSubtreeHorizontalBoundary(subtopic, collapsedIds)
+      ) + BRANCH_GAP;
     axisEndX = Math.max(axisEndX, subtopicBox.x + subtopicBox.width / 2);
   }
 
@@ -244,6 +248,26 @@ export function timelinePointWidth(topic, collapsedIds, branchExpansion = 'side'
   }
 
   return Math.max(box.width, box.width / 2 + TIMELINE_DETAIL_LEVEL_GAP + subtopicWidth);
+}
+
+/*
+ * 作用：
+ * 计算时间轴某个时间点详情子树的实际最右边界。
+ *
+ * 为什么不用 timelinePointWidth：
+ * 宽度预估用于初步排布；但详情主题完成递归布局后，深层后代或长文本可能比预估更靠右。
+ * 主轴上同侧下一个时间点需要避开这个真实边界，否则它的竖向详情主干会穿过上一棵详情子树。
+ */
+export function timelineVisibleSubtreeHorizontalBoundary(topic, collapsedIds) {
+  const box = topic?._layout;
+  if (!box) return 0;
+
+  let boundary = box.x + box.width / 2;
+  for (const subtopic of visibleSubtopics(topic, collapsedIds)) {
+    boundary = Math.max(boundary, timelineVisibleSubtreeHorizontalBoundary(subtopic, collapsedIds));
+  }
+
+  return boundary;
 }
 
 /*
