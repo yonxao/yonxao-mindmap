@@ -932,6 +932,7 @@ src/obsidian/embed.js
 - 页面滚动期间不要显示工具栏，避免 body 级浮层停留在旧位置造成视觉错位。
 - 全屏时工具栏会临时移入全屏元素内（编辑视图移入 hostEl，阅读视图移入 body 级覆盖层），退出后恢复到 body 级浮层。
 - 全屏期间的导图编辑会先暂存在内存中，退出全屏后再异步写回文件并显示 Notice。窗口全屏会把 `hostEl` 移到 body 覆盖层，保存前必须在 `hostEl` 回到原代码块位置后重新写入主题焦点记忆；保存完成后还要再恢复一次主题选中状态和 SVG 焦点，避免 Notice 或 Obsidian 重建代码块覆盖退出全屏时的焦点恢复。
+- 全屏待保存内容还会写入短期 localStorage 快照。快照按 vault、Markdown 文件路径和代码块位置匹配；重新打开同一代码块且发现可恢复快照时，只提供“在当前导图下方创建新导图”和“复制源码”两个出口，不自动覆盖原代码块。
 
 已实现或已确认的方向：
 
@@ -1225,6 +1226,7 @@ src/
 │   ├── rendererState.js                     # DOM、文档、视口、交互、编辑器状态的分组初始化
 │   ├── mapRenderer.js                       # 根据布局结果调度 SVG 层绘制，不直接处理 UI 面板
 │   ├── fullscreenController.js              # 阅读视图覆盖层、编辑视图原生全屏、工具栏迁移
+│   ├── fullscreenDraftRecovery.js           # 全屏待保存快照：localStorage 兜底、恢复提示、创建恢复导图/复制源码
 │   ├── documentPersistence.js               # 文档持久化：配置/主题树写回 Markdown 文件
 │   ├── draw/
 │   │   ├── drawTopic.js                     # 主题卡片、背景、边框、基础 topic group 绘制

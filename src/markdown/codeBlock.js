@@ -53,6 +53,38 @@ export function replaceCodeBlockSource(
 
 /*
  * 作用：
+ * 在当前 yxmm 代码块后追加一个新的同语言代码块。
+ *
+ * 使用场景：
+ * 全屏待保存快照恢复时，不覆盖原代码块，而是在原代码块下方创建新导图承接残留源码。
+ */
+export function insertCodeBlockAfterSource(
+  markdown,
+  codeBlockName,
+  currentSource,
+  insertSource,
+  sectionInfo
+) {
+  const eol = markdown.includes('\r\n') ? '\r\n' : '\n';
+  const lines = markdown.split(/\r?\n/);
+
+  const fence =
+    findFenceBySection(lines, codeBlockName, sectionInfo) ||
+    findFenceBySource(lines, codeBlockName, currentSource, eol);
+  if (!fence) return null;
+
+  const indent = lines[fence.start].match(/^(\s*)/)?.[1] || '';
+  const insertLines = ['', `${indent}\`\`\`${codeBlockName}`];
+  insertLines.push(...String(insertSource || '').split(/\r?\n/));
+  insertLines.push(`${indent}\`\`\``);
+
+  const nextLines = [...lines];
+  nextLines.splice(fence.end + 1, 0, ...insertLines);
+  return nextLines.join(eol);
+}
+
+/*
+ * 作用：
  * 根据 Obsidian 提供的 sectionInfo 行号范围，向上查找当前代码块的 opening fence。
  *
  * 调用链：

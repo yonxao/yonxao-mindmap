@@ -79,6 +79,18 @@ export const enMessages = Object.freeze({
   'notice.rootCannotDeleteInMap': 'yonxao-mindmap: The root topic cannot be deleted in map view.',
   'notice.rootCannotDelete': 'yonxao-mindmap: The root topic cannot be deleted.',
 
+  // ── Fullscreen edit recovery ──
+  'fullscreenDraftRecovery.message':
+    'The previous session appears to have exited unexpectedly, and some edits may not have been saved. You can restore them as a new map below the current one, or copy the recoverable source to the clipboard.',
+  'fullscreenDraftRecovery.createMap': 'Create new map',
+  'fullscreenDraftRecovery.copySource': 'Copy source',
+  'fullscreenDraftRecovery.inserted': 'yonxao-mindmap: Recovery map created.',
+  'fullscreenDraftRecovery.copied': 'yonxao-mindmap: Leftover source copied.',
+  'fullscreenDraftRecovery.insertFailed': 'yonxao-mindmap: Failed to create recovery map.',
+  'fullscreenDraftRecovery.copyFailed': 'yonxao-mindmap: Failed to copy leftover source.',
+  'fullscreenDraftRecovery.insertUnsupported':
+    'yonxao-mindmap: This editor environment cannot create a recovery map automatically. Please copy the source instead.',
+
   // ── Editor menu ──
   'editorMenu.insertMindMap': 'Insert mind map',
 

@@ -54,6 +54,7 @@ export const runtimeConfigSaveMethods = {
       this.syncSourceInput();
       this.renderMap(true);
       this._pendingFullscreenSave = nextSource;
+      this.writeFullscreenDraftSnapshot(nextSource);
       return true;
     }
 

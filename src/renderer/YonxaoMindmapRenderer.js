@@ -26,6 +26,7 @@ import { topicControlPointMethods } from './draw/topicControlPoints.js';
 import { copyTextMethods } from './export/copyText.js';
 import { exportSvgMethods } from './export/exportSvg.js';
 import { fullscreenControllerMethods } from './fullscreenController.js';
+import { fullscreenDraftRecoveryMethods } from './fullscreenDraftRecovery.js';
 import { topicInteractionMethods } from './interaction/topicInteraction.js';
 import { topicKeyboardShortcutMethods } from './interaction/topicKeyboardShortcuts.js';
 import { mapRendererMethods } from './mapRenderer.js';
@@ -143,6 +144,9 @@ export class YonxaoMindmapRenderer extends Component {
     this._wfOverlay = null;
     this._wfHostElParent = null;
     this._wfHostElNextSibling = null;
+    this.fullscreenDraftIdentity = null;
+    this.pendingFullscreenDraftSnapshot = null;
+    this.fullscreenDraftRecoveryEl = null;
     this._configModalOpen = false;
   }
 }
@@ -156,6 +160,7 @@ Object.assign(
   toolbarPositionMethods,
   toolbarButtonMethods,
   fullscreenControllerMethods,
+  fullscreenDraftRecoveryMethods,
   sourceViewMethods,
   sourceDocumentMethods,
   sourceHighlightMethods,

@@ -45,6 +45,56 @@
   overflow: hidden;
 }
 
+.yonxao-mindmap-recovery-prompt {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--yonxao-mindmap-gap-md);
+  align-items: center;
+  justify-content: space-between;
+  margin: 0 0 var(--yonxao-mindmap-gap-md);
+  padding: 10px 12px;
+  border: 1px solid var(--background-modifier-border);
+  border-left: 3px solid var(--interactive-accent);
+  border-radius: var(--yonxao-mindmap-radius-lg);
+  color: var(--text-normal);
+  background: var(--background-secondary);
+  font-size: var(--font-ui-small);
+  line-height: 1.45;
+}
+
+.yonxao-mindmap-recovery-text {
+  flex: 1 1 260px;
+  min-width: 0;
+}
+
+.yonxao-mindmap-recovery-actions {
+  display: flex;
+  flex: 0 0 auto;
+  flex-wrap: wrap;
+  gap: var(--yonxao-mindmap-gap-md);
+}
+
+.yonxao-mindmap-recovery-button {
+  min-height: 28px;
+  padding: 4px 10px;
+  border: 1px solid var(--background-modifier-border);
+  border-radius: var(--yonxao-mindmap-radius-md);
+  color: var(--text-normal);
+  background: var(--background-primary);
+  font-size: var(--font-ui-smaller);
+  cursor: pointer;
+}
+
+.yonxao-mindmap-recovery-button:hover,
+.yonxao-mindmap-recovery-button:focus-visible {
+  border-color: var(--interactive-accent);
+}
+
+.yonxao-mindmap-recovery-button:disabled {
+  opacity: 0.65;
+  cursor: default;
+}
+
 /*
  * 作用：
  * 浏览器全屏查看时，让当前导图成为完整工作区。

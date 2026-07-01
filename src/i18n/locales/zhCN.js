@@ -72,6 +72,18 @@ export const zhCNMessages = Object.freeze({
   'notice.rootCannotDeleteInMap': 'yonxao-mindmap: 根主题不能在导图视图中删除。',
   'notice.rootCannotDelete': 'yonxao-mindmap: 根主题不能删除。',
 
+  // ── 全屏编辑恢复 ──
+  'fullscreenDraftRecovery.message':
+    '检测到上次异常退出，部分编辑内容可能尚未保存。可以将其恢复为当前导图下方的新导图，或复制可恢复源码到剪贴板。',
+  'fullscreenDraftRecovery.createMap': '创建新导图',
+  'fullscreenDraftRecovery.copySource': '复制源码',
+  'fullscreenDraftRecovery.inserted': 'yonxao-mindmap: 已创建恢复导图。',
+  'fullscreenDraftRecovery.copied': 'yonxao-mindmap: 残留源码已复制。',
+  'fullscreenDraftRecovery.insertFailed': 'yonxao-mindmap: 创建恢复导图失败。',
+  'fullscreenDraftRecovery.copyFailed': 'yonxao-mindmap: 复制残留源码失败。',
+  'fullscreenDraftRecovery.insertUnsupported':
+    'yonxao-mindmap: 当前编辑器环境暂不支持自动创建恢复导图，请复制源码。',
+
   // ── 编辑器菜单 ──
   'editorMenu.insertMindMap': '插入思维导图',
 

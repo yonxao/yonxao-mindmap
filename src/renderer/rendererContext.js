@@ -117,9 +117,11 @@ export const rendererContextMethods = {
     }
     const rememberedTopicFocus = this.readRememberedTopicFocusState();
     this.focusedTopicId = rememberedTopicFocus?.topicId || '';
+    this.initializeFullscreenDraftRecovery();
 
     this.containerEl = document.createElement('div');
     this.containerEl.className = 'yonxao-mindmap-container';
+    this.renderFullscreenDraftRecoveryPrompt();
     this.hostEl.appendChild(this.containerEl);
 
     this.createToolbar();

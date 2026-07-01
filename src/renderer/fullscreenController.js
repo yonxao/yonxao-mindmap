@@ -232,6 +232,7 @@ export const fullscreenControllerMethods = {
       .then(() => this.saveSourceToMarkdownFile(pending))
       .then((saved) => {
         if (saved) {
+          this.clearFullscreenDraftSnapshot();
           new Notice('yonxao-mindmap: 配置已保存。');
         }
       })
