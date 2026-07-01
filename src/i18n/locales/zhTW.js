@@ -176,7 +176,7 @@ export const zhTWMessages = Object.freeze({
   'configModal.shortcuts.topicCreateDeleteSection': '主題建立與刪除',
   'configModal.shortcuts.topicEditSection': '主題編輯',
   'configModal.shortcuts.topicNavigateCollapseSection': '主題導覽與摺疊',
-  'configModal.shortcuts.topicClipboardHistorySection': '複製貼上與重做',
+  'configModal.shortcuts.topicClipboardHistorySection': '複製貼上與復原重做',
   'configModal.shortcuts.mapControlSection': '導圖控制',
   'configModal.shortcuts.viewControlSection': '檢視控制',
   'configModal.shortcuts.header.action': '操作',

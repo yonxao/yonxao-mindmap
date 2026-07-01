@@ -176,7 +176,7 @@ export const zhCNMessages = Object.freeze({
   'configModal.shortcuts.topicCreateDeleteSection': '主题创建与删除',
   'configModal.shortcuts.topicEditSection': '主题编辑',
   'configModal.shortcuts.topicNavigateCollapseSection': '主题导航与折叠',
-  'configModal.shortcuts.topicClipboardHistorySection': '复制粘贴与重做',
+  'configModal.shortcuts.topicClipboardHistorySection': '复制粘贴与撤销重做',
   'configModal.shortcuts.mapControlSection': '导图控制',
   'configModal.shortcuts.viewControlSection': '视图控制',
   'configModal.shortcuts.header.action': '操作',

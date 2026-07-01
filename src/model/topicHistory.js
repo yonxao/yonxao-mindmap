@@ -42,7 +42,8 @@ export const topicHistoryMethods = {
       return `${sourcePath}:history:editor:${this.editorContext.contentFrom}`;
     }
 
-    return `${sourcePath}:history:${String(this.source || '').slice(0, VIEW_MODE_KEY_SOURCE_TRUNCATE_LENGTH)}`;
+    const sourcePreview = String(this.source || '').slice(0, VIEW_MODE_KEY_SOURCE_TRUNCATE_LENGTH);
+    return `${sourcePath}:history:${sourcePreview}`;
   },
 
   readTopicHistoryMemory() {

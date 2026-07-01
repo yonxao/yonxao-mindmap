@@ -56,6 +56,13 @@ function cloneClipboardTopicSnapshot(options = {}) {
   });
 }
 
+function setSharedTopicClipboard(text, topicSnapshot) {
+  sharedTopicClipboard = {
+    text: text || '',
+    topicSnapshot,
+  };
+}
+
 function createTopicFromText(text, level) {
   return createMindTopic(String(text || '').trim(), {}, [], 0, level);
 }
@@ -152,11 +159,7 @@ export const topicCommandMethods = {
     if (!topic || topic._virtual) return false;
 
     const text = topic.text || '';
-    sharedTopicClipboard = {
-      mode: 'content',
-      text,
-      topicSnapshot: createTopicFromText(text, topic.level || 1),
-    };
+    setSharedTopicClipboard(text, createTopicFromText(text, topic.level || 1));
     await writeSystemClipboardText(text);
     new Notice(this.t('notice.topicCopied'));
     return true;
@@ -171,11 +174,10 @@ export const topicCommandMethods = {
     if (!this.confirmDeleteTopic(topic)) return false;
 
     const parentTopic = this.findTopicParentInTree(topic.id);
-    sharedTopicClipboard = {
-      mode: 'content',
-      text: topic.text || '',
-      topicSnapshot: createTopicFromText(topic.text || '', topic.level || 1),
-    };
+    setSharedTopicClipboard(
+      topic.text || '',
+      createTopicFromText(topic.text || '', topic.level || 1)
+    );
     await writeSystemClipboardText(topic.text || '');
 
     this.closeTopicEditor();
@@ -227,11 +229,7 @@ export const topicCommandMethods = {
       includeAttributes: true,
       includeSubtopics: true,
     });
-    sharedTopicClipboard = {
-      mode: 'topic',
-      text: topic.text || '',
-      topicSnapshot,
-    };
+    setSharedTopicClipboard(topic.text || '', topicSnapshot);
     await writeSystemClipboardText(serializeTopic(topicSnapshot, 0));
     new Notice(this.t('notice.topicWithAttributesCopied'));
     return true;

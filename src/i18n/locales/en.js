@@ -183,7 +183,7 @@ export const enMessages = Object.freeze({
   'configModal.shortcuts.topicCreateDeleteSection': 'Topic Creation and Deletion',
   'configModal.shortcuts.topicEditSection': 'Topic Editing',
   'configModal.shortcuts.topicNavigateCollapseSection': 'Topic Navigation and Collapse',
-  'configModal.shortcuts.topicClipboardHistorySection': 'Copy, Paste, Undo and Redo',
+  'configModal.shortcuts.topicClipboardHistorySection': 'Copy, Paste, Undo, and Redo',
   'configModal.shortcuts.mapControlSection': 'Map Control',
   'configModal.shortcuts.viewControlSection': 'View Control',
   'configModal.shortcuts.header.action': 'Action',
