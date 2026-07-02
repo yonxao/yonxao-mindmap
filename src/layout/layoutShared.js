@@ -22,11 +22,11 @@ import {
 } from '../config/mindConfig.js';
 import { normalizeIcon, resolveTopicIconSize } from '../icons/renderIcon.js';
 import { clamp } from '../utils/math.js';
-import {
-  estimateRichLineWidth,
-  richLineToPlainText,
-  wrapTopicRichTextByWidth,
-} from '../utils/richText.js';
+/*
+ * 富文本块级格式布局工具：
+ * 解析主题内容中的列表、代码块、公式和段落标记，按最大宽度换行并返回带样式片段的块级结构。
+ */
+import { wrapTopicRichBlocksByWidth } from '../utils/richText.js';
 
 export {
   BRANCH_GAP,
@@ -419,25 +419,32 @@ export function measureTopic(topic, config) {
     MIN_USABLE_TEXT_WIDTH,
     maxWidth - TOPIC_PADDING_X * 2 - iconWidth
   );
-  // richLines 保存局部样式片段供 SVG 渲染使用；lines 保留纯文本，给布局、表格和旧逻辑读取。
-  const richLines = wrapTopicRichTextByWidth(topic.text || 'Untitled', usableTextWidth, font);
-  const lines = richLines.map((line) => richLineToPlainText(line));
-  const textWidth = Math.ceil(
-    richLines.reduce((max, line) => Math.max(max, estimateRichLineWidth(line, font)), 0)
-  );
-  const width = clamp(textWidth + TOPIC_PADDING_X * 2 + iconWidth, TOPIC_MIN_WIDTH, maxWidth);
-  const height = Math.max(TOPIC_MIN_HEIGHT, lines.length * font.lineHeight + TOPIC_PADDING_Y * 2);
+  /*
+   * richBlocks 保存列表、公式、代码块等块级格式；richLines/lines 保留扁平结果，
+   * 让树形表格、导出和旧渲染兜底逻辑仍能读取主题的纯文本行。
+   */
+  const richContent = wrapTopicRichBlocksByWidth(topic.text || 'Untitled', usableTextWidth, font);
+  const richLines = richContent.richLines;
+  const lines = richContent.lines;
+  const textWidth = Math.ceil(richContent.width);
+  const measuredWidth = textWidth + TOPIC_PADDING_X * 2 + iconWidth;
+  const width = clamp(measuredWidth, TOPIC_MIN_WIDTH, Math.max(maxWidth, measuredWidth));
+  const contentHeight = richContent.height;
+  const height = Math.max(TOPIC_MIN_HEIGHT, contentHeight + TOPIC_PADDING_Y * 2);
 
   return {
     width,
     height,
     lines,
     richLines,
+    richBlocks: richContent.blocks,
+    contentHeight,
     icon,
     iconSize,
     font,
     textX: TOPIC_PADDING_X + iconWidth,
     textY: (height - (lines.length - 1) * font.lineHeight) / 2 + font.size * TEXT_Y_CENTER_RATIO,
+    textTop: (height - contentHeight) / 2,
     side: 'right',
     x: 0,
     y: 0,

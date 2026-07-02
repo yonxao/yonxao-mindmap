@@ -233,6 +233,14 @@
   display: flex;
   width: 100%;
   min-width: 0;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 5px;
+}
+
+.yonxao-mindmap-topic-rich-text-toolbar-row {
+  display: flex;
+  min-width: 0;
   flex-wrap: wrap;
   align-items: center;
   gap: 4px;
@@ -285,6 +293,53 @@
 .yonxao-mindmap-topic-rich-text-button.is-clear svg {
   width: 14px;
   height: 14px;
+}
+
+.yonxao-mindmap-topic-rich-text-list-button-group {
+  display: inline-flex;
+  align-items: center;
+  flex: 0 0 auto;
+}
+
+.yonxao-mindmap-topic-rich-text-list-button-group .yonxao-mindmap-topic-rich-text-button {
+  border-radius: 0;
+}
+
+.yonxao-mindmap-topic-rich-text-list-button-group
+  .yonxao-mindmap-topic-rich-text-button
+  + .yonxao-mindmap-topic-rich-text-button {
+  margin-left: -1px;
+}
+
+.yonxao-mindmap-topic-rich-text-list-button-group
+  .yonxao-mindmap-topic-rich-text-button:first-child {
+  border-radius: 5px 0 0 5px;
+}
+
+.yonxao-mindmap-topic-rich-text-list-button-group
+  .yonxao-mindmap-topic-rich-text-button:last-child {
+  border-radius: 0 5px 5px 0;
+}
+
+.yonxao-mindmap-topic-rich-text-button.is-unordered-list,
+.yonxao-mindmap-topic-rich-text-button.is-ordered-list,
+.yonxao-mindmap-topic-rich-text-button.is-equation,
+.yonxao-mindmap-topic-rich-text-button.is-code-block {
+  color: var(--text-muted);
+  font-weight: 700;
+}
+
+.yonxao-mindmap-topic-rich-text-button.is-unordered-list svg,
+.yonxao-mindmap-topic-rich-text-button.is-ordered-list svg {
+  width: 15px;
+  height: 15px;
+  stroke-width: 2;
+}
+
+.yonxao-mindmap-topic-rich-text-button.is-code-block {
+  width: 34px;
+  font-family: var(--yonxao-mindmap-mono-font);
+  font-size: 10px;
 }
 
 .yonxao-mindmap-topic-rich-text-color-dropdown {

@@ -23,6 +23,17 @@ continued line
   assert.equal(document.root.subtopics[0].subtopics[0].text, 'Leaf');
 });
 
+test('parseMindDocument preserves leading spaces in nested list content', () => {
+  const document = parseMindDocument(`# 高级格式
+## 无序列表
+- abc
+  - a
+  - b
+- ddd`);
+
+  assert.equal(document.root.subtopics[0].text, '无序列表\n- abc\n  - a\n  - b\n- ddd');
+});
+
 test('parseMindDocument creates a virtual root for multiple top-level topics', () => {
   const document = parseMindDocument(`# A
 # B`);

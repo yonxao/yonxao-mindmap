@@ -83,7 +83,7 @@ export function parseTopicMind(lines) {
         throw new Error(`第 ${lineIndex + 1} 行不是主题内容行，请先使用 #、##、### 创建主题。`);
       }
 
-      currentTopic.text = `${currentTopic.text}\n${rawLine.trim()}`;
+      currentTopic.text = `${currentTopic.text}\n${rawLine.trimEnd()}`;
       continue;
     }
 

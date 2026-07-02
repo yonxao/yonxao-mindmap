@@ -165,12 +165,14 @@ function trimLineEnd(text) {
  * 把编辑器里的主题文本归一成 yxmm 正文区可安全保存的文本。
  */
 export function normalizeTopicTextForStorage(text) {
-  return String(text || '')
+  const lines = String(text || '')
     .replace(/\r\n/g, '\n')
     .split('\n')
-    .map((line) => line.trim())
-    .join('\n')
-    .trim();
+    .map((line) => line.trimEnd());
+
+  while (lines.length && !lines[0].trim()) lines.shift();
+  while (lines.length && !lines[lines.length - 1].trim()) lines.pop();
+  return lines.join('\n');
 }
 
 /*

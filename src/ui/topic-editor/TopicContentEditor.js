@@ -16,6 +16,10 @@ const FLOATING_EDITOR_DEFAULT_WIDTH = 520;
 const FLOATING_EDITOR_DEFAULT_HEIGHT = 420;
 
 export const topicContentEditorMethods = {
+  /*
+   * 创建大内容编辑浮层 DOM。浮层独立于主题编辑面板，包含标题栏、富文本工具栏、
+   * 多行文本输入框和应用/取消按钮。支持拖拽移动和快捷键操作。
+   */
   createTopicContentEditor() {
     this.topicContentEditorEl = document.createElement('div');
     this.topicContentEditorEl.className = 'yonxao-mindmap-topic-content-editor';
@@ -64,6 +68,7 @@ export const topicContentEditorMethods = {
       'change',
       'wheel',
     ]) {
+      // 阻止所有事件冒泡，避免触发导图画布的事件处理
       this.registerDomEvent(this.topicContentEditorEl, eventName, (event) => {
         event.stopPropagation();
       });
@@ -92,6 +97,10 @@ export const topicContentEditorMethods = {
     });
   },
 
+  /*
+   * 打开大内容编辑浮层：从面板文本域同步内容、全屏模式下移入浮层容器、
+   * 居中定位并自动全选文本。
+   */
   openTopicContentEditor() {
     if (
       !this.topicEditorFields?.content ||
@@ -117,6 +126,10 @@ export const topicContentEditorMethods = {
     this.topicContentEditorInput.select();
   },
 
+  /*
+   * 关闭大内容编辑浮层。apply=true 时将编辑内容回写到面板文本域并更新状态。
+   * 无论是否应用，都重置位置和拖拽状态。
+   */
   closeTopicContentEditor(apply = false) {
     if (!this.topicContentEditorEl) return;
 
@@ -133,6 +146,9 @@ export const topicContentEditorMethods = {
     this.topicContentEditorDragState = null;
   },
 
+  /*
+   * 将编辑浮层居中定位到视口中间，并限制不超出视口边界。
+   */
   positionTopicContentEditor() {
     if (!this.topicContentEditorEl) return;
 
@@ -162,6 +178,9 @@ export const topicContentEditorMethods = {
     };
   },
 
+  /*
+   * 开始拖拽编辑浮层：记录起始位置和指针 ID，尝试捕获指针以便在标题栏外继续拖动。
+   */
   startTopicContentEditorDrag(event) {
     if (event.button !== 0 || !this.topicContentEditorEl || this.topicContentEditorEl.hidden) {
       return;
@@ -187,6 +206,9 @@ export const topicContentEditorMethods = {
     }
   },
 
+  /*
+   * 拖拽移动中：根据指针位移计算新位置，并限制不超出视口边界。
+   */
   handleTopicContentEditorDragMove(event) {
     const state = this.topicContentEditorDragState;
     if (!state || event.pointerId !== state.pointerId || !this.topicContentEditorEl) return;
@@ -201,6 +223,9 @@ export const topicContentEditorMethods = {
     this.topicContentEditorEl.style.top = `${Math.round(position.top)}px`;
   },
 
+  /*
+   * 结束拖拽：释放指针捕获，清除拖拽状态。
+   */
   finishTopicContentEditorDrag(event) {
     const state = this.topicContentEditorDragState;
     if (!state || event.pointerId !== state.pointerId) return;

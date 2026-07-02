@@ -117,11 +117,16 @@ export const zhTWMessages = Object.freeze({
   'topicEditor.fontFamily.invalid':
     "請輸入合法的 CSS font-family 清單，例如：'SimSun', 'Songti SC', serif",
   'topicEditor.editContentAria': '編輯內容',
+  // 富文本編輯工具栏提示
   'topicEditor.richText.bold': '加粗選中文字',
   'topicEditor.richText.italic': '傾斜選中文字',
   'topicEditor.richText.strike': '為選中文字加刪除線',
   'topicEditor.richText.underline': '為選中文字加底線',
   'topicEditor.richText.clear': '清除內容樣式',
+  'topicEditor.richText.unorderedList': '插入無序列表',
+  'topicEditor.richText.orderedList': '插入有序列表',
+  'topicEditor.richText.equation': '插入方程式',
+  'topicEditor.richText.codeBlock': '插入程式碼區塊',
   'topicEditor.richText.colorNamed': '把選中文字設為 {color}',
   'topicEditor.richText.colorCustom': '為選中文字設定顏色',
   'topicEditor.richText.placeholder': '文字',

@@ -27,6 +27,12 @@ import {
 import { ICON_EDITOR_EXPAND } from '../../icons/iconNames.js';
 import { INLINE_TOPIC_COLOR_OPTIONS, topicRichTextToPlainText } from '../../utils/richText.js';
 
+/*
+ * 富文本编辑相关常量：
+ * - RICH_TEXT_STYLE_CONTROLS：行内样式按钮配置（加粗/斜体/中划线/下划线）
+ * - RICH_TEXT_BLOCK_CONTROLS：块级格式按钮配置（列表/公式/代码块）
+ * - RICH_TEXT_CLEAR_CONTROL：清除样式按钮配置
+ */
 const RICH_TEXT_PLACEHOLDER_KEY = 'topicEditor.richText.placeholder';
 const RICH_TEXT_FALLBACK_PLACEHOLDER = 'Text';
 const RICH_TEXT_DEFAULT_COLOR = '#ef4444';
@@ -56,6 +62,36 @@ const RICH_TEXT_STYLE_CONTROLS = Object.freeze([
     className: 'is-underline',
     titleKey: 'topicEditor.richText.underline',
     marker: '++',
+  },
+]);
+const RICH_TEXT_BLOCK_CONTROLS = Object.freeze([
+  {
+    label: '•',
+    icon: 'list',
+    group: 'list',
+    className: 'is-unordered-list',
+    titleKey: 'topicEditor.richText.unorderedList',
+    format: 'unordered-list',
+  },
+  {
+    label: '1',
+    icon: 'list-ordered',
+    group: 'list',
+    className: 'is-ordered-list',
+    titleKey: 'topicEditor.richText.orderedList',
+    format: 'ordered-list',
+  },
+  {
+    label: 'Σ',
+    className: 'is-equation',
+    titleKey: 'topicEditor.richText.equation',
+    format: 'equation',
+  },
+  {
+    label: '</>',
+    className: 'is-code-block',
+    titleKey: 'topicEditor.richText.codeBlock',
+    format: 'code-block',
   },
 ]);
 const RICH_TEXT_CLEAR_CONTROL = Object.freeze({
@@ -112,9 +148,19 @@ export const topicEditorFieldMethods = {
     return field;
   },
 
+  /*
+   * 创建富文本编辑工具栏，包含两行按钮：
+   * - 样式行：加粗/斜体/中划线/下划线 + 颜色选择器 + 清除样式
+   * - 块级行：无序列表/有序列表/公式/代码块
+   */
   createTopicRichTextToolbar(input) {
     const toolbar = document.createElement('div');
     toolbar.className = 'yonxao-mindmap-topic-rich-text-toolbar';
+
+    const styleRow = document.createElement('div');
+    styleRow.className = 'yonxao-mindmap-topic-rich-text-toolbar-row';
+    const blockRow = document.createElement('div');
+    blockRow.className = 'yonxao-mindmap-topic-rich-text-toolbar-row';
 
     for (const control of RICH_TEXT_STYLE_CONTROLS) {
       const button = document.createElement('button');
@@ -127,15 +173,54 @@ export const topicEditorFieldMethods = {
         event.stopPropagation();
         this.applyTopicRichTextFormat(input, control.marker, control.marker);
       });
-      toolbar.appendChild(button);
+      styleRow.appendChild(button);
     }
 
-    toolbar.appendChild(this.createTopicRichTextColorDropdown(input));
-    toolbar.appendChild(this.createTopicRichTextClearButton(input));
+    styleRow.appendChild(this.createTopicRichTextColorDropdown(input));
+    styleRow.appendChild(this.createTopicRichTextClearButton(input));
+
+    const listGroup = document.createElement('div');
+    listGroup.className = 'yonxao-mindmap-topic-rich-text-list-button-group';
+
+    for (const control of RICH_TEXT_BLOCK_CONTROLS) {
+      const button = document.createElement('button');
+      button.type = 'button';
+      button.className = `yonxao-mindmap-topic-rich-text-button ${control.className}`;
+      if (control.icon) {
+        try {
+          setIcon(button, control.icon);
+        } catch (_error) {
+          button.textContent = control.label;
+        }
+      } else {
+        button.textContent = control.label;
+      }
+      this.setTopicRichTextControlTooltip(button, this.t(control.titleKey));
+      this.registerDomEvent(button, 'click', (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        this.applyTopicRichTextBlockFormat(input, control.format);
+      });
+
+      if (control.group === 'list') {
+        listGroup.appendChild(button);
+      } else {
+        blockRow.appendChild(button);
+      }
+    }
+    if (listGroup.childElementCount) {
+      blockRow.prepend(listGroup);
+    }
+
+    toolbar.appendChild(styleRow);
+    toolbar.appendChild(blockRow);
 
     return toolbar;
   },
 
+  /*
+   * 创建"清除样式"按钮：点击后将选中区域或全部内容中的样式标记剥离，只保留纯文本。
+   */
   createTopicRichTextClearButton(input) {
     const button = document.createElement('button');
     button.type = 'button';
@@ -154,6 +239,10 @@ export const topicEditorFieldMethods = {
     return button;
   },
 
+  /*
+   * 创建文字颜色选择器下拉组件。包含预定义色块（语义色）和一个原生 <input type="color">
+   * 供用户选取任意颜色。菜单使用 fixed 定位避免被滚动容器裁切。
+   */
   createTopicRichTextColorDropdown(input) {
     const dropdown = document.createElement('div');
     dropdown.className = 'yonxao-mindmap-topic-rich-text-color-dropdown';
@@ -253,6 +342,10 @@ export const topicEditorFieldMethods = {
     return dropdown;
   },
 
+  /*
+   * 切换颜色选择器的打开/关闭状态。打开时重新计算菜单位置，
+   * 使用 fixed 定位确保不被滚动容器裁切。
+   */
   toggleTopicRichTextColorDropdown(dropdown) {
     const menu = dropdown?.querySelector?.('.yonxao-mindmap-topic-rich-text-color-menu');
     if (!menu) return;
@@ -267,6 +360,9 @@ export const topicEditorFieldMethods = {
     }
   },
 
+  /*
+   * 关闭颜色选择器并重置菜单位置和 aria-expanded 状态。
+   */
   closeTopicRichTextColorDropdown(dropdown) {
     const menu = dropdown?.querySelector?.('.yonxao-mindmap-topic-rich-text-color-menu');
     if (!menu) return;
@@ -278,6 +374,10 @@ export const topicEditorFieldMethods = {
       ?.setAttribute('aria-expanded', 'false');
   },
 
+  /*
+   * 计算颜色选择器菜单的 fixed 定位坐标。优先向下展开，
+   * 下方空间不足时向上展开，避免菜单盖住工具栏按钮。
+   */
   positionTopicRichTextColorDropdown(dropdown) {
     const trigger = dropdown?.querySelector?.('.yonxao-mindmap-topic-rich-text-color-trigger');
     const menu = dropdown?.querySelector?.('.yonxao-mindmap-topic-rich-text-color-menu');
@@ -307,6 +407,10 @@ export const topicEditorFieldMethods = {
     dropdown?.style?.setProperty('--yonxao-mindmap-topic-rich-text-current-color', color);
   },
 
+  /*
+   * 清除选中文字或全部内容的富文本样式标记，仅保留纯文本。
+   * 有选择时只清除选择区域，无选择时清除整个输入框。
+   */
   clearTopicRichTextStyles(input) {
     if (!input) return;
 
@@ -329,14 +433,84 @@ export const topicEditorFieldMethods = {
     input.dispatchEvent(new Event('input', { bubbles: true }));
   },
 
+  /*
+   * 对选中文字应用行内样式标记（如 **加粗**、*斜体*）。
+   * 无选中时使用占位文本作为样式内容。
+   */
   applyTopicRichTextFormat(input, open, close) {
     const fallback = this.topicRichTextPlaceholder();
     this.replaceTopicRichTextSelection(input, open, close, fallback);
   },
 
+  /*
+   * 对选中文字应用颜色标记（如 {red|文字}、{#e11d48|文字}）。
+   */
   applyTopicRichTextColor(input, color) {
     const fallback = this.topicRichTextPlaceholder();
     this.replaceTopicRichTextSelection(input, `{${color}|`, '}', fallback);
+  },
+
+  applyTopicRichTextBlockFormat(input, format) {
+    if (!input) return;
+
+    const fallback = this.topicRichTextPlaceholder();
+    const start = Number(input.selectionStart) || 0;
+    const end = Number(input.selectionEnd) || start;
+    const selected = input.value.slice(start, end);
+    const replacement = this.createTopicRichTextBlockReplacement(format, selected, fallback);
+    input.value = `${input.value.slice(0, start)}${replacement}${input.value.slice(end)}`;
+
+    const selection = this.topicRichTextBlockSelectionRange(format, replacement, start);
+    input.focus();
+    input.setSelectionRange(selection.start, selection.end);
+    input.dispatchEvent(new Event('input', { bubbles: true }));
+  },
+
+  createTopicRichTextBlockReplacement(format, selected, fallback) {
+    const text = selected || fallback;
+    if (format === 'unordered-list') {
+      return this.prefixTopicRichTextLines(text, '- ');
+    }
+    if (format === 'ordered-list') {
+      return this.prefixTopicRichTextLines(text, '1. ');
+    }
+    if (format === 'equation') {
+      return `$$\n${text}\n$$`;
+    }
+    if (format === 'code-block') {
+      return `~~~\n${text}\n~~~`;
+    }
+    return text;
+  },
+
+  /*
+   * 计算应用块级格式后光标的选中范围：
+   * - 公式和代码块选中 fence 之间的内容
+   * - 列表选中前缀之后的所有内容
+   */
+  topicRichTextBlockSelectionRange(format, replacement, start) {
+    if (format === 'equation' || format === 'code-block') {
+      const firstLineBreak = replacement.indexOf('\n');
+      const lastLineBreak = replacement.lastIndexOf('\n');
+      return {
+        start: start + firstLineBreak + 1,
+        end: start + Math.max(firstLineBreak + 1, lastLineBreak),
+      };
+    }
+
+    const prefixLength = format === 'ordered-list' ? '1. '.length : '- '.length;
+    return {
+      start: start + prefixLength,
+      end: start + replacement.length,
+    };
+  },
+
+  prefixTopicRichTextLines(text, prefix) {
+    return String(text || '')
+      .replace(/\r\n/g, '\n')
+      .split('\n')
+      .map((line) => (line.trim() ? `${prefix}${line}` : line))
+      .join('\n');
   },
 
   topicRichTextPlaceholder() {
@@ -362,6 +536,10 @@ export const topicEditorFieldMethods = {
     });
   },
 
+  /*
+   * 用样式标记包裹选中文字（如 **text** 或 {red|text}）。
+   * 无选中时使用 fallbackText 作为样式内容，光标自动选中内容区供用户替换。
+   */
   replaceTopicRichTextSelection(input, open, close, fallbackText) {
     if (!input) return;
 
@@ -379,6 +557,10 @@ export const topicEditorFieldMethods = {
     input.dispatchEvent(new Event('input', { bubbles: true }));
   },
 
+  /*
+   * 为富文本控件设置无障碍标签和 tooltip。优先使用 Obsidian 的 setTooltip，
+   * 不可用时保留原生 title 作为兜底。
+   */
   setTopicRichTextControlTooltip(element, text) {
     const label = String(text || '').trim();
     if (!label) return;

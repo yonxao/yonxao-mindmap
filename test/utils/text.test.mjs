@@ -15,6 +15,6 @@ test('wrapTopicTextByWidth keeps hard line breaks', () => {
   assert.deepEqual(wrapTopicTextByWidth('第一行\n第二行', 240, { size: 16 }), ['第一行', '第二行']);
 });
 
-test('normalizeTopicTextForStorage trims each line and preserves hard breaks', () => {
-  assert.equal(normalizeTopicTextForStorage('  A  \n  B  '), 'A\nB');
+test('normalizeTopicTextForStorage preserves leading indentation in content lines', () => {
+  assert.equal(normalizeTopicTextForStorage('\n- abc  \n  - a  \n  - b\n'), '- abc\n  - a\n  - b');
 });

@@ -201,6 +201,10 @@ export const topicEditorPanelMethods = {
     this.registerDomEvent(this.topicEditorEl, 'change', () => {
       this.updateTopicEditorActionState();
     });
+    /*
+     * 点击面板空白区域时聚焦浮层本身，使快捷键（如 Cmd+S）能从面板触发保存，
+     * 但不抢输入控件和按钮的焦点。
+     */
     this.registerDomEvent(this.topicEditorEl, 'pointerdown', (event) => {
       this.focusTopicEditorPanelFromPointer(event);
     });
@@ -208,6 +212,10 @@ export const topicEditorPanelMethods = {
     this.createTopicContentEditor();
   },
 
+  /*
+   * 全局 keydown 监听（capture 阶段），拦截 Cmd/Ctrl+S 快捷键。
+   * 如果大内容编辑浮层打开则只应用文本，否则保存整个主题。
+   */
   handleTopicEditorGlobalKeyDown(event) {
     if (!this.isTopicEditorSaveShortcut(event)) return;
     if (!this.isTopicEditorShortcutTarget(event.target)) return;
@@ -255,6 +263,10 @@ export const topicEditorPanelMethods = {
     );
   },
 
+  /*
+   * 点击编辑面板空白区域时聚焦浮层自身，使其能接收键盘快捷键。
+   * 如果点击的是输入控件或按钮则跳过，避免抢走交互元素的焦点。
+   */
   focusTopicEditorPanelFromPointer(event) {
     if (!this.topicEditorEl || this.topicEditorEl.hidden) return;
     const interactiveTarget = event.target?.closest?.(

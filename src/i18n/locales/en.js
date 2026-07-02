@@ -124,11 +124,16 @@ export const enMessages = Object.freeze({
   'topicEditor.fontFamily.invalid':
     "Please enter a valid CSS font-family list, for example: 'SimSun', 'Songti SC', serif",
   'topicEditor.editContentAria': 'Edit content',
+  // 富文本编辑工具栏提示
   'topicEditor.richText.bold': 'Bold selected text',
   'topicEditor.richText.italic': 'Italicize selected text',
   'topicEditor.richText.strike': 'Strike through selected text',
   'topicEditor.richText.underline': 'Underline selected text',
   'topicEditor.richText.clear': 'Clear content styles',
+  'topicEditor.richText.unorderedList': 'Insert unordered list',
+  'topicEditor.richText.orderedList': 'Insert ordered list',
+  'topicEditor.richText.equation': 'Insert equation',
+  'topicEditor.richText.codeBlock': 'Insert code block',
   'topicEditor.richText.colorNamed': 'Color selected text {color}',
   'topicEditor.richText.colorCustom': 'Color selected text',
   'topicEditor.richText.placeholder': 'Text',
