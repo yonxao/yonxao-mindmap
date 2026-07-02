@@ -4,8 +4,6 @@
 
 A feature-rich Obsidian mind map plugin that renders `yxmm` code blocks in Markdown documents as interactive SVG mind maps and various structural diagrams.
 
-这是一个功能丰富的 Obsidian 思维导图插件，将 Markdown 文档中的 `yxmm` 代码块渲染为可交互的 SVG 思维导图及多种结构图。
-
 [中文文档](./README.zh-CN.md)
 
 Demo screenshot:
@@ -14,15 +12,20 @@ Demo screenshot:
 
 ## ✨ Core Features
 
-- 🎨 **Rich Layout Types**: 7 categories with 20 layouts, including mind maps (right/left/bidirectional/up/down/vertical), tree diagrams, organization charts, timelines, radial maps, fishbone diagrams, and tree tables
-- 🎯 **Intuitive Syntax**: Use topic-level markers (`#`, `##`, `###`) to express hierarchy naturally and fluently
-- 🖱️ **Full Interactive Editing**: Double-click editing, drag-and-drop sorting, right-click menus, collapse/expand — support complete topic tree editing
+- 🎨 **20 Layout Types**: 7 categories with 20 layouts, including mind maps (right/left/bidirectional/up/down/vertical), tree diagrams, organization charts, timelines, radial maps, fishbone diagrams, and tree tables
+- 🎯 **Intuitive Topic-Level Syntax**: Use `#`, `##`, `###` markers for hierarchy; plain text lines automatically merge into multi-line topic content
+- 🖱️ **Full Interactive Editing**: Double-click editing, drag-and-drop sorting, right-click menus, collapse/expand, keyboard navigation
 - 🎨 **8 Theme Color Schemes**: default, ocean, forest, sunset, mono, rainbow, pastel-rainbow, neon-rainbow
 - 🔗 **Flexible Connector Styles**: Curve, straight, and elbow connectors — freely switchable in mind map layouts
-- 📐 **Custom Fonts**: Support setting font family, size, weight, and line height per topic level
-- 🖼️ **Export Functionality**: Export PNG images or copy to clipboard
+- 📝 **Inline Topic Content Styles**: Bold, italic, strikethrough, underline, text color, plus lists, code blocks, and equations
+- ⌨️ **Full Keyboard Navigation & Shortcuts**: Arrow key navigation, quick create/delete/copy topics, zoom, fullscreen, and more
+- 📋 **Internal Clipboard & Undo/Redo**: Copy/cut/paste topics with attributes, up to 80-step undo history
+- 📐 **Visual Topic Editor Panel**: Floating panel for editing content, color, icon, font, and max width with rich text toolbar
+- 🔧 **7-Tab Visual Configuration**: Display, Structure, Color, Font, Interaction, Shortcuts, Advanced (YAML editing)
+- 🖼️ **Dual Fullscreen Modes**: Window fullscreen and physical fullscreen with automatic crash recovery
+- 📄 **Source Code Editor**: Integrated syntax highlighting, YAML config editing, dirty state detection
+- 🖼️ **Export & Copy**: Export PNG image or copy to clipboard; copy plain text, source code, or config
 - 🌐 **Multi-language Support**: 16 languages, automatically follows Obsidian language settings
-- ⚙️ **Visual Configuration Panel**: Intuitive configuration interface supporting global defaults and per-code-block configuration
 - 📱 **Responsive Design**: Adapts to different screen sizes and Obsidian themes
 
 ## 🚀 Quick Start
@@ -95,25 +98,53 @@ This is the third line
 
 ### Inline Topic Content Styles
 
-Topic content supports lightweight inline style markers:
+Topic content supports lightweight inline style markers and block-level formatting:
 
 ````markdown
 ```yxmm
 # Central Topic
 ## **Bold**, *italic*, ~~strikethrough~~, ++underline++
 ## {red|Semantic color text} and {#3b82f6|Hex color text}
+## Lists, equations, and code blocks
+- Unordered list item
+  - Nested list item
+1. Ordered list item
+2. Second item
+$$
+E = mc^2
+$$
+~~~js
+const topic = 'yonxao-mindmap';
+~~~
 ```
 ````
 
-Supported inline styles:
+**Inline styles:**
 
-- `**Text**`: Bold
-- `*Text*`: Italic
-- `~~Text~~`: Strikethrough
-- `++Text++`: Underline
-- `{red|Text}`, `{#3b82f6|Text}`: Text color
+| Syntax | Effect |
+| ------ | ------ |
+| `**Text**` | **Bold** |
+| `*Text*` | *Italic* |
+| `~~Text~~` | ~~Strikethrough~~ |
+| `++Text++` | ++Underline++ |
+| `{red|Text}` | Semantic color text |
+| `{#3b82f6|Text}` | Hex color text |
 
-Semantic colors: `red`, `green`, `blue`, `yellow`, `orange`, `purple`, `pink`, `gray`, `black`, `white`. The topic edit panel and large text editor include visual style buttons and can clear inline styles from the selection or the whole content field. These markers are part of topic content, not topic attributes.
+**Block-level formats:**
+
+| Syntax | Effect |
+| ------ | ------ |
+| `- List item` | Unordered list |
+| `1. List item` | Ordered list |
+| `$$ ... $$` | Equation (MathJax rendered) |
+| `~~~lang ... ~~~` | Code block (monospace font) |
+
+- Semantic colors: `red`, `green`, `blue`, `yellow`, `orange`, `purple`, `pink`, `gray`, `black`, `white`
+- List indentation uses 2 spaces per level
+- Equations are rendered asynchronously via Obsidian/MathJax; source text is shown as fallback
+- Code blocks use monospace font with independent background color and auto-width
+- The topic edit panel and large text editor include visual toolbar buttons and can clear inline styles
+- These markers are part of topic content, not topic attributes
 
 ### Topic Attributes
 
@@ -129,14 +160,20 @@ Add attributes in `[key=value]` format at the end of a topic-level marker line:
 
 Supported attributes:
 
-- `color=#3b82f6`: Topic color
-- `icon=book`: Topic icon
-- `layout=mindmap-right`: Local layout type
-- `fontSize=16`, `fontWeight=700`, `fontFamily="..."`, `lineHeight=20`: Font overrides
+| Attribute | Example | Description |
+| --------- | ------- | ----------- |
+| `color` | `[color=#3b82f6]` | Topic color |
+| `icon` | `[icon=book]` | Topic icon (Lucide icon name) |
+| `layout` | `[layout=mindmap-right]` | Local layout type, overrides code block config |
+| `fontSize` | `[fontSize=16]` | Font size override (9-96px) |
+| `fontWeight` | `[fontWeight=700]` | Font weight override (100-900) |
+| `fontFamily` | `[fontFamily="..."]` | Font family override |
+| `lineHeight` | `[lineHeight=20]` | Line height override (12-160px) |
+| `maxWidth` | `[maxWidth=300]` | Max width override (120-800px) |
 
 ### Config Block
 
-Add a YAML config block wrapped in `---` at the top of the code block:
+Add a YAML config block wrapped in `---` at the top of the code block to override plugin global defaults:
 
 ````markdown
 ```yxmm
@@ -176,71 +213,203 @@ interaction:
 
 ### Mind Maps
 
-- `mindmap-right`: Rightward mind map (default)
-- `mindmap-left`: Leftward mind map
-- `mindmap-bidirectional`: Bidirectional mind map
-- `mindmap-up`: Upward mind map
-- `mindmap-down`: Downward mind map
-- `mindmap-vertical`: Vertical bidirectional mind map
+| Layout | Description |
+| ------ | ----------- |
+| `mindmap-right` | Rightward mind map (default) |
+| `mindmap-left` | Leftward mind map |
+| `mindmap-bidirectional` | Bidirectional mind map |
+| `mindmap-up` | Upward mind map |
+| `mindmap-down` | Downward mind map |
+| `mindmap-vertical` | Vertical bidirectional mind map |
+
+> Mind map layouts support switching connector styles (curve/straight/elbow) and branch expansion modes (side/hanging).
 
 ### Tree Diagrams
 
-- `tree`: Tree diagram
-- `tree-right`: Rightward tree diagram
-- `tree-left`: Leftward tree diagram
+| Layout | Description |
+| ------ | ----------- |
+| `tree` | Tree diagram |
+| `tree-right` | Rightward tree diagram |
+| `tree-left` | Leftward tree diagram |
 
 ### Organization Charts
 
-- `org`: Organization chart
-- `org-right`: Rightward organization chart
+| Layout | Description |
+| ------ | ----------- |
+| `org` | Organization chart |
+| `org-right` | Rightward organization chart |
 
 ### Timelines
 
-- `timeline`: Timeline
-- `timeline-up`: Upper-side timeline
-- `timeline-down`: Lower-side timeline
+| Layout | Description |
+| ------ | ----------- |
+| `timeline` | Timeline |
+| `timeline-up` | Upper-side timeline |
+| `timeline-down` | Lower-side timeline |
 
 ### Radial Maps
 
-- `radial`: Radial map
+| Layout | Description |
+| ------ | ----------- |
+| `radial` | Radial map |
 
 ### Fishbone Diagrams
 
-- `fishbone-left`: Leftward fishbone diagram
-- `fishbone-right`: Rightward fishbone diagram
+| Layout | Description |
+| ------ | ----------- |
+| `fishbone-left` | Leftward fishbone diagram |
+| `fishbone-right` | Rightward fishbone diagram |
 
 ### Tree Tables
 
-- `tree-table`: Tree table
-- `tree-table-stepped`: Stepped tree table
+| Layout | Description |
+| ------ | ----------- |
+| `tree-table` | Tree table |
+| `tree-table-stepped` | Stepped tree table |
 
 ## 🖱️ Usage Guide
 
 ### Basic Operations
 
-- **Double-click a topic**: Quickly edit topic content
-- **Click collapse button**: Collapse/expand subtopics
-- **Drag a topic**: Adjust sibling topic order or move to another position
-- **Right-click a topic**: Open context menu (add, delete, copy, collapse, etc.)
+| Operation | Description |
+|:---------:|:-----------:|
+| Double-click a topic | Quick inline editing of topic content |
+| Click collapse button | Collapse/expand subtopics |
+| Drag a topic | Rearrange sibling order or move to another position |
+| Right-click a topic | Open context menu |
+
+### Keyboard Shortcuts
+
+| Windows | macOS | Function | Context |
+|:-------:|:-----:|:--------:|:-------:|
+| `↑` `↓` `←` `→` | `↑` `↓` `←` `→` | Navigate topics | All layouts |
+| `Tab` | `Tab` | Add child topic | Edit mode |
+| `Enter` | `Enter` | Add sibling topic below | Edit mode |
+| `Shift` + `Enter` | `Shift` + `Enter` | Add sibling topic above | Edit mode |
+| `Delete` | `Delete` / `Cmd` + `Backspace` | Delete topic | Edit mode |
+| `Space` | `Space` | Open inline editor | Edit mode |
+| `` ` `` | `` ` `` | Open topic edit panel | Edit mode |
+| `Alt` + `/` | `Option` + `/` | Toggle collapse/expand | Always available |
+| `Ctrl` + `C` / `X` / `V` | `Cmd` + `C` / `X` / `V` | Copy/cut/paste topic | Edit mode |
+| `Ctrl` + `Alt` + `C` | `Cmd` + `Option` + `C` | Copy topic with attributes | Edit mode |
+| `Ctrl` + `Alt` + `V` | `Cmd` + `Option` + `V` | Paste topic with attributes | Edit mode |
+| `Ctrl` + `Z` / `Y` | `Cmd` + `Z` / `Shift` + `Z` | Undo/redo | Edit mode |
+| `Alt` + `+` / `-` | `Option` + `+` / `-` | Zoom in/out | Always available |
+| `Alt` + `0` | `Option` + `0` | Fit view | Always available |
+| `Alt` + `1` | `Option` + `1` | Original size (100%) | Always available |
+| `Alt` + `2` | `Option` + `2` | Window fullscreen | Always available |
+| `Alt` + `3` | `Option` + `3` | Physical fullscreen | Always available |
+| `Alt` + `,` | `Option` + `,` | Open config panel | Always available |
+
+> **Arrow key navigation logic**: In horizontal layouts, left/right navigates parent-child relationships and up/down navigates siblings; vertical layouts are the opposite; other layouts navigate by spatial proximity.
+
+### Context Menu
+
+**Topic context menu:**
+
+| Action | Description |
+|:-----:|:-----------:|
+| Edit Topic | Open inline text editor |
+| Topic Edit Panel | Open full attribute editing panel |
+| Copy Topic Content | Copy topic plain text |
+| Copy Subtree Text | Copy subtree as plain text |
+| Copy Indented Subtree | Copy subtree as indented text |
+| Add Subtopic | Add child topic under selected topic |
+| Add Sibling Above | Add sibling above selected topic |
+| Add Sibling Below | Add sibling below selected topic |
+| Collapse/Expand Subtopic | Toggle collapse state |
+| Expand All Subtopics | Recursively expand all descendants |
+| Collapse All Subtopics | Recursively collapse all descendants |
+| Delete Topic | Confirm and delete (shows count if has children) |
+
+**Canvas context menu (on blank area):**
+
+| Action | Description |
+|:-----:|:-----------:|
+| Copy Text | Copy topic tree as plain text |
+| Copy Indented Text | Copy topic tree as indented format |
+| Copy Source | Copy full code block content |
+| Copy Config | Copy YAML config block only |
+| Export PNG | Download as PNG image |
+| Copy PNG | Copy image to clipboard |
+| Fit View | Auto-adjust viewport to fit the entire map |
+| Original Size | Restore 100% zoom |
+| Delete Mind Map | Delete the entire `yxmm` code block |
+
+### Topic Edit Panel
+
+Press `` ` `` (backtick) while a topic is selected, or use the context menu to open the topic edit panel — a floating panel with:
+
+| Field | Description |
+|:-----:|:-----------:|
+| Content | Multi-line text input with rich text toolbar |
+| Color | Topic color (swatches + hex color picker) |
+| Icon | Icon picker (Lucide icons) |
+| Max Width | Override global/level configuration |
+| Font Family | Dropdown: inherit / Obsidian variables / system fonts / custom |
+| Font Size | 9-96px |
+| Font Weight | 100-900 |
+| Line Height | 12-160px |
+
+**Rich text toolbar:**
+
+Style buttons: **B** (bold), *I* (italic), ~~S~~ (strikethrough), U (underline), A▼ (text color), 🧹 (clear styles)
+
+Block format buttons: • (unordered list), 1. (ordered list), Σ (equation), \</\> (code block)
+
+- Select text and click a style button to wrap it with markers; inserts placeholder text when nothing is selected
+- Click A▼ to open the color picker: 10 predefined semantic colors + native color picker
+- The clear styles button strips inline style markers from the selection or entire content
+
+**Large text editor:**
+- Click the "expand" button next to the content field to open a standalone floating editor
+- Supports drag-to-move, ideal for editing large amounts of content
+- `Cmd/Ctrl + Enter` to save, `Escape` to cancel
+- Includes the full rich text toolbar
+
+### Source Code Editor
+
+Click the "Source/Map Toggle" button in the toolbar or double-click the code block area to enter source editing mode:
+
+- **Config tab** (YAML): Syntax highlighting (key/value/comment/string/number), line numbers
+- **Content tab** (topic-level markers): Line numbers, `Tab` key inserts level markers
+- **Real-time validation**: Parses before saving; rejects invalid content with error message
+- **Dirty state detection**: Shows `dirty`/`synced` status indicator
+- **Auto height**: Adapts to line count
+- `Cmd/Ctrl + S` to save
+
+### Fullscreen Modes
+
+- **Window fullscreen**: Expands the map container to fill the browser viewport (does not use Fullscreen API)
+- **Physical fullscreen**: Uses the browser Fullscreen API
+- **Crash recovery**: Edited content is automatically saved to localStorage (7-day validity); on recovery, a new code block is appended or content is copied to clipboard
+- Toolbar auto-repositions into the fullscreen container
+- Reading view uses body-level overlay for fullscreen
 
 ### Toolbar Operations
 
-- **Fit View**: Automatically adjust viewport to show the entire map
-- **Zoom in/out**: Adjust view zoom level
-- **Reset Collapse**: Expand all topics
-- **Config Panel**: Open visual configuration interface
-- **Source/Map Toggle**: Switch between source mode and map mode
-- **Export Image**: Export PNG image or copy to clipboard
+| Button | Description |
+|:-----:|:-----------:|
+| Source/Map Toggle | Switch between source editor and map view |
+| Config Panel | Open visual configuration interface |
+| Fit View | Auto-adjust viewport to fit the entire map |
+| Window Fullscreen | Expand to browser viewport |
+| Physical Fullscreen | Use Fullscreen API |
+| Zoom In | Zoom in view |
+| Zoom Out | Zoom out view |
+| Reset Collapse | Expand all topics |
+| Drag Handle | Drag toolbar to any position (auto-snaps to nearest corner) |
 
-### View Modes
+- Toolbar can be placed at 4 corners (top-left/right, bottom-left/right), inside or outside
+- Toolbar auto-hides during scrolling or middle-click, reappears when idle
+- Dragging the toolbar auto-snaps to the nearest corner and persists to config
 
-- **Reading View**: Browse only, editing functions disabled
-- **Editing View**: Full editing capability, supporting topic drag, add, delete, etc.
-
-### Height Adjustment
+### Canvas Control
 
 - **Drag the bottom edge of the canvas**: Manually adjust canvas height
 - **Double-click the resize handle**: Restore auto height
+- Map mode and source mode save independent height values
+- Mouse wheel zoom (can be disabled in config)
 
 ## ⚙️ Configuration
 
@@ -252,32 +421,130 @@ Topic attributes > Code block config > Plugin global defaults > Plugin built-in 
 
 ### Global Default Configuration
 
-Set global defaults in Obsidian `Settings` → `Community plugins` → `yonxao-mindmap`. All `yxmm` code blocks will inherit these configurations.
+Open the visual config panel in Obsidian `Settings` → `Community plugins` → `yonxao-mindmap`. There are 7 tabs:
+
+**1. Display**
+- Canvas height settings (map mode / source mode, saved independently)
+- Initial zoom: original size / fit view
+- `fitViewNoUpscale`: Don't upscale when fitting view
+- `fitViewMaxScale`: Maximum zoom multiplier (1-6)
+- `saveFullConfig`: Config trimming toggle
+
+**2. Structure**
+- Layout selector (7 categories, 20 layouts)
+- Connector style (mind map layouts only: curve/straight/elbow)
+- Branch expansion mode (elbow connector only: side/hanging)
+- Topic max width: global + level1/level2/level3 overrides (120-800px)
+- **Inheritance linkage**: Level fields auto-update when global value changes
+
+**3. Color**
+- Theme scheme selector (8 color schemes)
+- Default topic color (hex / color picker)
+- Rainbow theme override warning: shown when both default color and rainbow theme are set
+- Button color mode: `inherit-accent` / `subtle` / `topic` / `custom`
+- Custom button color (10 presets + color picker)
+
+**4. Font**
+- Global font: family / size / weight / lineHeight
+- 3-level font overrides: level1 / level2 / level3
+- Font family dropdown: inherit (empty) / Obsidian variables (interface/text/monospace) / system fonts (sans/serif/monospace) / custom input
+- **Level font inheritance linkage**: Auto-syncs when global field changes
+- One-click clear level overrides button
+
+**5. Interaction**
+- Toolbar position: 4 corners
+- Toolbar placement: inside / outside
+- Topic control visibility: `always` / `toggle-always` / `hover`
+- Wheel zoom toggle
+- Tab indent toggle
+
+**6. Shortcuts**
+- Read-only display listing all shortcut groups:
+  - Topic create/delete
+  - Topic editing
+  - Topic navigation/collapse
+  - Clipboard/history
+  - View control
+  - Map control
+
+**7. Advanced**
+- YAML raw text editing
+- Real-time parse validation (shows valid/invalid status)
+- Syntax highlighting
+- Auto-trim inactive config
+
+> **Config panel common features:**
+> - Drag-to-move: Drag the title bar to reposition the panel
+> - Inherited value display: Gray text shows inherited values, blue text shows explicit values
+> - Status bar: Shows configuration state
+> - Apply / Save & Close / Cancel buttons
 
 ### Language Support
 
-Language option is also available in preferences. The initial default language follows Obsidian's current language; if the Obsidian language is not yet supported, it falls back to English. Currently supported:
+A language option is also available in preferences. The initial default language follows Obsidian's current language; if the Obsidian language is not yet supported, it falls back to English. Currently supported:
 
-- English: Fallback language.
-- 中文（简体）.
-- 中文（繁體）.
-- 日本語.
-- 한국어.
-- Français.
-- Deutsch.
-- Español.
-- Português (Brasil).
-- Русский.
-- Italiano.
-- Bahasa Indonesia.
-- Türkçe.
-- Tiếng Việt.
-- ไทย.
-- हिन्दी.
+- English (fallback)
+- 中文（简体）
+- 中文（繁體）
+- 日本語
+- 한국어
+- Français
+- Deutsch
+- Español
+- Português (Brasil)
+- Русский
+- Italiano
+- Bahasa Indonesia
+- Türkçe
+- Tiếng Việt
+- ไทย
+- हिन्दी
 
 ### Config Trimming
 
-When `display.saveFullConfig` is false (i.e., "Save full config" is turned off in the config panel), any config item whose value matches the global default will be trimmed to keep the config block concise.
+When `display.saveFullConfig` is `false` (default: off), any config item whose value matches the global default will be trimmed to keep the config block concise.
+
+Additional trimming rules:
+- Non-elbow connector layouts: removes `branchExpansion` field
+- Non-fit view: removes `fitViewNoUpscale` / `fitViewMaxScale`
+- Non-custom button color mode: removes `buttonColor`
+- Radial / tree-table layouts: removes `branchExpansion`
+
+## 🖼️ Export
+
+| Feature | Description |
+|:-------:|:-----------:|
+| Export PNG | Download as PNG image file |
+| Copy PNG | Copy PNG image to system clipboard |
+| Copy Text | Copy topic tree as plain text |
+| Copy Indented Text | Copy as indented format text |
+| Copy Subtree | Copy subtree plain text (with/without indentation) |
+| Copy Source | Copy full code block content |
+| Copy Config | Copy YAML config block only |
+
+- Automatically inlines all CSS color values before export for color consistency
+- Automatically removes interactive controls (collapse buttons, etc.) during export
+- Export resolution is automatically optimized based on pixel ratio
+
+## 📋 Clipboard & Undo/Redo
+
+### Internal Clipboard
+
+The plugin maintains an internal clipboard for topic-level copy/cut/paste:
+
+- **Copy topic**: Copies the topic content and its entire subtree
+- **Cut topic**: Cuts the topic and its entire subtree
+- **Paste topic**: Pastes the clipboard topic as a child under the target topic
+- **Copy topic with attributes**: Full copy including color, icon, font, etc.
+- Operations are also written to the system clipboard
+
+### Undo/Redo
+
+- Full source snapshot-based undo/redo system (not incremental diff)
+- Up to 80 history snapshots retained
+- 30-minute in-memory expiry for auto-cleanup
+- Snapshots are buffered during fullscreen editing and committed on exit
+- Snapshots are indexed by `sourcePath + sectionInfo`
 
 ## 📦 Installation
 
@@ -310,7 +577,7 @@ Issues and Pull Requests are welcome!
 
 - [Development Context (Chinese)](docs/DEVELOPMENT_CONTEXT.zh-CN.md): Development collaboration memo including architecture, terminology, workflows, and FAQs
 - [Regression Test Checklist (Chinese)](docs/REGRESSION_TEST_CHECKLIST.zh-CN.md): Regression test checklist
-- [Example Gallery (Chinese)](examples/regression-layout-gallery.zh-CN.md): Collection of various layout examples
+- [Example Gallery (Chinese)](docs/regression-layout-gallery.zh-CN.md): Collection of various layout examples
 
 ---
 
