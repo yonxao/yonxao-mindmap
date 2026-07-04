@@ -23,6 +23,7 @@ import {
   FONT_WEIGHT_MAX,
   FONT_WEIGHT_MIN,
   LAYOUT_TYPES,
+  TEXT_ALIGN_VALUES,
   TOOLBAR_CORNERS,
   TOOLBAR_PLACEMENTS,
   TOPIC_CONTROL_VISIBILITY_MODES,
@@ -317,6 +318,7 @@ export function normalizeFontConfig(rawFont) {
     lineHeight:
       normalizeOptionalNumber(font.lineHeight, FONT_LINE_HEIGHT_MIN, FONT_LINE_HEIGHT_MAX) ||
       DEFAULT_MIND_CONFIG.font.lineHeight,
+    align: normalizeTextAlign(font.align) || DEFAULT_MIND_CONFIG.font.align,
     levels: normalizedLevels,
   };
 }
@@ -367,7 +369,13 @@ export function resolveTopicFont(topic, config) {
       normalizeOptionalNumber(attributes.lineHeight, FONT_LINE_HEIGHT_MIN, FONT_LINE_HEIGHT_MAX) ||
       levelFont.lineHeight ||
       safeConfig.font.lineHeight,
+    align: normalizeTextAlign(attributes.align) || safeConfig.font.align,
   };
+}
+
+export function normalizeTextAlign(value) {
+  const align = normalizeText(value).toLowerCase();
+  return TEXT_ALIGN_VALUES.includes(align) ? align : '';
 }
 
 /*

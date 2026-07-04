@@ -2,9 +2,9 @@
 
 [![GitHub Release](https://img.shields.io/github/v/release/yonxao/yonxao-mindmap?logo=github&logoColor=white)](https://github.com/yonxao/yonxao-mindmap/releases/latest) [![Obsidian](https://img.shields.io/badge/Obsidian-1.12.7%2B-7C3AED?logo=obsidian&logoColor=white)](https://community.obsidian.md/plugins/yonxao-mindmap) [![Platform](https://img.shields.io/badge/Platform-desktop%20%26%20mobile-5865F2)](https://github.com/yonxao/yonxao-mindmap/blob/main/manifest.json) [![License](https://img.shields.io/badge/License-AGPL--3.0-green)](https://github.com/yonxao/yonxao-mindmap/blob/main/LICENSE) [![中文文档](https://img.shields.io/badge/中文文档-查看-blue?logo=readthedocs&logoColor=white)](https://github.com/yonxao/yonxao-mindmap/blob/main/README.zh-CN.md)
 
-A feature-rich Obsidian mind map plugin that renders `yxmm` code blocks in Markdown documents as interactive SVG mind maps and various structural diagrams.
+<!-- [中文文档](./README.zh-CN.md) -->
 
-[中文文档](./README.zh-CN.md)
+A feature-rich Obsidian mind map plugin that renders `yxmm` code blocks in Markdown documents as interactive SVG mind maps and various structural diagrams.
 
 Demo screenshot:
 
@@ -121,14 +121,14 @@ const topic = 'yonxao-mindmap';
 
 **Inline styles:**
 
-| Syntax            | Effect              |
-| ----------------- | ------------------- |
-| `**Text**`        | **Bold**            |
-| `*Text*`          | _Italic_            |
-| `~~Text~~`        | ~~Strikethrough~~   |
-| `++Text++`        | ++Underline++       |
-| `{red\|Text}`     | Semantic color text |
-| `{#3b82f6\|Text}` | Hex color text      |
+| Syntax           | Effect              |
+| ---------------- | ------------------- |
+| `**Text**`       | **Bold**            |
+| `*Text*`         | _Italic_            |
+| `~~Text~~`       | ~~Strikethrough~~   |
+| `++Text++`       | ++Underline++       |
+| `{red|Text}`     | Semantic color text |
+| `{#3b82f6|Text}` | Hex color text      |
 
 **Block-level formats:**
 
@@ -155,6 +155,7 @@ Add attributes in `[key=value]` format at the end of a topic-level marker line:
 # Central Topic [color=#3b82f6]
 ## Branch Topic [icon=book layout=mindmap-right]
 ### Subtopic [fontSize=14 fontWeight=700]
+### Note [align=center]
 ```
 ````
 
@@ -169,6 +170,7 @@ Supported attributes:
 | `fontWeight` | `[fontWeight=700]`       | Font weight override (100-900)                 |
 | `fontFamily` | `[fontFamily="..."]`     | Font family override                           |
 | `lineHeight` | `[lineHeight=20]`        | Line height override (12-160px)                |
+| `align`      | `[align=center]`         | Text alignment: auto/left/center/right         |
 | `maxWidth`   | `[maxWidth=300]`         | Max width override (120-800px)                 |
 
 ### Config Block
@@ -195,6 +197,7 @@ font:
   size: 16
   weight: 400
   lineHeight: 20
+  align: auto
 interaction:
   toolbar:
     corner: top-right
@@ -353,20 +356,29 @@ Press `` ` `` (backtick) while a topic is selected, or use the context menu to o
 
 **Rich text toolbar:**
 
-Style buttons: **B** (bold), _I_ (italic), ~~S~~ (strikethrough), U (underline), A▼ (text color), 🧹 (clear styles)
-
-Block format buttons: • (unordered list), 1. (ordered list), Σ (equation), \</\> (code block)
+| Button | Action                                                       |
+| :----: | ------------------------------------------------------------ |
+|   B    | Wrap selected text with `**...**` bold markers               |
+|   I    | Wrap selected text with `*...*` italic markers               |
+|   S    | Wrap selected text with `~~...~~` strikethrough markers      |
+|   U    | Wrap selected text with `++...++` underline markers          |
+|   A    | Wrap selected text with `{color|...}` text color markers     |
+| Eraser | Clear inline content style markers from the selection or full content |
+|  List  | Insert an unordered list item                                |
+| Number | Insert an ordered list item                                  |
+|   Σ    | Insert a `$$ ... $$` equation block                          |
+| `</>`  | Insert a `~~~lang ... ~~~` code block                        |
 
 - Select text and click a style button to wrap it with markers; inserts placeholder text when nothing is selected
-- Click A▼ to open the color picker: 10 predefined semantic colors + native color picker
-- The clear styles button strips inline style markers from the selection or entire content
+- Click the text color button to open the color picker: 10 predefined semantic colors + native color picker
+- These buttons only edit inline content style markers; they do not write topic attributes
 
 **Large text editor:**
 
 - Click the "expand" button next to the content field to open a standalone floating editor
 - Supports drag-to-move, ideal for editing large amounts of content
 - `Cmd/Ctrl + Enter` to save, `Escape` to cancel
-- Includes the full rich text toolbar
+- Includes the same full rich text toolbar as the topic edit panel
 
 ### Source Code Editor
 
@@ -450,7 +462,7 @@ Open the visual config panel in Obsidian `Settings` → `Community plugins` → 
 
 **4. Font**
 
-- Global font: family / size / weight / lineHeight
+- Global font: family / size / weight / lineHeight / align
 - 3-level font overrides: level1 / level2 / level3
 - Font family dropdown: inherit (empty) / Obsidian variables (interface/text/monospace) / system fonts (sans/serif/monospace) / custom input
 - **Level font inheritance linkage**: Auto-syncs when global field changes

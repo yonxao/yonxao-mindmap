@@ -43,8 +43,9 @@ test('serializeTopicAttributes uses stable common attribute order', () => {
       icon: 'book',
       color: '#3b82f6',
       fontSize: 18,
+      align: 'center',
       custom: 'x',
     }),
-    ' [color=#3b82f6 icon=book fontSize=18 lineHeight=24 custom=x]'
+    ' [color=#3b82f6 icon=book fontSize=18 lineHeight=24 align=center custom=x]'
   );
 });

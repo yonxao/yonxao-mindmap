@@ -113,7 +113,7 @@ function configKeyOrder(path) {
   if (keyPath === 'structure.topicMaxWidth') return ['global', 'level1', 'level2', 'level3'];
   if (keyPath === 'color') return ['scheme', 'defaultTopicColor', 'buttonColorMode', 'buttonColor'];
   if (keyPath === 'font') {
-    return ['family', 'size', 'weight', 'lineHeight', 'level1', 'level2', 'level3'];
+    return ['family', 'size', 'weight', 'lineHeight', 'align', 'level1', 'level2', 'level3'];
   }
   if (/^font\.level[123]$/.test(keyPath)) {
     return ['family', 'size', 'weight', 'lineHeight'];

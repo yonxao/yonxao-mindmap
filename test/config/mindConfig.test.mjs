@@ -8,19 +8,45 @@ import {
   normalizeMindConfig,
   parseSimpleYaml,
   pruneInactiveMindConfig,
+  resolveTopicFont,
   stringifySimpleYaml,
 } from '../../src/config/mindConfig.js';
 
 test('normalizeMindConfig clamps numeric font values and keeps legal layout', () => {
   const config = normalizeMindConfig({
     structure: { layout: 'timeline-up' },
-    font: { size: 999, weight: 50, lineHeight: 999 },
+    font: { size: 999, weight: 50, lineHeight: 999, align: 'right' },
   });
 
   assert.equal(config.layout, 'timeline-up');
   assert.equal(config.font.size, 96);
   assert.equal(config.font.weight, 100);
   assert.equal(config.font.lineHeight, 160);
+  assert.equal(config.font.align, 'right');
+});
+
+test('normalizeMindConfig falls back invalid font alignment to auto', () => {
+  const config = normalizeMindConfig({
+    font: { align: 'invalid' },
+  });
+
+  assert.equal(config.font.align, 'auto');
+});
+
+test('resolveTopicFont lets topic alignment override global alignment', () => {
+  const config = normalizeMindConfig({
+    font: { align: 'right' },
+  });
+
+  assert.equal(resolveTopicFont({ level: 2, attributes: {} }, config).align, 'right');
+  assert.equal(
+    resolveTopicFont({ level: 2, attributes: { align: 'center' } }, config).align,
+    'center'
+  );
+  assert.equal(
+    resolveTopicFont({ level: 2, attributes: { align: 'invalid' } }, config).align,
+    'right'
+  );
 });
 
 test('normalizeMindConfig keeps legal topic control visibility', () => {

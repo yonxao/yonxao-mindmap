@@ -112,6 +112,7 @@ export const zhTWMessages = Object.freeze({
   'topicEditor.fontSize': '字號',
   'topicEditor.fontWeight': '字重',
   'topicEditor.lineHeight': '行高',
+  'topicEditor.align': '對齊方式',
   'topicEditor.maxWidth': '最大寬度',
   'topicEditor.fontCustomPlaceholder': "'霞鶩文楷', '思源黑體', sans-serif",
   'topicEditor.fontFamily.invalid':
@@ -364,6 +365,13 @@ export const zhTWMessages = Object.freeze({
   'configModal.font.lineHeight': '主題行高',
   'configModal.font.lineHeight.help':
     '行高是 SVG 文字每行之間的像素距離，建議約為字號的 1.3-1.5 倍。',
+  'configModal.font.align': '文字對齊',
+  'configModal.font.align.help':
+    '預設對齊會跟隨版面方向。靠左、置中、靠右會覆蓋一般段落文字；清單和程式碼區塊保持靠左。',
+  'configModal.font.align.auto': '預設對齊',
+  'configModal.font.align.left': '靠左',
+  'configModal.font.align.center': '置中',
+  'configModal.font.align.right': '靠右',
   'configModal.font.levelSection': '依主題級別覆蓋',
   'configModal.font.levelTitle1': '一級主題',
   'configModal.font.levelTitle2': '二級主題',

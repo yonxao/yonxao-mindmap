@@ -2,9 +2,9 @@
 
 [![GitHub Release](https://img.shields.io/github/v/release/yonxao/yonxao-mindmap?logo=github&logoColor=white)](https://github.com/yonxao/yonxao-mindmap/releases/latest) [![Obsidian](https://img.shields.io/badge/Obsidian-1.12.7%2B-7C3AED?logo=obsidian&logoColor=white)](https://community.obsidian.md/plugins/yonxao-mindmap) [![Platform](https://img.shields.io/badge/Platform-desktop%20%26%20mobile-5865F2)](https://github.com/yonxao/yonxao-mindmap/blob/main/manifest.json) [![License](https://img.shields.io/badge/License-AGPL--3.0-green)](https://github.com/yonxao/yonxao-mindmap/blob/main/LICENSE) [![English Docs](https://img.shields.io/badge/English-View-blue?logo=readthedocs&logoColor=white)](https://github.com/yonxao/yonxao-mindmap/blob/main/README.md)
 
-这是一个功能丰富的 Obsidian 思维导图插件，将 Markdown 文档中的 `yxmm` 代码块渲染为可交互的 SVG 思维导图及多种结构图。
+<!-- [English README](./README.md) -->
 
-[English README](./README.md)
+这是一个功能丰富的 Obsidian 思维导图插件，将 Markdown 文档中的 `yxmm` 代码块渲染为可交互的 SVG 思维导图及多种结构图。
 
 演示截图如下图：
 
@@ -121,14 +121,14 @@ const topic = 'yonxao-mindmap';
 
 **行内样式：**
 
-| 语法              | 效果         |
-| ----------------- | ------------ |
-| `**文本**`        | **加粗**     |
-| `*文本*`          | _斜体_       |
-| `~~文本~~`        | ~~中划线~~   |
-| `++文本++`        | ++下划线++   |
-| `{red\|文本}`     | 语义色文字   |
-| `{#3b82f6\|文本}` | 十六进制颜色 |
+| 语法             | 效果         |
+| ---------------- | ------------ |
+| `**文本**`       | **加粗**     |
+| `*文本*`         | _斜体_       |
+| `~~文本~~`       | ~~中划线~~   |
+| `++文本++`       | ++下划线++   |
+| `{red|文本}`     | 语义色文字   |
+| `{#3b82f6|文本}` | 十六进制颜色 |
 
 **块级格式：**
 
@@ -155,21 +155,23 @@ const topic = 'yonxao-mindmap';
 # 中心主题 [color=#3b82f6]
 ## 分支主题 [icon=book layout=mindmap-right]
 ### 子主题 [fontSize=14 fontWeight=700]
+### 说明 [align=center]
 ```
 ````
 
 支持的属性：
 
-| 属性         | 示例                     | 说明                         |
-| ------------ | ------------------------ | ---------------------------- |
-| `color`      | `[color=#3b82f6]`        | 主题颜色                     |
-| `icon`       | `[icon=book]`            | 主题图标（Lucide 图标名）    |
-| `layout`     | `[layout=mindmap-right]` | 局部布局类型，覆盖代码块配置 |
-| `fontSize`   | `[fontSize=16]`          | 字号覆盖（9-96px）           |
-| `fontWeight` | `[fontWeight=700]`       | 字重覆盖（100-900）          |
-| `fontFamily` | `[fontFamily="..." ]`    | 字体族覆盖                   |
-| `lineHeight` | `[lineHeight=20]`        | 行高覆盖（12-160px）         |
-| `maxWidth`   | `[maxWidth=300]`         | 最大宽度覆盖（120-800px）    |
+| 属性         | 示例                     | 说明                             |
+| ------------ | ------------------------ | -------------------------------- |
+| `color`      | `[color=#3b82f6]`        | 主题颜色                         |
+| `icon`       | `[icon=book]`            | 主题图标（Lucide 图标名）        |
+| `layout`     | `[layout=mindmap-right]` | 局部布局类型，覆盖代码块配置     |
+| `fontSize`   | `[fontSize=16]`          | 字号覆盖（9-96px）               |
+| `fontWeight` | `[fontWeight=700]`       | 字重覆盖（100-900）              |
+| `fontFamily` | `[fontFamily="..." ]`    | 字体族覆盖                       |
+| `lineHeight` | `[lineHeight=20]`        | 行高覆盖（12-160px）             |
+| `align`      | `[align=center]`         | 文本对齐：auto/left/center/right |
+| `maxWidth`   | `[maxWidth=300]`         | 最大宽度覆盖（120-800px）        |
 
 ### 配置区
 
@@ -195,6 +197,7 @@ font:
   size: 16
   weight: 400
   lineHeight: 20
+  align: auto
 interaction:
   toolbar:
     corner: top-right
@@ -353,20 +356,29 @@ interaction:
 
 **富文本工具栏：**
 
-样式按钮：**B**（加粗）、_I_（斜体）、~~S~~（中划线）、U（下划线）、A▼（文字颜色）、🧹（清除样式）
-
-块级格式按钮：•（无序列表）、1.（有序列表）、Σ（公式）、\</\>（代码块）
+| 按钮  | 作用                                     |
+| :---: | ---------------------------------------- |
+|   B   | 给选中文字插入 `**...**` 加粗标记        |
+|   I   | 给选中文字插入 `*...*` 斜体标记          |
+|   S   | 给选中文字插入 `~~...~~` 中划线标记      |
+|   U   | 给选中文字插入 `++...++` 下划线标记      |
+|   A   | 给选中文字插入 `{颜色|...}` 文字颜色标记 |
+| 橡皮  | 清除选中区域或全部内容中的局部样式标记   |
+| 列表  | 插入无序列表项                           |
+| 编号  | 插入有序列表项                           |
+|   Σ   | 插入 `$$ ... $$` 公式块                  |
+| `</>` | 插入 `~~~语言 ... ~~~` 代码块            |
 
 - 选中文字后点击样式按钮，自动包裹标记；未选中时插入占位文本
-- 点击 A▼ 打开颜色选择器：10 个预定义语义色 + 原生颜色拾色器
-- 清除样式按钮可剥离选中区域或全部内容中的样式标记
+- 点击文字颜色按钮打开颜色选择器：10 个预定义语义色 + 原生颜色拾色器
+- 这些按钮只修改内容局部样式标记，不会写入主题属性
 
 **长文本编辑浮层：**
 
 - 点击内容字段旁的「展开」按钮打开独立浮层
 - 支持拖拽移动，适合编辑大段内容
 - `Cmd/Ctrl + Enter` 保存，`Escape` 取消
-- 包含完整的富文本工具栏
+- 包含与主题编辑面板一致的完整富文本工具栏
 
 ### 源码编辑器
 
@@ -450,7 +462,7 @@ interaction:
 
 **4. 字体 (Font)**
 
-- 全局字体：family / size / weight / lineHeight
+- 全局字体：family / size / weight / lineHeight / align
 - 3 级层级字体覆盖：level1 / level2 / level3
 - 字体家族下拉：继承（空）/ Obsidian 变量（interface/text/monospace）/ 系统字体（sans/serif/monospace）/ 自定义输入
 - **层级字体继承联动**：全局字段变化时自动同步到级别继承值

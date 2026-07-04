@@ -18,6 +18,7 @@ import {
   FONT_SIZE_MIN,
   FONT_WEIGHT_MAX,
   FONT_WEIGHT_MIN,
+  TEXT_ALIGN_VALUES,
   normalizeMindConfig,
   normalizeFontFamilyInput,
 } from './configModalShared.js';
@@ -76,6 +77,15 @@ export const fontTabMethods = {
         max: FONT_LINE_HEIGHT_MAX,
         step: 1,
         help: this.t('configModal.font.lineHeight.help'),
+      }
+    );
+    this.createSelectField(
+      this.t('configModal.font.align'),
+      ['font', 'align'],
+      normalized.font.align,
+      this.textAlignOptions(),
+      {
+        help: this.t('configModal.font.align.help'),
       }
     );
 
@@ -178,6 +188,10 @@ export const fontTabMethods = {
 
   inheritedLevelFontValue(normalized, key) {
     return normalized.font[key] || '';
+  },
+
+  textAlignOptions() {
+    return TEXT_ALIGN_VALUES.map((value) => [value, this.t(`configModal.font.align.${value}`)]);
   },
 
   installLevelFontInheritanceSync(globalFields, levelFontGroups) {

@@ -42,6 +42,7 @@ export {
   FONT_WEIGHT_MIN,
   isPlainObject,
   MINDMAP_LAYOUT_TYPES,
+  TEXT_ALIGN_VALUES,
   TOPIC_MAX_WIDTH_LEVEL_KEYS,
   TOPIC_MAX_WIDTH_MAX,
   TOPIC_MAX_WIDTH_MIN,
@@ -118,6 +119,7 @@ export const DOCUMENT_CONFIG_DEFAULT_PRUNE_PATHS = Object.freeze([
   ['font', 'size'],
   ['font', 'weight'],
   ['font', 'lineHeight'],
+  ['font', 'align'],
 ]);
 
 // 折叠/展开按钮半径，参与按钮碰撞避让计算。

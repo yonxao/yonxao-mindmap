@@ -64,6 +64,7 @@ function runtimePathForDraftPath(path) {
     'font.size': ['font', 'size'],
     'font.weight': ['font', 'weight'],
     'font.lineHeight': ['font', 'lineHeight'],
+    'font.align': ['font', 'align'],
   };
   if (directPaths[key]) return directPaths[key];
 

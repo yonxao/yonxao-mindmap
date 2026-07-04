@@ -442,6 +442,7 @@ export function measureTopic(topic, config) {
     icon,
     iconSize,
     font,
+    textAlign: font.align || 'auto',
     textX: TOPIC_PADDING_X + iconWidth,
     textY: (height - (lines.length - 1) * font.lineHeight) / 2 + font.size * TEXT_Y_CENTER_RATIO,
     textTop: (height - contentHeight) / 2,

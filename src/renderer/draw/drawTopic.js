@@ -467,14 +467,18 @@ export const topicDrawMethods = {
   },
 
   topicTextAnchor(box) {
+    const align = String(box?.textAlign || 'auto');
+    if (align === 'left') return 'start';
+    if (align === 'center') return 'middle';
+    if (align === 'right') return 'end';
     if (box?.side === 'root') return 'middle';
     if (this.isLeftwardTopicTextBox(box)) return 'end';
     return 'start';
   },
 
   /*
-   * 普通段落文字按布局方向贴近连接侧：
-   * 一级主题居中，左向分支右对齐；列表和代码块不走这里，继续左对齐以保证可读性。
+   * 普通段落文字默认按布局方向贴近连接侧；显式 align 会覆盖方向判断。
+   * 列表和代码块不走这里，继续左对齐以保证可读性和缩进结构。
    */
   topicTextAnchorX(box) {
     const anchor = this.topicTextAnchor(box);

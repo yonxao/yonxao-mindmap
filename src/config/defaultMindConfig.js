@@ -147,6 +147,8 @@ export const FIT_VIEW_MAX_SCALE_MAX = 6;
 export const DEFAULT_FONT_FAMILY = 'var(--font-text)';
 // 字体下拉框中“自定义”选项的内部值，不会写入最终配置。
 export const CUSTOM_FONT_VALUE = '__custom_font__';
+// 主题普通文本对齐方式：auto 表示根据布局方向自动判断。
+export const TEXT_ALIGN_VALUES = Object.freeze(['auto', 'left', 'center', 'right']);
 
 /*
  * 可按主题级别覆盖的字体字段名。
@@ -305,6 +307,8 @@ export const DEFAULT_MIND_CONFIG = Object.freeze({
     weight: 400,
     // 默认全局行高，单位为 px。
     lineHeight: 20,
+    // 默认按布局方向自动决定普通文本对齐。
+    align: 'auto',
   }),
   interaction: Object.freeze({
     toolbar: Object.freeze({

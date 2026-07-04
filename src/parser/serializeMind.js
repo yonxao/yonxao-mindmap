@@ -79,6 +79,7 @@ export function serializeTopicAttributes(attributes) {
     'fontSize',
     'fontWeight',
     'lineHeight',
+    'align',
   ];
   const keys = [
     ...orderedKeys.filter((key) => topicAttributes[key]),

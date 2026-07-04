@@ -230,6 +230,7 @@
  * 主题内容局部样式工具条，提供加粗、斜体、中划线、下划线和文字颜色快捷插入。
  */
 .yonxao-mindmap-topic-rich-text-toolbar {
+  --yonxao-mindmap-topic-rich-text-button-size: 24px;
   display: flex;
   width: 100%;
   min-width: 0;
@@ -257,10 +258,13 @@
 
 .yonxao-mindmap-topic-rich-text-button {
   display: inline-flex;
-  width: 24px;
-  height: 24px;
+  width: var(--yonxao-mindmap-topic-rich-text-button-size);
+  height: var(--yonxao-mindmap-topic-rich-text-button-size);
+  min-width: var(--yonxao-mindmap-topic-rich-text-button-size);
+  min-height: var(--yonxao-mindmap-topic-rich-text-button-size);
   align-items: center;
   justify-content: center;
+  flex: 0 0 var(--yonxao-mindmap-topic-rich-text-button-size);
   padding: 0;
   color: var(--text-normal);
   border-radius: 5px;
@@ -286,7 +290,6 @@
 }
 
 .yonxao-mindmap-topic-rich-text-button.is-clear {
-  width: 24px;
   color: var(--text-muted);
 }
 
@@ -298,27 +301,8 @@
 .yonxao-mindmap-topic-rich-text-list-button-group {
   display: inline-flex;
   align-items: center;
+  gap: 4px;
   flex: 0 0 auto;
-}
-
-.yonxao-mindmap-topic-rich-text-list-button-group .yonxao-mindmap-topic-rich-text-button {
-  border-radius: 0;
-}
-
-.yonxao-mindmap-topic-rich-text-list-button-group
-  .yonxao-mindmap-topic-rich-text-button
-  + .yonxao-mindmap-topic-rich-text-button {
-  margin-left: -1px;
-}
-
-.yonxao-mindmap-topic-rich-text-list-button-group
-  .yonxao-mindmap-topic-rich-text-button:first-child {
-  border-radius: 5px 0 0 5px;
-}
-
-.yonxao-mindmap-topic-rich-text-list-button-group
-  .yonxao-mindmap-topic-rich-text-button:last-child {
-  border-radius: 0 5px 5px 0;
 }
 
 .yonxao-mindmap-topic-rich-text-button.is-unordered-list,
@@ -337,9 +321,8 @@
 }
 
 .yonxao-mindmap-topic-rich-text-button.is-code-block {
-  width: 34px;
   font-family: var(--yonxao-mindmap-mono-font);
-  font-size: 10px;
+  font-size: 9px;
 }
 
 .yonxao-mindmap-topic-rich-text-color-dropdown {
@@ -349,13 +332,16 @@
 }
 
 .yonxao-mindmap-topic-rich-text-color-trigger {
+  position: relative;
   display: inline-flex;
-  min-width: 38px;
-  height: 24px;
+  width: var(--yonxao-mindmap-topic-rich-text-button-size);
+  height: var(--yonxao-mindmap-topic-rich-text-button-size);
+  min-width: var(--yonxao-mindmap-topic-rich-text-button-size);
+  min-height: var(--yonxao-mindmap-topic-rich-text-button-size);
   align-items: center;
   justify-content: center;
-  gap: 3px;
-  padding: 0 5px;
+  flex: 0 0 var(--yonxao-mindmap-topic-rich-text-button-size);
+  padding: 0;
   color: var(--text-normal);
   border-radius: 5px;
   font-family: var(--font-interface);
@@ -366,7 +352,7 @@
 .yonxao-mindmap-topic-rich-text-color-letter {
   position: relative;
   display: inline-flex;
-  min-width: 11px;
+  min-width: 12px;
   justify-content: center;
   font-weight: 700;
 }
@@ -383,9 +369,12 @@
 }
 
 .yonxao-mindmap-topic-rich-text-color-arrow {
+  position: absolute;
+  top: 2px;
+  right: 3px;
   color: var(--text-muted);
-  font-size: 9px;
-  transform: translateY(1px);
+  font-size: 7px;
+  line-height: 1;
 }
 
 .yonxao-mindmap-topic-rich-text-color-menu {

@@ -63,6 +63,7 @@ export function canonicalizeMindConfig(rawConfig) {
   for (const key of FONT_LEVEL_FIELD_KEYS) {
     setConfigValueIfPresent(next, ['font', key], font[key]);
   }
+  setConfigValueIfPresent(next, ['font', 'align'], font.align);
   for (const levelKey of FONT_LEVEL_KEYS) {
     const levelConfig = isPlainObject(font[levelKey]) ? font[levelKey] : {};
     for (const fontKey of FONT_LEVEL_FIELD_KEYS) {

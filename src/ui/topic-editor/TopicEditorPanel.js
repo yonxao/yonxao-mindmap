@@ -20,6 +20,7 @@ import {
   FONT_WEIGHT_MIN,
   TOPIC_MAX_WIDTH_MAX,
   TOPIC_MAX_WIDTH_MIN,
+  TEXT_ALIGN_VALUES,
   createLabeledField,
   clamp,
 } from '../../shared/rendererShared.js';
@@ -76,6 +77,7 @@ export const topicEditorPanelMethods = {
       step: 1,
       placeholder: DEFAULT_MIND_CONFIG.font.lineHeight,
     });
+    const textAlignSelect = this.createTopicEditorTextAlignSelect();
     const maxWidthInput = this.createTopicEditorNumberInput({
       min: TOPIC_MAX_WIDTH_MIN,
       max: TOPIC_MAX_WIDTH_MAX,
@@ -115,6 +117,9 @@ export const topicEditorPanelMethods = {
     this.topicEditorEl.appendChild(
       createLabeledField(this.t('topicEditor.lineHeight'), lineHeightInput)
     );
+    this.topicEditorEl.appendChild(
+      createLabeledField(this.t('topicEditor.align'), textAlignSelect)
+    );
     this.topicEditorEl.appendChild(actions);
     document.body.appendChild(this.topicEditorEl);
 
@@ -130,6 +135,7 @@ export const topicEditorPanelMethods = {
       fontSize: fontSizeInput,
       fontWeight: fontWeightInput,
       lineHeight: lineHeightInput,
+      align: textAlignSelect,
       maxWidth: maxWidthInput,
       saveButton,
     };
@@ -277,6 +283,29 @@ export const topicEditorPanelMethods = {
     this.topicEditorEl.focus({ preventScroll: true });
   },
 
+  createTopicEditorTextAlignSelect() {
+    const select = document.createElement('select');
+    select.className = 'yonxao-mindmap-topic-editor-input';
+    for (const value of TEXT_ALIGN_VALUES) {
+      const option = document.createElement('option');
+      option.value = value;
+      option.textContent = this.t(`configModal.font.align.${value}`);
+      select.appendChild(option);
+    }
+    return select;
+  },
+
+  setTopicEditorTextAlignValue(value, isCustom) {
+    const select = this.topicEditorFields?.align;
+    if (!select) return;
+    const nextValue = TEXT_ALIGN_VALUES.includes(String(value || '')) ? String(value) : 'auto';
+    select.value = nextValue;
+    this.setTopicEditorCustomState(
+      select,
+      Boolean(isCustom) && this.isTopicEditorExplicitValue('align', nextValue)
+    );
+  },
+
   installTopicEditorInheritanceEvents() {
     const fields = this.topicEditorFields;
     if (!fields) return;
@@ -301,6 +330,14 @@ export const topicEditorPanelMethods = {
 
     this.registerDomEvent(fields.colorField._textInput, 'blur', () => {
       this.restoreTopicEditorInheritedValue('color');
+      this.updateTopicEditorActionState();
+    });
+
+    this.registerDomEvent(fields.align, 'change', () => {
+      this.setTopicEditorCustomState(
+        fields.align,
+        this.isTopicEditorExplicitValue('align', fields.align.value)
+      );
       this.updateTopicEditorActionState();
     });
   },
@@ -344,6 +381,10 @@ export const topicEditorPanelMethods = {
       this.topicEditorFields.lineHeight,
       attributes.lineHeight ?? this.topicEditorInheritedValues.lineHeight,
       attributes.lineHeight !== undefined
+    );
+    this.setTopicEditorTextAlignValue(
+      attributes.align ?? this.topicEditorInheritedValues.align,
+      attributes.align !== undefined
     );
     this.setTopicEditorNumberValue(
       this.topicEditorFields.maxWidth,

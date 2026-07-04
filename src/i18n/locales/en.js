@@ -119,6 +119,7 @@ export const enMessages = Object.freeze({
   'topicEditor.fontSize': 'Font size',
   'topicEditor.fontWeight': 'Font weight',
   'topicEditor.lineHeight': 'Line height',
+  'topicEditor.align': 'Text alignment',
   'topicEditor.maxWidth': 'Max width',
   'topicEditor.fontCustomPlaceholder': "'LXGW WenKai', sans-serif",
   'topicEditor.fontFamily.invalid':
@@ -378,6 +379,13 @@ export const enMessages = Object.freeze({
   'configModal.font.lineHeight': 'Topic line height',
   'configModal.font.lineHeight.help':
     'Line height is the SVG text line spacing in px. A practical value is usually 1.3-1.5 times the font size.',
+  'configModal.font.align': 'Text alignment',
+  'configModal.font.align.help':
+    'Auto follows the layout direction. Left, center, and right override ordinary paragraph text; lists and code blocks stay left-aligned.',
+  'configModal.font.align.auto': 'Auto',
+  'configModal.font.align.left': 'Left',
+  'configModal.font.align.center': 'Center',
+  'configModal.font.align.right': 'Right',
   'configModal.font.levelSection': 'Per-topic-level overrides',
   'configModal.font.levelTitle1': 'Level 1 topic',
   'configModal.font.levelTitle2': 'Level 2 topic',

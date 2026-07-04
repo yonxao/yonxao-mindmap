@@ -95,6 +95,7 @@ export const topicEditorStateMethods = {
       fontSize: this.topicEditorSaveValue(fields.fontSize),
       fontWeight: this.topicEditorSaveValue(fields.fontWeight),
       lineHeight: this.topicEditorSaveValue(fields.lineHeight),
+      align: this.topicEditorSaveValue(fields.align),
       maxWidth: this.topicEditorSaveValue(fields.maxWidth),
     };
   },
@@ -168,6 +169,7 @@ export const topicEditorStateMethods = {
       'fontSize',
       'fontWeight',
       'lineHeight',
+      'align',
       'maxWidth',
     ]) {
       delete attributes[key];
@@ -182,6 +184,7 @@ export const topicEditorStateMethods = {
       fontSize: font.size || '',
       fontWeight: font.weight || '',
       lineHeight: font.lineHeight || '',
+      align: font.align || DEFAULT_MIND_CONFIG.font.align,
       maxWidth: resolveTopicMaxWidth(inheritedTopic, this.config) || '',
     };
   },
@@ -253,6 +256,11 @@ export const topicEditorStateMethods = {
       topic.attributes,
       'lineHeight',
       this.topicEditorSaveValue(this.topicEditorFields.lineHeight)
+    );
+    setOptionalTopicAttribute(
+      topic.attributes,
+      'align',
+      this.topicEditorSaveValue(this.topicEditorFields.align)
     );
     setOptionalTopicAttribute(
       topic.attributes,
