@@ -121,14 +121,14 @@ const topic = 'yonxao-mindmap';
 
 **Inline styles:**
 
-| Syntax           | Effect              |
-| ---------------- | ------------------- |
-| `**Text**`       | **Bold**            |
-| `*Text*`         | _Italic_            |
-| `~~Text~~`       | ~~Strikethrough~~   |
-| `++Text++`       | ++Underline++       |
-| `{red|Text}`     | Semantic color text |
-| `{#3b82f6|Text}` | Hex color text      |
+| Syntax            | Effect              |
+| ----------------- | ------------------- |
+| `**Text**`        | **Bold**            |
+| `*Text*`          | _Italic_            |
+| `~~Text~~`        | ~~Strikethrough~~   |
+| `++Text++`        | ++Underline++       |
+| `{red\|Text}`     | Semantic color text |
+| `{#3b82f6\|Text}` | Hex color text      |
 
 **Block-level formats:**
 
@@ -356,18 +356,18 @@ Press `` ` `` (backtick) while a topic is selected, or use the context menu to o
 
 **Rich text toolbar:**
 
-| Button | Action                                                       |
-| :----: | ------------------------------------------------------------ |
-|   B    | Wrap selected text with `**...**` bold markers               |
-|   I    | Wrap selected text with `*...*` italic markers               |
-|   S    | Wrap selected text with `~~...~~` strikethrough markers      |
-|   U    | Wrap selected text with `++...++` underline markers          |
-|   A    | Wrap selected text with `{color|...}` text color markers     |
+| Button | Action                                                                |
+| :----: | --------------------------------------------------------------------- |
+|   B    | Wrap selected text with `**...**` bold markers                        |
+|   I    | Wrap selected text with `*...*` italic markers                        |
+|   S    | Wrap selected text with `~~...~~` strikethrough markers               |
+|   U    | Wrap selected text with `++...++` underline markers                   |
+|   A    | Wrap selected text with `{color\|...}` text color markers             |
 | Eraser | Clear inline content style markers from the selection or full content |
-|  List  | Insert an unordered list item                                |
-| Number | Insert an ordered list item                                  |
-|   Σ    | Insert a `$$ ... $$` equation block                          |
-| `</>`  | Insert a `~~~lang ... ~~~` code block                        |
+|  List  | Insert an unordered list item                                         |
+| Number | Insert an ordered list item                                           |
+|   Σ    | Insert a `$$ ... $$` equation block                                   |
+| `</>`  | Insert a `~~~lang ... ~~~` code block                                 |
 
 - Select text and click a style button to wrap it with markers; inserts placeholder text when nothing is selected
 - Click the text color button to open the color picker: 10 predefined semantic colors + native color picker

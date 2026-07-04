@@ -121,7 +121,7 @@ export function parseTopicRichText(source, baseStyle = {}) {
 
 /*
  * 将主题内容文本解析为块级格式（段落/列表/代码/公式）的数组。
- * 按行扫描，识别 ```代码块、$$公式、列表和段落。
+ * 按行扫描，识别 ~~~ 代码块、$$ 公式、列表和段落。
  */
 export function parseTopicRichBlocks(source) {
   const rawLines = String(source || '')
@@ -266,6 +266,7 @@ export function estimateRichLineWidth(line, font = {}) {
 
 function parseRichTextRange(source, baseStyle) {
   const ranges = collectInlineStyleRanges(source);
+  const isRemovedIndex = createInlineStyleRemovalCursor(ranges.removals);
   const segments = [];
   let buffer = '';
   let bufferStyle = null;
@@ -278,7 +279,7 @@ function parseRichTextRange(source, baseStyle) {
   };
 
   for (let index = 0; index < source.length; index += 1) {
-    if (isRemovedInlineStyleIndex(ranges.removals, index)) continue;
+    if (isRemovedIndex(index)) continue;
 
     const style = inlineStyleAtIndex(ranges.styles, index, baseStyle);
     if (!bufferStyle || !hasSameStyle(bufferStyle, style)) {
@@ -352,8 +353,39 @@ function collectInlineStyleRanges(source) {
   return { styles, removals };
 }
 
-function isRemovedInlineStyleIndex(removals, index) {
-  return removals.some(([start, end]) => index >= start && index < end);
+/*
+ * 解析阶段会按字符顺序扫描 source。这里先把样式标记区间排序并合并，
+ * 再用游标判断当前位置是否应从显示文本中移除，避免长文本中每个字符都重复遍历 removals。
+ */
+function createInlineStyleRemovalCursor(removals) {
+  const ranges = mergeRemovalRanges(removals);
+  let rangeIndex = 0;
+
+  return (index) => {
+    while (rangeIndex < ranges.length && index >= ranges[rangeIndex][1]) {
+      rangeIndex += 1;
+    }
+    const range = ranges[rangeIndex];
+    return Boolean(range && index >= range[0] && index < range[1]);
+  };
+}
+
+function mergeRemovalRanges(removals) {
+  const sorted = removals
+    .filter(([start, end]) => Number.isFinite(start) && Number.isFinite(end) && end > start)
+    .sort((left, right) => left[0] - right[0] || left[1] - right[1]);
+  const merged = [];
+
+  for (const range of sorted) {
+    const previous = merged[merged.length - 1];
+    if (previous && range[0] <= previous[1]) {
+      previous[1] = Math.max(previous[1], range[1]);
+    } else {
+      merged.push([...range]);
+    }
+  }
+
+  return merged;
 }
 
 function inlineStyleAtIndex(styleRanges, index, baseStyle) {

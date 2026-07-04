@@ -38,6 +38,9 @@ const RICH_TEXT_FALLBACK_PLACEHOLDER = 'Text';
 const RICH_TEXT_DEFAULT_COLOR = '#ef4444';
 const RICH_TEXT_COLOR_MENU_VIEWPORT_GAP = 8;
 const RICH_TEXT_COLOR_MENU_TRIGGER_GAP = 4;
+// 菜单首次打开时可能还没有真实布局尺寸，定位逻辑用 CSS 设计尺寸作为兜底。
+const RICH_TEXT_COLOR_MENU_FALLBACK_WIDTH = 132;
+const RICH_TEXT_COLOR_MENU_FALLBACK_HEIGHT = 76;
 const RICH_TEXT_STYLE_CONTROLS = Object.freeze([
   {
     label: 'B',
@@ -385,8 +388,8 @@ export const topicEditorFieldMethods = {
 
     const triggerRect = trigger.getBoundingClientRect();
     const menuRect = menu.getBoundingClientRect();
-    const menuWidth = menuRect.width || 132;
-    const menuHeight = menuRect.height || 76;
+    const menuWidth = menuRect.width || RICH_TEXT_COLOR_MENU_FALLBACK_WIDTH;
+    const menuHeight = menuRect.height || RICH_TEXT_COLOR_MENU_FALLBACK_HEIGHT;
     const maxLeft = Math.max(
       RICH_TEXT_COLOR_MENU_VIEWPORT_GAP,
       window.innerWidth - menuWidth - RICH_TEXT_COLOR_MENU_VIEWPORT_GAP
