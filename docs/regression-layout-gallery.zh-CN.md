@@ -1187,19 +1187,19 @@ font:
 ### 短主题
 ```
 
-## fishbone-left
+## fishbone-right
 
 ### 小图
 
 ```yxmm
 ---
 structure:
-  layout: fishbone-left
+  layout: fishbone-right
 color:
-  scheme: ocean
+  scheme: forest
 ---
 
-# 左向鱼骨小图
+# 右向鱼骨小图
 ## 原因一
 ## 原因二
 ```
@@ -1209,13 +1209,12 @@ color:
 ```yxmm
 ---
 structure:
-  layout: fishbone-left
-  branchExpansion: hanging
+  layout: fishbone-right
 color:
-  scheme: ocean
+  scheme: forest
 ---
 
-# 左向鱼骨中图
+# 右向鱼骨中图
 ## 原因一
 ### 子原因一
 ### 子原因二
@@ -1234,18 +1233,18 @@ color:
 ```yxmm
 ---
 structure:
-  layout: fishbone-left
+  layout: fishbone-right
   branchExpansion: hanging
   topicMaxWidth:
     global: 260
     level2: 340
 color:
-  scheme: ocean
+  scheme: forest
 font:
   lineHeight: 22
 ---
 
-# 左向鱼骨长文本
+# 右向鱼骨长文本
 ## 多行大分支 [maxWidth=360]
 第一行检查鱼骨图斜骨线。
 第二行检查大分支宽高不一致时是否重叠。
@@ -1255,7 +1254,7 @@ font:
 ### 短主题
 ```
 
-## fishbone-right
+## fishbone-left
 
 ### 小图
 

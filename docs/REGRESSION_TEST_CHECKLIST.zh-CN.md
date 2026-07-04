@@ -39,8 +39,8 @@
 - `timeline-down`
 - `timeline`
 - `radial`
-- `fishbone-left`
 - `fishbone-right`
+- `fishbone-left`
 - `tree-table`
 - `tree-table-stepped`
 

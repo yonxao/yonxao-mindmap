@@ -25,6 +25,7 @@ import {
   TOPIC_CODE_BLOCK_PADDING_Y,
   TOPIC_RICH_BLOCK_TYPES,
 } from '../../utils/richText.js';
+import { fishboneHeadSideForLayout } from '../../layout/layoutTypes.js';
 
 const BRAND_HIGHLIGHT_POSITIONS = new Set([0, 3, 7, 11]);
 const UNORDERED_LIST_MARKER_SOLID_RADIUS = 2.4;
@@ -105,10 +106,12 @@ export const topicDrawMethods = {
   },
 
   renderLegacyTopicText(box) {
+    const textX = this.topicTextAnchorX(box);
     const textEl = this.createTopicTextElement(box, {
-      x: box.textX,
+      x: textX,
       y: box.textY,
       font: box.font,
+      textAnchor: this.topicTextAnchor(box),
     });
 
     for (let index = 0; index < box.lines.length; index += 1) {
@@ -116,12 +119,12 @@ export const topicDrawMethods = {
       const richLine = box.richLines?.[index];
 
       if (this.isPlainYonxaoMindmapLine(line, richLine)) {
-        this.appendYonxaoMindmapBrandLine(textEl, box, index);
+        this.appendYonxaoMindmapBrandLine(textEl, box, index, { x: textX });
       } else if (Array.isArray(richLine) && richLine.length) {
-        this.appendRichTopicTextLine(textEl, richLine, box, index);
+        this.appendRichTopicTextLine(textEl, richLine, box, index, { x: textX });
       } else {
         const tspan = svg('tspan', {
-          x: box.textX,
+          x: textX,
           dy: index === 0 ? 0 : box.font.lineHeight,
         });
         tspan.textContent = line;
@@ -162,19 +165,21 @@ export const topicDrawMethods = {
    * 每行可以是纯文本或带局部样式（加粗/颜色等）的样式片段。
    */
   appendTopicParagraphBlock(contentGroup, block, box, top) {
+    const textX = this.topicTextAnchorX(box);
     const textEl = this.createTopicTextElement(box, {
-      x: box.textX,
+      x: textX,
       y: this.topicTextBlockFirstBaseline(box, top, box.font),
       font: box.font,
+      textAnchor: this.topicTextAnchor(box),
     });
 
     for (let index = 0; index < block.lines.length; index += 1) {
       const line = block.lines[index];
       const plainLine = line.map((segment) => segment.text).join('');
       if (this.isPlainYonxaoMindmapLine(plainLine, line)) {
-        this.appendYonxaoMindmapBrandLine(textEl, box, index);
+        this.appendYonxaoMindmapBrandLine(textEl, box, index, { x: textX });
       } else {
-        this.appendRichTopicTextLine(textEl, line, box, index);
+        this.appendRichTopicTextLine(textEl, line, box, index, { x: textX });
       }
     }
 
@@ -454,11 +459,33 @@ export const topicDrawMethods = {
       class: options.className || 'yonxao-mindmap-topic-text',
       x: options.x,
       y: options.y,
-      'text-anchor': 'start',
+      'text-anchor': options.textAnchor || 'start',
       'font-family': font.family,
       'font-size': font.size,
       'font-weight': font.weight,
     });
+  },
+
+  topicTextAnchor(box) {
+    if (box?.side === 'root') return 'middle';
+    if (this.isLeftwardTopicTextBox(box)) return 'end';
+    return 'start';
+  },
+
+  /*
+   * 普通段落文字按布局方向贴近连接侧：
+   * 一级主题居中，左向分支右对齐；列表和代码块不走这里，继续左对齐以保证可读性。
+   */
+  topicTextAnchorX(box) {
+    const anchor = this.topicTextAnchor(box);
+    if (anchor === 'middle') return (box.textX + box.width - TOPIC_PADDING_X) / 2;
+    if (anchor === 'end') return box.width - TOPIC_PADDING_X;
+    return box.textX;
+  },
+
+  isLeftwardTopicTextBox(box) {
+    const side = String(box?.side || '');
+    return side === 'left' || side === 'tree-left' || Number(box?.fishboneDirection) < 0;
   },
 
   topicTextBlockFirstBaseline(box, top, font = box.font) {
@@ -475,7 +502,7 @@ export const topicDrawMethods = {
    * 绘制品牌文字 "yonxao-mindmap" 的高亮效果。
    * 对位置 0(y)、3(x)、7(m)、11(m) 四个字母加高亮 class，形成品牌视觉标识。
    */
-  appendYonxaoMindmapBrandLine(textEl, box, lineIndex) {
+  appendYonxaoMindmapBrandLine(textEl, box, lineIndex, options = {}) {
     const segments = [];
     let buffer = '';
     let isHighlighted = false;
@@ -494,7 +521,7 @@ export const topicDrawMethods = {
     for (let i = 0; i < segments.length; i++) {
       const seg = segments[i];
       const tspan = svg('tspan', {
-        x: i === 0 ? box.textX : undefined,
+        x: i === 0 ? (options.x ?? box.textX) : undefined,
         dy: i === 0 ? (lineIndex === 0 ? 0 : box.font.lineHeight) : undefined,
         class: seg.highlight ? 'yonxao-mindmap-text-highlight' : undefined,
       });
@@ -507,9 +534,9 @@ export const topicDrawMethods = {
    * 在 SVG <text> 元素末尾追加一行富文本（带局部样式）。
    * 每段样式（加粗/斜体/颜色等）对应一个独立的 <tspan>。
    */
-  appendRichTopicTextLine(textEl, richLine, box, lineIndex) {
+  appendRichTopicTextLine(textEl, richLine, box, lineIndex, options = {}) {
     this.appendRichTopicTextLineAt(textEl, richLine, box, {
-      x: box.textX,
+      x: options.x ?? box.textX,
       dy: lineIndex === 0 ? 0 : box.font.lineHeight,
       font: box.font,
     });
@@ -619,7 +646,7 @@ export const topicDrawMethods = {
   },
 
   fishboneHeadSide() {
-    return this.config.layout === 'fishbone-right' ? 'right' : 'left';
+    return fishboneHeadSideForLayout(this.config.layout);
   },
 
   fishboneGrowthDirection() {

@@ -101,7 +101,7 @@ export const TIMELINE_LAYOUT_TYPES = Object.freeze(['timeline', 'timeline-up', '
 // 放射布局，以中心主题向外环绕展开。
 export const RADIAL_LAYOUT_TYPES = Object.freeze(['radial']);
 // 鱼骨图布局，按左右骨架方向展开。
-export const FISHBONE_LAYOUT_TYPES = Object.freeze(['fishbone-left', 'fishbone-right']);
+export const FISHBONE_LAYOUT_TYPES = Object.freeze(['fishbone-right', 'fishbone-left']);
 // 表格树布局，按表格列/阶梯列展示层级。
 export const TREE_TABLE_LAYOUT_TYPES = Object.freeze(['tree-table', 'tree-table-stepped']);
 

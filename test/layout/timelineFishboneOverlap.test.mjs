@@ -67,6 +67,32 @@ ${OVERLAP_SAMPLE_BODY}`);
   });
 }
 
+for (const [layout, direction] of [
+  ['fishbone-left', -1],
+  ['fishbone-right', 1],
+]) {
+  test(`${layout} expands primary bones toward its named direction`, () => {
+    const document = parseMindDocument(`---
+structure:
+  layout: ${layout}
+---
+
+# Root
+## Primary
+### Rib
+#### Detail`);
+    layoutTree(document.root, new Set(), document.config);
+
+    const rootX = document.root._layout.x;
+    const primaryBox = document.root.subtopics[0]._layout;
+    const ribBox = document.root.subtopics[0].subtopics[0]._layout;
+
+    assert.equal(Math.sign(primaryBox.x - rootX), direction);
+    assert.equal(Math.sign(ribBox.x - rootX), direction);
+    assert.equal(primaryBox.fishboneDirection, direction);
+  });
+}
+
 function findOverlappingTopicTexts(topics) {
   const overlaps = [];
 

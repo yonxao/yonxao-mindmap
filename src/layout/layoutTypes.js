@@ -53,6 +53,23 @@ export function isMindMapLayoutType(layoutType) {
 
 /*
  * 作用：
+ * 返回鱼骨图主骨和内容的水平展开方向。
+ *
+ * 规则：
+ * 和其他 left/right 布局保持一致，布局名表示内容展开方向，而不是鱼头位置。
+ * - fishbone-right: 鱼头在左，主骨向右，返回 1。
+ * - fishbone-left: 鱼头在右，主骨向左，返回 -1。
+ */
+export function fishboneLayoutDirection(layoutType) {
+  return normalizeLayoutType(layoutType) === 'fishbone-left' ? -1 : 1;
+}
+
+export function fishboneHeadSideForLayout(layoutType) {
+  return fishboneLayoutDirection(layoutType) > 0 ? 'left' : 'right';
+}
+
+/*
+ * 作用：
  * 决定当前整张图使用哪一种布局。
  *
  * 优先级：

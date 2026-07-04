@@ -19,6 +19,7 @@ import {
   FISHBONE_TAIL_WING_Y,
   FISHBONE_TAIL_EXTEND_FACTOR,
 } from '../../shared/rendererShared.js';
+import { fishboneLayoutDirection } from '../../layout/layoutTypes.js';
 
 export const fishboneDrawMethods = {
   renderFishboneMainSpine(layout) {
@@ -27,7 +28,7 @@ export const fishboneDrawMethods = {
     const rootBox = this.root?._layout;
     if (!rootBox) return null;
 
-    const direction = layout.mode === 'fishbone-right' ? -1 : 1;
+    const direction = fishboneLayoutDirection(layout.mode);
     const branchTopics = layout.topics
       .filter((topic) => {
         const side = topic._layout?.side;

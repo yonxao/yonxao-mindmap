@@ -17,6 +17,7 @@ import {
   visibleSubtopics,
   clamp,
 } from './layoutShared.js';
+import { fishboneLayoutDirection } from './layoutTypes.js';
 
 /*
  * 鱼骨图上下两侧大分支斜骨起点在水平方向上的错开比例，
@@ -48,7 +49,7 @@ export function layoutFishbone(
   const subtopics = visibleSubtopics(root, collapsedIds);
   if (!subtopics.length) return;
 
-  const direction = mode === 'fishbone-right' ? -1 : 1;
+  const direction = fishboneLayoutDirection(mode);
   const firstAttachX = rootBox.x + direction * (rootBox.width / 2 + LEVEL_GAP);
   const sideCursors = {
     top: firstAttachX,
