@@ -9,6 +9,48 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.3.0] - 2026-07-04
+
+### Added
+
+- Added inline content styles for topic text, including bold, italic, strikethrough, underline, and inline text colors.
+- Added lightweight block content support inside topics: unordered lists, ordered lists, display equations, and fenced code blocks using `~~~`.
+- Added topic text alignment configuration with `auto`, `left`, `center`, and `right`, plus topic-level `align` attributes.
+- Added topic editor controls for quickly inserting or clearing inline styles, lists, equations, code blocks, and text colors.
+
+### Changed
+
+- Refactored rich text parsing so inline styles can span hard line breaks and overlap with other style ranges.
+- Improved code block and equation measurement so rich topic content keeps stable layout before SVG/MathJax rendering completes.
+- Unified fishbone layout naming semantics so `fishbone-left` and `fishbone-right` describe the content expansion direction.
+- Expanded README documentation and development context for rich content, font alignment, and current release behavior.
+
+### Fixed
+
+- Preserved list indentation and automatic ordered-list numbering during rich content rendering.
+- Kept code blocks width-limited while allowing them to be wider than ordinary topic text when needed.
+- Added regression coverage for rich text parsing, serialization, text wrapping, and timeline/fishbone overlap cases.
+
+### 新增
+
+- 新增主题内容局部样式：加粗、斜体、中划线、下划线和内容文字颜色。
+- 新增主题内轻量块级内容：无序列表、有序列表、展示公式，以及使用 `~~~` 的代码块。
+- 新增主题文本对齐配置，支持 `auto`、`left`、`center`、`right`，并支持主题属性 `align`。
+- 主题编辑面板新增内容样式工具，可快速插入或清除行内样式、列表、公式、代码块和文字颜色。
+
+### 调整
+
+- 重构富文本解析逻辑，支持局部样式跨硬换行和不同样式区间交叉叠加。
+- 优化代码块和公式的测量逻辑，让 SVG/MathJax 异步渲染完成前布局仍保持稳定。
+- 统一鱼骨图布局命名语义，`fishbone-left` 与 `fishbone-right` 表示内容展开方向。
+- 扩展 README 和开发上下文，补充富文本内容、字体对齐和当前发布行为说明。
+
+### 修复
+
+- 保留列表缩进，并在渲染有序列表时按层级自动递增编号。
+- 代码块可按内容适度放宽宽度，同时仍受上限约束，避免撑开整张导图。
+- 补充富文本解析、序列化、文本换行，以及时间轴/鱼骨图重叠场景的回归测试。
+
 ## [1.2.1] - 2026-07-02
 
 ### Fixed
