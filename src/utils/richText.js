@@ -4,6 +4,7 @@
  *
  * 支持语法：
  * **加粗**、*斜体*、~~中划线~~、++下划线++、{red|语义色}、{#e11d48|十六进制颜色}。
+ * 行内样式允许跨硬换行，并允许不同样式区间交叉叠加。
  * 块级格式：
  * - 无序列表
  * 1. 有序列表
@@ -263,69 +264,106 @@ export function estimateRichLineWidth(line, font = {}) {
   }, 0);
 }
 
-/*
- * 递归解析富文本源码，将样式标记（**、*、~~、++、{color|}）转换为样式片段。
- * 样式标记可以嵌套（如 **{red|加粗红色}**）。
- * 非法或未闭合的标记作为普通文本保留，不静默吞掉用户输入。
- */
 function parseRichTextRange(source, baseStyle) {
+  const ranges = collectInlineStyleRanges(source);
   const segments = [];
-  let index = 0;
   let buffer = '';
+  let bufferStyle = null;
 
   const flush = () => {
     if (!buffer) return;
-    segments.push(createRichSegment(buffer, baseStyle));
+    segments.push(createRichSegment(buffer, bufferStyle || baseStyle));
     buffer = '';
+    bufferStyle = null;
   };
 
-  while (index < source.length) {
-    // 匹配颜色标记 {color|text} 或 {#hex|text}
-    const colorMatch = source.slice(index).match(COLOR_MARKER_PATTERN);
-    if (colorMatch) {
-      const color = normalizeInlineTopicColor(colorMatch[1]);
-      const contentStart = index + colorMatch[0].length;
-      const contentEnd = findClosingBrace(source, contentStart);
-      if (color && contentEnd !== -1) {
-        flush();
-        // 颜色标记内部继续解析其他样式标记，支持嵌套
-        segments.push(
-          ...parseRichTextRange(source.slice(contentStart, contentEnd), {
-            ...baseStyle,
-            color,
-          })
-        );
-        index = contentEnd + 1;
-        continue;
-      }
-    }
+  for (let index = 0; index < source.length; index += 1) {
+    if (isRemovedInlineStyleIndex(ranges.removals, index)) continue;
 
-    // 匹配行内样式标记：**加粗**、*斜体*、~~中划线~~、++下划线++
-    const styleMarker = STYLE_MARKERS.find(({ marker }) => source.startsWith(marker, index));
-    if (styleMarker) {
-      const contentStart = index + styleMarker.marker.length;
-      const contentEnd = source.indexOf(styleMarker.marker, contentStart);
-      if (contentEnd !== -1) {
-        flush();
-        // 样式标记内部继续递归解析
-        segments.push(
-          ...parseRichTextRange(source.slice(contentStart, contentEnd), {
-            ...baseStyle,
-            [styleMarker.key]: true,
-          })
-        );
-        index = contentEnd + styleMarker.marker.length;
-        continue;
-      }
+    const style = inlineStyleAtIndex(ranges.styles, index, baseStyle);
+    if (!bufferStyle || !hasSameStyle(bufferStyle, style)) {
+      flush();
+      bufferStyle = style;
     }
-
-    // 非法颜色、未知语义色、未闭合标记都按普通文本保留，避免用户输入被静默吞掉。
     buffer += source[index];
-    index += 1;
   }
 
   flush();
   return segments;
+}
+
+/*
+ * 作用：
+ * 收集行内样式区间，并记录需要从显示文本里移除的标记区间。
+ *
+ * 说明：
+ * 主题内容不是完整 Markdown 解析器，但这里允许样式区间交叉叠加：
+ * `**加粗~~加粗删除**删除~~` 会分别应用加粗和删除线，而不是把 `~~` 当普通文字。
+ * 未闭合或非法颜色标记不进入 removals，因此会按用户输入原样显示。
+ */
+function collectInlineStyleRanges(source) {
+  const styles = [];
+  const removals = [];
+  const openStyleMarkers = new Map();
+  let index = 0;
+
+  while (index < source.length) {
+    const colorMatch = source.slice(index).match(COLOR_MARKER_PATTERN);
+    if (colorMatch) {
+      const color = normalizeInlineTopicColor(colorMatch[1]);
+      const start = index;
+      const contentStart = start + colorMatch[0].length;
+      const contentEnd = findClosingBrace(source, contentStart);
+      if (color && contentEnd !== -1) {
+        styles.push({
+          start: contentStart,
+          end: contentEnd,
+          style: { color },
+        });
+        removals.push([start, contentStart], [contentEnd, contentEnd + 1]);
+        index = contentStart;
+        continue;
+      }
+    }
+
+    const styleMarker = STYLE_MARKERS.find(({ marker }) => source.startsWith(marker, index));
+    if (styleMarker) {
+      const openings = openStyleMarkers.get(styleMarker.marker) || [];
+      const markerEnd = index + styleMarker.marker.length;
+      if (openings.length) {
+        const opening = openings.pop();
+        styles.push({
+          start: opening.end,
+          end: index,
+          style: { [styleMarker.key]: true },
+        });
+        removals.push([opening.start, opening.end], [index, markerEnd]);
+      } else {
+        openings.push({ start: index, end: markerEnd });
+        openStyleMarkers.set(styleMarker.marker, openings);
+      }
+      index = markerEnd;
+      continue;
+    }
+
+    index += 1;
+  }
+
+  return { styles, removals };
+}
+
+function isRemovedInlineStyleIndex(removals, index) {
+  return removals.some(([start, end]) => index >= start && index < end);
+}
+
+function inlineStyleAtIndex(styleRanges, index, baseStyle) {
+  const style = { ...baseStyle };
+  for (const range of styleRanges) {
+    if (index >= range.start && index < range.end) {
+      Object.assign(style, range.style);
+    }
+  }
+  return style;
 }
 
 function wrapTopicRichBlock(block, maxWidth, font, gapBefore) {
@@ -342,10 +380,13 @@ function wrapTopicRichBlock(block, maxWidth, font, gapBefore) {
 }
 
 function wrapTopicParagraphBlock(block, maxWidth, font, gapBefore) {
-  const richLines = block.lines
-    .flatMap((line) =>
-      wrapRichLineByWidth(normalizeRichLineWhitespace(parseTopicRichText(line)), maxWidth, font)
-    )
+  /*
+   * 段落必须先整体解析再按硬换行拆回行。
+   * 否则 **第一行\n第二行** 或 ~~多行内容~~ 会在逐行解析时被误判为未闭合标记。
+   */
+  const hardLines = normalizeRichHardLines(parseTopicRichText(block.lines.join('\n')));
+  const richLines = hardLines
+    .flatMap((line) => wrapRichLineByWidth(line, maxWidth, font))
     .filter((line) => joinSegmentsText(line));
   const lines = richLines.length ? richLines : [[{ text: 'Untitled' }]];
   const lineHeight = Number(font?.lineHeight) || Number(font?.size) * 1.3 || 20;

@@ -55,6 +55,53 @@ test('wrapTopicRichTextByWidth preserves style segments after wrapping', () => {
   assert.equal(lines[1][0].bold, true);
 });
 
+test('wrapTopicRichBlocksByWidth preserves paragraph styles across hard line breaks', () => {
+  const content = wrapTopicRichBlocksByWidth('**第一行\n第二行**', 180, {
+    size: 16,
+    weight: 400,
+    lineHeight: 20,
+  });
+
+  assert.deepEqual(content.lines, ['第一行', '第二行']);
+  assert.equal(content.blocks[0].lines[0][0].bold, true);
+  assert.equal(content.blocks[0].lines[1][0].bold, true);
+});
+
+test('wrapTopicRichBlocksByWidth parses nested styles inside multi-line wrappers', () => {
+  const content = wrapTopicRichBlocksByWidth(
+    `~~++发{red|文本}大水++
+**{green|到*撒*}**
+发动~~`,
+    220,
+    {
+      size: 16,
+      weight: 400,
+      lineHeight: 20,
+    }
+  );
+  const lines = content.blocks[0].lines;
+
+  assert.deepEqual(content.lines, ['发文本大水', '到撒', '发动']);
+  assert.equal(lines[0][0].strike, true);
+  assert.equal(lines[0][0].underline, true);
+  assert.equal(lines[0][1].color, '#ef4444');
+  assert.equal(lines[1][0].strike, true);
+  assert.equal(lines[1][0].bold, true);
+  assert.equal(lines[1][0].color, '#22c55e');
+  assert.equal(lines[1][1].italic, true);
+  assert.equal(lines[2][0].strike, true);
+});
+
+test('parseTopicRichText supports overlapping inline style ranges', () => {
+  assert.deepEqual(parseTopicRichText('这**是一~~段特别**长~~文本'), [
+    { text: '这' },
+    { text: '是一', bold: true },
+    { text: '段特别', bold: true, strike: true },
+    { text: '长', strike: true },
+    { text: '文本' },
+  ]);
+});
+
 test('parseTopicRichBlocks recognizes lists equations and code blocks', () => {
   const blocks = parseTopicRichBlocks(`Intro
 - item
