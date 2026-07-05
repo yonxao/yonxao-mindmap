@@ -33,13 +33,15 @@ export const fullscreenControllerMethods = {
       this._fsOverlay.className = 'yonxao-mindmap-fs-overlay';
       this._hostElParent = this.hostEl.parentNode;
       this._hostElNextSibling = this.hostEl.nextSibling;
-      this._fsOverlay.appendChild(this.hostEl);
       document.body.appendChild(this._fsOverlay);
+      this._fsOverlay.appendChild(this.hostEl);
       this.moveToolbarIntoFullscreenHost();
       this.hostEl.classList.add('is-fullscreen');
       try {
         await this._fsOverlay.requestFullscreen();
       } catch (error) {
+        this.hostEl?.classList.remove('is-fullscreen');
+        this.restoreToolbarToBody();
         this.cleanupFullscreenOverlay();
         throw error;
       }
@@ -103,8 +105,8 @@ export const fullscreenControllerMethods = {
     this._wfOverlay.className = 'yonxao-mindmap-wf-overlay';
     this._wfHostElParent = this.hostEl.parentNode;
     this._wfHostElNextSibling = this.hostEl.nextSibling;
-    this._wfOverlay.appendChild(this.hostEl);
     document.body.appendChild(this._wfOverlay);
+    this._wfOverlay.appendChild(this.hostEl);
 
     this.moveToolbarIntoFullscreenHost();
     this.isWindowFullscreen = true;
@@ -148,8 +150,6 @@ export const fullscreenControllerMethods = {
     this._flushPendingFullscreenSave();
     this.restoreMapFocusAfterWindowFullscreenToggle();
   },
-
-  /*
 
   /*
    * 全屏幕状态变更处理。注意全屏幕 API 的事件可能来自本插件之外（如 Obsidian 本身

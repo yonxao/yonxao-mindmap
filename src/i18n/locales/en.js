@@ -70,6 +70,10 @@ export const enMessages = Object.freeze({
     'yonxao-mindmap: This environment does not support copying images to clipboard.',
   'notice.imageClipboardFocusRequired':
     'yonxao-mindmap: Please click the mind map first, then copy the image again.',
+  'notice.attachmentCopied': 'yonxao-mindmap: Attachment address copied.',
+  'notice.attachmentCopyUnsupported':
+    'yonxao-mindmap: This environment does not support copying attachment addresses.',
+  'notice.attachmentMissing': 'yonxao-mindmap: Attachment does not exist or cannot be opened.',
   'notice.topicContentRequired': 'yonxao-mindmap: Content cannot be empty.',
   'notice.topicContentSaved': 'Content saved.',
   'notice.subtopicAdded': 'Subtopic added.',
@@ -86,6 +90,10 @@ export const enMessages = Object.freeze({
   'notice.rootCannotAddSibling': 'yonxao-mindmap: The root topic cannot add sibling topics.',
   'notice.rootCannotDeleteInMap': 'yonxao-mindmap: The root topic cannot be deleted in map view.',
   'notice.rootCannotDelete': 'yonxao-mindmap: The root topic cannot be deleted.',
+
+  // ── Attachment popover ──
+  'attachment.open': 'Open',
+  'attachment.copy': 'Copy',
 
   // ── Fullscreen edit recovery ──
   'fullscreenDraftRecovery.message':
@@ -131,8 +139,14 @@ export const enMessages = Object.freeze({
   'topicEditor.richText.strike': 'Strike through selected text',
   'topicEditor.richText.underline': 'Underline selected text',
   'topicEditor.richText.clear': 'Clear content styles',
+  'topicEditor.richText.tag': 'Insert tag',
+  'topicEditor.richText.link': 'Insert link',
   'topicEditor.richText.unorderedList': 'Insert unordered list',
   'topicEditor.richText.orderedList': 'Insert ordered list',
+  'topicEditor.richText.task': 'Insert task',
+  'topicEditor.richText.image': 'Insert image',
+  'topicEditor.richText.note': 'Insert note',
+  'topicEditor.richText.attachment': 'Insert attachment',
   'topicEditor.richText.equation': 'Insert equation',
   'topicEditor.richText.codeBlock': 'Insert code block',
   'topicEditor.richText.colorNamed': 'Color selected text {color}',

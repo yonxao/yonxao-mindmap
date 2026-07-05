@@ -307,6 +307,12 @@
 
 .yonxao-mindmap-topic-rich-text-button.is-unordered-list,
 .yonxao-mindmap-topic-rich-text-button.is-ordered-list,
+.yonxao-mindmap-topic-rich-text-button.is-task-list,
+.yonxao-mindmap-topic-rich-text-button.is-tag,
+.yonxao-mindmap-topic-rich-text-button.is-link,
+.yonxao-mindmap-topic-rich-text-button.is-image,
+.yonxao-mindmap-topic-rich-text-button.is-note,
+.yonxao-mindmap-topic-rich-text-button.is-attachment,
 .yonxao-mindmap-topic-rich-text-button.is-equation,
 .yonxao-mindmap-topic-rich-text-button.is-code-block {
   color: var(--text-muted);
@@ -314,7 +320,13 @@
 }
 
 .yonxao-mindmap-topic-rich-text-button.is-unordered-list svg,
-.yonxao-mindmap-topic-rich-text-button.is-ordered-list svg {
+.yonxao-mindmap-topic-rich-text-button.is-ordered-list svg,
+.yonxao-mindmap-topic-rich-text-button.is-task-list svg,
+.yonxao-mindmap-topic-rich-text-button.is-tag svg,
+.yonxao-mindmap-topic-rich-text-button.is-link svg,
+.yonxao-mindmap-topic-rich-text-button.is-image svg,
+.yonxao-mindmap-topic-rich-text-button.is-note svg,
+.yonxao-mindmap-topic-rich-text-button.is-attachment svg {
   width: 15px;
   height: 15px;
   stroke-width: 2;

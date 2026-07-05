@@ -29,13 +29,15 @@ import { INLINE_TOPIC_COLOR_OPTIONS, topicRichTextToPlainText } from '../../util
 
 /*
  * 富文本编辑相关常量：
- * - RICH_TEXT_STYLE_CONTROLS：行内样式按钮配置（加粗/斜体/中划线/下划线）
- * - RICH_TEXT_BLOCK_CONTROLS：块级格式按钮配置（列表/公式/代码块）
+ * - RICH_TEXT_STYLE_CONTROLS：行内样式按钮配置（加粗/斜体/下划线/中划线）
+ * - RICH_TEXT_INLINE_INSERT_CONTROLS：行内插入按钮配置（标签/链接）
+ * - RICH_TEXT_BLOCK_CONTROLS：块级格式按钮配置（列表/公式/代码块/媒体）
  * - RICH_TEXT_CLEAR_CONTROL：清除样式按钮配置
  */
 const RICH_TEXT_PLACEHOLDER_KEY = 'topicEditor.richText.placeholder';
 const RICH_TEXT_FALLBACK_PLACEHOLDER = 'Text';
 const RICH_TEXT_DEFAULT_COLOR = '#ef4444';
+// 颜色菜单定位常量：与触发按钮的间距和视口边缘安全间距
 const RICH_TEXT_COLOR_MENU_VIEWPORT_GAP = 8;
 const RICH_TEXT_COLOR_MENU_TRIGGER_GAP = 4;
 // 菜单首次打开时可能还没有真实布局尺寸，定位逻辑用 CSS 设计尺寸作为兜底。
@@ -55,23 +57,38 @@ const RICH_TEXT_STYLE_CONTROLS = Object.freeze([
     marker: '*',
   },
   {
+    label: 'U',
+    className: 'is-underline',
+    titleKey: 'topicEditor.richText.underline',
+    marker: '++',
+  },
+  {
     label: 'S',
     className: 'is-strike',
     titleKey: 'topicEditor.richText.strike',
     marker: '~~',
   },
+]);
+const RICH_TEXT_INLINE_INSERT_CONTROLS = Object.freeze([
   {
-    label: 'U',
-    className: 'is-underline',
-    titleKey: 'topicEditor.richText.underline',
-    marker: '++',
+    label: '#',
+    icon: 'tag',
+    className: 'is-tag',
+    titleKey: 'topicEditor.richText.tag',
+    format: 'tag',
+  },
+  {
+    label: '[]',
+    icon: 'link',
+    className: 'is-link',
+    titleKey: 'topicEditor.richText.link',
+    format: 'link',
   },
 ]);
 const RICH_TEXT_BLOCK_CONTROLS = Object.freeze([
   {
     label: '•',
     icon: 'list',
-    group: 'list',
     className: 'is-unordered-list',
     titleKey: 'topicEditor.richText.unorderedList',
     format: 'unordered-list',
@@ -79,10 +96,16 @@ const RICH_TEXT_BLOCK_CONTROLS = Object.freeze([
   {
     label: '1',
     icon: 'list-ordered',
-    group: 'list',
     className: 'is-ordered-list',
     titleKey: 'topicEditor.richText.orderedList',
     format: 'ordered-list',
+  },
+  {
+    label: '[ ]',
+    icon: 'check-square',
+    className: 'is-task-list',
+    titleKey: 'topicEditor.richText.task',
+    format: 'task',
   },
   {
     label: 'Σ',
@@ -95,6 +118,27 @@ const RICH_TEXT_BLOCK_CONTROLS = Object.freeze([
     className: 'is-code-block',
     titleKey: 'topicEditor.richText.codeBlock',
     format: 'code-block',
+  },
+  {
+    label: 'IMG',
+    icon: 'image',
+    className: 'is-image',
+    titleKey: 'topicEditor.richText.image',
+    format: 'image',
+  },
+  {
+    label: '>',
+    icon: 'message-square',
+    className: 'is-note',
+    titleKey: 'topicEditor.richText.note',
+    format: 'note',
+  },
+  {
+    label: '@',
+    icon: 'paperclip',
+    className: 'is-attachment',
+    titleKey: 'topicEditor.richText.attachment',
+    format: 'attachment',
   },
 ]);
 const RICH_TEXT_CLEAR_CONTROL = Object.freeze({
@@ -153,8 +197,8 @@ export const topicEditorFieldMethods = {
 
   /*
    * 创建富文本编辑工具栏，包含两行按钮：
-   * - 样式行：加粗/斜体/中划线/下划线 + 颜色选择器 + 清除样式
-   * - 块级行：无序列表/有序列表/公式/代码块
+   * - 样式行：加粗/斜体/下划线/中划线 + 颜色选择器 + 标签/链接 + 清除样式
+   * - 块级行：无序列表/有序列表/任务/公式/代码块/图片/备注/附件
    */
   createTopicRichTextToolbar(input) {
     const toolbar = document.createElement('div');
@@ -180,45 +224,41 @@ export const topicEditorFieldMethods = {
     }
 
     styleRow.appendChild(this.createTopicRichTextColorDropdown(input));
+    for (const control of RICH_TEXT_INLINE_INSERT_CONTROLS) {
+      styleRow.appendChild(this.createTopicRichTextInsertButton(input, control));
+    }
     styleRow.appendChild(this.createTopicRichTextClearButton(input));
 
-    const listGroup = document.createElement('div');
-    listGroup.className = 'yonxao-mindmap-topic-rich-text-list-button-group';
-
     for (const control of RICH_TEXT_BLOCK_CONTROLS) {
-      const button = document.createElement('button');
-      button.type = 'button';
-      button.className = `yonxao-mindmap-topic-rich-text-button ${control.className}`;
-      if (control.icon) {
-        try {
-          setIcon(button, control.icon);
-        } catch (_error) {
-          button.textContent = control.label;
-        }
-      } else {
-        button.textContent = control.label;
-      }
-      this.setTopicRichTextControlTooltip(button, this.t(control.titleKey));
-      this.registerDomEvent(button, 'click', (event) => {
-        event.preventDefault();
-        event.stopPropagation();
-        this.applyTopicRichTextBlockFormat(input, control.format);
-      });
-
-      if (control.group === 'list') {
-        listGroup.appendChild(button);
-      } else {
-        blockRow.appendChild(button);
-      }
-    }
-    if (listGroup.childElementCount) {
-      blockRow.prepend(listGroup);
+      blockRow.appendChild(this.createTopicRichTextInsertButton(input, control));
     }
 
     toolbar.appendChild(styleRow);
     toolbar.appendChild(blockRow);
 
     return toolbar;
+  },
+
+  createTopicRichTextInsertButton(input, control) {
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.className = `yonxao-mindmap-topic-rich-text-button ${control.className}`;
+    if (control.icon) {
+      try {
+        setIcon(button, control.icon);
+      } catch (_error) {
+        button.textContent = control.label;
+      }
+    } else {
+      button.textContent = control.label;
+    }
+    this.setTopicRichTextControlTooltip(button, this.t(control.titleKey));
+    this.registerDomEvent(button, 'click', (event) => {
+      event.preventDefault();
+      event.stopPropagation();
+      this.applyTopicRichTextBlockFormat(input, control.format);
+    });
+    return button;
   },
 
   /*
@@ -471,11 +511,29 @@ export const topicEditorFieldMethods = {
 
   createTopicRichTextBlockReplacement(format, selected, fallback) {
     const text = selected || fallback;
+    if (format === 'tag') {
+      return selected ? `#${text.replace(/\s+/g, '-')}` : '#tag';
+    }
+    if (format === 'link') {
+      return `[${text}](https://example.com)`;
+    }
     if (format === 'unordered-list') {
       return this.prefixTopicRichTextLines(text, '- ');
     }
     if (format === 'ordered-list') {
       return this.prefixTopicRichTextLines(text, '1. ');
+    }
+    if (format === 'task') {
+      return this.prefixTopicRichTextLines(text, '- [ ] ');
+    }
+    if (format === 'image') {
+      return `![${text}](image.png)`;
+    }
+    if (format === 'note') {
+      return this.prefixTopicRichTextLines(text, '> ');
+    }
+    if (format === 'attachment') {
+      return `@[${text}](attachment.pdf)`;
     }
     if (format === 'equation') {
       return `$$\n${text}\n$$`;
@@ -501,7 +559,36 @@ export const topicEditorFieldMethods = {
       };
     }
 
-    const prefixLength = format === 'ordered-list' ? '1. '.length : '- '.length;
+    if (format === 'link') {
+      return {
+        start: start + 1,
+        end: start + Math.max(1, replacement.indexOf(']')),
+      };
+    }
+
+    if (format === 'image' || format === 'attachment') {
+      const pathStart = replacement.indexOf('](') + 2;
+      return {
+        start: start + pathStart,
+        end: start + replacement.length - 1,
+      };
+    }
+
+    if (format === 'tag') {
+      return {
+        start: start + 1,
+        end: start + replacement.length,
+      };
+    }
+
+    const prefixLength =
+      format === 'ordered-list'
+        ? '1. '.length
+        : format === 'task'
+          ? '- [ ] '.length
+          : format === 'note'
+            ? '> '.length
+            : '- '.length;
     return {
       start: start + prefixLength,
       end: start + replacement.length,

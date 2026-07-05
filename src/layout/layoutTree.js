@@ -25,9 +25,9 @@ export { collectVisible, computeBounds } from './layoutBounds.js';
  * 不同布局共享“测量主题”和“收集主题”的流程，只把坐标分配拆成多个策略。
  * 这样新增布局不会破坏已经稳定的水平 mind map 布局。
  */
-export function layoutTree(root, collapsedIds, config) {
+export function layoutTree(root, collapsedIds, config, options = {}) {
   const normalizedConfig = normalizeMindConfig(config);
-  prepareTopic(root, normalizedConfig);
+  prepareTopic(root, normalizedConfig, options);
 
   const rootBox = root._layout;
   rootBox.x = 0;

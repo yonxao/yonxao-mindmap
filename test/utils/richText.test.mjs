@@ -11,6 +11,7 @@ import {
   parseTopicRichBlocks,
   parseTopicRichText,
   richLineToPlainText,
+  topicRichTextLinkMarker,
   topicRichTextToPlainText,
   wrapTopicRichBlocksByWidth,
   wrapTopicRichTextByWidth,
@@ -67,6 +68,22 @@ test('wrapTopicRichBlocksByWidth preserves paragraph styles across hard line bre
   assert.equal(content.blocks[0].lines[1][0].bold, true);
 });
 
+test('wrapTopicRichBlocksByWidth marks wrapped link continuations without duplicate icon markers', () => {
+  const content = wrapTopicRichBlocksByWidth('[[测试用例|打开项目笔记]]', 42, {
+    size: 16,
+    weight: 400,
+    lineHeight: 20,
+  });
+  const linkSegments = content.blocks[0].lines.flat().filter((segment) => segment.link);
+
+  assert.ok(content.blocks[0].lines.length > 1);
+  assert.notEqual(linkSegments[0]?.linkMarker, false);
+  assert.equal(
+    linkSegments.slice(1).every((segment) => segment.linkMarker === false),
+    true
+  );
+});
+
 test('wrapTopicRichBlocksByWidth parses nested styles inside multi-line wrappers', () => {
   const content = wrapTopicRichBlocksByWidth(
     `~~++发{red|文本}大水++
@@ -102,6 +119,29 @@ test('parseTopicRichText supports overlapping inline style ranges', () => {
   ]);
 });
 
+test('parseTopicRichText recognizes tags and links as styled segments', () => {
+  assert.deepEqual(
+    parseTopicRichText('查看 [官网](https://example.com) #project [[内部笔记|别名]]'),
+    [
+      { text: '查看 ' },
+      { text: '官网', link: true, href: 'https://example.com', linkKind: 'external' },
+      { text: ' ' },
+      { text: '#project', tag: true, tagName: '#project' },
+      { text: ' ' },
+      { text: '别名', link: true, href: '内部笔记', linkKind: 'obsidian' },
+    ]
+  );
+  assert.equal(
+    topicRichTextToPlainText('查看 [官网](https://example.com) #project [[内部笔记|别名]]'),
+    '查看 官网 #project 别名'
+  );
+});
+
+test('topicRichTextLinkMarker distinguishes external and obsidian links', () => {
+  assert.equal(topicRichTextLinkMarker('external'), '↗');
+  assert.equal(topicRichTextLinkMarker('obsidian'), '◇');
+});
+
 test('parseTopicRichBlocks recognizes lists equations and code blocks', () => {
   const blocks = parseTopicRichBlocks(`Intro
 - item
@@ -122,6 +162,57 @@ const answer = 42;
   assert.equal(blocks[2].source, 'E = mc^2');
   assert.equal(blocks[3].type, 'code');
   assert.equal(blocks[3].language, 'js');
+});
+
+test('parseTopicRichBlocks recognizes tasks notes and images', () => {
+  const blocks = parseTopicRichBlocks(`- [ ] todo
+- [x] done
+> note line
+> second line
+![cover](cover.png|180x120)
+![[vault image.png|封面]]
+@[Spec](spec.pdf)
+@[[design.fig|Design file]]`);
+
+  assert.equal(blocks[0].type, 'list');
+  assert.equal(blocks[0].items[0].task, true);
+  assert.equal(blocks[0].items[0].checked, false);
+  assert.equal(blocks[0].items[1].checked, true);
+  assert.equal(blocks[1].type, 'note');
+  assert.deepEqual(blocks[1].lines, ['note line', 'second line']);
+  assert.equal(blocks[2].type, 'image');
+  assert.equal(blocks[2].source, 'cover.png');
+  assert.equal(blocks[2].width, 180);
+  assert.equal(blocks[2].height, 120);
+  assert.equal(blocks[3].type, 'image');
+  assert.equal(blocks[3].obsidian, true);
+  assert.equal(blocks[3].alt, '封面');
+  assert.equal(blocks[4].type, 'attachment');
+  assert.equal(blocks[4].label, 'Spec');
+  assert.equal(blocks[4].source, 'spec.pdf');
+  assert.equal(blocks[5].type, 'attachment');
+  assert.equal(blocks[5].obsidian, true);
+  assert.equal(blocks[5].label, 'Design file');
+});
+
+test('parseTopicRichBlocks ignores markdown attachment pipe suffix as display metadata', () => {
+  const [block] = parseTopicRichBlocks('@[规格文档](spec.pdf|备用名称)');
+
+  assert.equal(block.type, 'attachment');
+  assert.equal(block.label, '规格文档');
+  assert.equal(block.source, 'spec.pdf');
+});
+
+test('parseTopicRichBlocks keeps media and notes separate after paragraphs', () => {
+  const blocks = parseTopicRichBlocks(`This is a #tag
+![cover](cover.png)
+> note
+@[Spec](spec.pdf)`);
+
+  assert.deepEqual(
+    blocks.map((block) => block.type),
+    ['paragraph', 'image', 'note', 'attachment']
+  );
 });
 
 test('wrapTopicRichBlocksByWidth returns measurable rich blocks', () => {
@@ -149,6 +240,118 @@ const value = 1;
   assert.ok(content.height > 0);
   assert.equal(content.blocks[0].items[0].lines[0][0].bold, true);
   assert.match(content.lines.join('\n'), /a\^2/);
+});
+
+test('wrapTopicRichBlocksByWidth measures images task lists and adornments', () => {
+  const content = wrapTopicRichBlocksByWidth(
+    `> **备注**
+- [x] 完成任务
+![说明](image.png|160x90)
+@[资料](file.pdf)`,
+    220,
+    {
+      size: 16,
+      weight: 400,
+      lineHeight: 20,
+    }
+  );
+
+  assert.deepEqual(
+    content.blocks.map((block) => block.type),
+    ['note', 'list', 'image', 'attachment']
+  );
+  assert.deepEqual(
+    content.adornments.map((block) => block.type),
+    ['note', 'attachment']
+  );
+  assert.equal(content.adornmentCount, 2);
+  assert.equal(content.blocks[1].items[0].task, true);
+  assert.equal(content.blocks[1].items[0].checked, true);
+  assert.equal(content.blocks[2].imageWidth, 160);
+  assert.equal(content.blocks[2].imageHeight, 90);
+  assert.ok(content.height > 0);
+});
+
+test('wrapTopicRichBlocksByWidth supports percent image width hints', () => {
+  const content = wrapTopicRichBlocksByWidth('![半宽](image.png|50%)', 240, {
+    size: 16,
+    weight: 400,
+    lineHeight: 20,
+  });
+
+  assert.equal(content.blocks[0].type, 'image');
+  assert.equal(content.blocks[0].sizeMode, 'percent');
+  assert.equal(content.blocks[0].scale, 0.5);
+  assert.equal(content.blocks[0].imageWidth, 120);
+});
+
+test('wrapTopicRichBlocksByWidth keeps explicit image size within topic width', () => {
+  const content = wrapTopicRichBlocksByWidth('![规则类型](testpng.png|400X300)', 560, {
+    size: 16,
+    weight: 400,
+    lineHeight: 20,
+  });
+
+  assert.equal(content.blocks[0].type, 'image');
+  assert.equal(content.blocks[0].imageWidth, 400);
+  assert.equal(content.blocks[0].imageHeight, 300);
+});
+
+test('wrapTopicRichBlocksByWidth uses natural image ratio when available', () => {
+  const content = wrapTopicRichBlocksByWidth(
+    '![规则类型](testpng.png|400X300)',
+    560,
+    {
+      size: 16,
+      weight: 400,
+      lineHeight: 20,
+    },
+    {
+      resolveImageSize: () => ({ width: 800, height: 500 }),
+    }
+  );
+
+  assert.equal(content.blocks[0].imageWidth, 400);
+  assert.equal(content.blocks[0].imageHeight, 250);
+});
+
+test('wrapTopicRichBlocksByWidth uses natural ratio for percent image width', () => {
+  const content = wrapTopicRichBlocksByWidth(
+    '![半宽](image.png|50%)',
+    240,
+    {
+      size: 16,
+      weight: 400,
+      lineHeight: 20,
+    },
+    {
+      resolveImageSize: () => ({ width: 400, height: 300 }),
+    }
+  );
+
+  assert.equal(content.blocks[0].imageWidth, 120);
+  assert.equal(content.blocks[0].imageHeight, 90);
+});
+
+test('wrapTopicRichBlocksByWidth uses compact blocks for unresolved images', () => {
+  const content = wrapTopicRichBlocksByWidth(
+    '![缺失](missing.png)',
+    240,
+    {
+      size: 16,
+      weight: 400,
+      lineHeight: 20,
+    },
+    {
+      isImageResolved: () => false,
+    }
+  );
+
+  assert.equal(content.blocks[0].type, 'image');
+  assert.equal(content.blocks[0].imageMissing, true);
+  assert.equal(content.blocks[0].imageWidth, 118);
+  assert.equal(content.blocks[0].imageHeight, 54);
+  assert.ok(content.height < 90);
 });
 
 test('wrapTopicRichBlocksByWidth increments ordered list markers by level', () => {

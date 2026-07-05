@@ -168,9 +168,14 @@
  * 配合 is-fullscreen 的同类规则，覆盖层内部和原生 Fullscreen API 进入的
  * 全屏保持一致的幕布高度行为。
  */
+/*
+ * 覆盖层内幕布高度需要减去覆盖层 padding（16px × 2 = 32px）和
+ * host is-fullscreen padding（16px × 2 = 32px），合计 64px。
+ * 如果只减 32px，容器底部会被 host 的 overflow: hidden 裁切。
+ */
 .yonxao-mindmap-fs-overlay .yonxao-mindmap-container {
   /* stylelint-disable-next-line declaration-no-important */
-  height: calc(100vh - 32px) !important;
+  height: calc(100vh - 64px) !important;
   max-height: none;
 }
 

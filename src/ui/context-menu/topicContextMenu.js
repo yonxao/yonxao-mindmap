@@ -43,6 +43,8 @@ export const topicContextMenuMethods = {
 
     event.preventDefault();
     event.stopPropagation();
+    // 右键某个具体主题时，让该主题获得焦点，而不是留给 focus 事件默认回退到一级主题
+    this.setFocusedTopic(id, { focusSvg: false, ensureInView: false });
     this.openTopicContextMenu(event, topic);
   },
 

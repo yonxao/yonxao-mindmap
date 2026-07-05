@@ -101,7 +101,9 @@ function keyboardNavigationCandidateScore(currentBox, candidateBox, direction, o
 export const topicInteractionMethods = {
   handleMapFocus() {
     if (this.isSourceMode) return;
-    // SVG 是导图模式的整体键盘入口，获得焦点时保证至少有一个可见主题可被方向键接管。
+    // 阅读视图中不自动聚焦主题，避免焦点无法消除；编辑视图中保持原有行为，
+    // SVG 获得焦点时保证至少有一个可见主题可被方向键接管。
+    if (!this.canEditMindMap()) return;
     this.ensureFocusedTopic();
   },
 

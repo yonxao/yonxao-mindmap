@@ -15,6 +15,7 @@ import {
   TOPIC_PADDING_Y,
 } from '../constants.js';
 import {
+  TOPIC_MAX_WIDTH_MAX,
   CONNECTOR_STYLE_CONFIGURABLE_LAYOUTS,
   normalizeMindConfig,
   resolveTopicFont,
@@ -26,7 +27,10 @@ import { clamp } from '../utils/math.js';
  * 富文本块级格式布局工具：
  * 解析主题内容中的列表、代码块、公式和段落标记，按最大宽度换行并返回带样式片段的块级结构。
  */
-import { wrapTopicRichBlocksByWidth } from '../utils/richText.js';
+import {
+  topicRichTextPreferredContentWidth,
+  wrapTopicRichBlocksByWidth,
+} from '../utils/richText.js';
 
 export {
   BRANCH_GAP,
@@ -121,6 +125,12 @@ export const MIN_USABLE_TEXT_WIDTH = 48;
 export const ICON_GAP_MIN_RATIO = 0.35;
 // 图标和文本之间间隙的上限
 export const MAX_ICON_GAP = 16;
+// 主题右侧装饰按钮（备注/附件）的尺寸和间距常量，布局阶段预留宽度
+// 按钮大小 = TOPIC_ADORNMENT_BUTTON_SIZE，按钮间距 = TOPIC_ADORNMENT_BUTTON_GAP
+// 按钮列与正文之间的间隙 = TOPIC_ADORNMENT_LANE_GAP
+export const TOPIC_ADORNMENT_BUTTON_SIZE = 18;
+export const TOPIC_ADORNMENT_BUTTON_GAP = 4;
+export const TOPIC_ADORNMENT_LANE_GAP = 6;
 // 下挂展开生效的起始层级（三级及更深）
 export const HANGING_EXPANSION_LEVEL_THRESHOLD = 3;
 
@@ -394,10 +404,10 @@ export function timelineDetailSiblingGapForParent(parent, branchExpansion) {
  * 作用：
  * 为每个主题预先写入 _layout 测量结果。
  */
-export function prepareTopic(topic, config) {
-  topic._layout = measureTopic(topic, config);
+export function prepareTopic(topic, config, options = {}) {
+  topic._layout = measureTopic(topic, config, options);
   for (const subtopic of topic.subtopics) {
-    prepareTopic(subtopic, config);
+    prepareTopic(subtopic, config, options);
   }
 }
 
@@ -405,29 +415,47 @@ export function prepareTopic(topic, config) {
  * 作用：
  * 根据主题文本、图标和常量配置估算主题宽高。
  */
-export function measureTopic(topic, config) {
+export function measureTopic(topic, config, options = {}) {
   const normalizedConfig = normalizeMindConfig(config);
   const font = resolveTopicFont(topic, normalizedConfig);
   const icon = normalizeIcon(topic.attributes.icon);
   const maxWidth = resolveTopicMaxWidth(topic, normalizedConfig) || TOPIC_MAX_WIDTH;
+  const preferredContentWidth = topicRichTextPreferredContentWidth(topic.text || 'Untitled');
   const iconSize = icon ? resolveTopicIconSize(font) : 0;
   const iconGap = icon
     ? Math.round(clamp(iconSize * ICON_GAP_MIN_RATIO, ICON_GAP, MAX_ICON_GAP))
     : 0;
   const iconWidth = icon ? iconSize + iconGap : 0;
+  const defaultUsableTextWidth = maxWidth - TOPIC_PADDING_X * 2 - iconWidth;
+  const maxUsableTextWidth = TOPIC_MAX_WIDTH_MAX - TOPIC_PADDING_X * 2 - iconWidth;
   const usableTextWidth = Math.max(
     MIN_USABLE_TEXT_WIDTH,
-    maxWidth - TOPIC_PADDING_X * 2 - iconWidth
+    Math.min(maxUsableTextWidth, Math.max(defaultUsableTextWidth, preferredContentWidth))
   );
   /*
    * richBlocks 保存列表、公式、代码块等块级格式；richLines/lines 保留扁平结果，
    * 让树形表格、导出和旧渲染兜底逻辑仍能读取主题的纯文本行。
    */
-  const richContent = wrapTopicRichBlocksByWidth(topic.text || 'Untitled', usableTextWidth, font);
+  let richContent = wrapTopicRichBlocksByWidth(
+    topic.text || 'Untitled',
+    usableTextWidth,
+    font,
+    options.richText || {}
+  );
+  const adornmentCount = Number(richContent.adornmentCount) || 0;
+  const adornmentLaneWidth = topicAdornmentLaneWidth(adornmentCount);
+  if (adornmentLaneWidth) {
+    richContent = wrapTopicRichBlocksByWidth(
+      topic.text || 'Untitled',
+      Math.max(MIN_USABLE_TEXT_WIDTH, usableTextWidth - adornmentLaneWidth),
+      font,
+      options.richText || {}
+    );
+  }
   const richLines = richContent.richLines;
   const lines = richContent.lines;
   const textWidth = Math.ceil(richContent.width);
-  const measuredWidth = textWidth + TOPIC_PADDING_X * 2 + iconWidth;
+  const measuredWidth = textWidth + TOPIC_PADDING_X * 2 + iconWidth + adornmentLaneWidth;
   const width = clamp(measuredWidth, TOPIC_MIN_WIDTH, Math.max(maxWidth, measuredWidth));
   const contentHeight = richContent.height;
   const height = Math.max(TOPIC_MIN_HEIGHT, contentHeight + TOPIC_PADDING_Y * 2);
@@ -438,18 +466,37 @@ export function measureTopic(topic, config) {
     lines,
     richLines,
     richBlocks: richContent.blocks,
+    adornments: richContent.adornments || [],
+    adornmentCount,
+    adornmentLaneWidth,
     contentHeight,
     icon,
     iconSize,
     font,
     textAlign: font.align || 'auto',
     textX: TOPIC_PADDING_X + iconWidth,
+    textRight: width - TOPIC_PADDING_X - adornmentLaneWidth,
     textY: (height - (lines.length - 1) * font.lineHeight) / 2 + font.size * TEXT_Y_CENTER_RATIO,
     textTop: (height - contentHeight) / 2,
     side: 'right',
     x: 0,
     y: 0,
   };
+}
+
+/*
+ * 计算主题右侧装饰按钮列（备注/附件）所需宽度。
+ * 布局阶段用此宽度从可用文本宽度中扣除，为装饰按钮预留空间。
+ * 计算公式：间隙 + 按钮数量×按钮尺寸 + (按钮数量-1)×按钮间距。
+ */
+function topicAdornmentLaneWidth(count) {
+  const safeCount = Math.max(0, Number(count) || 0);
+  if (!safeCount) return 0;
+  return (
+    TOPIC_ADORNMENT_LANE_GAP +
+    safeCount * TOPIC_ADORNMENT_BUTTON_SIZE +
+    Math.max(0, safeCount - 1) * TOPIC_ADORNMENT_BUTTON_GAP
+  );
 }
 
 /*

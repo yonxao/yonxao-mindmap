@@ -96,6 +96,14 @@ export class YonxaoMindmapRenderer extends Component {
     this.topicEditorInheritedValues = null;
     this.topicContentEditorEl = null;
     this.topicContentEditorInput = null;
+    this.topicAdornmentPopoverEl = null;
+    this.topicAdornmentAnchorEl = null;
+    this.topicAdornmentHideTimer = null;
+    this.topicAdornmentDocumentClickInstalled = false;
+    this.topicImagePreviewEl = null;
+    this.topicImagePreviewKeydownInstalled = false;
+    this.topicImageNaturalSizeCache = new Map();
+    this.pendingTopicImageNaturalSizeFrame = null;
     this.inlineTextEditorEl = null;
     this.inlineTextEditorInput = null;
     this.inlineEditingTopicId = null;

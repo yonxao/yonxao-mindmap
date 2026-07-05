@@ -98,18 +98,28 @@ This is the third line
 
 ### Inline Topic Content Styles
 
-Topic content supports lightweight inline style markers and block-level formatting:
+Topic content supports lightweight inline style markers, links, tags, tasks, images, notes, attachments, and block-level formatting:
 
 ````markdown
 ```yxmm
 # Central Topic
 ## **Bold**, *italic*, ~~strikethrough~~, ++underline++
 ## {red|Semantic color text} and {#3b82f6|Hex color text}
-## Lists, equations, and code blocks
+## Lists, tasks, media, notes, equations, and code blocks
 - Unordered list item
   - Nested list item
+- [ ] Todo item
+- [x] Done item
 1. Ordered list item
 2. Second item
+![Cover](cover.png|220x140)
+![[vault-image.png|Cover image]]
+This is a #tag and [link](https://example.com)
+[[Internal note|Open note]]
+> This note is shown from an icon after the topic
+> It can span multiple lines
+@[Spec](docs/spec.pdf)
+@[[design.fig|Design file]]
 $$
 E = mc^2
 $$
@@ -121,26 +131,81 @@ const topic = 'yonxao-mindmap';
 
 **Inline styles:**
 
-| Syntax            | Effect              |
-| ----------------- | ------------------- |
-| `**Text**`        | **Bold**            |
-| `*Text*`          | _Italic_            |
-| `~~Text~~`        | ~~Strikethrough~~   |
-| `++Text++`        | ++Underline++       |
-| `{red\|Text}`     | Semantic color text |
-| `{#3b82f6\|Text}` | Hex color text      |
+| Syntax                           | Effect              |
+| -------------------------------- | ------------------- |
+| `**Text**`                       | **Bold**            |
+| `*Text*`                         | _Italic_            |
+| `~~Text~~`                       | ~~Strikethrough~~   |
+| `++Text++`                       | ++Underline++       |
+| <code>{red&#124;Text}</code>     | Semantic color text |
+| <code>{#3b82f6&#124;Text}</code> | Hex color text      |
+| `#tag`                           | Tag                 |
+| `[Text](url)`                    | External link       |
+| `[[Note]]`                       | Obsidian link       |
 
 **Block-level formats:**
 
-| Syntax            | Effect                      |
-| ----------------- | --------------------------- |
-| `- List item`     | Unordered list              |
-| `1. List item`    | Ordered list                |
-| `$$ ... $$`       | Equation (MathJax rendered) |
-| `~~~lang ... ~~~` | Code block (monospace font) |
+| Syntax                           | Effect                                 |
+| -------------------------------- | -------------------------------------- |
+| `- List item`                    | Unordered list                         |
+| `- [ ] Task`                     | Unchecked task                         |
+| `- [x] Task`                     | Checked task                           |
+| `1. List item`                   | Ordered list                           |
+| `![Alt](path)`                   | Image                                  |
+| `![[image.png]]`                 | Obsidian attachment image              |
+| `> Note`                         | Note icon with hover/click popover     |
+| `@[Text](path)`                  | Attachment icon with open/copy actions |
+| <code>@[[file&#124;Text]]</code> | Obsidian-style attachment link         |
+| `$$ ... $$`                      | Equation (MathJax rendered)            |
+| `~~~lang ... ~~~`                | Code block (monospace font)            |
+
+**Link syntax:**
+
+| Syntax                           | Description                                                                   |
+| -------------------------------- | ----------------------------------------------------------------------------- |
+| `[Text](https://...)`            | External link with a `↗` marker; opens in the browser                         |
+| `[Text](mailto:...)`             | Mail link, handled as an external link                                        |
+| `[Text](Note name)`              | Markdown-style internal target; opens via Obsidian when the vault resolves it |
+| `[[Note]]`                       | Obsidian internal link with a `◇` marker                                      |
+| <code>[[Note&#124;Alias]]</code> | Obsidian internal link with custom display text                               |
+| `[[File#Heading]]`               | Obsidian anchor link; opening depends on the current vault metadata resolver  |
+
+**Image syntax:**
+
+| Syntax                                            | Description                                                                               |
+| ------------------------------------------------- | ----------------------------------------------------------------------------------------- |
+| `![Alt](path/to/image.png)`                       | Markdown image; `Alt` is rendered as the caption below the image                          |
+| `![Alt](https://...)`                             | External image URL                                                                        |
+| `![[image.png]]`                                  | Obsidian attachment image                                                                 |
+| <code>![[image.png&#124;Caption]]</code>          | Obsidian attachment image with caption                                                    |
+| <code>!&#91;Alt](image.png&#124;320)</code>       | Requested width in px; height uses the natural or fallback ratio                          |
+| <code>!&#91;Alt](image.png&#124;320x180)</code>   | Requested width and height, still constrained by topic text width                         |
+| <code>!&#91;Alt](image.png&#124;50%)</code>       | Percent of the current topic's available text width                                       |
+| <code>!&#91;Alt](image.png&#124;original)</code>  | Enables original-size preview behavior; in-topic rendering is still constrained by layout |
+| <code>![[image.png&#124;50%&#124;Caption]]</code> | Obsidian syntax can combine percent and caption; parameter order is flexible              |
+
+**Attachment syntax:**
+
+| Syntax                                | Description                                                        |
+| ------------------------------------- | ------------------------------------------------------------------ |
+| `@[Label](path/to.pdf)`               | Markdown-style attachment; `Label` is shown in the popover         |
+| `@[Label](https://...)`               | External attachment URL; icon click or Open uses the browser       |
+| `@[Label](obsidian://...)`            | Obsidian URI; opened as an external protocol                       |
+| `@[[file.pdf]]`                       | Obsidian attachment link; opens in Obsidian when the target exists |
+| <code>@[[file.pdf&#124;Label]]</code> | Obsidian attachment link with custom display text                  |
 
 - Semantic colors: `red`, `green`, `blue`, `yellow`, `orange`, `purple`, `pink`, `gray`, `black`, `white`
 - List indentation uses 2 spaces per level
+- Tags use a stable color palette: the same tag text renders with the same color in the current map, without relying on the default accent color
+- Links show a compact marker before the label: `↗` for external links and `◇` for Obsidian/internal links
+- A topic can contain multiple image lines; each line renders as a separate image block
+- Image parameters are separated with `|` and support width, width x height, percent, `original`, and captions. Explicit pixel widths participate in topic width measurement and can expand image topics up to the topic width cap; percentages use the current topic's available text width. The default topic image width is `min(220px, available topic text width)` with the natural image ratio or a 0.62 fallback aspect ratio. Obsidian attachment images are resolved through the vault when possible
+- Missing local images render as a compact placeholder instead of a large broken image
+- Double-click an image to open a floating preview; the preview fits the window by default, and double-clicking the preview toggles original image size
+- Notes render as yellow hint icons after the topic. Hover or click the icon to show the note text
+- Attachments render as icons after the topic. Click the icon to open the attachment; hover to show the attachment label, address, and Open / Copy actions. External URLs open in the browser, while Obsidian attachments are checked against the current vault first and missing targets do not create files
+- Multiple attachments use multiple attachment lines, with each line creating one independent attachment button. Commas are not split into multiple attachments
+- External links open in a browser window; Obsidian links use the current vault link resolver and do not create a new note when the target does not exist
 - Equations are rendered asynchronously via Obsidian/MathJax; source text is shown as fallback
 - Code blocks use monospace font with independent background color and auto-width
 - The topic edit panel and large text editor include visual toolbar buttons and can clear inline styles
@@ -356,21 +421,28 @@ Press `` ` `` (backtick) while a topic is selected, or use the context menu to o
 
 **Rich text toolbar:**
 
-| Button | Action                                                                |
-| :----: | --------------------------------------------------------------------- |
-|   B    | Wrap selected text with `**...**` bold markers                        |
-|   I    | Wrap selected text with `*...*` italic markers                        |
-|   S    | Wrap selected text with `~~...~~` strikethrough markers               |
-|   U    | Wrap selected text with `++...++` underline markers                   |
-|   A    | Wrap selected text with `{color\|...}` text color markers             |
-| Eraser | Clear inline content style markers from the selection or full content |
-|  List  | Insert an unordered list item                                         |
-| Number | Insert an ordered list item                                           |
-|   Σ    | Insert a `$$ ... $$` equation block                                   |
-| `</>`  | Insert a `~~~lang ... ~~~` code block                                 |
+| Button | Insert / edit content                                | Rendered behavior                                                                                                          |
+| :----: | ---------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------- |
+|   B    | `**text**`                                           | Bold selected text; inserts placeholder text when nothing is selected                                                      |
+|   I    | `*text*`                                             | Italic selected text                                                                                                       |
+|   U    | `++text++`                                           | Underline selected text                                                                                                    |
+|   S    | `~~text~~`                                           | Strikethrough selected text                                                                                                |
+|   A    | <code>{color&#124;text}</code>                       | Opens the color menu with semantic colors and custom Hex colors                                                            |
+|  Tag   | `#tag`                                               | Same tag text keeps the same color in the current map                                                                      |
+|  Link  | `[text](url)`                                        | External links show `↗`; Obsidian/internal links show `◇`                                                                  |
+| Eraser | Clear inline style markers                           | Clears the selection, or the whole content field when nothing is selected                                                  |
+|  List  | `- List item`                                        | Inserts an unordered list item; indent with 2 spaces for nesting                                                           |
+| Number | `1. List item`                                       | Inserts an ordered item; same-level numbering increments visually                                                          |
+|  Task  | `- [ ] Task`                                         | Inserts an unchecked task; write `- [x]` for checked tasks                                                                 |
+|   Σ    | `$$ ... $$`                                          | Inserts an equation block rendered via Obsidian/MathJax when possible                                                      |
+| `</>`  | `~~~lang ... ~~~`                                    | Inserts a code block with monospace font and background                                                                    |
+| Image  | `![alt](path)`                                       | Inserts an image block; supports <code>&#124;WxH</code>, <code>&#124;percent</code>, and <code>&#124;original</code> hints |
+|  Note  | `> Note`                                             | Adds a yellow note icon after the topic with a dynamic popover                                                             |
+| Attach | `@[label](path)` / <code>@[[file&#124;label]]</code> | Adds an attachment icon; click to open, popover offers Open / Copy                                                         |
 
 - Select text and click a style button to wrap it with markers; inserts placeholder text when nothing is selected
 - Click the text color button to open the color picker: 10 predefined semantic colors + native color picker
+- Clicking an attachment icon opens external URLs in the browser or existing Obsidian attachments in the current vault. Missing targets show a notice and do not create files
 - These buttons only edit inline content style markers; they do not write topic attributes
 
 **Large text editor:**

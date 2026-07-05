@@ -78,10 +78,67 @@
   user-select: none;
 }
 
+/*
+ * 作用：
+ * 块级格式内容组的指针事件容器。
+ * 说明：
+ * 整体禁用指针事件让点击穿透到主题 group 上统一处理；
+ * 内部的链接、图片等交互元素单独启用 pointer-events: auto。
+ */
 .yonxao-mindmap-topic-rich-content {
   pointer-events: none;
 }
 
+/*
+ * 作用：
+ * 链接锚点和链接文本：可点击，显示强调色和下滑线。
+ * Obsidian 内部链接使用绿色调区分于外部链接的蓝色强调色。
+ * 链接前由渲染器添加轻量标识（↗ 外部 / ◇ 内部）。
+ */
+.yonxao-mindmap-topic-link-anchor,
+.yonxao-mindmap-topic-link {
+  pointer-events: auto;
+  cursor: pointer;
+}
+
+.yonxao-mindmap-topic-link {
+  fill: var(--text-accent);
+  font-weight: 600;
+  text-decoration: underline;
+}
+
+.yonxao-mindmap-topic-link.is-obsidian {
+  fill: color-mix(in srgb, var(--text-success, #16a34a) 82%, var(--text-accent));
+}
+
+/*
+ * 作用：
+ * 链接目标不存在时的视觉反馈。
+ * 锚点显示 not-allowed 光标；链接文本变淡并加删除线。
+ */
+.yonxao-mindmap-topic-link-anchor.is-missing {
+  cursor: not-allowed;
+}
+
+.yonxao-mindmap-topic-link.is-missing {
+  fill: var(--text-faint);
+  text-decoration: line-through;
+}
+
+/*
+ * 作用：
+ * 标签（#标签）文本样式：加粗显示，颜色由渲染器根据标签文本哈希到固定色板。
+ */
+.yonxao-mindmap-topic-tag {
+  font-weight: 700;
+}
+
+/*
+ * 作用：
+ * 列表标记（项目符号和编号）统一样式。
+ * 无序列表按层级使用三种形状：实心圆→空心圆→方框循环。
+ * 有序列表使用加粗编号。
+ */
 .yonxao-mindmap-topic-list-marker {
   fill: var(--text-muted);
   font-weight: 700;
@@ -105,6 +162,73 @@
   font-weight: 600;
 }
 
+/*
+ * 作用：
+ * 任务复选框样式。
+ * 未选中时显示空心白底方框；选中时填充强调色并显示对勾路径。
+ */
+.yonxao-mindmap-topic-task-box {
+  fill: var(--background-primary);
+  stroke: var(--text-muted);
+  stroke-width: 1.4;
+}
+
+.yonxao-mindmap-topic-task-box.is-checked {
+  fill: var(--interactive-accent);
+  stroke: var(--interactive-accent);
+}
+
+.yonxao-mindmap-topic-task-check {
+  fill: none;
+  stroke: var(--text-on-accent);
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+/*
+ * 作用：
+ * 图片块框架。正常图片框架透明不可见；缺失图片时显示灰色占位背景。
+ */
+.yonxao-mindmap-topic-image-frame {
+  fill: transparent;
+  stroke: transparent;
+  stroke-width: 0;
+}
+
+.yonxao-mindmap-topic-image-frame.is-missing {
+  fill: color-mix(in srgb, var(--background-secondary) 88%, var(--text-muted) 12%);
+  stroke: color-mix(in srgb, var(--background-modifier-border) 82%, transparent);
+  stroke-width: 1;
+}
+
+/*
+ * 作用：
+ * 图片块启用指针事件，可双击放大预览。缺失时显示紧凑占位图标。
+ */
+.yonxao-mindmap-topic-image-block {
+  pointer-events: auto;
+  cursor: zoom-in;
+}
+
+.yonxao-mindmap-topic-image {
+  pointer-events: auto;
+}
+
+/*
+ * 作用：
+ * 图片标题和缺失占位文本，使用较小字号避免占用过多空间。
+ */
+.yonxao-mindmap-topic-image-caption,
+.yonxao-mindmap-topic-image-placeholder {
+  fill: var(--text-muted);
+  font-size: var(--font-ui-smaller);
+}
+
+/*
+ * 作用：
+ * 代码块背景和文本样式。背景使用深色区分，等宽字体由渲染器写入 SVG font-family。
+ */
 .yonxao-mindmap-topic-code-background {
   fill: color-mix(in srgb, var(--background-secondary) 88%, var(--text-normal) 12%);
   stroke: color-mix(in srgb, var(--background-modifier-border) 78%, transparent);
@@ -115,6 +239,12 @@
   fill: var(--code-normal, var(--text-normal));
 }
 
+/*
+ * 作用：
+ * 公式块渲染控制。
+ * 渲染前显示斜体源码文本作为 fallback；
+ * MathJax 异步渲染完成后切换 opacity 隐藏源码、显示渲染结果。
+ */
 .yonxao-mindmap-topic-equation-text {
   fill: var(--text-normal);
   font-style: italic;
@@ -133,6 +263,12 @@
   opacity: 1;
 }
 
+/*
+ * 作用：
+ * foreignObject 内嵌的公式宿主容器。
+ * 使用 flex 居中内容，确保 MathJax 输出的公式在 foreignObject 框内垂直居中。
+ * 重置 MathJax 的默认外边距和对齐，避免溢出 foreignObject 边界。
+ */
 .yonxao-mindmap-topic-equation-host {
   display: flex;
   width: 100%;
@@ -150,7 +286,180 @@
 }
 
 .yonxao-mindmap-topic-equation-host mjx-container {
+  color: inherit !important;
   margin: 0 !important;
+  text-align: left !important;
+}
+
+.yonxao-mindmap-topic-equation-host mjx-container[display='true'] {
+  display: inline-block !important;
+}
+
+.yonxao-mindmap-topic-equation-host .math,
+.yonxao-mindmap-topic-equation-host .math-block {
+  color: inherit;
+  margin: 0;
+}
+
+/*
+ * 作用：
+ * 主题装饰按钮（备注/附件图标列）。
+ * 启用指针事件让点击和 hover 可交互；outline: none 避免 focus 时出现默认描边。
+ */
+.yonxao-mindmap-topic-adornments {
+  pointer-events: auto;
+}
+
+.yonxao-mindmap-topic-adornment {
+  cursor: pointer;
+  outline: none;
+}
+
+.yonxao-mindmap-topic-adornment-button {
+  fill: color-mix(in srgb, var(--background-primary) 82%, var(--text-muted) 18%);
+  stroke: color-mix(in srgb, var(--background-modifier-border) 72%, transparent);
+  stroke-width: 1;
+}
+
+.yonxao-mindmap-topic-adornment.is-note .yonxao-mindmap-topic-adornment-button {
+  fill: color-mix(in srgb, #f59e0b 17%, var(--background-primary));
+  stroke: color-mix(in srgb, #f59e0b 76%, transparent);
+}
+
+.yonxao-mindmap-topic-adornment.is-attachment .yonxao-mindmap-topic-adornment-button {
+  fill: color-mix(in srgb, #64748b 16%, var(--background-primary));
+  stroke: color-mix(in srgb, #64748b 76%, transparent);
+}
+
+.yonxao-mindmap-topic-adornment:hover .yonxao-mindmap-topic-adornment-button,
+.yonxao-mindmap-topic-adornment:focus .yonxao-mindmap-topic-adornment-button {
+  fill: color-mix(in srgb, var(--interactive-accent) 13%, var(--background-primary));
+  stroke: var(--interactive-accent);
+}
+
+.yonxao-mindmap-topic-adornment-icon {
+  fill: none;
+  stroke: var(--text-muted);
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.yonxao-mindmap-topic-adornment.is-note .yonxao-mindmap-topic-adornment-icon {
+  stroke: #b45309;
+}
+
+.yonxao-mindmap-topic-adornment.is-attachment .yonxao-mindmap-topic-adornment-icon {
+  stroke: #475569;
+}
+
+.yonxao-mindmap-topic-adornment:hover .yonxao-mindmap-topic-adornment-icon,
+.yonxao-mindmap-topic-adornment:focus .yonxao-mindmap-topic-adornment-icon {
+  stroke: var(--text-normal);
+}
+
+.yonxao-mindmap-topic-adornment-popover {
+  position: fixed;
+  z-index: 10002;
+  width: max-content;
+  min-width: 56px;
+  max-width: min(360px, calc(100vw - 24px));
+  box-sizing: border-box;
+  padding: 8px 10px;
+  color: var(--text-normal);
+  border: 1px solid var(--background-modifier-border);
+  border-radius: var(--yonxao-mindmap-radius-md);
+  background: var(--background-primary);
+  box-shadow: var(--shadow-l);
+  font-size: var(--font-ui-small);
+  line-height: 1.45;
+  white-space: pre-wrap;
+}
+
+.yonxao-mindmap-topic-adornment-popover.is-note {
+  border-color: color-mix(in srgb, #f59e0b 58%, var(--background-modifier-border));
+  background: color-mix(in srgb, #f59e0b 13%, var(--background-primary));
+}
+
+.yonxao-mindmap-topic-adornment-popover.is-attachment {
+  border-color: color-mix(in srgb, #64748b 55%, var(--background-modifier-border));
+  background: color-mix(in srgb, #64748b 11%, var(--background-primary));
+}
+
+.yonxao-mindmap-topic-adornment-popover-body {
+  max-width: inherit;
+  overflow-wrap: anywhere;
+}
+
+.yonxao-mindmap-topic-attachment-popover-content {
+  display: grid;
+  gap: 6px;
+  max-width: inherit;
+}
+
+.yonxao-mindmap-topic-attachment-label {
+  color: var(--text-normal);
+  font-weight: 700;
+  overflow-wrap: anywhere;
+}
+
+.yonxao-mindmap-topic-attachment-source {
+  color: var(--text-muted);
+  font-size: var(--font-ui-smaller);
+  overflow-wrap: anywhere;
+}
+
+.yonxao-mindmap-topic-attachment-actions {
+  display: flex;
+  gap: 6px;
+  justify-content: flex-end;
+}
+
+.yonxao-mindmap-topic-attachment-action {
+  height: 24px;
+  padding: 0 8px;
+  border: 1px solid color-mix(in srgb, #64748b 42%, var(--background-modifier-border));
+  border-radius: 5px;
+  background: color-mix(in srgb, #64748b 8%, var(--background-primary));
+  color: var(--text-normal);
+  cursor: pointer;
+  font-size: var(--font-ui-smaller);
+}
+
+.yonxao-mindmap-topic-attachment-action:hover,
+.yonxao-mindmap-topic-attachment-action:focus {
+  border-color: #64748b;
+  background: color-mix(in srgb, #64748b 16%, var(--background-primary));
+}
+
+.yonxao-mindmap-topic-image-preview-overlay {
+  position: fixed;
+  z-index: 10003;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: auto;
+  padding: 24px;
+  background: rgba(0, 0, 0, 0.72);
+  cursor: zoom-out;
+}
+
+.yonxao-mindmap-topic-image-preview {
+  max-width: calc(100vw - 48px);
+  max-height: calc(100vh - 48px);
+  object-fit: contain;
+  border-radius: 6px;
+  box-shadow: 0 18px 52px rgba(0, 0, 0, 0.45);
+  cursor: zoom-in;
+}
+
+.yonxao-mindmap-topic-image-preview.is-original-size {
+  width: auto;
+  height: auto;
+  max-width: none;
+  max-height: none;
+  cursor: zoom-out;
 }
 
 /*

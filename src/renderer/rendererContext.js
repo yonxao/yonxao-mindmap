@@ -40,6 +40,8 @@ export const rendererContextMethods = {
   onunload() {
     this.closeTopicEditor();
     this.closeInlineTextEditor(false);
+    this.hideTopicAdornmentPopover?.();
+    this.closeTopicImagePreview?.();
     // 在清理全屏之前先刷写待保存数据，避免 Obsidian 重渲染导致数据丢失
     if (this._pendingFullscreenSave) {
       this._flushPendingFullscreenSave();
@@ -90,6 +92,10 @@ export const rendererContextMethods = {
     if (this.pendingMapFocusFrame) {
       window.cancelAnimationFrame(this.pendingMapFocusFrame);
       this.pendingMapFocusFrame = null;
+    }
+    if (this.pendingTopicImageNaturalSizeFrame) {
+      window.cancelAnimationFrame(this.pendingTopicImageNaturalSizeFrame);
+      this.pendingTopicImageNaturalSizeFrame = null;
     }
     if (this.pendingMapFocusTimer) {
       window.clearTimeout(this.pendingMapFocusTimer);

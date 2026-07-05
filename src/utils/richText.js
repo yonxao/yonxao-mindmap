@@ -3,11 +3,18 @@
  * 解析主题内容中的局部文字样式标记，并提供布局测量和 SVG 渲染可复用的片段数据。
  *
  * 支持语法：
- * **加粗**、*斜体*、~~中划线~~、++下划线++、{red|语义色}、{#e11d48|十六进制颜色}。
+ * **加粗**、*斜体*、~~中划线~~、++下划线++、{red|语义色}、{#e11d48|十六进制颜色}、
+ * #标签、[链接](https://example.com)、[[内部链接]]。
  * 行内样式允许跨硬换行，并允许不同样式区间交叉叠加。
  * 块级格式：
  * - 无序列表
+ * - [ ] 任务
  * 1. 有序列表
+ * > 备注
+ * @[附件](path-or-url)
+ * @[[Obsidian 附件.pdf]]
+ * ![图片](path-or-url)
+ * ![[Obsidian 附件.png]]
  * $$
  * E = mc^2
  * $$
@@ -23,8 +30,21 @@ const HEX_COLOR_PATTERN = /^#(?:[0-9a-f]{3}|[0-9a-f]{6})$/i;
 const CJK_OR_FULLWIDTH_RE = /[\u2e80-\u9fff\uff00-\uffef]/;
 const CODE_FENCE_PATTERN = /^~~~([a-zA-Z0-9_-]+)?\s*$/;
 const EQUATION_FENCE_PATTERN = /^\$\$\s*$/;
+const MARKDOWN_IMAGE_PATTERN = /^!\[([^\]]*)\]\(([^)]+)\)\s*$/;
+const OBSIDIAN_IMAGE_PATTERN = /^!\[\[([^\]]+)\]\]\s*$/;
+const MARKDOWN_ATTACHMENT_PATTERN = /^@\[([^\]]*)\]\(([^)]+)\)\s*$/;
+const OBSIDIAN_ATTACHMENT_PATTERN = /^@\[\[([^\]]+)\]\]\s*$/;
+const NOTE_LINE_PATTERN = /^>\s?(.*)$/;
+const TASK_LIST_PATTERN = /^(\s*)[-*+]\s+\[([ xX])\]\s+(.+)$/;
 const UNORDERED_LIST_PATTERN = /^(\s*)[-*+]\s+(.+)$/;
 const ORDERED_LIST_PATTERN = /^(\s*)(\d+)[.)]\s+(.+)$/;
+const MARKDOWN_LINK_PATTERN = /^\[([^\]]+)\]\(([^)]+)\)/;
+const OBSIDIAN_LINK_PATTERN = /^\[\[([^\]]+)\]\]/;
+const TAG_PATTERN = /^#([\p{L}\p{N}_/-]+)/u;
+const LINK_MARKERS = Object.freeze({
+  external: '↗',
+  obsidian: '◇',
+});
 // 主题内容不是完整 Markdown 解析器；列表缩进按编辑器常用的 2 空格一级折算。
 const INDENT_TAB_WIDTH = 2;
 const LIST_LEVEL_INDENT = 22;
@@ -48,12 +68,24 @@ const EQUATION_TALL_HEIGHT_RATIO = 2.55;
 const EQUATION_EXTRA_TALL_HEIGHT_RATIO = 3.15;
 const TOPIC_RICH_BLOCK_GAP_RATIO = 0.32;
 const TOPIC_RICH_BLOCK_MIN_GAP = 4;
+const IMAGE_BLOCK_DEFAULT_WIDTH = 220;
+const IMAGE_BLOCK_MAX_WIDTH = 360;
+const IMAGE_BLOCK_MIN_WIDTH = 96;
+const MISSING_IMAGE_BLOCK_WIDTH = 118;
+const MISSING_IMAGE_BLOCK_HEIGHT = 54;
+const IMAGE_BLOCK_DEFAULT_ASPECT_RATIO = 0.62;
+const IMAGE_BLOCK_CAPTION_GAP = 5;
+const IMAGE_SIZE_ORIGINAL = 'original';
+const IMAGE_SIZE_PERCENT_PATTERN = /^(\d+(?:\.\d+)?)%$/;
 
 export const TOPIC_RICH_BLOCK_TYPES = Object.freeze({
   PARAGRAPH: 'paragraph',
   LIST: 'list',
   EQUATION: 'equation',
   CODE: 'code',
+  NOTE: 'note',
+  IMAGE: 'image',
+  ATTACHMENT: 'attachment',
 });
 
 export const TOPIC_CODE_BLOCK_PADDING_X = CODE_BLOCK_PADDING_X;
@@ -120,8 +152,16 @@ export function parseTopicRichText(source, baseStyle = {}) {
 }
 
 /*
- * 将主题内容文本解析为块级格式（段落/列表/代码/公式）的数组。
- * 按行扫描，识别 ~~~ 代码块、$$ 公式、列表和段落。
+ * 将主题内容文本解析为块级格式（段落/列表/代码/公式/图片/备注/附件）的数组。
+ * 按行扫描，优先级依次为：
+ * 1. ~~~ 代码块 fence
+ * 2. $$ 公式 fence
+ * 3. 图片（Markdown 和 Obsidian 风格）
+ * 4. 附件（Markdown 和 Obsidian 风格）
+ * 5. > 备注行（连续多行合并为一个备注块）
+ * 6. 列表行（- / 1. 等，连续合并为一个列表块）
+ * 7. 普通段落
+ * 没有匹配任何格式时兜底返回一个 "Untitled" 段落块。
  */
 export function parseTopicRichBlocks(source) {
   const rawLines = String(source || '')
@@ -173,6 +213,33 @@ export function parseTopicRichBlocks(source) {
       continue;
     }
 
+    const imageBlock = parseTopicImageBlock(trimmed);
+    if (imageBlock) {
+      blocks.push(imageBlock);
+      index += 1;
+      continue;
+    }
+
+    const attachmentBlock = parseTopicAttachmentBlock(trimmed);
+    if (attachmentBlock) {
+      blocks.push(attachmentBlock);
+      index += 1;
+      continue;
+    }
+
+    if (NOTE_LINE_PATTERN.test(line)) {
+      const lines = [];
+      while (index < rawLines.length && NOTE_LINE_PATTERN.test(rawLines[index])) {
+        lines.push(rawLines[index].match(NOTE_LINE_PATTERN)?.[1] || '');
+        index += 1;
+      }
+      blocks.push({
+        type: TOPIC_RICH_BLOCK_TYPES.NOTE,
+        lines: lines.length ? lines : [''],
+      });
+      continue;
+    }
+
     // 检测列表行（- / 1. 等）
     if (isTopicListLine(line)) {
       const items = [];
@@ -188,9 +255,7 @@ export function parseTopicRichBlocks(source) {
     while (
       index < rawLines.length &&
       rawLines[index].trim() &&
-      !CODE_FENCE_PATTERN.test(rawLines[index].trim()) &&
-      !EQUATION_FENCE_PATTERN.test(rawLines[index].trim()) &&
-      !isTopicListLine(rawLines[index])
+      !isTopicStandaloneBlockLine(rawLines[index])
     ) {
       paragraphLines.push(rawLines[index]);
       index += 1;
@@ -215,15 +280,28 @@ export function wrapTopicRichTextByWidth(source, maxWidth, font) {
   return hardLines.flatMap((line) => wrapRichLineByWidth(line, maxWidth, font));
 }
 
-export function wrapTopicRichBlocksByWidth(source, maxWidth, font) {
+/*
+ * 将主题内容解析为块级格式并逐块按最大宽度换行，返回布局和渲染所需的结构化数据。
+ *
+ * 返回值包含：
+ * - blocks: 所有格式化块（含装饰块）的布局数据
+ * - adornments/adornmentCount: 装饰块（备注/附件）列表，供渲染器生成按钮列
+ * - lines/richLines: 纯文本行和样式片段行的扁平数组，供旧版渲染回退
+ * - width/height: 所有可见块的总宽高
+ *
+ * 装饰块单独统计不参与正文高度，但布局阶段需要提前预留右侧按钮列宽度；
+ * 因此先按原始可用宽度统计装饰按钮数量，扣除其宽度后再重新换行正文内容。
+ */
+export function wrapTopicRichBlocksByWidth(source, maxWidth, font, options = {}) {
   const blockGap = Math.max(
     TOPIC_RICH_BLOCK_MIN_GAP,
     Math.round((Number(font?.lineHeight) || Number(font?.size) || 16) * TOPIC_RICH_BLOCK_GAP_RATIO)
   );
   const blocks = parseTopicRichBlocks(source).map((block, blockIndex) =>
-    wrapTopicRichBlock(block, maxWidth, font, blockIndex === 0 ? 0 : blockGap)
+    wrapTopicRichBlock(block, maxWidth, font, blockIndex === 0 ? 0 : blockGap, options)
   );
-  const visibleBlocks = blocks.filter((block) => block.height > 0);
+  const visibleBlocks = blocks.filter((block) => !isTopicAdornmentBlock(block) && block.height > 0);
+  const adornmentBlocks = blocks.filter(isTopicAdornmentBlock);
   const lines = [];
   const richLines = [];
   let width = 0;
@@ -239,11 +317,19 @@ export function wrapTopicRichBlocksByWidth(source, maxWidth, font) {
   }
 
   if (!visibleBlocks.length) {
-    return wrapTopicRichBlocksByWidth('Untitled', maxWidth, font);
+    const fallbackContent = wrapTopicRichBlocksByWidth('Untitled', maxWidth, font, options);
+    return {
+      ...fallbackContent,
+      blocks: [...fallbackContent.blocks, ...adornmentBlocks],
+      adornments: adornmentBlocks,
+      adornmentCount: adornmentBlocks.length,
+    };
   }
 
   return {
-    blocks: visibleBlocks,
+    blocks,
+    adornments: adornmentBlocks,
+    adornmentCount: adornmentBlocks.length,
     lines,
     richLines,
     width,
@@ -255,12 +341,44 @@ export function richLineToPlainText(line) {
   return joinSegmentsText(line);
 }
 
+export function topicRichTextLinkMarker(linkKind) {
+  return LINK_MARKERS[String(linkKind || '').toLowerCase()] || LINK_MARKERS.external;
+}
+
+/*
+ * 计算主题内容中图片块的首选宽度（用于主题宽度估算）。
+ * 只计入定宽图片（像素宽或宽高），百分比图片和缺失图片不计入。
+ * 如果主题中所有图片的显式宽度都小于默认可用文本宽度，返回 0。
+ */
+export function topicRichTextPreferredContentWidth(source) {
+  return parseTopicRichBlocks(source).reduce((width, block) => {
+    if (block.type !== TOPIC_RICH_BLOCK_TYPES.IMAGE) return width;
+    if (block.sizeMode === 'percent') return width;
+    return Math.max(width, Number(block.width) || 0);
+  }, 0);
+}
+
+function isTopicAdornmentBlock(block) {
+  return (
+    block?.type === TOPIC_RICH_BLOCK_TYPES.NOTE || block?.type === TOPIC_RICH_BLOCK_TYPES.ATTACHMENT
+  );
+}
+
+/*
+ * 估算一行富文本样式片段的显示宽度。
+ * 每段样式独立测量宽度并累加；链接段额外计入前置标识符（↗/◇）的宽度。
+ * 加粗段使用更大的字重估算宽度，因为加粗字形通常略宽。
+ */
 export function estimateRichLineWidth(line, font = {}) {
   return line.reduce((sum, segment) => {
     const segmentFont = segment.bold
       ? { ...font, weight: Math.max(Number(font?.weight) || 400, 700) }
       : font;
-    return sum + estimateTopicTextWidth(segment.text, segmentFont);
+    const markerWidth =
+      segment.link && segment.linkMarker !== false
+        ? estimateTopicTextWidth(`${topicRichTextLinkMarker(segment.linkKind)} `, segmentFont)
+        : 0;
+    return sum + markerWidth + estimateTopicTextWidth(segment.text, segmentFont);
   }, 0);
 }
 
@@ -325,6 +443,50 @@ function collectInlineStyleRanges(source) {
         index = contentStart;
         continue;
       }
+    }
+
+    const markdownLink = source.slice(index).match(MARKDOWN_LINK_PATTERN);
+    if (markdownLink) {
+      const labelStart = index + 1;
+      const labelEnd = labelStart + markdownLink[1].length;
+      const markerEnd = index + markdownLink[0].length;
+      styles.push({
+        start: labelStart,
+        end: labelEnd,
+        style: { link: true, href: markdownLink[2], linkKind: 'external' },
+      });
+      removals.push([index, labelStart], [labelEnd, markerEnd]);
+      index = labelStart;
+      continue;
+    }
+
+    const obsidianLink = source.slice(index).match(OBSIDIAN_LINK_PATTERN);
+    if (obsidianLink) {
+      const link = parseObsidianLinkText(obsidianLink[1]);
+      const contentStart = index + 2;
+      const visibleStart = contentStart + link.visibleOffset;
+      const visibleEnd = visibleStart + link.label.length;
+      const markerEnd = index + obsidianLink[0].length;
+      styles.push({
+        start: visibleStart,
+        end: visibleEnd,
+        style: { link: true, href: link.target, linkKind: 'obsidian' },
+      });
+      removals.push([index, visibleStart], [visibleEnd, markerEnd]);
+      index = visibleStart;
+      continue;
+    }
+
+    const tagMatch = source.slice(index).match(TAG_PATTERN);
+    if (tagMatch && isTagBoundaryBefore(source, index)) {
+      const markerEnd = index + tagMatch[0].length;
+      styles.push({
+        start: index,
+        end: markerEnd,
+        style: { tag: true, tagName: tagMatch[0].toLowerCase() },
+      });
+      index = markerEnd;
+      continue;
     }
 
     const styleMarker = STYLE_MARKERS.find(({ marker }) => source.startsWith(marker, index));
@@ -398,9 +560,44 @@ function inlineStyleAtIndex(styleRanges, index, baseStyle) {
   return style;
 }
 
-function wrapTopicRichBlock(block, maxWidth, font, gapBefore) {
+function parseObsidianLinkText(linkText) {
+  const text = String(linkText || '');
+  const pipeIndex = text.lastIndexOf('|');
+  if (pipeIndex === -1) {
+    return { target: text.trim(), label: text.trim(), visibleOffset: 0 };
+  }
+
+  const target = text.slice(0, pipeIndex).trim();
+  const alias = text.slice(pipeIndex + 1);
+  const label = alias.trim();
+  if (!label) {
+    return { target, label: target, visibleOffset: 0 };
+  }
+
+  return {
+    target,
+    label,
+    visibleOffset: pipeIndex + 1 + alias.search(/\S|$/),
+  };
+}
+
+function isTagBoundaryBefore(source, index) {
+  if (index <= 0) return true;
+  return /[\s([{，。；：、,.!?;:]/.test(source[index - 1]);
+}
+
+function wrapTopicRichBlock(block, maxWidth, font, gapBefore, options = {}) {
   if (block.type === TOPIC_RICH_BLOCK_TYPES.LIST) {
     return wrapTopicListBlock(block, maxWidth, font, gapBefore);
+  }
+  if (block.type === TOPIC_RICH_BLOCK_TYPES.IMAGE) {
+    return wrapTopicImageBlock(block, maxWidth, font, gapBefore, options);
+  }
+  if (block.type === TOPIC_RICH_BLOCK_TYPES.NOTE) {
+    return wrapTopicNoteBlock(block, gapBefore);
+  }
+  if (block.type === TOPIC_RICH_BLOCK_TYPES.ATTACHMENT) {
+    return wrapTopicAttachmentBlock(block, gapBefore);
   }
   if (block.type === TOPIC_RICH_BLOCK_TYPES.CODE) {
     return wrapTopicCodeBlock(block, maxWidth, font, gapBefore);
@@ -431,6 +628,92 @@ function wrapTopicParagraphBlock(block, maxWidth, font, gapBefore) {
   };
 }
 
+function wrapTopicNoteBlock(block, gapBefore) {
+  const text = String(block.lines?.join('\n') || '').trim() || 'Note';
+  return {
+    type: TOPIC_RICH_BLOCK_TYPES.NOTE,
+    gapBefore,
+    text,
+    width: 0,
+    height: 0,
+  };
+}
+
+function wrapTopicAttachmentBlock(block, gapBefore) {
+  return {
+    ...block,
+    type: TOPIC_RICH_BLOCK_TYPES.ATTACHMENT,
+    gapBefore,
+    title: block.label || block.source || 'Attachment',
+    text: block.source || '',
+    width: 0,
+    height: 0,
+  };
+}
+
+function wrapTopicImageBlock(block, maxWidth, font, gapBefore, options = {}) {
+  const isImageResolved =
+    typeof options.isImageResolved === 'function' ? options.isImageResolved(block) : true;
+  const naturalSize =
+    typeof options.resolveImageSize === 'function' ? options.resolveImageSize(block) : null;
+  const naturalAspectRatio =
+    Number(naturalSize?.width) > 0 && Number(naturalSize?.height) > 0
+      ? Number(naturalSize.height) / Number(naturalSize.width)
+      : 0;
+  const hasRequestedWidth =
+    (block.sizeMode === 'percent' && Number(block.scale) > 0) || Number(block.width) > 0;
+  const requestedWidth =
+    block.sizeMode === 'percent' && Number(block.scale) > 0
+      ? Math.round(maxWidth * Number(block.scale))
+      : Number(block.width) || 0;
+  const fallbackWidth = Math.min(
+    IMAGE_BLOCK_DEFAULT_WIDTH,
+    Math.max(IMAGE_BLOCK_MIN_WIDTH, maxWidth)
+  );
+  const imageWidth = isImageResolved
+    ? Math.round(
+        Math.min(
+          hasRequestedWidth ? maxWidth : IMAGE_BLOCK_MAX_WIDTH,
+          Math.max(IMAGE_BLOCK_MIN_WIDTH, requestedWidth || fallbackWidth)
+        )
+      )
+    : Math.min(MISSING_IMAGE_BLOCK_WIDTH, maxWidth);
+  const requestedHeight = Number(block.height) || 0;
+  const scaledRequestedHeight =
+    requestedHeight && requestedWidth
+      ? Math.round(requestedHeight * (imageWidth / requestedWidth))
+      : 0;
+  const imageHeight = isImageResolved
+    ? Math.round(
+        (naturalAspectRatio ? imageWidth * naturalAspectRatio : 0) ||
+          scaledRequestedHeight ||
+          Math.max(
+            60,
+            Math.min(IMAGE_BLOCK_MAX_WIDTH, imageWidth * IMAGE_BLOCK_DEFAULT_ASPECT_RATIO)
+          )
+      )
+    : MISSING_IMAGE_BLOCK_HEIGHT;
+  const captionLines = block.alt
+    ? wrapRichLineByWidth(parseTopicRichText(block.alt), imageWidth, font)
+    : [];
+  const captionLineHeight = captionLines.length
+    ? Number(font?.lineHeight) || Number(font?.size) * 1.3 || 20
+    : 0;
+  return {
+    ...block,
+    type: TOPIC_RICH_BLOCK_TYPES.IMAGE,
+    gapBefore,
+    imageMissing: !isImageResolved,
+    imageWidth,
+    imageHeight,
+    captionLines,
+    width: imageWidth,
+    height:
+      imageHeight +
+      (captionLines.length ? IMAGE_BLOCK_CAPTION_GAP + captionLines.length * captionLineHeight : 0),
+  };
+}
+
 /*
  * 计算列表块每个列表项的布局：编号/符号宽度、缩进偏移、文本换行后的宽高。
  * 有序列表编号按层级自动递增。
@@ -441,10 +724,9 @@ function wrapTopicListBlock(block, maxWidth, font, gapBefore) {
   const levelKinds = [];
   const items = block.items.map((item) => {
     const markerText = topicListMarkerText(item, orderedCounters, levelKinds);
-    const markerWidth = Math.max(
-      LIST_MIN_MARKER_WIDTH,
-      Math.ceil(estimateTopicTextWidth(markerText, font))
-    );
+    const markerWidth = item.task
+      ? Math.max(LIST_MIN_MARKER_WIDTH, Math.round((Number(font?.size) || 16) * 1.05))
+      : Math.max(LIST_MIN_MARKER_WIDTH, Math.ceil(estimateTopicTextWidth(markerText, font)));
     const markerXOffset = item.level * LIST_LEVEL_INDENT;
     const textXOffset = markerXOffset + markerWidth + LIST_MARKER_GAP;
     const lineMaxWidth = Math.max(24, maxWidth - textXOffset);
@@ -588,6 +870,11 @@ function flattenTopicRichBlockLines(block) {
   if (block.type === TOPIC_RICH_BLOCK_TYPES.LIST) {
     return block.items.flatMap((item) => item.lines);
   }
+  if (block.type === TOPIC_RICH_BLOCK_TYPES.IMAGE) {
+    return block.captionLines?.length
+      ? block.captionLines
+      : [[{ text: block.alt || block.source || 'Image' }]];
+  }
   return block.lines || [];
 }
 
@@ -648,10 +935,38 @@ function resolveTopicCodeFont(font = {}) {
 }
 
 function isTopicListLine(line) {
-  return UNORDERED_LIST_PATTERN.test(line) || ORDERED_LIST_PATTERN.test(line);
+  return (
+    TASK_LIST_PATTERN.test(line) ||
+    UNORDERED_LIST_PATTERN.test(line) ||
+    ORDERED_LIST_PATTERN.test(line)
+  );
+}
+
+function isTopicStandaloneBlockLine(line) {
+  const trimmed = String(line || '').trim();
+  return (
+    CODE_FENCE_PATTERN.test(trimmed) ||
+    EQUATION_FENCE_PATTERN.test(trimmed) ||
+    isTopicListLine(line) ||
+    NOTE_LINE_PATTERN.test(line) ||
+    Boolean(parseTopicImageBlock(trimmed)) ||
+    Boolean(parseTopicAttachmentBlock(trimmed))
+  );
 }
 
 function parseTopicListItem(line) {
+  const task = line.match(TASK_LIST_PATTERN);
+  if (task) {
+    return {
+      ordered: false,
+      task: true,
+      checked: task[2].toLowerCase() === 'x',
+      number: '',
+      level: listIndentLevel(task[1]),
+      text: task[3],
+    };
+  }
+
   const ordered = line.match(ORDERED_LIST_PATTERN);
   if (ordered) {
     return {
@@ -668,6 +983,97 @@ function parseTopicListItem(line) {
     number: '',
     level: listIndentLevel(unordered?.[1] || ''),
     text: unordered?.[2] || '',
+  };
+}
+
+function parseTopicImageBlock(line) {
+  const markdown = line.match(MARKDOWN_IMAGE_PATTERN);
+  if (markdown) {
+    const target = parseTopicImageTarget(markdown[2]);
+    return {
+      type: TOPIC_RICH_BLOCK_TYPES.IMAGE,
+      alt: markdown[1] || target.caption || 'Image',
+      source: target.source,
+      width: target.width,
+      height: target.height,
+      sizeMode: target.sizeMode,
+      scale: target.scale,
+      obsidian: false,
+    };
+  }
+
+  const obsidian = line.match(OBSIDIAN_IMAGE_PATTERN);
+  if (!obsidian) return null;
+
+  const target = parseTopicImageTarget(obsidian[1]);
+  return {
+    type: TOPIC_RICH_BLOCK_TYPES.IMAGE,
+    alt: target.caption || target.source || 'Image',
+    source: target.source,
+    width: target.width,
+    height: target.height,
+    sizeMode: target.sizeMode,
+    scale: target.scale,
+    obsidian: true,
+  };
+}
+
+function parseTopicAttachmentBlock(line) {
+  const markdown = line.match(MARKDOWN_ATTACHMENT_PATTERN);
+  if (markdown) {
+    const target = parseTopicAttachmentTarget(markdown[2]);
+    return {
+      type: TOPIC_RICH_BLOCK_TYPES.ATTACHMENT,
+      label: markdown[1] || target.source || 'Attachment',
+      source: target.source,
+      obsidian: false,
+    };
+  }
+
+  const obsidian = line.match(OBSIDIAN_ATTACHMENT_PATTERN);
+  if (!obsidian) return null;
+
+  const target = parseTopicAttachmentTarget(obsidian[1]);
+  return {
+    type: TOPIC_RICH_BLOCK_TYPES.ATTACHMENT,
+    label: target.caption || target.source || 'Attachment',
+    source: target.source,
+    obsidian: true,
+  };
+}
+
+function parseTopicAttachmentTarget(rawTarget) {
+  const [source = '', ...captionParts] = String(rawTarget || '')
+    .split('|')
+    .map((part) => part.trim());
+  return {
+    source,
+    caption: captionParts.find(Boolean) || '',
+  };
+}
+
+function parseTopicImageTarget(rawTarget) {
+  const parts = String(rawTarget || '')
+    .split('|')
+    .map((part) => part.trim());
+  const source = parts[0] || '';
+  const size = parts.find((part, index) => index > 0 && /^\d+(?:x\d+)?$/i.test(part));
+  const percent = parts.find((part, index) => index > 0 && IMAGE_SIZE_PERCENT_PATTERN.test(part));
+  const original = parts.find(
+    (part, index) => index > 0 && part.toLowerCase() === IMAGE_SIZE_ORIGINAL
+  );
+  const [width, height] = size ? size.toLowerCase().split('x').map(Number) : [];
+  const caption =
+    parts.find((part, index) => index > 0 && ![size, percent, original].includes(part)) || '';
+  const scale = percent ? Number(percent.match(IMAGE_SIZE_PERCENT_PATTERN)?.[1]) / 100 : 0;
+
+  return {
+    source,
+    width: Number.isFinite(width) ? width : 0,
+    height: Number.isFinite(height) ? height : 0,
+    sizeMode: original ? IMAGE_SIZE_ORIGINAL : percent ? 'percent' : '',
+    scale: Number.isFinite(scale) ? scale : 0,
+    caption,
   };
 }
 
@@ -806,7 +1212,12 @@ function splitRichLineByWords(line) {
  */
 function splitRichLineIntoChars(line) {
   return line.flatMap((segment) =>
-    Array.from(segment.text || '').map((char) => createRichSegment(char, segment))
+    Array.from(segment.text || '').map((char, index) =>
+      createRichSegment(char, {
+        ...segment,
+        linkMarker: !segment.link || (index === 0 && segment.linkMarker !== false),
+      })
+    )
   );
 }
 
@@ -880,6 +1291,16 @@ function createRichSegment(text, style = {}) {
   if (style.strike) segment.strike = true;
   if (style.underline) segment.underline = true;
   if (style.color) segment.color = style.color;
+  if (style.tag) {
+    segment.tag = true;
+    segment.tagName = String(style.tagName || text || '').toLowerCase();
+  }
+  if (style.link) {
+    segment.link = true;
+    segment.href = String(style.href || '');
+    segment.linkKind = String(style.linkKind || 'external');
+    if (style.linkMarker === false) segment.linkMarker = false;
+  }
   return segment;
 }
 
@@ -909,7 +1330,13 @@ function hasSameStyle(left, right) {
     Boolean(left.italic) === Boolean(right.italic) &&
     Boolean(left.strike) === Boolean(right.strike) &&
     Boolean(left.underline) === Boolean(right.underline) &&
-    String(left.color || '') === String(right.color || '')
+    String(left.color || '') === String(right.color || '') &&
+    Boolean(left.tag) === Boolean(right.tag) &&
+    String(left.tagName || '') === String(right.tagName || '') &&
+    Boolean(left.link) === Boolean(right.link) &&
+    String(left.href || '') === String(right.href || '') &&
+    String(left.linkKind || '') === String(right.linkKind || '') &&
+    Boolean(left.linkMarker !== false) === Boolean(right.linkMarker !== false)
   );
 }
 

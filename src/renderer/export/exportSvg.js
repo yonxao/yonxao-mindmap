@@ -21,6 +21,9 @@ import {
   EXPORT_MIN_PIXEL_SCALE,
   EXPORT_FILENAME_MAX_LENGTH,
 } from '../../shared/rendererShared.js';
+import { renderEquationSvg } from '../../utils/equationSvg.js';
+
+const EXPORT_EQUATION_CAPTURE_PADDING = 2;
 
 export const exportSvgMethods = {
   async exportMapPng() {
@@ -70,9 +73,11 @@ export const exportSvgMethods = {
   async writeImageBlobToElectronClipboard(blob) {
     const electron = this.electronClipboardModule();
     if (!electron?.clipboard || !electron?.nativeImage) return false;
+    const BufferCtor = globalThis.Buffer;
+    if (typeof BufferCtor?.from !== 'function') return false;
 
     const buffer = await blob.arrayBuffer();
-    const image = electron.nativeImage.createFromBuffer(Buffer.from(buffer));
+    const image = electron.nativeImage.createFromBuffer(BufferCtor.from(buffer));
     if (image.isEmpty && image.isEmpty()) return false;
 
     electron.clipboard.writeImage(image);
@@ -83,7 +88,7 @@ export const exportSvgMethods = {
     const runtimeRequire =
       typeof globalThis.require === 'function'
         ? globalThis.require
-        : typeof window?.require === 'function'
+        : typeof window !== 'undefined' && typeof window.require === 'function'
           ? window.require
           : null;
     if (!runtimeRequire) return null;
@@ -103,7 +108,8 @@ export const exportSvgMethods = {
   },
 
   async renderMapPngBlob() {
-    const exportSvg = this.createExportSvgElement();
+    const exportSvg = await this.createExportSvgElement();
+    await this.inlineExportSvgImages(exportSvg);
     const svgText = new XMLSerializer().serializeToString(exportSvg);
     const svgBlob = new Blob([svgText], { type: 'image/svg+xml;charset=utf-8' });
     const url = URL.createObjectURL(svgBlob);
@@ -142,12 +148,17 @@ export const exportSvgMethods = {
     }
   },
 
-  createExportSvgElement() {
+  async createExportSvgElement() {
     if (!this.mapEl || !this.root) {
       throw new Error('当前没有可导出的导图。');
     }
 
-    const bounds = layoutTree(this.root, this.collapsedIds, this.config).bounds;
+    const bounds = layoutTree(
+      this.root,
+      this.collapsedIds,
+      this.config,
+      this.topicRichTextLayoutOptions()
+    ).bounds;
     const viewBox = {
       x: bounds.minX - VIEWBOX_MARGIN_X,
       y: bounds.minY - VIEWBOX_MARGIN_Y,
@@ -173,6 +184,8 @@ export const exportSvgMethods = {
     );
 
     const mapClone = this.mapEl.cloneNode(true);
+    this.inlineExportSvgComputedStyles(this.mapEl, mapClone);
+    await this.replaceExportEquationForeignObjects(this.mapEl, mapClone);
     this.cleanupExportMapClone(mapClone);
     this.inlineExportSvgColors(mapClone);
     exportSvg.appendChild(mapClone);
@@ -193,6 +206,420 @@ export const exportSvgMethods = {
     return styleEl;
   },
 
+  /*
+   * 递归遍历源 SVG 和克隆 SVG，将计算后样式内联到克隆元素上。
+   * 使用 TreeWalker 并行遍历两棵树，保持节点一一对应。
+   */
+  inlineExportSvgComputedStyles(sourceRoot, cloneRoot) {
+    if (typeof window === 'undefined' || !sourceRoot || !cloneRoot) return;
+
+    this.inlineExportElementComputedStyle(sourceRoot, cloneRoot);
+    const sourceWalker = document.createTreeWalker(sourceRoot, NodeFilter.SHOW_ELEMENT);
+    const cloneWalker = document.createTreeWalker(cloneRoot, NodeFilter.SHOW_ELEMENT);
+
+    while (sourceWalker.nextNode() && cloneWalker.nextNode()) {
+      this.inlineExportElementComputedStyle(sourceWalker.currentNode, cloneWalker.currentNode);
+    }
+  },
+
+  /*
+   * 将单个 SVG 图形元素的计算后样式（fill/stroke/font 等）内联到克隆元素。
+   * 只处理 path/rect/text 等可见图形元素，跳过容器元素。
+   * 导出的 SVG 脱离 Obsidian 上下文后无法访问 CSS 变量，
+   * 因此需要把计算后的具体色值写死到属性上。
+   */
+  inlineExportElementComputedStyle(sourceEl, cloneEl) {
+    if (!sourceEl || !cloneEl || typeof window === 'undefined') return;
+    const tagName = String(sourceEl.tagName || '').toLowerCase();
+    const isSvgGraphic = /^(path|rect|circle|ellipse|line|polyline|polygon|text|tspan)$/.test(
+      tagName
+    );
+    if (!isSvgGraphic) return;
+
+    const computed = window.getComputedStyle(sourceEl);
+    const attributes = [
+      'fill',
+      'stroke',
+      'stroke-width',
+      'stroke-linecap',
+      'stroke-linejoin',
+      'stroke-dasharray',
+      'stroke-opacity',
+      'fill-opacity',
+      'opacity',
+      'font-family',
+      'font-size',
+      'font-weight',
+      'font-style',
+      'text-anchor',
+      'dominant-baseline',
+      'paint-order',
+    ];
+
+    for (const attribute of attributes) {
+      const value = computed.getPropertyValue(attribute).trim();
+      if (!value || value === 'normal' || value === 'auto') continue;
+      cloneEl.setAttribute(attribute, value);
+    }
+
+    const textDecorationLine = computed.getPropertyValue('text-decoration-line').trim();
+    if (textDecorationLine && textDecorationLine !== 'none') {
+      cloneEl.setAttribute('text-decoration', textDecorationLine);
+    }
+
+    const filter = computed.getPropertyValue('filter').trim();
+    if (filter && filter !== 'none') cloneEl.style.filter = filter;
+  },
+
+  /*
+   * 将导出 SVG 中的所有图片引用内联为 data URL。
+   * 导出的 SVG 是独立文件，无法依赖 Obsidian 资源路径解析，
+   * 因此需要把 vault 内图片读取为 base64 数据内嵌到 SVG 中。
+   */
+  async inlineExportSvgImages(exportSvg) {
+    const imageElements = Array.from(exportSvg.querySelectorAll('image[href]'));
+    await Promise.all(
+      imageElements.map(async (imageEl) => {
+        const dataUrl = await this.resolveExportImageDataUrl(imageEl);
+        if (!dataUrl) return;
+        imageEl.setAttribute('href', dataUrl);
+        imageEl.setAttributeNS('http://www.w3.org/1999/xlink', 'xlink:href', dataUrl);
+      })
+    );
+  },
+
+  /*
+   * 解析图片元素的 data URL：已内联的直接返回；
+   * Obsidian vault 内图片通过 vault.readBinary 读取后转为 data URL；
+   * 外部 URL 通过 fetch 获取后转为 data URL。
+   */
+  async resolveExportImageDataUrl(imageEl) {
+    const href = String(imageEl.getAttribute('href') || '').trim();
+    if (!href || /^data:/i.test(href)) return href;
+
+    const source = String(imageEl.getAttribute('data-image-source') || '').trim();
+    const linkedFile = this.resolveExportImageFile(source);
+    if (linkedFile) {
+      try {
+        const buffer = await this.plugin.app.vault.readBinary(linkedFile);
+        return await this.blobToDataUrl(
+          new Blob([buffer], { type: this.exportImageMimeType(linkedFile.path || source) })
+        );
+      } catch (_error) {
+        return '';
+      }
+    }
+
+    try {
+      const response = await fetch(href);
+      if (!response.ok) return '';
+      return await this.blobToDataUrl(await response.blob());
+    } catch (_error) {
+      return '';
+    }
+  },
+
+  resolveExportImageFile(source) {
+    if (!source) return null;
+    const app = this.plugin?.app;
+    const sourcePath = this.ctx?.sourcePath || '';
+    return app?.metadataCache?.getFirstLinkpathDest?.(source, sourcePath) || null;
+  },
+
+  blobToDataUrl(blob) {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(String(reader.result || ''));
+      reader.onerror = () => reject(reader.error || new Error('图片数据读取失败。'));
+      reader.readAsDataURL(blob);
+    });
+  },
+
+  exportImageMimeType(path) {
+    const extension = String(path || '')
+      .split('?')[0]
+      .split('#')[0]
+      .split('.')
+      .pop()
+      ?.toLowerCase();
+    if (extension === 'svg') return 'image/svg+xml';
+    if (extension === 'jpg' || extension === 'jpeg') return 'image/jpeg';
+    if (extension === 'gif') return 'image/gif';
+    if (extension === 'webp') return 'image/webp';
+    if (extension === 'avif') return 'image/avif';
+    return 'image/png';
+  },
+
+  /*
+   * 替换导出 SVG 中的公式 foreignObject 为纯 SVG。
+   * foreignObject 在导出为独立 SVG 或绘制到 canvas 时无法正确渲染，
+   * 因此需要将其替换为 MathJax 输出的 SVG 或轻量兜底 SVG。
+   */
+  async replaceExportEquationForeignObjects(sourceRoot, cloneRoot) {
+    const sourceElements = Array.from(
+      sourceRoot.querySelectorAll('.yonxao-mindmap-topic-equation-rendered')
+    );
+    const cloneElements = Array.from(
+      cloneRoot.querySelectorAll('.yonxao-mindmap-topic-equation-rendered')
+    );
+
+    for (let index = 0; index < cloneElements.length; index += 1) {
+      const sourceElement = sourceElements[index];
+      const cloneElement = cloneElements[index];
+      if (!sourceElement || !cloneElement) continue;
+      if (await this.replaceExportEquationForeignObject(sourceElement, cloneElement)) continue;
+      this.showExportEquationFallback(cloneElement);
+    }
+  },
+
+  /*
+   * 替换单个公式 foreignObject：优先使用 Electron capturePage 截图实际渲染区，
+   * 其次使用 MathJax SVG 克隆，最后使用轻量方程 SVG 兜底。
+   * 兜底公式的尺寸和偏移仍取自页面中真实 MathJax 区块的定位，
+   * 避免复制图片里的公式字号、基线、分式高度明显偏离预览。
+   */
+  async replaceExportEquationForeignObject(sourceElement, cloneElement) {
+    const sourceMathSvg = sourceElement.querySelector('mjx-container svg, svg');
+    const placement = this.exportEquationPlacement(sourceElement, cloneElement, sourceMathSvg);
+    const capturedImage = sourceMathSvg
+      ? null
+      : await this.createExportEquationCapturedImage(sourceElement, placement);
+    if (capturedImage) {
+      cloneElement.replaceWith(capturedImage);
+      return true;
+    }
+
+    const exportSvg =
+      sourceMathSvg?.cloneNode(true) || (await this.createExportEquationSvg(sourceElement));
+    if (!exportSvg) return false;
+
+    /*
+     * MathJax 的 HTML foreignObject 不能安全绘制到 canvas。导出时把公式替换成纯 SVG，
+     * 但尺寸和偏移仍取自页面里真实渲染出的 MathJax/HTML 区块，避免兜底 SVG 与预览
+     * 在字号、垂直居中、分式高度上出现明显偏差。
+     */
+    this.applyExportEquationSvgPlacement(exportSvg, placement);
+    cloneElement.replaceWith(exportSvg);
+    return true;
+  },
+
+  async createExportEquationCapturedImage(sourceElement, placement) {
+    const electronWindow = this.currentElectronWindowForElementCapture();
+    const mathContentEl = this.exportEquationContentElement(sourceElement, null);
+    const rect = mathContentEl?.getBoundingClientRect?.();
+    if (!electronWindow?.capturePage || !rect?.width || !rect?.height) return null;
+    if (!this.isRectFullyVisibleInViewport(rect, EXPORT_EQUATION_CAPTURE_PADDING)) return null;
+
+    try {
+      const padding = EXPORT_EQUATION_CAPTURE_PADDING;
+      const captureRect = {
+        x: Math.max(0, Math.floor(rect.left - padding)),
+        y: Math.max(0, Math.floor(rect.top - padding)),
+        width: Math.ceil(rect.width + padding * 2),
+        height: Math.ceil(rect.height + padding * 2),
+      };
+      const nativeImage = await electronWindow.capturePage(captureRect);
+      const dataUrl = this.nativeImageToDataUrl(nativeImage);
+      if (!dataUrl) return null;
+
+      return svg('image', {
+        href: dataUrl,
+        x: placement.x - padding,
+        y: placement.y - padding,
+        width: captureRect.width,
+        height: captureRect.height,
+        preserveAspectRatio: 'none',
+        class: 'yonxao-mindmap-topic-equation-export',
+      });
+    } catch (_error) {
+      return null;
+    }
+  },
+
+  /*
+   * 获取当前 Electron 窗口对象用于 capturePage。
+   * 依次尝试 @electron/remote、electron.remote、window.electron 等候选，
+   * 兼容 Obsidian 不同版本的模块暴露方式。
+   */
+  currentElectronWindowForElementCapture() {
+    const runtimeRequire =
+      typeof globalThis.require === 'function'
+        ? globalThis.require
+        : typeof window !== 'undefined' && typeof window.require === 'function'
+          ? window.require
+          : null;
+
+    if (runtimeRequire) {
+      try {
+        const remote = runtimeRequire('@electron/remote');
+        const currentWindow = remote?.getCurrentWindow?.();
+        if (currentWindow?.capturePage) return currentWindow;
+      } catch (_error) {
+        // Obsidian may not expose @electron/remote; try the legacy Electron remote bridge below.
+      }
+
+      try {
+        const electron = runtimeRequire('electron');
+        const currentWindow = electron?.remote?.getCurrentWindow?.();
+        if (currentWindow?.capturePage) return currentWindow;
+      } catch (_error) {
+        // Continue with Obsidian-provided bridge candidates below.
+      }
+    }
+
+    const bridgedWindow =
+      typeof window === 'undefined'
+        ? null
+        : window.electron?.remote?.getCurrentWindow?.() ||
+          window.electronWindow ||
+          this.plugin?.app?.workspace?.containerEl?.win?.electronWindow;
+    return bridgedWindow?.capturePage ? bridgedWindow : null;
+  },
+
+  nativeImageToDataUrl(nativeImage) {
+    if (typeof nativeImage?.toDataURL === 'function') {
+      const dataUrl = nativeImage.toDataURL();
+      if (dataUrl?.startsWith('data:image/')) return dataUrl;
+    }
+
+    const png = nativeImage?.toPNG?.();
+    if (!png?.length || typeof png.toString !== 'function') return null;
+    return `data:image/png;base64,${png.toString('base64')}`;
+  },
+
+  /*
+   * 检查矩形区域是否完全可见在视口内（含内边距容差）。
+   * 用于判断 Electron capturePage 能否截取到完整的公式渲染区域。
+   */
+  isRectFullyVisibleInViewport(rect, padding = 0) {
+    if (typeof window === 'undefined') return false;
+    return (
+      rect.left - padding >= 0 &&
+      rect.top - padding >= 0 &&
+      rect.right + padding <= window.innerWidth &&
+      rect.bottom + padding <= window.innerHeight
+    );
+  },
+
+  /*
+   * 创建导出用的公式 SVG：优先使用 MathJax tex2svgPromise 渲染，
+   * 失败时回退到轻量 equationSvg 渲染器兜底。
+   * Obsidian 可能只暴露 CHTML 输出（不支持 SVG 转换），此时直接走兜底。
+   */
+  async createExportEquationSvg(sourceElement) {
+    const source = String(sourceElement.getAttribute('data-equation-source') || '').trim();
+    if (!source || typeof window === 'undefined') return null;
+
+    const mathJax = window.MathJax;
+    if (mathJax) {
+      try {
+        await mathJax.startup?.promise;
+        const container =
+          typeof mathJax.tex2svgPromise === 'function'
+            ? await mathJax.tex2svgPromise(source, { display: true })
+            : typeof mathJax.tex2svg === 'function'
+              ? mathJax.tex2svg(source, { display: true })
+              : null;
+        const svgEl = container?.querySelector?.('svg') || null;
+        if (svgEl) {
+          const exportSvg = svgEl.cloneNode(true);
+          exportSvg.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
+          return exportSvg;
+        }
+      } catch (_error) {
+        // 当前 Obsidian 可能只暴露 CHTML 输出；继续使用轻量 SVG 兜底渲染。
+      }
+    }
+
+    return renderEquationSvg(source, {
+      fontSize: this.exportEquationFontSize(sourceElement),
+      color: this.exportEquationColor(sourceElement),
+    });
+  },
+
+  exportEquationPlacement(sourceElement, cloneElement, sourceMathSvg) {
+    const x = Number(cloneElement.getAttribute('x')) || 0;
+    const y = Number(cloneElement.getAttribute('y')) || 0;
+    const fallbackWidth = Number(cloneElement.getAttribute('width')) || 40;
+    const fallbackHeight = Number(cloneElement.getAttribute('height')) || 24;
+    const mathContentEl = this.exportEquationContentElement(sourceElement, sourceMathSvg);
+    const foreignObjectRect = sourceElement.getBoundingClientRect?.();
+    const mathContentRect = mathContentEl?.getBoundingClientRect?.();
+
+    if (
+      foreignObjectRect?.width &&
+      foreignObjectRect?.height &&
+      mathContentRect?.width &&
+      mathContentRect?.height
+    ) {
+      return {
+        x: x + (mathContentRect.left - foreignObjectRect.left),
+        y: y + (mathContentRect.top - foreignObjectRect.top),
+        width: mathContentRect.width,
+        height: mathContentRect.height,
+        color: this.exportEquationColor(mathContentEl),
+      };
+    }
+
+    return {
+      x,
+      y,
+      width: fallbackWidth,
+      height: fallbackHeight,
+      color: this.exportEquationColor(sourceElement),
+    };
+  },
+
+  applyExportEquationSvgPlacement(exportSvg, placement) {
+    exportSvg.setAttribute('x', placement.x);
+    exportSvg.setAttribute('y', placement.y);
+    exportSvg.setAttribute('width', placement.width);
+    exportSvg.setAttribute('height', placement.height);
+    exportSvg.setAttribute('overflow', 'visible');
+    exportSvg.setAttribute('preserveAspectRatio', 'xMinYMid meet');
+    exportSvg.classList.add('yonxao-mindmap-topic-equation-export');
+    exportSvg.style.color = placement.color;
+    exportSvg.style.fill = placement.color;
+  },
+
+  exportEquationFontSize(sourceElement) {
+    const host = sourceElement.querySelector('.yonxao-mindmap-topic-equation-host');
+    const value =
+      (host && window.getComputedStyle(host).fontSize) ||
+      window.getComputedStyle(sourceElement).fontSize;
+    return Number.parseFloat(value) || 16;
+  },
+
+  exportEquationColor(element) {
+    if (typeof window === 'undefined' || !element) {
+      return this.resolveCssColor('--text-normal', '#1f2328');
+    }
+    return (
+      window.getComputedStyle(element).color || this.resolveCssColor('--text-normal', '#1f2328')
+    );
+  },
+
+  exportEquationContentElement(sourceElement, sourceMathSvg) {
+    return (
+      sourceMathSvg ||
+      sourceElement.querySelector(
+        'mjx-container, .math, .math-block, .yonxao-mindmap-topic-equation-host'
+      ) ||
+      sourceElement
+    );
+  },
+
+  showExportEquationFallback(cloneElement) {
+    const groupEl = cloneElement.closest('.yonxao-mindmap-topic-equation-block');
+    cloneElement.remove();
+    if (!groupEl) return;
+    groupEl.classList.remove('is-equation-rendered');
+    for (const textEl of groupEl.querySelectorAll('.yonxao-mindmap-topic-equation-text')) {
+      textEl.setAttribute('opacity', '1');
+      textEl.style.opacity = '1';
+    }
+  },
+
   cleanupExportMapClone(mapClone) {
     const selectors = [
       '.yonxao-mindmap-toggle',
@@ -204,6 +631,10 @@ export const exportSvgMethods = {
     ];
     for (const element of mapClone.querySelectorAll(selectors.join(','))) {
       element.remove();
+    }
+    // 导出图片前移除主题焦点高亮，避免导出/复制图片中残留焦点框
+    for (const element of mapClone.querySelectorAll('.is-keyboard-focused')) {
+      element.classList.remove('is-keyboard-focused');
     }
   },
 

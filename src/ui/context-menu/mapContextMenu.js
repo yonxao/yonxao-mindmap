@@ -24,6 +24,9 @@ import {
 
 export const mapContextMenuMethods = {
   openMapContextMenu(event) {
+    // 右键空白处时清除主题焦点，避免导图整体获得焦点后自动高亮一级主题
+    this.clearFocusedTopic();
+
     // 复用主题菜单的菜单实例管理，关闭上一个跨实例右键菜单
     this._closeCurrentContextMenu();
     const menu = new Menu();

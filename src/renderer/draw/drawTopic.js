@@ -13,6 +13,7 @@ import { MarkdownRenderer } from 'obsidian';
 
 import {
   DEFAULT_TOPIC_BUTTON_COLOR,
+  Notice,
   TOPIC_PADDING_X,
   renderIcon,
   themeTopicFillAlpha,
@@ -24,6 +25,7 @@ import {
   TOPIC_CODE_BLOCK_PADDING_X,
   TOPIC_CODE_BLOCK_PADDING_Y,
   TOPIC_RICH_BLOCK_TYPES,
+  topicRichTextLinkMarker,
 } from '../../utils/richText.js';
 import { fishboneHeadSideForLayout } from '../../layout/layoutTypes.js';
 
@@ -35,6 +37,67 @@ const UNORDERED_LIST_MARKER_CENTER_OFFSET_RATIO = 0.28;
 const CODE_BLOCK_MIN_RENDER_WIDTH = 48;
 const CODE_BLOCK_TEXT_ASCENT_RATIO = 0.75;
 const EQUATION_RENDER_WAIT_MS = 600;
+const TASK_CHECKBOX_SIZE = 11;
+const TASK_CHECKBOX_RADIUS = 2;
+const TASK_CHECKMARK_PATH = 'M3 6l2 2 4-5';
+const TASK_TEXT_CENTER_FROM_BASELINE_RATIO = 0.36;
+const IMAGE_BLOCK_CORNER_RADIUS = 6;
+const IMAGE_BLOCK_CAPTION_GAP = 5;
+const TOPIC_TAG_COLORS = Object.freeze([
+  '#3b82f6',
+  '#22c55e',
+  '#ef4444',
+  '#a855f7',
+  '#06b6d4',
+  '#f59e0b',
+  '#ec4899',
+  '#475569',
+  '#14b8a6',
+  '#818cf8',
+  '#84cc16',
+  '#fb923c',
+  '#38bdf8',
+  '#c084fc',
+  '#f87171',
+  '#34d399',
+]);
+const TOPIC_TAG_HASH_SEED = 2166136261;
+const TOPIC_TAG_HASH_PRIME = 16777619;
+const TOPIC_ADORNMENT_BUTTON_SIZE = 18;
+const TOPIC_ADORNMENT_BUTTON_GAP = 4;
+const TOPIC_ADORNMENT_LANE_GAP = 6;
+const TOPIC_ADORNMENT_ICON_TRANSFORM = 'translate(-6 -6) scale(0.5)';
+const TOPIC_ADORNMENT_NOTE_PATH = 'M21 15a4 4 0 0 1-4 4H7l-4 4V7a4 4 0 0 1 4-4h10a4 4 0 0 1 4 4z';
+const TOPIC_ADORNMENT_ATTACHMENT_PATH =
+  'M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 1 1-2.83-2.83l8.49-8.48';
+const TOPIC_ADORNMENT_POPOVER_OFFSET = 8;
+const TOPIC_ADORNMENT_POPOVER_VIEWPORT_GAP = 12;
+const TOPIC_ADORNMENT_POPOVER_HIDE_DELAY_MS = 180;
+const MISSING_IMAGE_PLACEHOLDER_WIDTH = 118;
+const MISSING_IMAGE_PLACEHOLDER_HEIGHT = 54;
+
+function splitObsidianLinkTarget(href) {
+  const text = String(href || '').trim();
+  const hashIndex = text.indexOf('#');
+  if (hashIndex === -1) {
+    return { linkpath: text, subpath: '' };
+  }
+  return {
+    linkpath: text.slice(0, hashIndex).trim(),
+    subpath: text.slice(hashIndex + 1).trim(),
+  };
+}
+
+function normalizeObsidianHeadingText(text) {
+  const source = String(text || '');
+  let decoded;
+  try {
+    decoded = decodeURIComponent(source);
+  } catch (_error) {
+    decoded = source;
+  }
+  return decoded.replace(/^#+/, '').trim().replace(/\s+/g, ' ').toLowerCase();
+}
 
 export const topicDrawMethods = {
   applyTopicButtonColorVariable(element, topic, color = topicColor(topic, this.config)) {
@@ -102,6 +165,10 @@ export const topicDrawMethods = {
       group.appendChild(this.renderLegacyTopicText(box));
     }
 
+    if (Array.isArray(box.adornments) && box.adornments.length) {
+      group.appendChild(this.renderTopicAdornments(topic, box));
+    }
+
     return group;
   },
 
@@ -144,9 +211,17 @@ export const topicDrawMethods = {
     let cursorY = Number(box.textTop) || 0;
 
     for (const block of box.richBlocks) {
+      if (
+        block.type === TOPIC_RICH_BLOCK_TYPES.NOTE ||
+        block.type === TOPIC_RICH_BLOCK_TYPES.ATTACHMENT
+      ) {
+        continue;
+      }
       cursorY += Number(block.gapBefore) || 0;
       if (block.type === TOPIC_RICH_BLOCK_TYPES.LIST) {
         this.appendTopicListBlock(contentGroup, block, box, cursorY);
+      } else if (block.type === TOPIC_RICH_BLOCK_TYPES.IMAGE) {
+        this.appendTopicImageBlock(contentGroup, block, box, cursorY);
       } else if (block.type === TOPIC_RICH_BLOCK_TYPES.CODE) {
         this.appendTopicCodeBlock(contentGroup, block, box, cursorY);
       } else if (block.type === TOPIC_RICH_BLOCK_TYPES.EQUATION) {
@@ -158,6 +233,274 @@ export const topicDrawMethods = {
     }
 
     return contentGroup;
+  },
+
+  /*
+   * 渲染主题右侧的备注/附件装饰按钮列。
+   *
+   * 每个备注或附件生成一个圆形图标按钮，hover/focus 时弹出浮层显示详情。
+   * 按钮从右到左排列在主题卡片的 adornment lane 中。
+   * 点击附件按钮直接尝试打开附件；点击备注按钮切换浮层固定态。
+   */
+  renderTopicAdornments(topic, box) {
+    const adornments = Array.isArray(box.adornments) ? box.adornments : [];
+    const group = svg('g', { class: 'yonxao-mindmap-topic-adornments' });
+    const laneWidth =
+      Number(box.adornmentLaneWidth) ||
+      TOPIC_ADORNMENT_LANE_GAP +
+        adornments.length * TOPIC_ADORNMENT_BUTTON_SIZE +
+        Math.max(0, adornments.length - 1) * TOPIC_ADORNMENT_BUTTON_GAP;
+    const startX =
+      box.width -
+      TOPIC_PADDING_X -
+      laneWidth +
+      TOPIC_ADORNMENT_LANE_GAP +
+      TOPIC_ADORNMENT_BUTTON_SIZE / 2;
+    const centerY = box.height / 2;
+
+    adornments.forEach((block, index) => {
+      const button = svg('g', {
+        class: `yonxao-mindmap-topic-adornment is-${block.type}`,
+        transform: `translate(${startX + index * (TOPIC_ADORNMENT_BUTTON_SIZE + TOPIC_ADORNMENT_BUTTON_GAP)} ${centerY})`,
+        'data-topic-id': topic?.id || '',
+        tabindex: '0',
+      });
+      button.appendChild(
+        svg('rect', {
+          class: 'yonxao-mindmap-topic-adornment-button',
+          x: -TOPIC_ADORNMENT_BUTTON_SIZE / 2,
+          y: -TOPIC_ADORNMENT_BUTTON_SIZE / 2,
+          width: TOPIC_ADORNMENT_BUTTON_SIZE,
+          height: TOPIC_ADORNMENT_BUTTON_SIZE,
+          rx: 5,
+        })
+      );
+      button.appendChild(
+        svg('path', {
+          class: 'yonxao-mindmap-topic-adornment-icon',
+          d:
+            block.type === TOPIC_RICH_BLOCK_TYPES.ATTACHMENT
+              ? TOPIC_ADORNMENT_ATTACHMENT_PATH
+              : TOPIC_ADORNMENT_NOTE_PATH,
+          transform: TOPIC_ADORNMENT_ICON_TRANSFORM,
+        })
+      );
+
+      this.registerDomEvent(button, 'mouseenter', () => {
+        this.showTopicAdornmentPopover(button, block);
+      });
+      this.registerDomEvent(button, 'mouseleave', () => {
+        this.scheduleHideTopicAdornmentPopover();
+      });
+      this.registerDomEvent(button, 'focus', () => {
+        this.showTopicAdornmentPopover(button, block);
+      });
+      this.registerDomEvent(button, 'blur', () => {
+        this.scheduleHideTopicAdornmentPopover();
+      });
+      this.registerDomEvent(button, 'click', (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        if (block.type === TOPIC_RICH_BLOCK_TYPES.ATTACHMENT) {
+          if (this.openTopicAttachment(block)) return;
+        }
+        this.showTopicAdornmentPopover(button, block, { pinned: true });
+      });
+
+      group.appendChild(button);
+    });
+
+    return group;
+  },
+
+  /*
+   * 显示主题装饰按钮（备注/附件）的浮层。
+   * 浮层根据按钮所在列位置自动选择显示在列上方或下方，
+   * 避免左右弹出时覆盖相邻按钮。
+   * pinned 选项用于点击附件时的固定态浮层。
+   */
+  showTopicAdornmentPopover(anchorEl, block, options = {}) {
+    if (!anchorEl || !block) return;
+    if (this.topicAdornmentHideTimer) {
+      window.clearTimeout(this.topicAdornmentHideTimer);
+      this.topicAdornmentHideTimer = null;
+    }
+    this.hideTopicAdornmentPopover();
+
+    const popover = document.createElement('div');
+    popover.className = `yonxao-mindmap-topic-adornment-popover is-${block.type}`;
+    if (options.pinned) popover.classList.add('is-pinned');
+
+    if (block.type === TOPIC_RICH_BLOCK_TYPES.ATTACHMENT) {
+      popover.appendChild(this.createTopicAttachmentPopoverContent(block));
+    } else {
+      const body = document.createElement('div');
+      body.className = 'yonxao-mindmap-topic-adornment-popover-body';
+      body.textContent = block.text || block.source || '';
+      popover.appendChild(body);
+    }
+    (this._bodyFloatContainer?.() || document.body).appendChild(popover);
+    this.topicAdornmentPopoverEl = popover;
+    this.topicAdornmentAnchorEl = anchorEl;
+    this.ensureTopicAdornmentDocumentClickHandler();
+    this.positionTopicAdornmentPopover(anchorEl, popover);
+
+    popover.addEventListener('mouseenter', () => {
+      if (this.topicAdornmentHideTimer) {
+        window.clearTimeout(this.topicAdornmentHideTimer);
+        this.topicAdornmentHideTimer = null;
+      }
+    });
+    popover.addEventListener('mouseleave', () => {
+      this.scheduleHideTopicAdornmentPopover();
+    });
+  },
+
+  createTopicAttachmentPopoverContent(block) {
+    const content = document.createElement('div');
+    content.className = 'yonxao-mindmap-topic-attachment-popover-content';
+
+    const label = document.createElement('div');
+    label.className = 'yonxao-mindmap-topic-attachment-label';
+    label.textContent = block.title || block.label || block.source || 'Attachment';
+    content.appendChild(label);
+
+    const source = document.createElement('div');
+    source.className = 'yonxao-mindmap-topic-attachment-source';
+    source.textContent = block.source || '';
+    content.appendChild(source);
+
+    const actions = document.createElement('div');
+    actions.className = 'yonxao-mindmap-topic-attachment-actions';
+    const openButton = document.createElement('button');
+    openButton.className = 'yonxao-mindmap-topic-attachment-action';
+    openButton.type = 'button';
+    openButton.textContent = this.t('attachment.open');
+    openButton.addEventListener('click', (event) => {
+      event.preventDefault();
+      event.stopPropagation();
+      this.openTopicAttachment(block);
+    });
+
+    const copyButton = document.createElement('button');
+    copyButton.className = 'yonxao-mindmap-topic-attachment-action';
+    copyButton.type = 'button';
+    copyButton.textContent = this.t('attachment.copy');
+    copyButton.addEventListener('click', async (event) => {
+      event.preventDefault();
+      event.stopPropagation();
+      await this.copyTopicAttachment(block);
+    });
+
+    actions.appendChild(openButton);
+    actions.appendChild(copyButton);
+    content.appendChild(actions);
+    return content;
+  },
+
+  /*
+   * 打开附件：外部 URL（http/mailto/obsidian/file 协议）直接用浏览器打开；
+   * Obsidian 内部附件先通过 metadataCache 确认目标存在，
+   * 避免 openLinkText 自动创建不存在的文档。
+   * 目标不存在时只提示，不调用会自动创建文档的打开路径。
+   */
+  openTopicAttachment(block) {
+    const source = String(block?.source || '').trim();
+    if (!source) {
+      new Notice(this.t('notice.attachmentMissing'));
+      return false;
+    }
+
+    if (/^(?:https?:|mailto:|obsidian:|file:)/i.test(source)) {
+      window.open(source, '_blank', 'noopener');
+      return true;
+    }
+
+    const sourcePath = this.ctx?.sourcePath || '';
+    const linkedFile = this.plugin?.app?.metadataCache?.getFirstLinkpathDest?.(source, sourcePath);
+    if (!linkedFile) {
+      new Notice(this.t('notice.attachmentMissing'));
+      return false;
+    }
+
+    this.plugin?.app?.workspace?.openLinkText?.(source, sourcePath);
+    return true;
+  },
+
+  /*
+   * 复制附件地址到系统剪贴板。
+   */
+  async copyTopicAttachment(block) {
+    const source = String(block?.source || '').trim();
+    if (!source || !navigator.clipboard?.writeText) {
+      new Notice(this.t('notice.attachmentCopyUnsupported'));
+      return false;
+    }
+    await navigator.clipboard.writeText(source);
+    new Notice(this.t('notice.attachmentCopied'));
+    return true;
+  },
+
+  ensureTopicAdornmentDocumentClickHandler() {
+    if (this.topicAdornmentDocumentClickInstalled) return;
+    this.topicAdornmentDocumentClickInstalled = true;
+    this.registerDomEvent(document, 'click', (event) => {
+      if (!this.topicAdornmentPopoverEl) return;
+      if (
+        this.topicAdornmentPopoverEl.contains(event.target) ||
+        this.topicAdornmentAnchorEl?.contains?.(event.target)
+      ) {
+        return;
+      }
+      this.hideTopicAdornmentPopover();
+    });
+  },
+
+  positionTopicAdornmentPopover(anchorEl, popover) {
+    const anchorRect = anchorEl.getBoundingClientRect();
+    const laneRect =
+      anchorEl.closest?.('.yonxao-mindmap-topic-adornments')?.getBoundingClientRect?.() ||
+      anchorRect;
+    const popoverRect = popover.getBoundingClientRect();
+    const laneCenterX = laneRect.left + laneRect.width / 2;
+    const left = Math.min(
+      Math.max(TOPIC_ADORNMENT_POPOVER_VIEWPORT_GAP, laneCenterX - popoverRect.width / 2),
+      window.innerWidth - popoverRect.width - TOPIC_ADORNMENT_POPOVER_VIEWPORT_GAP
+    );
+    const topSpace = laneRect.top - TOPIC_ADORNMENT_POPOVER_VIEWPORT_GAP;
+    const bottomSpace = window.innerHeight - laneRect.bottom - TOPIC_ADORNMENT_POPOVER_VIEWPORT_GAP;
+    const showAbove =
+      topSpace >= popoverRect.height + TOPIC_ADORNMENT_POPOVER_OFFSET || topSpace >= bottomSpace;
+    const rawTop = showAbove
+      ? laneRect.top - popoverRect.height - TOPIC_ADORNMENT_POPOVER_OFFSET
+      : laneRect.bottom + TOPIC_ADORNMENT_POPOVER_OFFSET;
+    const top = Math.min(
+      Math.max(TOPIC_ADORNMENT_POPOVER_VIEWPORT_GAP, rawTop),
+      window.innerHeight - popoverRect.height - TOPIC_ADORNMENT_POPOVER_VIEWPORT_GAP
+    );
+    popover.style.left = `${Math.round(left)}px`;
+    popover.style.top = `${Math.round(top)}px`;
+  },
+
+  scheduleHideTopicAdornmentPopover() {
+    if (this.topicAdornmentHideTimer) {
+      window.clearTimeout(this.topicAdornmentHideTimer);
+    }
+    this.topicAdornmentHideTimer = window.setTimeout(() => {
+      this.topicAdornmentHideTimer = null;
+      this.hideTopicAdornmentPopover();
+    }, TOPIC_ADORNMENT_POPOVER_HIDE_DELAY_MS);
+  },
+
+  hideTopicAdornmentPopover() {
+    if (this.topicAdornmentHideTimer) {
+      window.clearTimeout(this.topicAdornmentHideTimer);
+      this.topicAdornmentHideTimer = null;
+    }
+    if (!this.topicAdornmentPopoverEl) return;
+    this.topicAdornmentPopoverEl.remove();
+    this.topicAdornmentPopoverEl = null;
+    this.topicAdornmentAnchorEl = null;
   },
 
   /*
@@ -205,7 +548,9 @@ export const topicDrawMethods = {
       for (let index = 0; index < item.lines.length; index += 1) {
         const dy = lineIndex === 0 ? 0 : listLineHeight;
         if (index === 0) {
-          if (item.ordered) {
+          if (item.task) {
+            this.appendTopicTaskMarker(listGroup, item, box, top, lineIndex, listFont);
+          } else if (item.ordered) {
             // 有序列表：在指定偏移处绘制编号文本
             const marker = svg('tspan', {
               x: box.textX + item.markerXOffset,
@@ -237,6 +582,37 @@ export const topicDrawMethods = {
 
     listGroup.appendChild(textEl);
     contentGroup.appendChild(listGroup);
+  },
+
+  appendTopicTaskMarker(listGroup, item, box, top, lineIndex, listFont = box.font) {
+    const markerWidth = Number(item.markerWidth) || TASK_CHECKBOX_SIZE;
+    const lineHeight = Number(listFont.lineHeight) || Number(box.font.lineHeight) || 20;
+    const fontSize = Number(listFont.size) || Number(box.font.size) || 16;
+    const x = box.textX + item.markerXOffset + (markerWidth - TASK_CHECKBOX_SIZE) / 2;
+    const baseline = this.topicTextBlockFirstBaseline(box, top, listFont) + lineIndex * lineHeight;
+    const textCenterY = baseline - fontSize * TASK_TEXT_CENTER_FROM_BASELINE_RATIO;
+    const y = textCenterY - TASK_CHECKBOX_SIZE / 2;
+
+    listGroup.appendChild(
+      svg('rect', {
+        class: `yonxao-mindmap-topic-task-box${item.checked ? ' is-checked' : ''}`,
+        x,
+        y,
+        width: TASK_CHECKBOX_SIZE,
+        height: TASK_CHECKBOX_SIZE,
+        rx: TASK_CHECKBOX_RADIUS,
+      })
+    );
+
+    if (!item.checked) return;
+
+    listGroup.appendChild(
+      svg('path', {
+        class: 'yonxao-mindmap-topic-task-check',
+        d: TASK_CHECKMARK_PATH,
+        transform: `translate(${x} ${y})`,
+      })
+    );
   },
 
   /*
@@ -291,6 +667,211 @@ export const topicDrawMethods = {
     );
   },
 
+  appendTopicImageBlock(contentGroup, block, box, top) {
+    const imageGroup = svg('g', { class: 'yonxao-mindmap-topic-image-block' });
+    const href = this.resolveTopicImageHref(block);
+    const renderWidth = href
+      ? block.imageWidth
+      : Math.min(block.imageWidth, MISSING_IMAGE_PLACEHOLDER_WIDTH);
+    const renderHeight = href
+      ? block.imageHeight
+      : Math.min(block.imageHeight, MISSING_IMAGE_PLACEHOLDER_HEIGHT);
+    const imageX = box.textX + (block.imageWidth - renderWidth) / 2;
+    const imageY = top + (block.imageHeight - renderHeight) / 2;
+    this.registerDomEvent(imageGroup, 'dblclick', (event) => {
+      event.preventDefault();
+      event.stopPropagation();
+      this.openTopicImagePreview(block);
+    });
+
+    imageGroup.appendChild(
+      svg('rect', {
+        class: `yonxao-mindmap-topic-image-frame${href ? ' is-loaded' : ' is-missing'}`,
+        x: imageX,
+        y: imageY,
+        width: renderWidth,
+        height: renderHeight,
+        rx: IMAGE_BLOCK_CORNER_RADIUS,
+      })
+    );
+
+    if (href) {
+      const imageEl = svg('image', {
+        class: 'yonxao-mindmap-topic-image',
+        'data-image-source': block.source || '',
+        href,
+        x: imageX,
+        y: imageY,
+        width: renderWidth,
+        height: renderHeight,
+        preserveAspectRatio: 'xMidYMid meet',
+      });
+      this.registerDomEvent(imageEl, 'load', () => {
+        this.captureTopicImageNaturalSize(block, href);
+      });
+      imageGroup.appendChild(imageEl);
+    } else {
+      this.appendTopicImagePlaceholder(
+        imageGroup,
+        block,
+        box,
+        imageX,
+        imageY,
+        renderWidth,
+        renderHeight
+      );
+    }
+
+    if (block.captionLines?.length) {
+      const captionFont = { ...box.font, size: Math.max(10, Math.round(box.font.size * 0.86)) };
+      const captionText = this.createTopicTextElement(box, {
+        x: imageX,
+        y: top + block.imageHeight + IMAGE_BLOCK_CAPTION_GAP + captionFont.size,
+        font: captionFont,
+        className: 'yonxao-mindmap-topic-text yonxao-mindmap-topic-image-caption',
+      });
+      for (let index = 0; index < block.captionLines.length; index += 1) {
+        this.appendRichTopicTextLineAt(captionText, block.captionLines[index], box, {
+          x: imageX,
+          dy: index === 0 ? 0 : captionFont.lineHeight,
+          font: captionFont,
+        });
+      }
+      imageGroup.appendChild(captionText);
+    }
+
+    contentGroup.appendChild(imageGroup);
+  },
+
+  appendTopicImagePlaceholder(imageGroup, block, box, imageX, imageY, renderWidth, renderHeight) {
+    const label = 'Missing image';
+    const textEl = this.createTopicTextElement(box, {
+      x: imageX + renderWidth / 2,
+      y: imageY + renderHeight / 2 + box.font.size * 0.3,
+      font: { ...box.font, size: Math.max(10, Math.round(box.font.size * 0.82)) },
+      textAnchor: 'middle',
+      className: 'yonxao-mindmap-topic-text yonxao-mindmap-topic-image-placeholder',
+    });
+    const tspan = svg('tspan', { x: imageX + renderWidth / 2 });
+    tspan.textContent = label;
+    textEl.appendChild(tspan);
+    imageGroup.appendChild(textEl);
+  },
+
+  /*
+   * 解析图片块中的资源地址为可渲染的 URL。
+   * 外部 URL 直接返回；Obsidian 内部附件通过 metadataCache 解析为资源路径；
+   * 目标不存在时返回空字符串，避免渲染破图。
+   */
+  resolveTopicImageHref(block) {
+    const source = String(block?.source || '').trim();
+    if (!source) return '';
+    if (/^(?:https?:|data:|blob:|file:)/i.test(source)) return source;
+
+    const app = this.plugin?.app;
+    const sourcePath = this.ctx?.sourcePath || '';
+    const linkedFile = app?.metadataCache?.getFirstLinkpathDest?.(source, sourcePath);
+    if (linkedFile && typeof app?.vault?.getResourcePath === 'function') {
+      return app.vault.getResourcePath(linkedFile);
+    }
+
+    return app?.metadataCache ? '' : source;
+  },
+
+  /*
+   * 捕获图片的真实自然尺寸并缓存，触发一次重排使图片盒贴合真实比例。
+   * 首次布局拿不到真实图片比例时先按语法或默认比例估算，
+   * 图片加载出自然宽高后缓存比例并重排，减少上下/左右空边。
+   */
+  captureTopicImageNaturalSize(block, href) {
+    const cacheKey = this.topicImageNaturalSizeKey(block, href);
+    if (!cacheKey || this.topicImageNaturalSizeCache.has(cacheKey)) return;
+
+    const image = new Image();
+    image.onload = () => {
+      const width = Number(image.naturalWidth) || 0;
+      const height = Number(image.naturalHeight) || 0;
+      if (!width || !height || this.topicImageNaturalSizeCache.has(cacheKey)) return;
+      this.topicImageNaturalSizeCache.set(cacheKey, { width, height });
+      this.scheduleTopicImageNaturalSizeRelayout();
+    };
+    image.src = href;
+  },
+
+  topicImageNaturalSizeKey(block, href = '') {
+    return String(href || block?.source || '').trim();
+  },
+
+  /*
+   * 安排一次动画帧驱动的重排：图片自然尺寸加载后更新布局，
+   * 如果当前处于 fit 模式还需要重新适配 viewBox，
+   * 避免图片真实高度变大后沿用旧 viewBox 导致顶部或底部被截掉。
+   */
+  scheduleTopicImageNaturalSizeRelayout() {
+    if (this.pendingTopicImageNaturalSizeFrame || this.isSourceMode) return;
+    this.pendingTopicImageNaturalSizeFrame = window.requestAnimationFrame(() => {
+      this.pendingTopicImageNaturalSizeFrame = null;
+      if (!this.mapEl || this.isSourceMode) return;
+      this.renderMap(false);
+      // 初次打开时图片可能在 view fit 状态写入前完成加载；此时仍需按配置重新适配视口，
+      // 否则图片真实尺寸扩大主题后会出现上/下边界被旧 viewBox 裁掉的情况。
+      if (this.currentViewFitMode === 'fit' || this.config?.view?.fit === 'fit') {
+        this.scheduleFitView();
+      }
+    });
+  },
+
+  /*
+   * 打开图片预览浮层：双击图片块触发，覆盖在导图上方完整显示图片。
+   * 浮层挂载到 _bodyFloatContainer 避免被全屏覆盖层遮挡。
+   * 单击背景关闭；双击图片切换原始尺寸。
+   */
+  openTopicImagePreview(block) {
+    const href = this.resolveTopicImageHref(block);
+    if (!href) return;
+
+    this.closeTopicImagePreview();
+
+    const overlay = document.createElement('div');
+    overlay.className = 'yonxao-mindmap-topic-image-preview-overlay';
+
+    const image = document.createElement('img');
+    image.className = 'yonxao-mindmap-topic-image-preview';
+    image.src = href;
+    image.alt = block?.alt || block?.source || 'Image';
+    if (block?.sizeMode === 'original') {
+      image.classList.add('is-original-size');
+    }
+
+    overlay.appendChild(image);
+    (this._bodyFloatContainer?.() || document.body).appendChild(overlay);
+    this.topicImagePreviewEl = overlay;
+
+    overlay.addEventListener('click', (event) => {
+      if (event.target === overlay) this.closeTopicImagePreview();
+    });
+    image.addEventListener('dblclick', (event) => {
+      event.preventDefault();
+      event.stopPropagation();
+      image.classList.toggle('is-original-size');
+    });
+    if (!this.topicImagePreviewKeydownInstalled) {
+      this.topicImagePreviewKeydownInstalled = true;
+      this.registerDomEvent(window, 'keydown', (event) => {
+        if (event.key === 'Escape') this.closeTopicImagePreview();
+      });
+    }
+  },
+
+  /*
+   * 关闭图片预览浮层并清理 DOM 引用。
+   */
+  closeTopicImagePreview() {
+    if (!this.topicImagePreviewEl) return;
+    this.topicImagePreviewEl.remove();
+    this.topicImagePreviewEl = null;
+  },
+
   /*
    * 渲染代码块：绘制圆角背景矩形，然后在其内部用等宽字体逐行渲染代码文本。
    * 代码块宽度受主题最大宽度和 CODE_BLOCK_MAX_WIDTH 双重限制。
@@ -298,7 +879,7 @@ export const topicDrawMethods = {
   appendTopicCodeBlock(contentGroup, block, box, top) {
     const blockGroup = svg('g', { class: 'yonxao-mindmap-topic-code-block' });
     const rectWidth = Math.min(
-      box.width - box.textX - TOPIC_PADDING_X,
+      this.topicTextRightX(box) - box.textX,
       Math.max(block.width, CODE_BLOCK_MIN_RENDER_WIDTH)
     );
     blockGroup.appendChild(
@@ -382,14 +963,17 @@ export const topicDrawMethods = {
 
     const foreignObject = svg('foreignObject', {
       class: 'yonxao-mindmap-topic-equation-rendered',
+      'data-equation-source': block.source,
       x: box.textX,
       y: top,
       width: Math.max(block.width, 40),
       height: Math.max(block.height, box.font.lineHeight),
     });
     const host = document.createElement('div');
-    host.className = 'yonxao-mindmap-topic-equation-host';
-    host.style.fontSize = `${Math.max(10, Number(block.font?.size) || Number(box.font.size) || 16)}px`;
+    host.className = 'yonxao-mindmap-topic-equation-host markdown-rendered';
+    const equationFontSize = Math.max(10, Number(block.font?.size) || Number(box.font.size) || 16);
+    host.style.fontSize = `${equationFontSize}px`;
+    host.style.setProperty('--font-text-size', `${equationFontSize}px`);
     foreignObject.appendChild(host);
     equationGroup.appendChild(foreignObject);
 
@@ -424,6 +1008,11 @@ export const topicDrawMethods = {
     }, 0);
   },
 
+  /*
+   * 等待 MathJax 异步渲染完成。最多等待 EQUATION_RENDER_WAIT_MS 毫秒，
+   * 超时则放弃并显示源码 fallback。
+   * 检测条件：MathJax container、.math 块或任何子元素/文本出现即视为渲染完成。
+   */
   waitForRenderedEquationContent(host) {
     return new Promise((resolve) => {
       const hasContent = () =>
@@ -482,9 +1071,13 @@ export const topicDrawMethods = {
    */
   topicTextAnchorX(box) {
     const anchor = this.topicTextAnchor(box);
-    if (anchor === 'middle') return (box.textX + box.width - TOPIC_PADDING_X) / 2;
-    if (anchor === 'end') return box.width - TOPIC_PADDING_X;
+    if (anchor === 'middle') return (box.textX + this.topicTextRightX(box)) / 2;
+    if (anchor === 'end') return this.topicTextRightX(box);
     return box.textX;
+  },
+
+  topicTextRightX(box) {
+    return Number.isFinite(box?.textRight) ? box.textRight : box.width - TOPIC_PADDING_X;
   },
 
   isLeftwardTopicTextBox(box) {
@@ -578,10 +1171,124 @@ export const topicDrawMethods = {
       }
 
       // SVG text 不能像 HTML 一样嵌套样式节点；每段样式独立生成 tspan。
-      const tspan = svg('tspan', attributes);
-      tspan.textContent = segment.text;
-      textEl.appendChild(tspan);
+      if (segment.tag) {
+        attributes.class = 'yonxao-mindmap-topic-tag';
+        attributes.fill = this.topicTagColor(segment.tagName || segment.text);
+      } else if (segment.link) {
+        attributes.class = 'yonxao-mindmap-topic-link';
+      }
+      if (segment.link) {
+        this.appendTopicRichTextLinkSegment(textEl, segment, attributes);
+      } else {
+        const tspan = svg('tspan', attributes);
+        tspan.textContent = segment.text;
+        textEl.appendChild(tspan);
+      }
     }
+  },
+
+  appendTopicRichTextLinkSegment(textEl, segment, attributes) {
+    const linkKind = segment.linkKind === 'obsidian' ? 'obsidian' : 'external';
+    const isMissing = this.isTopicRichTextLinkMissing(segment);
+    const linkEl = svg('a', {
+      class: `yonxao-mindmap-topic-link-anchor is-${linkKind}${isMissing ? ' is-missing' : ''}`,
+      href: linkKind === 'external' && !isMissing ? segment.href : undefined,
+    });
+    const linkAttrs = {
+      ...attributes,
+      class: `yonxao-mindmap-topic-link is-${linkKind}${isMissing ? ' is-missing' : ''}`,
+    };
+    const label = svg('tspan', linkAttrs);
+    label.textContent =
+      segment.linkMarker === false
+        ? segment.text
+        : `${topicRichTextLinkMarker(linkKind)} ${segment.text}`;
+
+    this.registerDomEvent(linkEl, 'click', (event) => {
+      event.preventDefault();
+      event.stopPropagation();
+      this.openTopicRichTextLink(segment);
+    });
+    linkEl.appendChild(label);
+    textEl.appendChild(linkEl);
+  },
+
+  topicRichTextLayoutOptions() {
+    return {
+      richText: {
+        isImageResolved: (block) => Boolean(this.resolveTopicImageHref(block)),
+        resolveImageSize: (block) =>
+          this.topicImageNaturalSizeCache.get(
+            this.topicImageNaturalSizeKey(block, this.resolveTopicImageHref(block))
+          ) || null,
+      },
+    };
+  },
+
+  topicTagColor(tagName) {
+    const text = String(tagName || '')
+      .trim()
+      .toLowerCase();
+    let hash = TOPIC_TAG_HASH_SEED;
+    for (const char of Array.from(text)) {
+      hash ^= char.codePointAt(0) || 0;
+      hash = Math.imul(hash, TOPIC_TAG_HASH_PRIME) >>> 0;
+    }
+    return TOPIC_TAG_COLORS[hash % TOPIC_TAG_COLORS.length];
+  },
+
+  isTopicRichTextLinkMissing(segment) {
+    const href = String(segment?.href || '').trim();
+    if (!href) return true;
+    if (segment.linkKind === 'obsidian') {
+      return !this.resolveTopicObsidianLinkFile(href);
+    }
+    if (/^(?:https?:|mailto:|obsidian:)/i.test(href)) return false;
+    return !this.resolveTopicObsidianLinkFile(href);
+  },
+
+  openTopicRichTextLink(segment) {
+    const href = String(segment?.href || '').trim();
+    if (!href) return;
+
+    if (segment.linkKind === 'obsidian') {
+      const sourcePath = this.ctx?.sourcePath || '';
+      if (!this.resolveTopicObsidianLinkFile(href)) return;
+      this.plugin?.app?.workspace?.openLinkText?.(href, sourcePath);
+      return;
+    }
+
+    if (/^(?:https?:|mailto:|obsidian:)/i.test(href)) {
+      window.open(href, '_blank', 'noopener');
+      return;
+    }
+
+    const sourcePath = this.ctx?.sourcePath || '';
+    if (!this.resolveTopicObsidianLinkFile(href)) return;
+    this.plugin?.app?.workspace?.openLinkText?.(href, sourcePath);
+  },
+
+  resolveTopicObsidianLinkFile(href) {
+    const sourcePath = this.ctx?.sourcePath || '';
+    const app = this.plugin?.app;
+    const metadataCache = app?.metadataCache;
+    const { linkpath, subpath } = splitObsidianLinkTarget(href);
+    const file =
+      linkpath && metadataCache?.getFirstLinkpathDest
+        ? metadataCache.getFirstLinkpathDest(linkpath, sourcePath)
+        : app?.vault?.getAbstractFileByPath?.(sourcePath) || null;
+    if (!file) return null;
+
+    const heading = normalizeObsidianHeadingText(subpath);
+    if (!heading || heading.startsWith('^')) return file;
+
+    const cache = metadataCache?.getFileCache?.(file);
+    const headings = Array.isArray(cache?.headings) ? cache.headings : null;
+    if (!headings) return file;
+
+    return headings.some((item) => normalizeObsidianHeadingText(item?.heading) === heading)
+      ? file
+      : null;
   },
 
   isPlainYonxaoMindmapLine(line, richLine) {
@@ -593,7 +1300,9 @@ export const topicDrawMethods = {
       segment.italic ||
       segment.underline ||
       segment.strike ||
-      segment.color
+      segment.color ||
+      segment.tag ||
+      segment.link
     );
   },
 

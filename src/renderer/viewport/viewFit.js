@@ -60,7 +60,10 @@ export const viewFitMethods = {
       return;
     }
 
-    const currentBounds = bounds || layoutTree(this.root, this.collapsedIds, this.config).bounds;
+    const currentBounds =
+      bounds ||
+      layoutTree(this.root, this.collapsedIds, this.config, this.topicRichTextLayoutOptions())
+        .bounds;
     if (!options.preserveCanvasHeight) {
       this.updateOriginalSizeContainerHeight(currentBounds, options);
     }
@@ -181,7 +184,10 @@ export const viewFitMethods = {
       return;
     }
 
-    const currentBounds = bounds || layoutTree(this.root, this.collapsedIds, this.config).bounds;
+    const currentBounds =
+      bounds ||
+      layoutTree(this.root, this.collapsedIds, this.config, this.topicRichTextLayoutOptions())
+        .bounds;
     const minX = currentBounds.minX - VIEWBOX_MARGIN_X;
     const maxX = currentBounds.maxX + VIEWBOX_MARGIN_X;
     const minY = currentBounds.minY - VIEWBOX_MARGIN_Y;

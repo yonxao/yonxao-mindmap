@@ -63,6 +63,9 @@ export const zhCNMessages = Object.freeze({
   'notice.imageCopied': 'yonxao-mindmap: 图片已复制。',
   'notice.imageClipboardUnsupported': 'yonxao-mindmap: 当前环境不支持复制图片到剪贴板。',
   'notice.imageClipboardFocusRequired': 'yonxao-mindmap: 请先点击导图，再复制图片。',
+  'notice.attachmentCopied': 'yonxao-mindmap: 附件地址已复制。',
+  'notice.attachmentCopyUnsupported': 'yonxao-mindmap: 当前环境不支持复制附件地址。',
+  'notice.attachmentMissing': 'yonxao-mindmap: 附件不存在或无法打开。',
   'notice.topicContentRequired': 'yonxao-mindmap: 内容不能为空。',
   'notice.topicContentSaved': '内容已保存。',
   'notice.subtopicAdded': '已新增子主题。',
@@ -79,6 +82,10 @@ export const zhCNMessages = Object.freeze({
   'notice.rootCannotAddSibling': 'yonxao-mindmap: 根主题不能新增兄弟主题。',
   'notice.rootCannotDeleteInMap': 'yonxao-mindmap: 根主题不能在导图视图中删除。',
   'notice.rootCannotDelete': 'yonxao-mindmap: 根主题不能删除。',
+
+  // ── 附件浮层 ──
+  'attachment.open': '打开',
+  'attachment.copy': '复制',
 
   // ── 全屏编辑恢复 ──
   'fullscreenDraftRecovery.message':
@@ -124,8 +131,14 @@ export const zhCNMessages = Object.freeze({
   'topicEditor.richText.strike': '给选中文字加中划线',
   'topicEditor.richText.underline': '给选中文字加下划线',
   'topicEditor.richText.clear': '清除内容样式',
+  'topicEditor.richText.tag': '插入标签',
+  'topicEditor.richText.link': '插入链接',
   'topicEditor.richText.unorderedList': '插入无序列表',
   'topicEditor.richText.orderedList': '插入有序列表',
+  'topicEditor.richText.task': '插入任务',
+  'topicEditor.richText.image': '插入图片',
+  'topicEditor.richText.note': '插入备注',
+  'topicEditor.richText.attachment': '插入附件',
   'topicEditor.richText.equation': '插入方程式',
   'topicEditor.richText.codeBlock': '插入代码块',
   'topicEditor.richText.colorNamed': '把选中文字设为 {color}',
