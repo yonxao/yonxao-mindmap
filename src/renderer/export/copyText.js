@@ -10,6 +10,7 @@
  */
 
 import { Notice } from '../../shared/rendererShared.js';
+import { formatFencedMindMapSource } from './sourceFence.js';
 
 export const copyTextMethods = {
   async copyTopicContent(topic) {
@@ -52,7 +53,7 @@ export const copyTextMethods = {
   },
 
   async copyFullSource() {
-    await navigator.clipboard.writeText(this.source || '');
+    await navigator.clipboard.writeText(formatFencedMindMapSource(this.source));
     new Notice(this.t('notice.sourceCopied'));
     return true;
   },
