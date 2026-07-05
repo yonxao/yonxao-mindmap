@@ -17,6 +17,10 @@ import {
 } from '../../shared/rendererShared.js';
 import { createSourceCodeEditor } from './sourceCodeEditor.js';
 
+// 使用 KeyboardEvent.code 兜底识别物理 S 键，避免 macOS Option+S 产生特殊字符后 key 不再是 "s"。
+const SOURCE_SAVE_SHORTCUT_CODE = 'KeyS';
+const SOURCE_SAVE_SHORTCUT_KEY = 's';
+
 export const sourceViewMethods = {
   createSourceView() {
     this.sourceEl = document.createElement('div');
@@ -73,6 +77,7 @@ export const sourceViewMethods = {
     this.sourceStatusEl = document.createElement('div');
     this.sourceStatusEl.className = 'yonxao-mindmap-source-status';
     this.sourceStatusEl.textContent = this.t('source.status.editable');
+    this.sourceStatusEl.classList.add('is-synced');
 
     editorEl.appendChild(this.sourceConfigEditorEl);
     editorEl.appendChild(this.sourceBodyEditorEl);
@@ -83,6 +88,7 @@ export const sourceViewMethods = {
 
     this.installSourceInputEvents(this.sourceConfigInputEl, 'config');
     this.installSourceInputEvents(this.sourceInputEl, 'body');
+    this.installSourceViewGlobalShortcut();
     this.setSourceActiveTab('body', { focus: false });
   },
 
@@ -124,13 +130,7 @@ export const sourceViewMethods = {
         return;
       }
 
-      // 在 textarea 中拦截 Ctrl/Cmd+S，和桌面应用常见保存体验保持一致。
-      if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 's') {
-        event.preventDefault();
-        Promise.resolve(this.saveFromSourceView()).catch((error) => {
-          new Notice(`yonxao-mindmap: ${error.message || String(error)}`);
-        });
-      }
+      this.handleSourceViewSaveShortcut(event);
     });
 
     const syncEditorScroll = () => {
@@ -179,6 +179,54 @@ export const sourceViewMethods = {
       : this.sourceInputEl;
   },
 
+  installSourceViewGlobalShortcut() {
+    if (this.sourceViewGlobalShortcutInstalled || typeof window === 'undefined') return;
+
+    /*
+     * Obsidian/CodeMirror 也会监听键盘事件，而且它们可能在外层捕获阶段先处理保存类快捷键。
+     * 所以源码模式保存不能只挂在 textarea 冒泡阶段，否则焦点稍微偏到高亮层、宿主层或外层编辑器，
+     * Alt/Option+S 就可能表现为“没反应”。
+     *
+     * 这里挂 window capture，但通过 isSourceShortcutTarget() 限定事件必须来自当前源码视图，
+     * 避免抢走 Obsidian 其它区域或其它 yxmm 代码块的快捷键。
+     */
+    const sourceShortcutListener = (event) => {
+      this.handleSourceViewSaveShortcut(event);
+    };
+    window.addEventListener('keydown', sourceShortcutListener, true);
+    this.register(() => {
+      window.removeEventListener('keydown', sourceShortcutListener, true);
+    });
+    this.sourceViewGlobalShortcutInstalled = true;
+  },
+
+  handleSourceViewSaveShortcut(event) {
+    if (!this.isSourceMode || !this.isSourceSaveShortcut(event)) return;
+    if (!this.isSourceShortcutTarget(event.target)) return;
+
+    event.preventDefault();
+    event.stopPropagation();
+    Promise.resolve(this.saveFromSourceView()).catch((error) => {
+      new Notice(`yonxao-mindmap: ${error.message || String(error)}`);
+    });
+  },
+
+  isSourceSaveShortcut(event) {
+    if (event.isComposing) return false;
+    const key = String(event.key || '').toLowerCase();
+    return (
+      event.altKey &&
+      !event.ctrlKey &&
+      !event.metaKey &&
+      !event.shiftKey &&
+      (event.code === SOURCE_SAVE_SHORTCUT_CODE || key === SOURCE_SAVE_SHORTCUT_KEY)
+    );
+  },
+
+  isSourceShortcutTarget(target) {
+    return Boolean(target && this.sourceEl && this.sourceEl.contains(target));
+  },
+
   async saveFromSourceView() {
     if (!this.sourceInputEl) return false;
 
@@ -200,8 +248,17 @@ export const sourceViewMethods = {
       return false;
     }
 
+    /*
+     * 先写源码模式记忆，再真正修改 Markdown 文件。
+     * Obsidian 写回文件后可能立刻卸载旧 renderer 并创建新 renderer；如果等 vault.modify()
+     * 返回之后才记忆，新实例可能已经按默认导图模式渲染了，用户就会看到“偶尔切回导图”。
+     */
+    this.rememberSourceModeAcrossSave(nextSource);
     const saved = await this.saveSourceToMarkdownFile(nextSource);
-    if (!saved) return false;
+    if (!saved) {
+      this.updateSourceStatus(this.t('source.status.saveFailed'), 'error');
+      return false;
+    }
 
     this.source = nextSource;
     this.root = nextDocument.root;
@@ -212,9 +269,25 @@ export const sourceViewMethods = {
     this.collapsedIds.clear();
     this.sourceDirty = false;
     this.applyRuntimeConfigToView();
-    this.updateSourceStatus('源码已保存，并已重新渲染导图。');
+    /*
+     * 保存成功后再写一次，并附带“已保存”状态。
+     * 如果 sectionInfo 不可用，记忆 key 会退回到源码前缀；保存前后的源码前缀可能不同，
+     * 因此 rememberSourceModeAcrossSave() 同时覆盖旧源码和新源码两种 key。
+     */
+    this.rememberSourceModeAcrossSave(nextSource, {
+      type: 'saved',
+      messageKey: 'source.status.saved',
+    });
+    this.updateSourceStatus(this.t('source.status.saved'), 'saved');
     this.scheduleSourceModeHeight();
-    this.renderMap(true);
+    /*
+     * Alt/Option+S 是源码模式内保存，不应把用户带回导图模式。
+     * 只有当前实例已经不在源码模式时，才立即重绘 SVG；正常从源码模式切回导图时，
+     * toggleSourceMode() 会按最新 root/config 重新渲染。
+     */
+    if (!this.isSourceMode) {
+      this.renderMap(true);
+    }
     return true;
   },
 };

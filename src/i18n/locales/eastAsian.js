@@ -50,8 +50,9 @@ export const eastAsianLocaleMessages = Object.freeze({
       configSection: '設定', // source.tab.config
       bodySection: '本文', // source.tab.body
       sourceEditable:
-        'ソースは編集可能です。マップに戻るか Ctrl/Cmd+S で Markdown に書き込みます。',
-      sourceDirty: 'ソースが変更されました。マップに戻るか Ctrl/Cmd+S で Markdown に書き込みます。',
+        'ソースは編集可能です。マップに戻るか Alt/Option+S で Markdown に書き込みます。',
+      sourceDirty:
+        'ソースが変更されました。マップに戻るか Alt/Option+S で Markdown に書き込みます。',
       sourceSynced: 'ソースは現在の Markdown コードブロックと同期しています。',
       resizeCanvas: 'キャンバスの高さをドラッグで調整',
 
@@ -360,8 +361,8 @@ export const eastAsianLocaleMessages = Object.freeze({
       configSection: '설정', // source.tab.config
       bodySection: '본문', // source.tab.body
       sourceEditable:
-        '소스를 편집할 수 있습니다. 맵으로 돌아가거나 Ctrl/Cmd+S로 Markdown에 씁니다.',
-      sourceDirty: '소스가 변경되었습니다. 맵으로 돌아가거나 Ctrl/Cmd+S로 Markdown에 씁니다.',
+        '소스를 편집할 수 있습니다. 맵으로 돌아가거나 Alt/Option+S로 Markdown에 씁니다.',
+      sourceDirty: '소스가 변경되었습니다. 맵으로 돌아가거나 Alt/Option+S로 Markdown에 씁니다.',
       sourceSynced: '소스가 현재 Markdown 코드 블록과 동기화되었습니다.',
       resizeCanvas: '캔버스 높이 드래그 조정',
 

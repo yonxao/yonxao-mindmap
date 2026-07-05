@@ -58,6 +58,7 @@ let sourceViewIdCounter = 0;
 
 export class YonxaoMindmapRenderer extends Component {
   static viewModeMemory = new Map();
+  static sourceStatusMemory = new Map();
   static topicFocusMemory = new Map();
   static topicHistoryMemory = new Map();
 
@@ -91,6 +92,7 @@ export class YonxaoMindmapRenderer extends Component {
     sourceViewIdCounter += 1;
     this.sourceViewIdPrefix = `yonxao-mindmap-source-${sourceViewIdCounter}`;
     this.sourceStatusEl = null;
+    this.sourceViewGlobalShortcutInstalled = false;
     this.topicEditorEl = null;
     this.topicEditorFields = null;
     this.topicEditorInheritedValues = null;

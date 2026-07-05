@@ -48,9 +48,9 @@ export const europeanLocaleMessages = Object.freeze({
       configSection: 'Configuration',
       bodySection: 'Corps',
       sourceEditable:
-        'La source est modifiable. Revenez à la carte ou appuyez sur Ctrl/Cmd+S pour écrire dans le Markdown.',
+        'La source est modifiable. Revenez à la carte ou appuyez sur Alt/Option+S pour écrire dans le Markdown.',
       sourceDirty:
-        'Source modifiée. Revenez à la carte ou appuyez sur Ctrl/Cmd+S pour écrire dans le Markdown.',
+        'Source modifiée. Revenez à la carte ou appuyez sur Alt/Option+S pour écrire dans le Markdown.',
       sourceSynced: 'La source est synchronisée avec le bloc de code Markdown actuel.',
       resizeCanvas: 'Faites glisser pour redimensionner la hauteur du canevas',
 
@@ -342,9 +342,9 @@ export const europeanLocaleMessages = Object.freeze({
       configSection: 'Konfiguration',
       bodySection: 'Textkörper',
       sourceEditable:
-        'Quelle ist bearbeitbar. Zurück zur Karte oder Ctrl/Cmd+S drücken, um in Markdown zu schreiben.',
+        'Quelle ist bearbeitbar. Zurück zur Karte oder Alt/Option+S drücken, um in Markdown zu schreiben.',
       sourceDirty:
-        'Quelle geändert. Zurück zur Karte oder Ctrl/Cmd+S drücken, um in Markdown zu schreiben.',
+        'Quelle geändert. Zurück zur Karte oder Alt/Option+S drücken, um in Markdown zu schreiben.',
       sourceSynced: 'Quelle ist mit dem aktuellen Markdown-Codeblock synchronisiert.',
       resizeCanvas: 'Ziehen zum Ändern der Zeichenflächenhöhe',
 
@@ -637,9 +637,9 @@ export const europeanLocaleMessages = Object.freeze({
       configSection: 'Configuración',
       bodySection: 'Cuerpo',
       sourceEditable:
-        'La fuente es editable. Vuelva al mapa o presione Ctrl/Cmd+S para escribir Markdown.',
+        'La fuente es editable. Vuelva al mapa o presione Alt/Option+S para escribir Markdown.',
       sourceDirty:
-        'Fuente modificada. Vuelva al mapa o presione Ctrl/Cmd+S para escribir Markdown.',
+        'Fuente modificada. Vuelva al mapa o presione Alt/Option+S para escribir Markdown.',
       sourceSynced: 'La fuente está sincronizada con el bloque de código Markdown actual.',
       resizeCanvas: 'Arrastre para ajustar la altura del lienzo',
 
@@ -928,9 +928,9 @@ export const europeanLocaleMessages = Object.freeze({
       configSection: 'Configuração',
       bodySection: 'Corpo',
       sourceEditable:
-        'O código-fonte é editável. Volte ao mapa ou pressione Ctrl/Cmd+S para escrever no Markdown.',
+        'O código-fonte é editável. Volte ao mapa ou pressione Alt/Option+S para escrever no Markdown.',
       sourceDirty:
-        'Código-fonte alterado. Volte ao mapa ou pressione Ctrl/Cmd+S para escrever no Markdown.',
+        'Código-fonte alterado. Volte ao mapa ou pressione Alt/Option+S para escrever no Markdown.',
       sourceSynced: 'O código-fonte está sincronizado com o bloco de código Markdown atual.',
       resizeCanvas: 'Arraste para redimensionar a altura da tela',
 
@@ -1219,9 +1219,9 @@ export const europeanLocaleMessages = Object.freeze({
       configSection: 'Конфигурация',
       bodySection: 'Тело',
       sourceEditable:
-        'Исходник редактируем. Вернитесь на карту или нажмите Ctrl/Cmd+S для записи в Markdown.',
+        'Исходник редактируем. Вернитесь на карту или нажмите Alt/Option+S для записи в Markdown.',
       sourceDirty:
-        'Исходник изменён. Вернитесь на карту или нажмите Ctrl/Cmd+S для записи в Markdown.',
+        'Исходник изменён. Вернитесь на карту или нажмите Alt/Option+S для записи в Markdown.',
       sourceSynced: 'Исходник синхронизирован с текущим блоком кода Markdown.',
       resizeCanvas: 'Перетащите для изменения высоты холста',
 
@@ -1509,9 +1509,9 @@ export const europeanLocaleMessages = Object.freeze({
       configSection: 'Configurazione',
       bodySection: 'Corpo',
       sourceEditable:
-        'La sorgente è modificabile. Torna alla mappa o premi Ctrl/Cmd+S per scrivere Markdown.',
+        'La sorgente è modificabile. Torna alla mappa o premi Alt/Option+S per scrivere Markdown.',
       sourceDirty:
-        'Sorgente modificata. Torna alla mappa o premi Ctrl/Cmd+S per scrivere Markdown.',
+        'Sorgente modificata. Torna alla mappa o premi Alt/Option+S per scrivere Markdown.',
       sourceSynced: 'La sorgente è sincronizzata con il blocco di codice Markdown corrente.',
       resizeCanvas: "Trascina per ridimensionare l'altezza della tela",
 

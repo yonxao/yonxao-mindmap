@@ -12,19 +12,35 @@
 import { CANVAS_MIN_HEIGHT, clamp } from '../../shared/rendererShared.js';
 
 const SOURCE_EXTRA_LINE_MULTIPLIER = 2;
+// 这些状态只控制底部提示文字的语义和颜色，不参与源码保存或解析流程。
+const SOURCE_STATUS_TYPES = ['synced', 'dirty', 'saved', 'error'];
 
 export const sourceStatusMethods = {
-  updateSourceStatus(message) {
+  updateSourceStatus(message, statusType) {
     if (!this.sourceStatusEl) return;
 
     if (message) {
       this.sourceStatusEl.textContent = message;
+      // 传入自定义消息但未声明类型时，默认按错误处理，避免解析失败显示成普通同步色。
+      this.applySourceStatusType(statusType || 'error');
       return;
     }
 
+    const nextStatusType = this.sourceDirty ? 'dirty' : 'synced';
     this.sourceStatusEl.textContent = this.sourceDirty
       ? this.t('source.status.dirty')
       : this.t('source.status.synced');
+    this.applySourceStatusType(nextStatusType);
+  },
+
+  applySourceStatusType(statusType) {
+    if (!this.sourceStatusEl) return;
+
+    const nextStatusType = SOURCE_STATUS_TYPES.includes(statusType) ? statusType : 'synced';
+    // 每次只保留一个状态类，避免“已保存”和“已修改”等颜色状态互相叠加。
+    for (const type of SOURCE_STATUS_TYPES) {
+      this.sourceStatusEl.classList.toggle(`is-${type}`, type === nextStatusType);
+    }
   },
 
   scheduleSourceModeHeight() {

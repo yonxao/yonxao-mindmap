@@ -14,6 +14,9 @@ import {
   VIEW_MODE_KEY_SOURCE_TRUNCATE_LENGTH,
 } from '../shared/rendererShared.js';
 
+// 源码状态只用于跨过 Obsidian 重建后的短暂提示，不应像视图模式一样长时间保留。
+const SOURCE_STATUS_MEMORY_EXPIRY_MS = 8000;
+
 export const rendererStateMethods = {
   applyConfiguredViewMode() {
     const shouldUseSourceMode = this.readSessionViewMode() === 'source';
@@ -30,7 +33,10 @@ export const rendererStateMethods = {
 
     if (this.isSourceMode) {
       this.closeTopicEditor();
+      // 源码视图是懒创建的；重建时如果直接套 is-source-mode class 而不创建 DOM，会出现空白框。
+      this.ensureSourceViewCreated();
       this.syncSourceInput();
+      this.restoreRememberedSourceStatus();
       this.scheduleSourceModeHeight();
     }
 
@@ -52,25 +58,71 @@ export const rendererStateMethods = {
     return record.mode;
   },
 
-  writeSessionViewMode(mode) {
-    this.constructor.viewModeMemory.set(this.viewModeMemoryKey(), {
+  writeSessionViewMode(mode, source = this.source) {
+    this.constructor.viewModeMemory.set(this.viewModeMemoryKey(source), {
       mode,
       expiresAt: Date.now() + SESSION_VIEW_MODE_EXPIRY_MS,
     });
   },
 
-  viewModeMemoryKey() {
+  writeSourceStatusMemory(type, messageKey, source = this.source) {
+    this.constructor.sourceStatusMemory.set(this.viewModeMemoryKey(source), {
+      type,
+      messageKey,
+      expiresAt: Date.now() + SOURCE_STATUS_MEMORY_EXPIRY_MS,
+    });
+  },
+
+  rememberSourceModeAcrossSave(nextSource, status = null) {
+    /*
+     * 保存源码时有两个容易丢状态的窗口：
+     * 1. vault.modify() 触发 Obsidian 立即重建，新 renderer 可能抢在旧实例保存后续状态前启动；
+     * 2. sectionInfo 不可用时，viewModeMemoryKey() 会退回到源码前缀，保存前后的源码不同会得到两个 key。
+     *
+     * 因此这里同时写“旧源码 key”和“新源码 key”。sectionInfo 可用时两个 key 会自然合并成同一个行号 key；
+     * sectionInfo 不可用时也能覆盖保存前后两种 fallback key，避免偶发回到导图模式。
+     */
+    const sources = new Set([String(this.source || ''), String(nextSource || '')]);
+    for (const source of sources) {
+      this.writeSessionViewMode('source', source);
+      if (status?.type && status?.messageKey) {
+        this.writeSourceStatusMemory(status.type, status.messageKey, source);
+      }
+    }
+  },
+
+  restoreRememberedSourceStatus() {
+    const key = this.viewModeMemoryKey();
+    const record = this.constructor.sourceStatusMemory.get(key);
+    if (!record || record.expiresAt < Date.now()) {
+      this.constructor.sourceStatusMemory.delete(key);
+      return;
+    }
+
+    // 状态提示是一次性的：新实例接手显示后即删除，避免很久以后再次打开还看到旧的“已保存”。
+    this.constructor.sourceStatusMemory.delete(key);
+    if (!record.messageKey) return;
+
+    this.updateSourceStatus(this.t(record.messageKey), record.type);
+  },
+
+  viewModeMemoryKey(source = this.source) {
     const sourcePath = this.ctx?.sourcePath || 'unknown';
     const sectionInfo =
       this.ctx && typeof this.ctx.getSectionInfo === 'function'
         ? this.ctx.getSectionInfo(this.hostEl)
         : null;
 
+    /*
+     * 优先用 sectionInfo 行号定位同一个 yxmm 代码块。
+     * 只有 Obsidian 暂时拿不到 sectionInfo 时，才退回到源码前缀；调用方可传入 nextSource，
+     * 让保存流程提前覆盖“保存后源码”对应的 fallback key。
+     */
     if (sectionInfo) {
       return `${sourcePath}:${sectionInfo.lineStart}`;
     }
 
-    return `${sourcePath}:${String(this.source || '').slice(0, VIEW_MODE_KEY_SOURCE_TRUNCATE_LENGTH)}`;
+    return `${sourcePath}:${String(source || '').slice(0, VIEW_MODE_KEY_SOURCE_TRUNCATE_LENGTH)}`;
   },
 
   topicFocusMemoryKey() {

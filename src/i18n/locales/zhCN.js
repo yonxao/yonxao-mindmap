@@ -48,9 +48,11 @@ export const zhCNMessages = Object.freeze({
   // ── 源码视图 ──
   'source.tab.config': '配置区',
   'source.tab.body': '正文区',
-  'source.status.editable': '源码可编辑，切回导图或按 Ctrl/Cmd+S 写回 Markdown。',
-  'source.status.dirty': '源码已修改，切回导图或按 Ctrl/Cmd+S 写回 Markdown。',
+  'source.status.editable': '源码可编辑，切回导图或按 Alt/Option+S 写回 Markdown。',
+  'source.status.dirty': '源码已修改，切回导图或按 Alt/Option+S 写回 Markdown。',
   'source.status.synced': '源码实时同步到当前 Markdown 代码块。',
+  'source.status.saved': '源码已保存到当前 Markdown 代码块。',
+  'source.status.saveFailed': '源码保存失败，请检查当前 Markdown 代码块。',
   'canvas.resizeHandle': '拖拽调整幕布高度',
 
   // ── 通知消息 ──

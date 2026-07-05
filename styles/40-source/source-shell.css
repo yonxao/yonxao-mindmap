@@ -111,3 +111,21 @@
   font-size: var(--font-smallest);
   line-height: 1.4;
 }
+
+/*
+ * 源码状态颜色：
+ * dirty  表示输入内容尚未写回 Markdown；
+ * saved  表示 Alt/Option+S 已写回当前代码块；
+ * error  表示解析失败、定位失败或其它保存失败。
+ */
+.yonxao-mindmap-source-status.is-dirty {
+  color: var(--text-warning, #b45309);
+}
+
+.yonxao-mindmap-source-status.is-saved {
+  color: var(--text-success, #15803d);
+}
+
+.yonxao-mindmap-source-status.is-error {
+  color: var(--text-error, #dc2626);
+}

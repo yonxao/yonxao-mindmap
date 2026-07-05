@@ -60,6 +60,8 @@ export function createAdditionalLocale(text) {
     'source.status.editable': text.sourceEditable,
     'source.status.dirty': text.sourceDirty,
     'source.status.synced': text.sourceSynced,
+    'source.status.saved': text.sourceSaved,
+    'source.status.saveFailed': text.sourceSaveFailed,
     'canvas.resizeHandle': text.resizeCanvas,
 
     // ── 通知消息 ──
