@@ -26,6 +26,8 @@ await esbuild.build({
   platform: 'node',
   // Obsidian 插件入口保持 CommonJS，避免运行时把 main.js 当成 ESM 解析。
   format: 'cjs',
+  // 压缩发布入口，避免 main.js 超过 1MB 后触发 Obsidian 的体积警告。
+  minify: true,
   // obsidian 由宿主应用提供，不应该被打进插件包。
   external: ['obsidian'],
   outfile: 'dist/main.js',
