@@ -173,6 +173,15 @@
   stroke-width: 1.4;
 }
 
+.yonxao-mindmap-topic-task-marker.is-clickable {
+  pointer-events: auto;
+  cursor: pointer;
+}
+
+.yonxao-mindmap-topic-task-marker.is-clickable:hover .yonxao-mindmap-topic-task-box {
+  stroke: var(--interactive-accent);
+}
+
 .yonxao-mindmap-topic-task-box.is-checked {
   fill: var(--interactive-accent);
   stroke: var(--interactive-accent);

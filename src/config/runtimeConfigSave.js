@@ -31,7 +31,23 @@ import {
 } from '../shared/rendererShared.js';
 
 export const runtimeConfigSaveMethods = {
-  async saveTreeToSourceAndFile(successMessage) {
+  /*
+   * 保存当前内存中的主题树到 yxmm 源码和 Markdown 文件。
+   *
+   * options.render 控制保存成功后是否主动重绘整张导图；
+   * options.notice 控制是否显示保存成功提示。
+   */
+  async saveTreeToSourceAndFile(successMessage, options = {}) {
+    /*
+     * 部分导图编辑只改变源码语义，不改变布局几何。
+     * 例如任务复选框从 [ ] 切换到 [x] 时，主题尺寸和连线都不变；
+     * 调用方可以关闭 render/notice，只写回 Markdown 并同步源码缓存，避免可见的整图闪动。
+     */
+    // shouldRender 为 true 时保持旧行为：保存成功后重新布局并重绘整张导图。
+    const shouldRender = options.render !== false;
+    // shouldNotify 为 true 时保持旧行为：保存成功后弹出 Obsidian Notice。
+    const shouldNotify = options.notice !== false;
+
     // 导图编辑的保存流程：
     // 1. 当前内存里的 root 已经被修改。
     // 2. serializeMindDocument(root, rawConfig) 把配置区和树重新变成 yxmm 文本。
@@ -44,32 +60,46 @@ export const runtimeConfigSaveMethods = {
       this.hasConfigBlock,
       this.plugin?.getGlobalDefaultValueConfig?.() || {}
     );
+    // 只有源码真实变化时才压入撤销栈，避免重复点击失败或无效保存污染历史记录。
     if (nextSource !== this.source) {
       this.pushTopicUndoSnapshot(this.source);
     }
 
     // 全屏模式下跳过文件保存，避免触发 Obsidian 重渲染导致全屏退出。
     // 仅在内存中更新并重新渲染导图，退出全屏时再统一写入文件。
+    // 任务勾选这类轻量保存也要进入这里，否则全屏中写文件会打断全屏体验。
     if (this.isFullscreen || this.isWindowFullscreen) {
       this.source = nextSource;
       this.rawConfig = this.documentConfigForSave(this.rawConfig);
       this.refreshNormalizedConfig();
       this.syncSourceInput();
-      this.renderMap(true);
+      // 全屏内的轻量编辑可以跳过重绘，但仍要记录待保存源码，退出全屏后统一写回。
+      // shouldRender=false 时，调用方必须已经自行完成必要的局部视觉更新。
+      if (shouldRender) {
+        this.renderMap(true);
+      }
       this._pendingFullscreenSave = nextSource;
       this.writeFullscreenDraftSnapshot(nextSource);
       return true;
     }
 
     const saved = await this.saveSourceToMarkdownFile(nextSource);
+    // 保存失败时不更新 this.source，避免内存状态伪装成已经落盘。
     if (!saved) return false;
 
     this.source = nextSource;
     this.rawConfig = this.documentConfigForSave(this.rawConfig);
     this.refreshNormalizedConfig();
     this.syncSourceInput();
-    this.renderMap(true);
-    new Notice(`yonxao-mindmap: ${successMessage || '已保存。'}`);
+    // shouldRender=false 只用于确认不会改变布局的局部编辑；其它编辑默认仍完整重绘。
+    // 对任务勾选而言，局部 SVG 已更新，这里重绘反而会造成可见跳动。
+    if (shouldRender) {
+      this.renderMap(true);
+    }
+    // shouldNotify=false 用于高频轻量操作，避免每次勾选任务都弹提示。
+    if (shouldNotify) {
+      new Notice(`yonxao-mindmap: ${successMessage || '已保存。'}`);
+    }
     return true;
   },
 

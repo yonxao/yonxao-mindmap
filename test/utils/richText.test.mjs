@@ -177,7 +177,9 @@ test('parseTopicRichBlocks recognizes tasks notes and images', () => {
   assert.equal(blocks[0].type, 'list');
   assert.equal(blocks[0].items[0].task, true);
   assert.equal(blocks[0].items[0].checked, false);
+  assert.equal(blocks[0].items[0].sourceLineIndex, 0);
   assert.equal(blocks[0].items[1].checked, true);
+  assert.equal(blocks[0].items[1].sourceLineIndex, 1);
   assert.equal(blocks[1].type, 'note');
   assert.deepEqual(blocks[1].lines, ['note line', 'second line']);
   assert.equal(blocks[2].type, 'image');
@@ -193,6 +195,19 @@ test('parseTopicRichBlocks recognizes tasks notes and images', () => {
   assert.equal(blocks[5].type, 'attachment');
   assert.equal(blocks[5].obsidian, true);
   assert.equal(blocks[5].label, 'Design file');
+});
+
+test('parseTopicRichBlocks keeps original source line index for task items', () => {
+  const blocks = parseTopicRichBlocks(`Intro
+
+- [ ] first
+- [x] second`);
+
+  assert.equal(blocks[1].type, 'list');
+  assert.deepEqual(
+    blocks[1].items.map((item) => item.sourceLineIndex),
+    [2, 3]
+  );
 });
 
 test('parseTopicRichBlocks ignores markdown attachment pipe suffix as display metadata', () => {

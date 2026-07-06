@@ -35,6 +35,7 @@ const OBSIDIAN_IMAGE_PATTERN = /^!\[\[([^\]]+)\]\]\s*$/;
 const MARKDOWN_ATTACHMENT_PATTERN = /^@\[([^\]]*)\]\(([^)]+)\)\s*$/;
 const OBSIDIAN_ATTACHMENT_PATTERN = /^@\[\[([^\]]+)\]\]\s*$/;
 const NOTE_LINE_PATTERN = /^>\s?(.*)$/;
+// 任务列表语法：捕获缩进、勾选状态和正文，供渲染复选框以及点击写回使用。
 const TASK_LIST_PATTERN = /^(\s*)[-*+]\s+\[([ xX])\]\s+(.+)$/;
 const UNORDERED_LIST_PATTERN = /^(\s*)[-*+]\s+(.+)$/;
 const ORDERED_LIST_PATTERN = /^(\s*)(\d+)[.)]\s+(.+)$/;
@@ -242,11 +243,15 @@ export function parseTopicRichBlocks(source) {
 
     // 检测列表行（- / 1. 等）
     if (isTopicListLine(line)) {
+      // items 保存连续列表行；连续列表会作为一个 LIST block 统一测量和渲染。
       const items = [];
+      // 连续读取列表行，直到遇到非列表块，保持 Markdown 列表的自然分组。
       while (index < rawLines.length && isTopicListLine(rawLines[index])) {
-        items.push(parseTopicListItem(rawLines[index]));
+        // 保留主题内容中的原始行号，点击任务复选框时要用它精确写回 topic.text。
+        items.push(parseTopicListItem(rawLines[index], index));
         index += 1;
       }
+      // 列表 block 内每个 item 都带 sourceLineIndex，任务勾选时可精确定位原始行。
       blocks.push({ type: TOPIC_RICH_BLOCK_TYPES.LIST, items });
       continue;
     }
@@ -958,35 +963,66 @@ function isTopicStandaloneBlockLine(line) {
   );
 }
 
-function parseTopicListItem(line) {
+/*
+ * 解析一行列表文本为布局数据。
+ *
+ * sourceLineIndex 是该行在 topic.text 中的原始行号；
+ * 它不影响列表显示，但任务复选框点击时必须用它写回原始文本。
+ */
+function parseTopicListItem(line, sourceLineIndex = -1) {
+  // 优先识别任务列表，因为任务语法本身也满足普通无序列表的前缀形式。
   const task = line.match(TASK_LIST_PATTERN);
+  // 命中任务列表时，返回可渲染复选框所需的 checked/task 标记。
   if (task) {
     return {
+      // 任务列表显示为复选框，不显示有序编号。
       ordered: false,
+      // task=true 告诉渲染层使用任务复选框 marker。
       task: true,
+      // checked 只根据 [x]/[X] 判断；空格表示未完成。
       checked: task[2].toLowerCase() === 'x',
+      // number 字段保留为空，维持和普通列表 item 的统一数据形状。
       number: '',
+      // level 根据缩进计算，决定复选框和文本的水平缩进。
       level: listIndentLevel(task[1]),
+      // text 是去掉任务标记后的正文，后续仍会按富文本片段解析。
       text: task[3],
+      // 原始行号只用于交互写回，不参与布局测量。
+      sourceLineIndex,
     };
   }
 
+  // 任务未命中后再识别有序列表，例如 "1. item" 或 "1) item"。
   const ordered = line.match(ORDERED_LIST_PATTERN);
+  // 命中有序列表时，保留用户写的原始编号，渲染阶段会按同层级自动递增显示编号。
   if (ordered) {
     return {
+      // ordered=true 告诉渲染层使用编号 marker。
       ordered: true,
+      // number 是用户源码中的编号种子，保留给编号计算逻辑使用。
       number: ordered[2],
+      // level 根据缩进计算，决定编号和文本的水平缩进。
       level: listIndentLevel(ordered[1]),
+      // text 是去掉编号 marker 后的正文。
       text: ordered[3],
+      // 有序列表也保留原始行号，保持 item 数据结构统一。
+      sourceLineIndex,
     };
   }
 
+  // 最后按普通无序列表处理，例如 "- item"、"* item"、"+ item"。
   const unordered = line.match(UNORDERED_LIST_PATTERN);
   return {
+    // 普通无序列表不显示编号。
     ordered: false,
+    // number 字段保留为空，维持和有序列表 item 的统一数据形状。
     number: '',
+    // unordered 可能理论上为空；兜底空缩进可避免异常输入打断渲染。
     level: listIndentLevel(unordered?.[1] || ''),
+    // 普通无序列表正文；兜底空字符串保证后续 wrap 不读到 undefined。
     text: unordered?.[2] || '',
+    // 普通无序列表同样保留原始行号，方便未来扩展列表交互。
+    sourceLineIndex,
   };
 }
 

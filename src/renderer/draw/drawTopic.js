@@ -37,9 +37,13 @@ const UNORDERED_LIST_MARKER_CENTER_OFFSET_RATIO = 0.28;
 const CODE_BLOCK_MIN_RENDER_WIDTH = 48;
 const CODE_BLOCK_TEXT_ASCENT_RATIO = 0.75;
 const EQUATION_RENDER_WAIT_MS = 600;
+// 任务复选框的可点击方框边长，和列表行高解耦，避免字号变化时方框过大。
 const TASK_CHECKBOX_SIZE = 11;
+// 任务复选框的圆角半径，只影响视觉，不参与布局测量。
 const TASK_CHECKBOX_RADIUS = 2;
+// 任务完成状态的对勾路径，坐标基于 TASK_CHECKBOX_SIZE 的局部 11x11 视图。
 const TASK_CHECKMARK_PATH = 'M3 6l2 2 4-5';
+// 文本基线到视觉中心的估算比例，用于让复选框和同一行文字垂直居中。
 const TASK_TEXT_CENTER_FROM_BASELINE_RATIO = 0.36;
 const IMAGE_BLOCK_CORNER_RADIUS = 6;
 const IMAGE_BLOCK_CAPTION_GAP = 5;
@@ -219,7 +223,7 @@ export const topicDrawMethods = {
       }
       cursorY += Number(block.gapBefore) || 0;
       if (block.type === TOPIC_RICH_BLOCK_TYPES.LIST) {
-        this.appendTopicListBlock(contentGroup, block, box, cursorY);
+        this.appendTopicListBlock(contentGroup, block, box, cursorY, topic);
       } else if (block.type === TOPIC_RICH_BLOCK_TYPES.IMAGE) {
         this.appendTopicImageBlock(contentGroup, block, box, cursorY);
       } else if (block.type === TOPIC_RICH_BLOCK_TYPES.CODE) {
@@ -533,7 +537,7 @@ export const topicDrawMethods = {
    * 渲染列表块：处理有序和无序列表项，每项包含编号/项目符号和文本内容。
    * 有序列表显示编号（如 1. 2. 3.），无序列表按层级显示不同形状的符号。
    */
-  appendTopicListBlock(contentGroup, block, box, top) {
+  appendTopicListBlock(contentGroup, block, box, top, topic) {
     const listGroup = svg('g', { class: 'yonxao-mindmap-topic-list-block' });
     const listLineHeight = Number(block.lineHeight) || Number(box.font.lineHeight) || 20;
     const listFont = { ...box.font, lineHeight: listLineHeight };
@@ -549,7 +553,7 @@ export const topicDrawMethods = {
         const dy = lineIndex === 0 ? 0 : listLineHeight;
         if (index === 0) {
           if (item.task) {
-            this.appendTopicTaskMarker(listGroup, item, box, top, lineIndex, listFont);
+            this.appendTopicTaskMarker(listGroup, item, box, top, lineIndex, listFont, topic);
           } else if (item.ordered) {
             // 有序列表：在指定偏移处绘制编号文本
             const marker = svg('tspan', {
@@ -584,16 +588,51 @@ export const topicDrawMethods = {
     contentGroup.appendChild(listGroup);
   },
 
-  appendTopicTaskMarker(listGroup, item, box, top, lineIndex, listFont = box.font) {
+  /*
+   * 渲染单个任务项的复选框。
+   *
+   * 这个方法不仅画方框和对勾，还在可编辑导图中把复选框升级为轻量交互控件。
+   * 点击时只局部更新当前 SVG，再通过 toggleTopicTaskItem() 写回 Markdown。
+   */
+  appendTopicTaskMarker(listGroup, item, box, top, lineIndex, listFont = box.font, topic = null) {
+    // markerWidth 是布局阶段给列表 marker 预留的宽度，复选框需要在这个宽度内水平居中。
     const markerWidth = Number(item.markerWidth) || TASK_CHECKBOX_SIZE;
+    // lineHeight 决定当前列表行的垂直步进，用于从列表块顶部推算当前任务所在行。
     const lineHeight = Number(listFont.lineHeight) || Number(box.font.lineHeight) || 20;
+    // fontSize 用于估算文本视觉中心，避免复选框按基线对齐后看起来偏下。
     const fontSize = Number(listFont.size) || Number(box.font.size) || 16;
+    // x 是复选框左上角横坐标：主题文本起点 + 列表缩进 + marker 区域内居中偏移。
     const x = box.textX + item.markerXOffset + (markerWidth - TASK_CHECKBOX_SIZE) / 2;
+    // baseline 是当前列表行文字的基线坐标，复选框需要围绕文字视觉中心摆放。
     const baseline = this.topicTextBlockFirstBaseline(box, top, listFont) + lineIndex * lineHeight;
+    // textCenterY 是当前行文字的近似视觉中心，不等同于 SVG 文本基线。
     const textCenterY = baseline - fontSize * TASK_TEXT_CENTER_FROM_BASELINE_RATIO;
+    // y 是复选框左上角纵坐标，基于文字视觉中心向上偏移半个方框高度。
     const y = textCenterY - TASK_CHECKBOX_SIZE / 2;
+    /*
+     * 任务复选框只在导图可编辑时变成真正的交互控件。
+     * 阅读视图仍渲染普通 SVG 图形，避免用户以为点击会改动 Markdown。
+     */
+    const canToggle = Boolean(
+      topic &&
+      !topic._virtual &&
+      this.canEditMindMap() &&
+      Number.isInteger(Number(item.sourceLineIndex)) &&
+      Number(item.sourceLineIndex) >= 0
+    );
+    const markerGroup = svg('g', {
+      class: `yonxao-mindmap-topic-task-marker${canToggle ? ' is-clickable' : ''}`,
+      // 只有可编辑状态才声明 checkbox 语义；阅读视图中它只是普通图形。
+      role: canToggle ? 'checkbox' : undefined,
+      // aria-checked 和视觉状态保持一致，局部切换时也会同步更新。
+      'aria-checked': canToggle ? String(Boolean(item.checked)) : undefined,
+      // 只有可编辑状态才进入 Tab 顺序，避免阅读视图出现不能操作的焦点目标。
+      tabindex: canToggle ? '0' : undefined,
+      // 局部切换时需要复用对勾路径的位置，不重新计算或重绘整张导图。
+      'data-check-transform': `translate(${x} ${y})`,
+    });
 
-    listGroup.appendChild(
+    markerGroup.appendChild(
       svg('rect', {
         class: `yonxao-mindmap-topic-task-box${item.checked ? ' is-checked' : ''}`,
         x,
@@ -604,13 +643,88 @@ export const topicDrawMethods = {
       })
     );
 
-    if (!item.checked) return;
+    // 初始状态如果已经完成，就直接绘制对勾；未完成任务只保留空方框。
+    if (item.checked) {
+      markerGroup.appendChild(
+        svg('path', {
+          class: 'yonxao-mindmap-topic-task-check',
+          d: TASK_CHECKMARK_PATH,
+          transform: `translate(${x} ${y})`,
+        })
+      );
+    }
 
-    listGroup.appendChild(
+    // 只有可编辑导图才绑定点击事件；阅读视图点击任务框不改 Markdown。
+    if (canToggle) {
+      this.registerDomEvent(markerGroup, 'click', (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        // 如果上一次点击还在保存，忽略连续点击，避免多个异步保存互相覆盖。
+        if (markerGroup.classList.contains('is-saving')) return;
+
+        // previousChecked 是失败回滚的来源，必须在乐观更新前读取。
+        const previousChecked = markerGroup.getAttribute('aria-checked') === 'true';
+        // nextChecked 是本次点击期望写入 Markdown 的目标状态。
+        const nextChecked = !previousChecked;
+        // is-saving 用于阻止并发点击，aria-busy 用于暴露当前控件正在保存。
+        markerGroup.classList.add('is-saving');
+        markerGroup.setAttribute('aria-busy', 'true');
+        // 先做乐观视觉更新，让点击立即有反馈；保存失败时在 then/catch 中回滚。
+        this.setTopicTaskMarkerVisualState(markerGroup, nextChecked);
+
+        Promise.resolve(
+          this.toggleTopicTaskItem(topic, Number(item.sourceLineIndex), {
+            // 勾选状态不影响布局，避免主动 renderMap(true) 带来整图闪动。
+            render: false,
+            notice: false,
+          })
+        )
+          .then((saved) => {
+            // 保存入口返回 false 表示 Markdown 未写入成功，此时必须恢复点击前视觉状态。
+            if (!saved) {
+              this.setTopicTaskMarkerVisualState(markerGroup, previousChecked);
+            }
+          })
+          .catch((error) => {
+            this.setTopicTaskMarkerVisualState(markerGroup, previousChecked);
+            new Notice(`yonxao-mindmap: ${error.message || String(error)}`);
+          })
+          .finally(() => {
+            markerGroup.classList.remove('is-saving');
+            markerGroup.removeAttribute('aria-busy');
+          });
+      });
+    }
+
+    listGroup.appendChild(markerGroup);
+  },
+
+  setTopicTaskMarkerVisualState(markerGroup, checked) {
+    // markerGroup 不存在说明 SVG 已被 Obsidian 重建或当前控件已卸载，直接放弃局部更新。
+    if (!markerGroup) return;
+
+    // aria-checked 是当前复选框状态的语义来源，后续点击也从这里读取 previousChecked。
+    markerGroup.setAttribute('aria-checked', String(Boolean(checked)));
+    // 方框的 is-checked class 控制填充色和边框色。
+    const boxEl = markerGroup.querySelector('.yonxao-mindmap-topic-task-box');
+    boxEl?.classList.toggle('is-checked', Boolean(checked));
+
+    // existingCheckEl 表示当前 SVG 里是否已经有对勾 path。
+    const existingCheckEl = markerGroup.querySelector('.yonxao-mindmap-topic-task-check');
+    // 切换为未完成时，移除对勾 path 即可，不需要重建整个列表文本。
+    if (!checked) {
+      existingCheckEl?.remove();
+      return;
+    }
+    // 切换为完成且已有对勾时，不重复追加 path，避免 SVG 中出现多个重叠对勾。
+    if (existingCheckEl) return;
+
+    // 新增对勾只补当前复选框的 path，不触发布局、连线或主题文本重绘。
+    markerGroup.appendChild(
       svg('path', {
         class: 'yonxao-mindmap-topic-task-check',
         d: TASK_CHECKMARK_PATH,
-        transform: `translate(${x} ${y})`,
+        transform: markerGroup.getAttribute('data-check-transform') || '',
       })
     );
   },
