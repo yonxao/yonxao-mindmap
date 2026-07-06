@@ -5,7 +5,8 @@
  * 执行逻辑：
  * 1. 从 manifest.json 读取当前发布版本。
  * 2. 从 CHANGELOG.md 抽取当前版本的变更段落。
- * 3. 写入 dist/release-body.md，供 GitHub Actions 发布 Release 时使用。
+ * 3. 读取 .github/release-body.md 模板，填入当前版本更新内容。
+ * 4. 写入 dist/release-body.md，供 GitHub Actions 发布 Release 时使用。
  *
  * 调用链位置：
  * package.json scripts.release:prepare -> scripts/generate-release-body.mjs -> dist/release-body.md
@@ -19,7 +20,10 @@ const distDir = path.join(projectRoot, 'dist');
 const manifestPath = path.join(projectRoot, 'manifest.json');
 const packagePath = path.join(projectRoot, 'package.json');
 const changelogPath = path.join(projectRoot, 'CHANGELOG.md');
+const releaseBodyTemplatePath = path.join(projectRoot, '.github', 'release-body.md');
 const releaseBodyPath = path.join(distDir, 'release-body.md');
+const RELEASE_NOTES_PLACEHOLDER = '{{RELEASE_NOTES}}';
+const CHANGELOG_URL_PLACEHOLDER = '{{CHANGELOG_URL}}';
 
 function readJson(filePath) {
   return JSON.parse(fs.readFileSync(filePath, 'utf8'));
@@ -84,36 +88,47 @@ function extractChangelogEntry(changelog, version) {
   };
 }
 
+/*
+ * 用 .github/release-body.md 作为 GitHub Release 正文模板。
+ *
+ * 这样安装方式、固定说明等人工维护内容都写在 Markdown 里；
+ * 脚本只负责把当前版本的 CHANGELOG 内容填到占位符位置。
+ */
+function renderReleaseBodyTemplate(template, replacements) {
+  if (!template.includes(RELEASE_NOTES_PLACEHOLDER)) {
+    throw new Error(`.github/release-body.md 缺少 ${RELEASE_NOTES_PLACEHOLDER} 占位符。`);
+  }
+  if (!template.includes(CHANGELOG_URL_PLACEHOLDER)) {
+    throw new Error(`.github/release-body.md 缺少 ${CHANGELOG_URL_PLACEHOLDER} 占位符。`);
+  }
+
+  return template
+    .split(RELEASE_NOTES_PLACEHOLDER)
+    .join(replacements.releaseNotes)
+    .split(CHANGELOG_URL_PLACEHOLDER)
+    .join(replacements.changelogUrl);
+}
+
 const manifest = readJson(manifestPath);
 const packageJson = readJson(packagePath);
 const version = manifest.version;
 const repositoryUrl = normalizeRepositoryUrl(packageJson.repository);
 const changelogUrl = `${repositoryUrl}/blob/main/CHANGELOG.md`;
 const changelog = fs.readFileSync(changelogPath, 'utf8');
+const releaseBodyTemplate = fs.readFileSync(releaseBodyTemplatePath, 'utf8');
 const changelogEntry = extractChangelogEntry(changelog, version);
 
-const compareLine = changelogEntry.previousVersion
-  ? `\n版本对比：[${changelogEntry.previousVersion}...${version}](${repositoryUrl}/compare/${changelogEntry.previousVersion}...${version})\n`
+const compareBlock = changelogEntry.previousVersion
+  ? `版本对比：[${changelogEntry.previousVersion}...${version}](${repositoryUrl}/compare/${changelogEntry.previousVersion}...${version})\n\n`
   : '';
 const versionTitle = changelogEntry.date
   ? `#### ${version} - ${changelogEntry.date}`
   : `#### ${version}`;
-
-const releaseBody = `## yonxao-mindmap
-
-### 安装方式
-
-1. 在 Obsidian 中打开 **设置 → 社区插件 → 浏览**，搜索 "yonxao-mindmap"。
-2. 或手动下载压缩包，解压到 \`.obsidian/plugins/yonxao-mindmap/\`。
-
-### 更新内容
-${compareLine}
-${versionTitle}
-
-${changelogEntry.body}
-
-完整更新日志请参阅 [CHANGELOG](${changelogUrl})。
-`;
+const releaseNotes = `${compareBlock}${versionTitle}\n\n${changelogEntry.body}`;
+const releaseBody = renderReleaseBodyTemplate(releaseBodyTemplate, {
+  releaseNotes,
+  changelogUrl,
+});
 
 fs.mkdirSync(distDir, { recursive: true });
 fs.writeFileSync(releaseBodyPath, releaseBody, 'utf8');
