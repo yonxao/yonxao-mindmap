@@ -9,6 +9,62 @@ All notable changes to this project will be documented in this file.
 <!-- The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), -->
 <!-- and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html). -->
 
+## [1.4.0] - 2026-07-06
+
+### Added
+
+- Added richer topic content syntax for inline tags, Markdown links, Obsidian links, task items, image blocks, note adornments, and attachment adornments.
+- Added tag rendering with stable per-map colors so the same tag text keeps a consistent visual identity without relying on the Obsidian accent color.
+- Added clickable link rendering with lightweight markers for external and Obsidian/internal links, while resolving internal targets through the current vault before opening.
+- Added task list rendering for `- [ ]` and `- [x]` items inside topic content without changing the topic tree structure.
+- Added Markdown and Obsidian image block support, including captions, explicit pixel sizes, width-height hints, percentage sizing, missing-image placeholders, and double-click image preview.
+- Added note and attachment icons after topics. Notes show popovers, while attachments can be opened or copied from their popover and support external URLs, Obsidian URIs, and vault attachments.
+- Expanded the topic editor content toolbar with quick insert actions for tags, links, tasks, images, notes, and attachments.
+- Added `Alt+S` / `Option+S` source-mode saving so source edits can be saved without leaving source mode.
+
+### Changed
+
+- Improved PNG export and image-copy output by cloning the SVG with computed styles, embedded image data, and equation-safe SVG replacements, so rich content exports more closely match the preview.
+- Copying the full source now writes a complete fenced `yxmm` code block that can be pasted directly into Markdown.
+- Reworked physical fullscreen and window fullscreen to use body-level overlays consistently, improving behavior for long content, image-heavy maps, floating popovers, toolbar placement, focus recovery, and scroll restoration.
+- Improved image layout measurement so explicit image widths can participate in topic width calculation while still respecting the topic width cap.
+- Increased the documented and configured topic maximum width range to support wider rich-content topics up to `2000px`.
+- Updated English and Chinese documentation for the expanded rich content syntax, editor toolbar actions, link behavior, image sizing, attachment behavior, and source-mode save shortcut.
+
+### Fixed
+
+- Fixed source-mode saving state so saving a modified `yxmm` source no longer unexpectedly returns the block to map mode after Obsidian rebuilds the code block.
+- Fixed source-mode save feedback so the saved/dirty/error status can survive the short rebuild window and display consistently after saving.
+- Fixed source-mode save shortcut handling when focus is inside the source view but not directly on the textarea, including macOS `Option+S` key handling.
+- Fixed fullscreen exit recovery so topic focus and surrounding scroll positions are restored more reliably after physical fullscreen or window fullscreen.
+
+### 新增
+
+- 新增更完整的主题内容语法，支持内容标签、Markdown 链接、Obsidian 链接、任务项、图片块、备注装饰和附件装饰。
+- 新增标签渲染，同一导图内相同标签文字会保持稳定颜色，不依赖 Obsidian 默认强调色。
+- 新增可点击链接渲染，外部链接和 Obsidian/内部链接会显示轻量标识；内部目标打开前会先通过当前库解析，避免误创建不存在的文档。
+- 新增 `- [ ]` 和 `- [x]` 任务项渲染，任务项只作为主题内容显示，不改变主题树结构。
+- 新增 Markdown 图片和 Obsidian 附件图片渲染，支持标题、固定像素宽度、宽高提示、百分比尺寸、缺失图片占位，以及双击图片预览。
+- 新增主题后方备注和附件图标。备注可显示浮层；附件浮层提供打开和复制地址操作，并支持外部 URL、Obsidian URI 和当前库附件。
+- 主题编辑面板内容工具栏新增标签、链接、任务、图片、备注和附件快捷插入按钮。
+- 源码模式新增 `Alt+S` / `Option+S` 保存快捷键，可在不离开源码模式的情况下保存修改。
+
+### 调整
+
+- 优化 PNG 导出和复制图片流程：导出 SVG 会内联计算后的样式、图片数据，并把公式替换为更适合导出的 SVG 表达，使富内容导出结果更接近预览效果。
+- 复制完整源码时改为输出完整 fenced `yxmm` 代码块，可直接粘贴到 Markdown 文档中。
+- 重构物理全屏和窗口全屏流程，统一使用 body 级覆盖层承载导图，改善长内容、图片导图、浮层、工具栏、焦点恢复和滚动恢复的表现。
+- 优化图片布局测量，显式图片宽度可参与主题宽度估算，同时仍受主题宽度上限约束。
+- 扩展主题最大宽度的配置和文档范围，富内容主题最高可设置到 `2000px`。
+- 更新中英文文档，补充富内容语法、主题编辑工具栏、链接行为、图片尺寸、附件行为和源码模式保存快捷键说明。
+
+### 修复
+
+- 修复源码模式保存状态问题，修改 `yxmm` 源码后保存不再因 Obsidian 重建代码块而意外回到导图模式。
+- 修复源码模式保存提示在短暂重建窗口中丢失的问题，保存、已修改和错误状态会更稳定地显示。
+- 修复源码模式保存快捷键在焦点位于源码视图但不在 textarea 上时可能不响应的问题，并兼容 macOS `Option+S` 的按键识别。
+- 修复物理全屏和窗口全屏退出后的恢复问题，主题焦点和周围滚动位置会更可靠地回到进入全屏前的状态。
+
 ## [1.3.0] - 2026-07-04
 
 ### Added
