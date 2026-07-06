@@ -39,8 +39,28 @@ coverage/
 # AI Agent
 .claude/
 .trae/
+.kilo/
 .cursor/
 .windsurf/
+.devin/
+.cline/
+.roo/
+.continue/
+.codex/
+.gemini/
+.aider/
+.opencode/
+.tabby/
+.amazonq/
+.augment/
+.aider*
+.aiderignore
+.clinerules
+.clinerules/
+.roorules
+.roorules-*
+.windsurfrules
+.cursorrules
 
 # macOS and Windows metadata
 .DS_Store
