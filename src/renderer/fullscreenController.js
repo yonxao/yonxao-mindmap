@@ -1,9 +1,9 @@
 /*
  * 文件作用：
- * 全屏控制方法集合，负责阅读视图覆盖层、编辑视图原生全屏和工具栏归位。
+ * 全屏控制方法集合，负责物理全屏覆盖层、窗口全屏覆盖层和工具栏归位。
  *
  * 实现逻辑：
- * 阅读视图通过 body 级覆盖层承载 hostEl，编辑视图直接请求 hostEl 全屏，退出时恢复 DOM 位置和视口。
+ * 物理全屏通过 body 级覆盖层承载 hostEl，避免 Obsidian/CodeMirror 重渲染移除全屏元素。
  * 窗口全屏不使用 requestFullscreen API，而是通过 CSS 类控制 hostEl 填满 Obsidian 窗口区域。
  *
  * 调用链：
@@ -15,6 +15,7 @@ import { Notice, svg, CONNECTOR_STROKE_WIDTH } from '../shared/rendererShared.js
 export const fullscreenControllerMethods = {
   async toggleFullscreen() {
     if (!this.hostEl || typeof document === 'undefined') return;
+    if (this._fullscreenRequestPending) return;
 
     // 如果处于窗口全屏状态，先退出窗口全屏
     if (this.isWindowFullscreen) {
@@ -28,38 +29,34 @@ export const fullscreenControllerMethods = {
       return;
     }
 
-    if (!this.canEditMindMap()) {
-      this._fsOverlay = document.createElement('div');
-      this._fsOverlay.className = 'yonxao-mindmap-fs-overlay';
-      this._hostElParent = this.hostEl.parentNode;
-      this._hostElNextSibling = this.hostEl.nextSibling;
-      document.body.appendChild(this._fsOverlay);
-      this._fsOverlay.appendChild(this.hostEl);
-      this.moveToolbarIntoFullscreenHost();
-      this.hostEl.classList.add('is-fullscreen');
-      try {
-        await this._fsOverlay.requestFullscreen();
-      } catch (error) {
-        this.hostEl?.classList.remove('is-fullscreen');
-        this.restoreToolbarToBody();
-        this.cleanupFullscreenOverlay();
-        throw error;
-      }
-      return;
-    }
+    this.rememberFullscreenEntryState();
+    this._canEditBeforeFullscreen = this.canEditMindMap();
+    this._fsOverlay = this.moveHostIntoBodyOverlay(
+      'yonxao-mindmap-fs-overlay',
+      '_fsOverlay',
+      '_hostElParent',
+      '_hostElNextSibling'
+    );
 
-    if (typeof this.hostEl.requestFullscreen !== 'function') {
+    if (typeof this._fsOverlay.requestFullscreen !== 'function') {
+      this.cleanupFullscreenOverlay();
       new Notice('yonxao-mindmap: 当前环境不支持全屏查看。');
       return;
     }
 
     this.moveToolbarIntoFullscreenHost();
     this.hostEl.classList.add('is-fullscreen');
+    this._fullscreenRequestPending = true;
     try {
-      await this.hostEl.requestFullscreen();
+      await this._fsOverlay.requestFullscreen();
+      if (this._fullscreenRequestPending && this.isOwnPhysicalFullscreenElement()) {
+        this.applyFullscreenEntered();
+      }
     } catch (error) {
-      this.hostEl.classList.remove('is-fullscreen');
+      this._fullscreenRequestPending = false;
+      this.hostEl?.classList.remove('is-fullscreen');
       this.restoreToolbarToBody();
+      this.cleanupFullscreenOverlay();
       throw error;
     }
   },
@@ -90,65 +87,39 @@ export const fullscreenControllerMethods = {
     if (!this.hostEl) return;
 
     /*
-     * 缓存窗口全屏前的编辑能力状态。
+     * 缓存进入覆盖层前的编辑能力状态。
      *
-     * 窗口全屏会把 hostEl 移出 Obsidian 编辑器的 DOM 树（挂到 body 下的覆盖层），
+     * 全屏会把 hostEl 移出 Obsidian 编辑器的 DOM 树（挂到 body 下的覆盖层），
      * 导致 canEditMindMap() 通过 hostEl.closest() 无法再定位到编辑容器，
      * 从而让添加/编辑/删除主题等操作失效。
-     * 这里提前缓存编辑能力，在窗口全屏期间覆盖 canEditMindMap() 的判断。
+     * 这里提前缓存编辑能力，在全屏期间覆盖 canEditMindMap() 的判断。
      */
+    this.rememberFullscreenEntryState();
     this._canEditBeforeFullscreen = this.canEditMindMap();
 
-    // 统一使用 body 级覆盖层，避免编辑视图下 position: fixed 受 CodeMirror
-    // 祖先容器的 transform/will-change 影响导致导图消失。
-    this._wfOverlay = document.createElement('div');
-    this._wfOverlay.className = 'yonxao-mindmap-wf-overlay';
-    this._wfHostElParent = this.hostEl.parentNode;
-    this._wfHostElNextSibling = this.hostEl.nextSibling;
-    document.body.appendChild(this._wfOverlay);
-    this._wfOverlay.appendChild(this.hostEl);
+    this._wfOverlay = this.moveHostIntoBodyOverlay(
+      'yonxao-mindmap-wf-overlay',
+      '_wfOverlay',
+      '_wfHostElParent',
+      '_wfHostElNextSibling'
+    );
 
     this.moveToolbarIntoFullscreenHost();
     this.isWindowFullscreen = true;
     this.updateWindowFullscreenButton();
-    this.showToolbar();
-    this.scheduleFitView();
-    this.scheduleApplyToolbarPosition();
-    this._moveBodyFloatPanelsIntoContainer();
-    this.restoreMapFocusAfterWindowFullscreenToggle();
+    this.applyFullscreenViewEntered();
   },
 
   applyWindowFullscreenExited() {
     if (!this.hostEl) return;
     this._canEditBeforeFullscreen = undefined;
 
-    // 恢复 hostEl 到原位置
-    if (this._wfHostElParent) {
-      if (
-        this._wfHostElNextSibling &&
-        this._wfHostElNextSibling.parentNode === this._wfHostElParent
-      ) {
-        this._wfHostElParent.insertBefore(this.hostEl, this._wfHostElNextSibling);
-      } else {
-        this._wfHostElParent.appendChild(this.hostEl);
-      }
-    }
-    if (this._wfOverlay) {
-      this._wfOverlay.remove();
-      this._wfOverlay = null;
-    }
-    this._wfHostElParent = null;
-    this._wfHostElNextSibling = null;
+    this.restoreHostFromBodyOverlay('_wfOverlay', '_wfHostElParent', '_wfHostElNextSibling');
 
     this.restoreToolbarToBody();
     this.isWindowFullscreen = false;
     this.updateWindowFullscreenButton();
-    this.scheduleFitView();
-    this.scheduleApplyToolbarPosition();
-    this._restoreBodyFloatPanelsToBody();
-    // 刷写全屏期间的待保存数据
-    this._flushPendingFullscreenSave();
-    this.restoreMapFocusAfterWindowFullscreenToggle();
+    this.applyFullscreenViewExited();
   },
 
   /*
@@ -160,53 +131,221 @@ export const fullscreenControllerMethods = {
     if (typeof document === 'undefined') return;
 
     if (document.fullscreenElement) {
-      if (!this.hostEl?.classList.contains('is-fullscreen')) return;
+      if (
+        !this.hostEl?.classList.contains('is-fullscreen') ||
+        !this.isOwnPhysicalFullscreenElement(document.fullscreenElement)
+      ) {
+        return;
+      }
       this.applyFullscreenEntered();
     } else {
-      if (!this.isFullscreen) return;
+      if (
+        !this.isFullscreen &&
+        !this._fullscreenRequestPending &&
+        !this.hostEl?.classList.contains('is-fullscreen')
+      ) {
+        return;
+      }
+      this._fullscreenRequestPending = false;
       this.cleanupFullscreenOverlay();
       this.applyFullscreenExited();
     }
   },
 
-  cleanupFullscreenOverlay() {
-    if (!this._fsOverlay) return;
-    this._canEditBeforeFullscreen = undefined;
-    this._restoreBodyFloatPanelsToBody();
-    if (this._hostElParent) {
-      if (this._hostElNextSibling && this._hostElNextSibling.parentNode === this._hostElParent) {
-        this._hostElParent.insertBefore(this.hostEl, this._hostElNextSibling);
+  isOwnPhysicalFullscreenElement(
+    element = typeof document === 'undefined' ? null : document.fullscreenElement
+  ) {
+    return Boolean(element && (element === this.hostEl || element === this._fsOverlay));
+  },
+
+  isPhysicalFullscreenActiveOrPending() {
+    if (typeof document === 'undefined') {
+      return Boolean(this.isFullscreen || this._fullscreenRequestPending);
+    }
+
+    return Boolean(
+      this.isFullscreen ||
+      this._fullscreenRequestPending ||
+      this.hostEl?.classList.contains('is-fullscreen') ||
+      this.isOwnPhysicalFullscreenElement(document.fullscreenElement)
+    );
+  },
+
+  isFullscreenViewportActive() {
+    return Boolean(
+      this.isPhysicalFullscreenActiveOrPending() ||
+      this.isWindowFullscreen ||
+      this._wfOverlay ||
+      this.hostEl?.classList.contains('is-window-fullscreen')
+    );
+  },
+
+  /*
+   * 全屏和窗口全屏都要先把 hostEl 移到 body 级覆盖层。
+   *
+   * 业务边界：
+   * - 不直接对编辑视图里的 hostEl 请求物理全屏，避免 Obsidian/CodeMirror 重建代码块时
+   *   把浏览器的 fullscreenElement 从 DOM 中移除。
+   * - 保存原父节点和 nextSibling，退出时尽量回到原位置；如果 nextSibling 已被重建移除，
+   *   则退化为 appendChild，保证 hostEl 仍回到原父节点。
+   */
+  moveHostIntoBodyOverlay(className, overlayKey, parentKey, nextSiblingKey) {
+    const overlay = document.createElement('div');
+    overlay.className = className;
+    this[parentKey] = this.hostEl.parentNode;
+    this[nextSiblingKey] = this.hostEl.nextSibling;
+    document.body.appendChild(overlay);
+    overlay.appendChild(this.hostEl);
+    this[overlayKey] = overlay;
+    return overlay;
+  },
+
+  restoreHostFromBodyOverlay(overlayKey, parentKey, nextSiblingKey) {
+    const parent = this[parentKey];
+    const nextSibling = this[nextSiblingKey];
+    if (parent && this.hostEl) {
+      if (nextSibling && nextSibling.parentNode === parent) {
+        parent.insertBefore(this.hostEl, nextSibling);
       } else {
-        this._hostElParent.appendChild(this.hostEl);
+        parent.appendChild(this.hostEl);
       }
     }
-    this._fsOverlay.remove();
-    this._fsOverlay = null;
-    this._hostElParent = null;
-    this._hostElNextSibling = null;
+
+    this[overlayKey]?.remove();
+    this[overlayKey] = null;
+    this[parentKey] = null;
+    this[nextSiblingKey] = null;
+  },
+
+  rememberFullscreenEntryState() {
+    this._fullscreenFocusTopicId = this.focusedTopicId || '';
+    this._fullscreenScrollSnapshot = this.captureFullscreenScrollSnapshot();
+  },
+
+  captureFullscreenScrollSnapshot() {
+    if (typeof document === 'undefined') return null;
+
+    const snapshot = [];
+    if (typeof window !== 'undefined') {
+      snapshot.push({
+        type: 'window',
+        x:
+          window.scrollX ||
+          document.scrollingElement?.scrollLeft ||
+          document.documentElement?.scrollLeft ||
+          0,
+        y:
+          window.scrollY ||
+          document.scrollingElement?.scrollTop ||
+          document.documentElement?.scrollTop ||
+          0,
+      });
+    }
+
+    let element = this.hostEl?.parentElement || null;
+    while (element && element !== document.body && element !== document.documentElement) {
+      if (this.isFullscreenScrollSnapshotElement(element)) {
+        snapshot.push({
+          type: 'element',
+          element,
+          left: element.scrollLeft || 0,
+          top: element.scrollTop || 0,
+        });
+      }
+      element = element.parentElement;
+    }
+
+    return snapshot;
+  },
+
+  isFullscreenScrollSnapshotElement(element) {
+    return Boolean(
+      element &&
+      (element.scrollHeight > element.clientHeight || element.scrollWidth > element.clientWidth)
+    );
+  },
+
+  restoreFullscreenScrollSnapshot() {
+    const snapshot = this._fullscreenScrollSnapshot;
+    if (!snapshot?.length) {
+      this._fullscreenScrollSnapshot = null;
+      return;
+    }
+
+    const restore = () => {
+      for (const entry of snapshot) {
+        if (entry.type === 'window' && typeof window !== 'undefined') {
+          window.scrollTo(entry.x || 0, entry.y || 0);
+        } else if (entry.type === 'element' && entry.element?.isConnected) {
+          entry.element.scrollLeft = entry.left || 0;
+          entry.element.scrollTop = entry.top || 0;
+        }
+      }
+    };
+
+    restore();
+    if (typeof window !== 'undefined') {
+      if (typeof window.requestAnimationFrame === 'function') {
+        window.requestAnimationFrame(restore);
+      }
+      window.setTimeout(restore, 0);
+    }
+    this._fullscreenScrollSnapshot = null;
+  },
+
+  cleanupFullscreenOverlay() {
+    this._fullscreenRequestPending = false;
+    this._canEditBeforeFullscreen = undefined;
+    this._fullscreenFocusTopicId = '';
+    if (!this._fsOverlay) return;
+    this._restoreBodyFloatPanelsToBody();
+    this.restoreHostFromBodyOverlay('_fsOverlay', '_hostElParent', '_hostElNextSibling');
+    this.restoreFullscreenScrollSnapshot();
   },
 
   applyFullscreenEntered() {
+    this._fullscreenRequestPending = false;
     this.isFullscreen = true;
-    this.showToolbar();
     this.updateFullscreenButton();
-    this.scheduleFitView();
-    this.scheduleApplyToolbarPosition();
-    // 将 body 级浮动面板移入全屏元素，避免被浏览器顶层遮挡
-    this._moveBodyFloatPanelsIntoContainer();
+    this.applyFullscreenViewEntered();
   },
 
   applyFullscreenExited() {
+    this._fullscreenRequestPending = false;
     this.isFullscreen = false;
     this.hostEl?.classList.remove('is-fullscreen');
     this.restoreToolbarToBody();
     this.updateFullscreenButton();
+    this.applyFullscreenViewExited();
+  },
+
+  /*
+   * 物理全屏和窗口全屏进入后的 UI 收尾保持一致：
+   * - 刷新视图和工具栏位置；
+   * - 将 body 级浮层移入当前全屏容器，避免被 top layer / 覆盖层遮挡；
+   * - 恢复 SVG DOM 焦点，确保 Alt/Option 快捷键还能继续响应。
+   */
+  applyFullscreenViewEntered() {
+    this.showToolbar();
     this.scheduleFitView();
     this.scheduleApplyToolbarPosition();
-    // 将 body 级浮动面板恢复回 document.body
+    this._moveBodyFloatPanelsIntoContainer();
+    this.restoreMapFocusAfterFullscreenToggle();
+  },
+
+  /*
+   * 退出两类全屏后同样走统一收尾。_restoreBodyFloatPanelsToBody() 是幂等的，
+   * 因此物理全屏在 cleanupFullscreenOverlay() 已恢复过浮层时再次调用也安全。
+   */
+  applyFullscreenViewExited() {
+    this.scheduleFitView();
+    this.scheduleApplyToolbarPosition();
     this._restoreBodyFloatPanelsToBody();
+    this.restoreFullscreenScrollSnapshot();
     // 刷写全屏期间的待保存数据
     this._flushPendingFullscreenSave();
+    this.restoreMapFocusAfterFullscreenToggle();
+    this._fullscreenFocusTopicId = '';
   },
 
   /*
@@ -248,9 +387,9 @@ export const fullscreenControllerMethods = {
     if (!topicId) return;
 
     /*
-     * 窗口全屏期间 hostEl 会被移到 body 覆盖层，此时 getSectionInfo(hostEl)
+     * 全屏期间 hostEl 会被移到 body 覆盖层，此时 getSectionInfo(hostEl)
      * 可能失效，保存主题时写入的焦点记忆会落到不稳定的源码片段 key 上。
-     * 退出窗口全屏后 hostEl 已回到原代码块位置，写文件前再记一次，保证
+     * 退出全屏后 hostEl 已回到原代码块位置，写文件前再记一次，保证
      * Obsidian 重建代码块的新 renderer 能用稳定 key 找回主题焦点。
      */
     this.rememberTopicFocusState(topicId, { focusSvg: true });
@@ -336,35 +475,28 @@ export const fullscreenControllerMethods = {
 
   cleanupWindowFullscreenOverlay() {
     this._canEditBeforeFullscreen = undefined;
+    this._fullscreenFocusTopicId = '';
     this._restoreBodyFloatPanelsToBody();
-    if (this._wfHostElParent) {
-      if (
-        this._wfHostElNextSibling &&
-        this._wfHostElNextSibling.parentNode === this._wfHostElParent
-      ) {
-        this._wfHostElParent.insertBefore(this.hostEl, this._wfHostElNextSibling);
-      } else if (this.hostEl) {
-        this._wfHostElParent.appendChild(this.hostEl);
-      }
-    }
-    if (this._wfOverlay) {
-      this._wfOverlay.remove();
-      this._wfOverlay = null;
-    }
-    this._wfHostElParent = null;
-    this._wfHostElNextSibling = null;
+    this.restoreHostFromBodyOverlay('_wfOverlay', '_wfHostElParent', '_wfHostElNextSibling');
     this.isWindowFullscreen = false;
   },
 
-  restoreMapFocusAfterWindowFullscreenToggle() {
+  restoreMapFocusAfterFullscreenToggle(
+    topicId = this._fullscreenFocusTopicId || this.focusedTopicId
+  ) {
     if (!this.svgEl || this.isSourceMode) return;
+    const restoreTopicId = topicId || '';
 
     /*
-     * 窗口全屏会把 hostEl 移入/移出 body 级覆盖层，浏览器可能把 DOM 焦点落到 body。
-     * 立即和延迟各补一次 SVG 焦点，保证 Alt+2 / Option+2 能连续进入和退出窗口全屏。
+     * 全屏会把 hostEl 移入/移出 body 级覆盖层，浏览器可能把 DOM 焦点落到 body。
+     * 立即和延迟各补一次 SVG 焦点，保证 Alt/Option 全屏快捷键能连续进入和退出。
      */
     const focusSvg = () => {
       if (!this.svgEl || !this.hostEl?.isConnected || this.isSourceMode) return;
+      if (restoreTopicId && this.topicById.get(restoreTopicId)?._layout) {
+        this.setFocusedTopic(restoreTopicId, { focusSvg: true, ensureInView: false });
+        return;
+      }
       this.svgEl.focus({ preventScroll: true });
     };
 

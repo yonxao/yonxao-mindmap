@@ -149,6 +149,7 @@ export class YonxaoMindmapRenderer extends Component {
     this.fitRetryCount = 0;
     this.currentViewFitMode = null;
     this.isFullscreen = false;
+    this._fullscreenRequestPending = false;
     this.isWindowFullscreen = false;
     this._fsOverlay = null;
     this._hostElParent = null;
@@ -156,6 +157,8 @@ export class YonxaoMindmapRenderer extends Component {
     this._wfOverlay = null;
     this._wfHostElParent = null;
     this._wfHostElNextSibling = null;
+    this._fullscreenFocusTopicId = '';
+    this._fullscreenScrollSnapshot = null;
     this.fullscreenDraftIdentity = null;
     this.pendingFullscreenDraftSnapshot = null;
     this.fullscreenDraftRecoveryEl = null;

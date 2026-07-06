@@ -122,19 +122,18 @@
 
 /*
  * 作用：
- * 阅读视图全屏覆盖层，挂载在 body 下，不受阅读视图祖先容器约束。
+ * 物理全屏覆盖层，挂载在 body 下，不受 Obsidian 代码块祖先容器约束。
  *
  * 为什么需要覆盖层：
- * 1. 阅读视图祖先容器可能使用了 transform/translate，这会使内部
+ * 1. Obsidian 祖先容器可能使用了 transform/translate，这会使内部
  *    position: fixed 元素定位失效。body 级覆盖层能确保 position: fixed
  *    始终相对视口定位。
- * 2. Obsidian 阅读视图在布局变化时可能重新渲染 Markdown 预览，导致 hostEl
- *    被移除 DOM，浏览器会因为全屏元素脱离 DOM 而强制退出全屏（"闪退"）。
- *    body 级覆盖层不会被重渲染影响。
+ * 2. Obsidian/CodeMirror 在布局变化或图片加载后可能重建原代码块 DOM。
+ *    如果直接对 hostEl 请求物理全屏，浏览器会因为 fullscreenElement 脱离 DOM
+ *    而强制退出全屏；body 级覆盖层不会被原代码块重渲染影响。
  *
  * 使用场景：
- * 仅在阅读视图（canEditMindMap() === false）中创建。编辑视图直接对 hostEl
- * 调用原生 Fullscreen API。
+ * 物理全屏进入前统一创建，阅读视图和编辑视图都走这一条路径。
  *
  * 参见：
  * Renderer.toggleFullscreen() / cleanupFullscreenOverlay()
@@ -155,10 +154,16 @@
  * 为什么 overflow: hidden：
  * host 在普通文档流中 overflow: visible 允许浮层越界，但全屏时不需要，
  * 改为 hidden 避免拖拽或平移把内容推到视口外。
+ *
+ * 注意：
+ * 阅读视图物理全屏已经由覆盖层提供 16px padding，内部 host 不能再叠加
+ * .is-fullscreen 的 16px padding，否则图片异步重排时会用双层边距计算可视区域，
+ * 退出全屏后容易留下看似“双边框”和不居中的状态。
  */
 .yonxao-mindmap-fs-overlay .yonxao-mindmap-host {
   width: 100%;
   height: 100%;
+  padding: 0;
   overflow: hidden;
 }
 
@@ -169,13 +174,12 @@
  * 全屏保持一致的幕布高度行为。
  */
 /*
- * 覆盖层内幕布高度需要减去覆盖层 padding（16px × 2 = 32px）和
- * host is-fullscreen padding（16px × 2 = 32px），合计 64px。
- * 如果只减 32px，容器底部会被 host 的 overflow: hidden 裁切。
+ * 覆盖层自身已经扣除了 padding，内部 host 也取消了 is-fullscreen padding，
+ * 因此幕布直接填满 host 即可。
  */
 .yonxao-mindmap-fs-overlay .yonxao-mindmap-container {
   /* stylelint-disable-next-line declaration-no-important */
-  height: calc(100vh - 64px) !important;
+  height: 100% !important;
   max-height: none;
 }
 

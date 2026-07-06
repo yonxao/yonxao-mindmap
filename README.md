@@ -180,7 +180,7 @@ const topic = 'yonxao-mindmap';
 | <code>![[image.png&#124;Caption]]</code>          | Obsidian attachment image with caption                                                    |
 | <code>!&#91;Alt](image.png&#124;320)</code>       | Requested width in px; height uses the natural or fallback ratio                          |
 | <code>!&#91;Alt](image.png&#124;320x180)</code>   | Requested width and height, still constrained by topic text width                         |
-| <code>!&#91;Alt](image.png&#124;50%)</code>       | Percent of the current topic's available text width                                       |
+| <code>!&#91;Alt](image.png&#124;50%)</code>       | Percent of the image's natural width, still constrained by the topic width cap            |
 | <code>!&#91;Alt](image.png&#124;original)</code>  | Enables original-size preview behavior; in-topic rendering is still constrained by layout |
 | <code>![[image.png&#124;50%&#124;Caption]]</code> | Obsidian syntax can combine percent and caption; parameter order is flexible              |
 
@@ -199,7 +199,7 @@ const topic = 'yonxao-mindmap';
 - Tags use a stable color palette: the same tag text renders with the same color in the current map, without relying on the default accent color
 - Links show a compact marker before the label: `↗` for external links and `◇` for Obsidian/internal links
 - A topic can contain multiple image lines; each line renders as a separate image block
-- Image parameters are separated with `|` and support width, width x height, percent, `original`, and captions. Explicit pixel widths participate in topic width measurement and can expand image topics up to the topic width cap; percentages use the current topic's available text width. The default topic image width is `min(220px, available topic text width)` with the natural image ratio or a 0.62 fallback aspect ratio. Obsidian attachment images are resolved through the vault when possible
+- Image parameters are separated with `|` and support width, width x height, percent, `original`, and captions. Explicit pixel widths participate in topic width measurement and can expand image topics up to the topic width cap; percentages use the natural image width and remain capped by the topic width. Before the natural size is known, percent widths temporarily fall back to the current topic's available text width and relayout after the image loads. The default topic image width is `min(220px, available topic text width)` with the natural image ratio or a 0.62 fallback aspect ratio. Obsidian attachment images are resolved through the vault when possible
 - Missing local images render as a compact placeholder instead of a large broken image
 - Double-click an image to open a floating preview; the preview fits the window by default, and double-clicking the preview toggles original image size
 - Notes render as yellow hint icons after the topic. Hover or click the icon to show the note text
@@ -236,7 +236,7 @@ Supported attributes:
 | `fontFamily` | `[fontFamily="..."]`     | Font family override                           |
 | `lineHeight` | `[lineHeight=20]`        | Line height override (12-160px)                |
 | `align`      | `[align=center]`         | Text alignment: auto/left/center/right         |
-| `maxWidth`   | `[maxWidth=300]`         | Max width override (120-800px)                 |
+| `maxWidth`   | `[maxWidth=300]`         | Max width override (120-2000px)                |
 
 ### Config Block
 
@@ -368,6 +368,7 @@ interaction:
 |       `Alt` + `2`        |         `Option` + `2`         |      Window fullscreen      | Always available |
 |       `Alt` + `3`        |         `Option` + `3`         |     Physical fullscreen     | Always available |
 |       `Alt` + `,`        |         `Option` + `,`         |      Open config panel      | Always available |
+|       `Alt` + `S`        |         `Option` + `S`         |         Save source         |   Source mode    |
 
 > **Arrow key navigation logic**: In horizontal layouts, left/right navigates parent-child relationships and up/down navigates siblings; vertical layouts are the opposite; other layouts navigate by spatial proximity.
 
@@ -521,7 +522,7 @@ Open the visual config panel in Obsidian `Settings` → `Community plugins` → 
 - Layout selector (7 categories, 20 layouts)
 - Connector style (mind map layouts only: curve/straight/elbow)
 - Branch expansion mode (elbow connector only: side/hanging)
-- Topic max width: global + level1/level2/level3 overrides (120-800px)
+- Topic max width: global + level1/level2/level3 overrides (120-2000px)
 - **Inheritance linkage**: Level fields auto-update when global value changes
 
 **3. Color**

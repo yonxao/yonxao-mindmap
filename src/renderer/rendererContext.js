@@ -169,10 +169,17 @@ export const rendererContextMethods = {
     if (!this.hostEl || !this.hostEl.closest) return false;
 
     /*
-     * 窗口全屏时 hostEl 被移到了 body 下的覆盖层，不再位于 Obsidian 编辑器的 DOM 树内，
-     * 无法通过 closest() 判断编辑模式。此时使用窗口全屏前缓存的编辑能力状态。
+     * 全屏时 hostEl 被移到了 body 下的覆盖层，不再位于 Obsidian 编辑器的 DOM 树内，
+     * 无法通过 closest() 判断编辑模式。此时使用进入覆盖层前缓存的编辑能力状态。
      */
-    if (this.isWindowFullscreen && this._canEditBeforeFullscreen !== undefined) {
+    if (
+      (this.isFullscreen ||
+        this._fullscreenRequestPending ||
+        this.isWindowFullscreen ||
+        this._fsOverlay ||
+        this._wfOverlay) &&
+      this._canEditBeforeFullscreen !== undefined
+    ) {
       return this._canEditBeforeFullscreen;
     }
 

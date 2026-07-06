@@ -788,6 +788,7 @@ export const topicDrawMethods = {
     if (!cacheKey || this.topicImageNaturalSizeCache.has(cacheKey)) return;
 
     const image = new Image();
+    image.crossOrigin = 'anonymous';
     image.onload = () => {
       const width = Number(image.naturalWidth) || 0;
       const height = Number(image.naturalHeight) || 0;
@@ -809,6 +810,7 @@ export const topicDrawMethods = {
    */
   scheduleTopicImageNaturalSizeRelayout() {
     if (this.pendingTopicImageNaturalSizeFrame || this.isSourceMode) return;
+
     this.pendingTopicImageNaturalSizeFrame = window.requestAnimationFrame(() => {
       this.pendingTopicImageNaturalSizeFrame = null;
       if (!this.mapEl || this.isSourceMode) return;

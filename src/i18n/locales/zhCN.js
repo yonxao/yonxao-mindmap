@@ -360,7 +360,7 @@ export const zhCNMessages = Object.freeze({
   'configModal.structure.branchExpansion.elbowOnlyHelp':
     '子主题展开方式仅在实际连线线型为折线时生效。',
   'configModal.structure.topicMaxWidthSection': '主题最大宽度',
-  'configModal.structure.topicMaxWidth.help': '范围：120-800 px。',
+  'configModal.structure.topicMaxWidth.help': '范围：120-2000 px。',
   'configModal.structure.topicMaxWidthGlobal': '全局',
   'configModal.structure.topicMaxWidthLevel1': '一级主题',
   'configModal.structure.topicMaxWidthLevel2': '二级主题',

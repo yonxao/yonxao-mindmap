@@ -37,8 +37,8 @@ export const FONT_LINE_HEIGHT_MAX = 160;
 
 // 主题最大宽度允许的最小值，防止主题过窄导致文字频繁换行。
 export const TOPIC_MAX_WIDTH_MIN = 120;
-// 主题最大宽度允许的最大值，防止主题过宽影响整体布局。
-export const TOPIC_MAX_WIDTH_MAX = 800;
+// 主题最大宽度允许的最大值，允许长表格/代码等内容减少折行，同时仍保留硬上限。
+export const TOPIC_MAX_WIDTH_MAX = 2000;
 
 // 工具栏可吸附的幕布角落，顺序同时决定配置面板下拉顺序。
 export const TOOLBAR_CORNERS = Object.freeze([

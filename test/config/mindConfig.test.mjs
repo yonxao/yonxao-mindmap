@@ -9,6 +9,7 @@ import {
   parseSimpleYaml,
   pruneInactiveMindConfig,
   resolveTopicFont,
+  resolveTopicMaxWidth,
   stringifySimpleYaml,
 } from '../../src/config/mindConfig.js';
 
@@ -283,6 +284,21 @@ test('normalizeMindConfig lets topic max width levels inherit global unless expl
   assert.deepEqual(inheritedConfig.topic.levels, {});
   assert.equal(inheritedConfig.topic.maxWidth, 300);
   assert.equal(explicitConfig.topic.levels['2'].maxWidth, 240);
+});
+
+test('normalizeMindConfig accepts topic max width up to 2000', () => {
+  const config = normalizeMindConfig({
+    structure: {
+      topicMaxWidth: {
+        global: 2500,
+        level2: 2000,
+      },
+    },
+  });
+
+  assert.equal(config.topic.maxWidth, 2000);
+  assert.equal(config.topic.levels['2'].maxWidth, 2000);
+  assert.equal(resolveTopicMaxWidth({ level: 3, attributes: { maxWidth: '2500' } }, config), 2000);
 });
 
 test('normalizeMindConfig lets font levels inherit global unless explicitly set', () => {

@@ -375,7 +375,7 @@ export const enMessages = Object.freeze({
   'configModal.structure.branchExpansion.elbowOnlyHelp':
     'Subtopic expansion only applies when the actual connector style is elbow.',
   'configModal.structure.topicMaxWidthSection': 'Topic max width',
-  'configModal.structure.topicMaxWidth.help': 'Range: 120-800 px.',
+  'configModal.structure.topicMaxWidth.help': 'Range: 120-2000 px.',
   'configModal.structure.topicMaxWidthGlobal': 'Global',
   'configModal.structure.topicMaxWidthLevel1': 'Level 1 topic',
   'configModal.structure.topicMaxWidthLevel2': 'Level 2 topic',

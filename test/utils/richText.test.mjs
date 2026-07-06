@@ -272,7 +272,7 @@ test('wrapTopicRichBlocksByWidth measures images task lists and adornments', () 
   assert.ok(content.height > 0);
 });
 
-test('wrapTopicRichBlocksByWidth supports percent image width hints', () => {
+test('wrapTopicRichBlocksByWidth falls back to topic width for pending percent image width', () => {
   const content = wrapTopicRichBlocksByWidth('![半宽](image.png|50%)', 240, {
     size: 16,
     weight: 400,
@@ -329,8 +329,26 @@ test('wrapTopicRichBlocksByWidth uses natural ratio for percent image width', ()
     }
   );
 
-  assert.equal(content.blocks[0].imageWidth, 120);
-  assert.equal(content.blocks[0].imageHeight, 90);
+  assert.equal(content.blocks[0].imageWidth, 200);
+  assert.equal(content.blocks[0].imageHeight, 150);
+});
+
+test('wrapTopicRichBlocksByWidth does not upscale percent image width beyond natural size', () => {
+  const content = wrapTopicRichBlocksByWidth(
+    '![原图](image.png|100%)',
+    2000,
+    {
+      size: 16,
+      weight: 400,
+      lineHeight: 20,
+    },
+    {
+      resolveImageSize: () => ({ width: 800, height: 500 }),
+    }
+  );
+
+  assert.equal(content.blocks[0].imageWidth, 800);
+  assert.equal(content.blocks[0].imageHeight, 500);
 });
 
 test('wrapTopicRichBlocksByWidth uses compact blocks for unresolved images', () => {

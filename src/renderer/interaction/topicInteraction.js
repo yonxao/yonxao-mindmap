@@ -134,11 +134,12 @@ export const topicInteractionMethods = {
     if (!target) return false;
 
     /*
-     * 主题编辑器是导图焦点的延伸区域：进入这些浮层时仍保留当前主题高亮，
-     * 这样保存、取消或删除后可以明确回到对应主题或父主题。
+     * 工具栏和主题编辑器都是导图焦点的延伸区域：进入这些浮层时仍保留当前主题高亮，
+     * 这样执行全屏、保存、取消或删除后可以明确回到对应主题或父主题。
      */
     return (
       target === this.svgEl ||
+      containsFocusTarget(this.toolbarEl, target) ||
       containsFocusTarget(this.inlineTextEditorEl, target) ||
       containsFocusTarget(this.topicEditorEl, target) ||
       containsFocusTarget(this.topicContentEditorEl, target)

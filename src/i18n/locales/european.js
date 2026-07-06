@@ -207,7 +207,7 @@ export const europeanLocaleMessages = Object.freeze({
         'Seules les dispositions de carte mentale peuvent choisir un style de connecteur. Les autres dispositions utilisent une ligne brisée fixe.',
       branchExpansionElbowOnlyHelp:
         "L'extension des sous-sujets s'applique uniquement lorsque le connecteur est en ligne brisée.",
-      topicMaxWidthHelp: 'Plage : 120-800 px.',
+      topicMaxWidthHelp: 'Plage : 120-2000 px.',
       global: 'Global',
       level1Topic: 'Niveau 1',
       level2Topic: 'Niveau 2',
@@ -502,7 +502,7 @@ export const europeanLocaleMessages = Object.freeze({
         'Nur Mindmap-Layouts können den Verbindungsstil wählen. Andere Layouts verwenden eine feste Winkellinie zur Wahrung der Struktur.',
       branchExpansionElbowOnlyHelp:
         'Die Erweiterung der Unterthemen gilt nur, wenn der tatsächliche Verbinder eine Winkellinie ist.',
-      topicMaxWidthHelp: 'Bereich: 120-800 px.',
+      topicMaxWidthHelp: 'Bereich: 120-2000 px.',
       global: 'Global',
       level1Topic: 'Ebene 1',
       level2Topic: 'Ebene 2',
@@ -794,7 +794,7 @@ export const europeanLocaleMessages = Object.freeze({
         'Solo los diseños de mapa mental pueden elegir el estilo de conector. Otros diseños usan una línea angular fija.',
       branchExpansionElbowOnlyHelp:
         'La expansión de subtemas solo aplica cuando el conector real es una línea angular.',
-      topicMaxWidthHelp: 'Rango: 120-800 px.',
+      topicMaxWidthHelp: 'Rango: 120-2000 px.',
       global: 'Global',
       level1Topic: 'Nivel 1',
       level2Topic: 'Nivel 2',
@@ -1085,7 +1085,7 @@ export const europeanLocaleMessages = Object.freeze({
         'Apenas layouts de mapa mental podem escolher o estilo de conector. Outros layouts usam linha de cotovelo fixa.',
       branchExpansionElbowOnlyHelp:
         'A expansão de subtópicos só se aplica quando o conector real é uma linha de cotovelo.',
-      topicMaxWidthHelp: 'Intervalo: 120-800 px.',
+      topicMaxWidthHelp: 'Intervalo: 120-2000 px.',
       global: 'Global',
       level1Topic: 'Nível 1',
       level2Topic: 'Nível 2',
@@ -1374,7 +1374,7 @@ export const europeanLocaleMessages = Object.freeze({
         'Только макеты майнд-карт могут выбирать стиль соединителя. Другие макеты используют фиксированную ломаную линию.',
       branchExpansionElbowOnlyHelp:
         'Расширение подтем применяется только когда фактический соединитель — ломаная линия.',
-      topicMaxWidthHelp: 'Диапазон: 120-800 пикс.',
+      topicMaxWidthHelp: 'Диапазон: 120-2000 пикс.',
       global: 'Глобальный',
       level1Topic: 'Уровень 1',
       level2Topic: 'Уровень 2',
@@ -1668,7 +1668,7 @@ export const europeanLocaleMessages = Object.freeze({
         'Solo i layout di mappa mentale possono scegliere lo stile del connettore. Gli altri layout usano una linea a gomito fissa.',
       branchExpansionElbowOnlyHelp:
         "L'espansione dei sotto-topic si applica solo quando il connettore effettivo è una linea a gomito.",
-      topicMaxWidthHelp: 'Intervallo: 120-800 px.',
+      topicMaxWidthHelp: 'Intervallo: 120-2000 px.',
       global: 'Globale',
       level1Topic: 'Livello 1',
       level2Topic: 'Livello 2',

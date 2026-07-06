@@ -656,16 +656,20 @@ function wrapTopicImageBlock(block, maxWidth, font, gapBefore, options = {}) {
     typeof options.isImageResolved === 'function' ? options.isImageResolved(block) : true;
   const naturalSize =
     typeof options.resolveImageSize === 'function' ? options.resolveImageSize(block) : null;
+  const naturalWidth = Number(naturalSize?.width) > 0 ? Number(naturalSize.width) : 0;
+  const naturalHeight = Number(naturalSize?.height) > 0 ? Number(naturalSize.height) : 0;
   const naturalAspectRatio =
-    Number(naturalSize?.width) > 0 && Number(naturalSize?.height) > 0
-      ? Number(naturalSize.height) / Number(naturalSize.width)
-      : 0;
-  const hasRequestedWidth =
-    (block.sizeMode === 'percent' && Number(block.scale) > 0) || Number(block.width) > 0;
+    naturalWidth > 0 && naturalHeight > 0 ? naturalHeight / naturalWidth : 0;
+  const percentScale =
+    block.sizeMode === 'percent' && Number(block.scale) > 0 ? Number(block.scale) : 0;
+  /*
+   * 百分比尺寸语义跟 Markdown 图片更接近：`|50%` 表示原图自然宽度的 50%。
+   * 首次布局如果还没有拿到自然宽度，先按当前主题宽度估算；图片加载完成后会缓存自然尺寸并触发重排。
+   */
+  const percentBaseWidth = naturalWidth || maxWidth;
+  const hasRequestedWidth = percentScale > 0 || Number(block.width) > 0;
   const requestedWidth =
-    block.sizeMode === 'percent' && Number(block.scale) > 0
-      ? Math.round(maxWidth * Number(block.scale))
-      : Number(block.width) || 0;
+    percentScale > 0 ? Math.round(percentBaseWidth * percentScale) : Number(block.width) || 0;
   const fallbackWidth = Math.min(
     IMAGE_BLOCK_DEFAULT_WIDTH,
     Math.max(IMAGE_BLOCK_MIN_WIDTH, maxWidth)

@@ -204,7 +204,7 @@ export const globalSouthLocaleMessages = Object.freeze({
         'Hanya tata letak peta pikiran yang dapat memilih gaya konektor. Tata letak lain menggunakan garis siku tetap.',
       branchExpansionElbowOnlyHelp:
         'Ekspansi subtopik hanya berlaku saat konektor aktual adalah garis siku.',
-      topicMaxWidthHelp: 'Rentang: 120-800 px.',
+      topicMaxWidthHelp: 'Rentang: 120-2000 px.',
       global: 'Global',
       level1Topic: 'Tingkat 1',
       level2Topic: 'Tingkat 2',
@@ -495,7 +495,7 @@ export const globalSouthLocaleMessages = Object.freeze({
         'Yalnızca zihin haritası düzenleri bağlantı stili seçebilir. Diğer düzenler yapıyı korumak için sabit dirsek çizgisi kullanır.',
       branchExpansionElbowOnlyHelp:
         'Alt konu genişletme yalnızca gerçek bağlantı dirsek çizgisi olduğunda uygulanır.',
-      topicMaxWidthHelp: 'Aralık: 120-800 px.',
+      topicMaxWidthHelp: 'Aralık: 120-2000 px.',
       global: 'Genel',
       level1Topic: 'Seviye 1',
       level2Topic: 'Seviye 2',
@@ -784,7 +784,7 @@ export const globalSouthLocaleMessages = Object.freeze({
         'Chỉ bố cục bản đồ tư duy mới có thể chọn kiểu đường nối. Các bố cục khác dùng đường gấp khúc cố định.',
       branchExpansionElbowOnlyHelp:
         'Mở rộng chủ đề con chỉ áp dụng khi đường nối thực tế là đường gấp khúc.',
-      topicMaxWidthHelp: 'Phạm vi: 120-800 px.',
+      topicMaxWidthHelp: 'Phạm vi: 120-2000 px.',
       global: 'Toàn cục',
       level1Topic: 'Cấp 1',
       level2Topic: 'Cấp 2',
@@ -1068,7 +1068,7 @@ export const globalSouthLocaleMessages = Object.freeze({
       connectorFixedHelp:
         'เฉพาะเลย์เอาต์แผนที่ความคิดเท่านั้นที่สามารถเลือกรูปแบบเส้นเชื่อมได้ เลย์เอาต์อื่นใช้เส้นหักมุมคงที่',
       branchExpansionElbowOnlyHelp: 'การขยายหัวข้อย่อยจะใช้เฉพาะเมื่อเส้นเชื่อมจริงเป็นเส้นหักมุม',
-      topicMaxWidthHelp: 'ช่วง: 120-800 px',
+      topicMaxWidthHelp: 'ช่วง: 120-2000 px',
       global: 'ส่วนกลาง',
       level1Topic: 'ระดับ 1',
       level2Topic: 'ระดับ 2',
@@ -1358,7 +1358,7 @@ export const globalSouthLocaleMessages = Object.freeze({
         'केवल माइंड मैप लेआउट कनेक्टर शैली चुन सकते हैं। अन्य लेआउट संरचना बनाए रखने के लिए निश्चित कोहनी रेखा का उपयोग करते हैं।',
       branchExpansionElbowOnlyHelp:
         'उप-विषय विस्तार तभी लागू होता है जब वास्तविक कनेक्टर कोहनी रेखा हो।',
-      topicMaxWidthHelp: 'सीमा: 120-800 px।',
+      topicMaxWidthHelp: 'सीमा: 120-2000 px।',
       global: 'वैश्विक',
       level1Topic: 'स्तर 1',
       level2Topic: 'स्तर 2',

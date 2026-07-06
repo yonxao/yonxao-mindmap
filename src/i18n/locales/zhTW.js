@@ -360,7 +360,7 @@ export const zhTWMessages = Object.freeze({
   'configModal.structure.branchExpansion.elbowOnlyHelp':
     '子主題展開方式僅在實際連線線型為折線時生效。',
   'configModal.structure.topicMaxWidthSection': '主題最大寬度',
-  'configModal.structure.topicMaxWidth.help': '範圍：120-800 px。',
+  'configModal.structure.topicMaxWidth.help': '範圍：120-2000 px。',
   'configModal.structure.topicMaxWidthGlobal': '全域',
   'configModal.structure.topicMaxWidthLevel1': '一級主題',
   'configModal.structure.topicMaxWidthLevel2': '二級主題',

@@ -219,7 +219,7 @@ export const eastAsianLocaleMessages = Object.freeze({
         'マインドマップレイアウトのみコネクタースタイルを選択できます。他のレイアウトは構造を保つため固定折れ線を使用します。',
       branchExpansionElbowOnlyHelp:
         'サブトピック展開方式は実際のコネクターが折れ線の場合のみ有効です。',
-      topicMaxWidthHelp: '範囲：120-800 px。',
+      topicMaxWidthHelp: '範囲：120-2000 px。',
       global: 'グローバル',
       level1Topic: 'レベル1',
       level2Topic: 'レベル2',
@@ -526,7 +526,7 @@ export const eastAsianLocaleMessages = Object.freeze({
         '마인드맵 레이아웃만 연결선 스타일을 선택할 수 있습니다. 다른 레이아웃은 구조를 유지하기 위해 고정 꺾은선을 사용합니다.',
       branchExpansionElbowOnlyHelp:
         '하위 주제 확장 방식은 실제 연결선이 꺾은선인 경우에만 적용됩니다.',
-      topicMaxWidthHelp: '범위: 120-800 px.',
+      topicMaxWidthHelp: '범위: 120-2000 px.',
       global: '전역',
       level1Topic: '레벨 1',
       level2Topic: '레벨 2',

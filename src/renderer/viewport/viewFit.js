@@ -34,6 +34,10 @@ import {
 } from '../../shared/rendererShared.js';
 import { canvasToMapX, canvasToMapY } from './viewportMath.js';
 
+function isFullscreenViewport(renderer) {
+  return Boolean(renderer.isFullscreenViewportActive?.());
+}
+
 export const viewFitMethods = {
   applyConfiguredViewFit(bounds, options = {}) {
     if (this.config.view.fit === 'fit') {
@@ -205,7 +209,7 @@ export const viewFitMethods = {
   },
 
   getFitViewBox(contentViewBox) {
-    if (this.isFullscreen || this.isWindowFullscreen || !this.containerEl) return contentViewBox;
+    if (isFullscreenViewport(this) || !this.containerEl) return contentViewBox;
 
     const rect = this.containerEl.getBoundingClientRect();
     if (!rect.width) return contentViewBox;
@@ -225,7 +229,7 @@ export const viewFitMethods = {
   getAutoCanvasMaxHeight() {
     const viewportHeight =
       typeof window === 'undefined' ? AUTO_CANVAS_FALLBACK_VIEWPORT_HEIGHT : window.innerHeight;
-    if (this.isFullscreen || this.isWindowFullscreen) {
+    if (isFullscreenViewport(this)) {
       return Math.max(AUTO_CANVAS_MIN_HEIGHT, viewportHeight - FULLSCREEN_VIEWPORT_OFFSET);
     }
 
@@ -249,7 +253,7 @@ export const viewFitMethods = {
     this.fitRetryCount = 0;
 
     const minHeight = TOPIC_MIN_HEIGHT + VIEWBOX_MARGIN_Y * 2;
-    if (this.isFullscreen || this.isWindowFullscreen) {
+    if (isFullscreenViewport(this)) {
       return;
     }
 
@@ -292,6 +296,7 @@ export const viewFitMethods = {
 
     const run = () => {
       this.pendingFitFrame = null;
+
       // 记录首次刷新时的容器宽度，用于判断第二次刷新是否必要
       const containerWidth = this.containerEl?.getBoundingClientRect().width || 0;
       refresh();
