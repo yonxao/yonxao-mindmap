@@ -9,6 +9,36 @@ All notable changes to this project will be documented in this file.
 <!-- The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), -->
 <!-- and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html). -->
 
+## [1.4.1] - 2026-07-09
+
+### Added
+
+- Added clickable task checkbox interactions inside topic content for `- [ ]` and `- [x]` items.
+- Added line number tracking for task items to maintain visual correspondence with source text.
+
+### Changed
+
+- Normalized source mode save shortcut from `Alt/Option+S` to `Ctrl/Cmd+S` to match other save buttons.
+- Enabled JS build compression to reduce bundle size.
+
+### Fixed
+
+- Multiple details and performance optimizations
+
+### 新增
+
+- 主题内容中的 `- [ ]` 和 `- [x]` 任务项现在可点击交互，支持勾选和取消勾选。
+- 任务项增加行号追踪，保持与源码文本的视觉对应关系。
+
+### 调整
+
+- 统一源码模式保存快捷键为 `Ctrl/Cmd+S`，与插件内其他保存快捷键一致。
+- 启用 JS 构建压缩，减小打包体积。
+
+### 修复
+
+- 多项细节、性能优化
+
 ## [1.4.0] - 2026-07-06
 
 ### Added
