@@ -48,8 +48,8 @@ export const zhTWMessages = Object.freeze({
   // ── 原始碼檢視 ──
   'source.tab.config': '設定區',
   'source.tab.body': '正文區',
-  'source.status.editable': '原始碼可編輯，切回導圖或按 Alt/Option+S 寫回 Markdown。',
-  'source.status.dirty': '原始碼已修改，切回導圖或按 Alt/Option+S 寫回 Markdown。',
+  'source.status.editable': '原始碼可編輯，切回導圖或按 Ctrl/Cmd+S 寫回 Markdown。',
+  'source.status.dirty': '原始碼已修改，切回導圖或按 Ctrl/Cmd+S 寫回 Markdown。',
   'source.status.synced': '原始碼已同步到目前 Markdown 程式碼區塊。',
   'source.status.saved': '原始碼已儲存到目前 Markdown 程式碼區塊。',
   'source.status.saveFailed': '原始碼儲存失敗，請檢查目前 Markdown 程式碼區塊。',

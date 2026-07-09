@@ -52,9 +52,9 @@ export const enMessages = Object.freeze({
   'source.tab.config': 'Config',
   'source.tab.body': 'Body',
   'source.status.editable':
-    'Source is editable. Switch back to map or press Alt/Option+S to write Markdown.',
+    'Source is editable. Switch back to map or press Ctrl/Cmd+S to write Markdown.',
   'source.status.dirty':
-    'Source changed. Switch back to map or press Alt/Option+S to write Markdown.',
+    'Source changed. Switch back to map or press Ctrl/Cmd+S to write Markdown.',
   'source.status.synced': 'Source is synced to the current Markdown code block.',
   'source.status.saved': 'Source saved to the current Markdown code block.',
   'source.status.saveFailed': 'Source save failed. Check the current Markdown code block.',

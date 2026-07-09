@@ -47,9 +47,8 @@ export const globalSouthLocaleMessages = Object.freeze({
       configSection: 'Konfigurasi',
       bodySection: 'Badan',
       sourceEditable:
-        'Sumber dapat diedit. Kembali ke peta atau tekan Alt/Option+S untuk menulis Markdown.',
-      sourceDirty:
-        'Sumber berubah. Kembali ke peta atau tekan Alt/Option+S untuk menulis Markdown.',
+        'Sumber dapat diedit. Kembali ke peta atau tekan Ctrl/Cmd+S untuk menulis Markdown.',
+      sourceDirty: 'Sumber berubah. Kembali ke peta atau tekan Ctrl/Cmd+S untuk menulis Markdown.',
       sourceSynced: 'Sumber tersinkronisasi dengan blok kode Markdown saat ini.',
       resizeCanvas: 'Seret untuk mengubah tinggi kanvas',
 
@@ -339,9 +338,9 @@ export const globalSouthLocaleMessages = Object.freeze({
       configSection: 'Yapılandırma',
       bodySection: 'Gövde',
       sourceEditable:
-        "Kaynak düzenlenebilir. Haritaya dönün veya Markdown'a yazmak için Alt/Option+S'ye basın.",
+        "Kaynak düzenlenebilir. Haritaya dönün veya Markdown'a yazmak için Ctrl/Cmd+S'ye basın.",
       sourceDirty:
-        "Kaynak değişti. Haritaya dönün veya Markdown'a yazmak için Alt/Option+S'ye basın.",
+        "Kaynak değişti. Haritaya dönün veya Markdown'a yazmak için Ctrl/Cmd+S'ye basın.",
       sourceSynced: 'Kaynak, geçerli Markdown kod bloğuyla senkronize edildi.',
       resizeCanvas: 'Tuval yüksekliğini ayarlamak için sürükleyin',
 
@@ -629,8 +628,8 @@ export const globalSouthLocaleMessages = Object.freeze({
       configSection: 'Cấu hình',
       bodySection: 'Nội dung',
       sourceEditable:
-        'Mã nguồn có thể chỉnh sửa. Quay lại sơ đồ hoặc nhấn Alt/Option+S để ghi Markdown.',
-      sourceDirty: 'Mã nguồn đã thay đổi. Quay lại sơ đồ hoặc nhấn Alt/Option+S để ghi Markdown.',
+        'Mã nguồn có thể chỉnh sửa. Quay lại sơ đồ hoặc nhấn Ctrl/Cmd+S để ghi Markdown.',
+      sourceDirty: 'Mã nguồn đã thay đổi. Quay lại sơ đồ hoặc nhấn Ctrl/Cmd+S để ghi Markdown.',
       sourceSynced: 'Mã nguồn được đồng bộ với khối mã Markdown hiện tại.',
       resizeCanvas: 'Kéo để điều chỉnh chiều cao khung vẽ',
 
@@ -917,8 +916,8 @@ export const globalSouthLocaleMessages = Object.freeze({
 
       configSection: 'การตั้งค่า',
       bodySection: 'เนื้อหา',
-      sourceEditable: 'ซอร์สสามารถแก้ไขได้ กลับไปยังแผนที่หรือกด Alt/Option+S เพื่อเขียน Markdown',
-      sourceDirty: 'ซอร์สมีการเปลี่ยนแปลง กลับไปยังแผนที่หรือกด Alt/Option+S เพื่อเขียน Markdown',
+      sourceEditable: 'ซอร์สสามารถแก้ไขได้ กลับไปยังแผนที่หรือกด Ctrl/Cmd+S เพื่อเขียน Markdown',
+      sourceDirty: 'ซอร์สมีการเปลี่ยนแปลง กลับไปยังแผนที่หรือกด Ctrl/Cmd+S เพื่อเขียน Markdown',
       sourceSynced: 'ซอร์สซิงค์กับบล็อกโค้ด Markdown ปัจจุบันแล้ว',
       resizeCanvas: 'ลากเพื่อปรับความสูงของผืนผ้าใบ',
 
@@ -1203,9 +1202,8 @@ export const globalSouthLocaleMessages = Object.freeze({
       configSection: 'कॉन्फ़िग',
       bodySection: 'बॉडी',
       sourceEditable:
-        'स्रोत संपादन योग्य है। मैप पर वापस जाएँ या Markdown लिखने के लिए Alt/Option+S दबाएँ।',
-      sourceDirty:
-        'स्रोत बदल गया है। मैप पर वापस जाएँ या Markdown लिखने के लिए Alt/Option+S दबाएँ।',
+        'स्रोत संपादन योग्य है। मैप पर वापस जाएँ या Markdown लिखने के लिए Ctrl/Cmd+S दबाएँ।',
+      sourceDirty: 'स्रोत बदल गया है। मैप पर वापस जाएँ या Markdown लिखने के लिए Ctrl/Cmd+S दबाएँ।',
       sourceSynced: 'स्रोत वर्तमान Markdown कोड ब्लॉक से सिंक है।',
       resizeCanvas: 'कैनवास ऊँचाई बदलने के लिए खींचें',
 

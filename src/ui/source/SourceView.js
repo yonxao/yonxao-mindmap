@@ -185,7 +185,7 @@ export const sourceViewMethods = {
     /*
      * Obsidian/CodeMirror 也会监听键盘事件，而且它们可能在外层捕获阶段先处理保存类快捷键。
      * 所以源码模式保存不能只挂在 textarea 冒泡阶段，否则焦点稍微偏到高亮层、宿主层或外层编辑器，
-     * Alt/Option+S 就可能表现为“没反应”。
+     * Ctrl/Cmd+S 就可能表现为“没反应”。
      *
      * 这里挂 window capture，但通过 isSourceShortcutTarget() 限定事件必须来自当前源码视图，
      * 避免抢走 Obsidian 其它区域或其它 yxmm 代码块的快捷键。
@@ -215,9 +215,8 @@ export const sourceViewMethods = {
     if (event.isComposing) return false;
     const key = String(event.key || '').toLowerCase();
     return (
-      event.altKey &&
-      !event.ctrlKey &&
-      !event.metaKey &&
+      (event.ctrlKey || event.metaKey) &&
+      !event.altKey &&
       !event.shiftKey &&
       (event.code === SOURCE_SAVE_SHORTCUT_CODE || key === SOURCE_SAVE_SHORTCUT_KEY)
     );
@@ -281,7 +280,7 @@ export const sourceViewMethods = {
     this.updateSourceStatus(this.t('source.status.saved'), 'saved');
     this.scheduleSourceModeHeight();
     /*
-     * Alt/Option+S 是源码模式内保存，不应把用户带回导图模式。
+     * Ctrl/Cmd+S 是源码模式内保存，不应把用户带回导图模式。
      * 只有当前实例已经不在源码模式时，才立即重绘 SVG；正常从源码模式切回导图时，
      * toggleSourceMode() 会按最新 root/config 重新渲染。
      */
