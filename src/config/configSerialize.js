@@ -13,12 +13,15 @@ import {
   DEFAULT_MIND_CONFIG,
 } from './defaultMindConfig.js';
 
+// YAML 配置区分隔符
+const YAML_DELIMITER = '---';
+
 export function splitMindSourceConfig(source) {
   const text = String(source || '');
   const lines = text.split(/\r?\n/);
   const firstContentIndex = lines.findIndex((line) => line.trim() !== '');
 
-  if (firstContentIndex === -1 || lines[firstContentIndex].trim() !== '---') {
+  if (firstContentIndex === -1 || lines[firstContentIndex].trim() !== YAML_DELIMITER) {
     return {
       hasConfig: false,
       rawConfig: {},
@@ -27,7 +30,7 @@ export function splitMindSourceConfig(source) {
   }
 
   const endIndex = lines.findIndex(
-    (line, index) => index > firstContentIndex && line.trim() === '---'
+    (line, index) => index > firstContentIndex && line.trim() === YAML_DELIMITER
   );
 
   if (endIndex === -1) {
@@ -164,7 +167,7 @@ export function serializeMindSource(rawConfig, body, forceConfig, baseConfig) {
   if (!shouldWriteConfig) return bodyText;
 
   const configText = stringifySimpleYaml(config);
-  return ['---', configText, '---', '', bodyText].join('\n').trimEnd();
+  return [YAML_DELIMITER, configText, YAML_DELIMITER, '', bodyText].join('\n').trimEnd();
 }
 
 /*

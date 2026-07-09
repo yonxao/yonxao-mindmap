@@ -16,7 +16,7 @@ import {
   ICON_PATHS,
   normalizeIcon,
   CUSTOM_FONT_VALUE,
-  getLocalizedFontFamilyGroups,
+  appendFontOptionsToSelect,
   isValidFontFamilyInput,
   isPresetFontValue,
   normalizeFontFamilyInput,
@@ -752,20 +752,7 @@ export const topicEditorFieldMethods = {
   },
 
   appendTopicEditorFontOptions(select) {
-    const translate = (key, replacements) => this.t(key, replacements);
-    for (const group of getLocalizedFontFamilyGroups(translate)) {
-      const groupEl = document.createElement('optgroup');
-      groupEl.label = group.group;
-
-      for (const [optionValue, optionLabel] of group.options) {
-        const option = document.createElement('option');
-        option.value = optionValue;
-        option.textContent = optionLabel;
-        groupEl.appendChild(option);
-      }
-
-      select.appendChild(groupEl);
-    }
+    appendFontOptionsToSelect(select, (key) => this.t(key));
   },
 
   setTopicEditorFontFamilyValue(value, options = {}) {

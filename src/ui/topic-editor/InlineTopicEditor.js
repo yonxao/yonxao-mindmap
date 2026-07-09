@@ -18,6 +18,8 @@ const INLINE_EDITOR_WIDTH_OFFSET = 120;
 const INLINE_EDITOR_MIN_WIDTH = 240;
 const INLINE_EDITOR_ABSOLUTE_MIN_WIDTH = 180;
 const INLINE_EDITOR_HEIGHT_OFFSET = 44;
+// 行数乘以行高后额外追加的垂直内边距，确保编辑框底部留出舒适空间
+const INLINE_EDITOR_PADDING_OFFSET = 34;
 const INLINE_EDITOR_MIN_HEIGHT = 86;
 
 export const inlineTopicEditorMethods = {
@@ -61,7 +63,7 @@ export const inlineTopicEditorMethods = {
       'change',
       'wheel',
     ]) {
-      inputEl.addEventListener(eventName, (event) => {
+      this.registerDomEvent(inputEl, eventName, (event) => {
         event.stopPropagation();
       });
     }
@@ -136,7 +138,7 @@ export const inlineTopicEditorMethods = {
     const height = clamp(
       Math.max(
         anchorRect.height + INLINE_EDITOR_HEIGHT_OFFSET,
-        lineCount * INLINE_EDITOR_LINE_HEIGHT + 34
+        lineCount * INLINE_EDITOR_LINE_HEIGHT + INLINE_EDITOR_PADDING_OFFSET
       ),
       INLINE_EDITOR_MIN_HEIGHT,
       Math.max(INLINE_EDITOR_MIN_HEIGHT, window.innerHeight - INLINE_EDITOR_GAP * 2)

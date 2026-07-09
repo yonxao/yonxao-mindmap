@@ -51,12 +51,6 @@ export const structureTabMethods = {
         }
       );
       branchExpansionSelect.addEventListener('change', () => {
-        this.setConfigValueOrDeleteInherited(
-          ['structure', 'layout'],
-          normalized.layout,
-          layoutSelect._yonxaoMindmapInheritedValue
-        );
-        this.syncInheritedValueStyle(layoutSelect._yonxaoMindmapControlEl, ['structure', 'layout']);
         if (!this.isConnectorStyleConfigurable(normalized.layout)) return;
         this.setConfigValueOrDeleteInherited(
           ['structure', 'connectorStyle'],

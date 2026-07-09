@@ -207,6 +207,11 @@ export function deepMergePlainObjects(base, override) {
 /*
  * 作用：
  * 判断一个值是否为普通对象。
+ *
+ * 边界说明：
+ * 当前实现不会区分 Date、RegExp 等非纯对象，但在 yxmm 配置数据流中
+ *（YAML 解析 → 规范化）不会产生这类值。如果未来配置来源扩展，
+ * 应考虑使用 Object.prototype.toString.call(value) === '[object Object]' 做更严格的判断。
  */
 export function isPlainObject(value) {
   return Boolean(value) && typeof value === 'object' && !Array.isArray(value);

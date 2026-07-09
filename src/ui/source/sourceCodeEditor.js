@@ -178,7 +178,7 @@ function findYamlCommentIndex(line) {
   return -1;
 }
 
-function appendSourceToken(parentEl, text, className) {
+export function appendSourceToken(parentEl, text, className) {
   const spanEl = document.createElement('span');
   spanEl.className = className;
   spanEl.textContent = text;

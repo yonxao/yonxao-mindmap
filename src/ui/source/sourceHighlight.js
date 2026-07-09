@@ -11,6 +11,7 @@
 
 import {
   appendConfigHighlightedLine,
+  appendSourceToken,
   sourceInputCursorLineIndex,
   syncSourceCodeEditorScroll,
   updateSourceCodeEditor,
@@ -103,10 +104,7 @@ export const sourceHighlightMethods = {
   },
 
   appendSourceToken(parentEl, text, className) {
-    const spanEl = document.createElement('span');
-    spanEl.className = className;
-    spanEl.textContent = text;
-    parentEl.appendChild(spanEl);
+    appendSourceToken(parentEl, text, className);
   },
 
   sourceInputCursorLineIndex() {

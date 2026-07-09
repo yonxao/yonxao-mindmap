@@ -23,11 +23,10 @@
  * ~~~
  */
 
-import { estimateTopicTextWidth } from './text.js';
+import { CJK_OR_FULLWIDTH_RE, estimateTopicTextWidth, shouldWrapByWords } from './text.js';
 
 const COLOR_MARKER_PATTERN = /^\{((?:#[0-9a-fA-F]{3}(?:[0-9a-fA-F]{3})?)|[a-zA-Z][a-zA-Z0-9-]*)\|/;
 const HEX_COLOR_PATTERN = /^#(?:[0-9a-f]{3}|[0-9a-f]{6})$/i;
-const CJK_OR_FULLWIDTH_RE = /[\u2e80-\u9fff\uff00-\uffef]/;
 const CODE_FENCE_PATTERN = /^~~~([a-zA-Z0-9_-]+)?\s*$/;
 const EQUATION_FENCE_PATTERN = /^\$\$\s*$/;
 const MARKDOWN_IMAGE_PATTERN = /^!\[([^\]]*)\]\(([^)]+)\)\s*$/;
@@ -1310,10 +1309,6 @@ function trimRichLineEnd(line) {
   const next = [...line];
   while (next.length && next[next.length - 1].text === ' ') next.pop();
   return next;
-}
-
-function shouldWrapByWords(text) {
-  return text.includes(' ') && !CJK_OR_FULLWIDTH_RE.test(text);
 }
 
 function joinSegmentsText(segments) {

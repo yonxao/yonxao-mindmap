@@ -10,9 +10,6 @@
 import { SVG_NS } from '../constants.js';
 
 /*
- * TeX \u547d\u4ee4\u540d\u76f4\u63a5\u6620\u5c04\u5230 Unicode \u5b57\u7b26\uff0c\u7701\u53bb\u8fc7\u5ea6\u7684 COMMAND_SYMBOLS \u4e8c\u6b21\u95f4\u63a5\u3002
- */
-/*
  * TeX 命令名直接映射到 Unicode 字符，省去过度的二次间接查找。
  * 仅覆盖导图主题里常用的公式符号。
  */

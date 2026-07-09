@@ -21,9 +21,13 @@ import {
 } from '../../icons/iconNames.js';
 import { ZOOM_IN_FACTOR, ZOOM_OUT_FACTOR } from '../../constants.js';
 
+// 鼠标离开宿主后等待 140ms 再隐藏工具栏，避免短暂抖动手势导致工具栏闪烁
 const TOOLBAR_HIDE_DELAY_MS = 140;
+// 滚轮滚动后静默期 260ms，期间不显示工具栏，避免滚动操作时被工具栏遮挡内容
 const TOOLBAR_SCROLL_WHEEL_QUIET_MS = 260;
+// 中键（滚轮按钮）滚动后静默期 700ms，中键自动滚动通常持续时间较长，需要更长的屏蔽窗口
 const TOOLBAR_SCROLL_MIDDLE_BUTTON_QUIET_MS = 700;
+// 宿主元素距视口边缘小于此值时认为不在视口内，不显示工具栏
 const TOOLBAR_VIEWPORT_MARGIN = 64;
 export const floatingToolbarMethods = {
   createToolbar() {
@@ -213,7 +217,7 @@ export const floatingToolbarMethods = {
     );
   },
 
-  handleToolbarScroll(quietMs = 180) {
+  handleToolbarScroll(quietMs) {
     if (!this.toolbarEl) return;
     this.suppressToolbarDuringScroll = true;
     this.hideToolbar();

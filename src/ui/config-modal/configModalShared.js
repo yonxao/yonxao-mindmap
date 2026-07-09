@@ -58,6 +58,7 @@ export {
 } from '../../config/mindConfig.js';
 export { createTranslator } from '../../i18n/messages.js';
 export {
+  appendFontOptionsToSelect,
   getLocalizedFontFamilyGroups,
   isValidFontFamilyInput,
   normalizeFontFamilyInput,

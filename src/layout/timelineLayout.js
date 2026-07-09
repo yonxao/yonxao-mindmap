@@ -102,20 +102,15 @@ export function placeTimelineDetails(parent, branchSide, collapsedIds, branchExp
   const subtopics = visibleSubtopics(parent, collapsedIds);
   if (!subtopics.length) return;
 
-  if (
-    Number(parent?.level || 1) >= HANGING_EXPANSION_LEVEL_THRESHOLD &&
-    branchExpansion === 'side'
-  ) {
-    placeTimelineNaturalDetails(parent, branchSide, collapsedIds, branchExpansion);
-    return;
-  }
-
-  if (
-    Number(parent?.level || 1) >= HANGING_EXPANSION_LEVEL_THRESHOLD &&
-    branchExpansion === 'hanging'
-  ) {
-    placeTimelineHangingDetails(parent, branchSide, collapsedIds, branchExpansion);
-    return;
+  if (Number(parent?.level || 1) >= HANGING_EXPANSION_LEVEL_THRESHOLD) {
+    if (branchExpansion === 'side') {
+      placeTimelineNaturalDetails(parent, branchSide, collapsedIds, branchExpansion);
+      return;
+    }
+    if (branchExpansion === 'hanging') {
+      placeTimelineHangingDetails(parent, branchSide, collapsedIds, branchExpansion);
+      return;
+    }
   }
 
   const parentBox = parent._layout;

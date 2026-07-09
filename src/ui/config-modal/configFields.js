@@ -19,7 +19,7 @@ import {
   DEFAULT_BUTTON_COLOR,
   DEFAULT_FONT_FAMILY,
   CUSTOM_FONT_VALUE,
-  getLocalizedFontFamilyGroups,
+  appendFontOptionsToSelect,
   isValidFontFamilyInput,
   normalizeFontFamilyInput,
 } from './configModalShared.js';
@@ -363,19 +363,7 @@ export const configFieldMethods = {
   },
 
   appendFontOptions(select, options = {}) {
-    for (const group of getLocalizedFontFamilyGroups(this.t, options)) {
-      const groupEl = document.createElement('optgroup');
-      groupEl.label = group.group;
-
-      for (const [optionValue, optionLabel] of group.options) {
-        const option = document.createElement('option');
-        option.value = optionValue;
-        option.textContent = optionLabel;
-        groupEl.appendChild(option);
-      }
-
-      select.appendChild(groupEl);
-    }
+    appendFontOptionsToSelect(select, this.t, options);
   },
 
   createColorTextField(label, path, value, help) {

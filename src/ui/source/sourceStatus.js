@@ -12,6 +12,8 @@
 import { CANVAS_MIN_HEIGHT, clamp } from '../../shared/rendererShared.js';
 
 const SOURCE_EXTRA_LINE_MULTIPLIER = 2;
+// 当 CSS line-height 解析失败时的兜底行高值，约等于系统默认字号 16px 的 1.25 倍
+const FALLBACK_LINE_HEIGHT = 20;
 // 这些状态只控制底部提示文字的语义和颜色，不参与源码保存或解析流程。
 const SOURCE_STATUS_TYPES = ['synced', 'dirty', 'saved', 'error'];
 
@@ -83,7 +85,7 @@ export const sourceStatusMethods = {
     const statusHeight = this.sourceStatusEl
       ? this.sourceStatusEl.getBoundingClientRect().height
       : 0;
-    const lineHeight = parseFloat(inputStyle.lineHeight || '0') || 20;
+    const lineHeight = parseFloat(inputStyle.lineHeight || '0') || FALLBACK_LINE_HEIGHT;
     const lineCount = this.sourceInputLineCount();
     const inputPadding =
       parseFloat(inputStyle.paddingTop || '0') + parseFloat(inputStyle.paddingBottom || '0');

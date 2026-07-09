@@ -136,14 +136,15 @@ function normalizeHorizontalWhitespace(text) {
 /*
  * CJK（中日韩统一表意文字）与全角字符的范围正则，用于判断文本是否需要按字符折行。
  * 该正则覆盖了中文、日文、韩文以及全角标点字符。
+ * 被 text.js（纯文本换行）和 richText.js（富文本解析）复用。
  */
-const CJK_OR_FULLWIDTH_RE = /[\u2e80-\u9fff\uff00-\uffef]/;
+export const CJK_OR_FULLWIDTH_RE = /[\u2e80-\u9fff\uff00-\uffef]/;
 
 /*
  * 作用：
  * 只有纯英文/拉丁文本才按单词折行；中文文本里的空格不能提前截断一整行。
  */
-function shouldWrapByWords(text) {
+export function shouldWrapByWords(text) {
   return text.includes(' ') && !CJK_OR_FULLWIDTH_RE.test(text);
 }
 
@@ -263,11 +264,21 @@ export function estimateTopicTextWidth(text, font = {}) {
   return cjkWidth + otherWidth * weightFactor;
 }
 
+// 各字符类别相对 font-size 的视觉宽度比例系数，偏保守以避免文字穿出主题框
+const CHAR_WIDTH_RATIOS = Object.freeze({
+  CJK: 1.0,
+  SPACE: 0.36,
+  WIDE_LETTER: 0.86, // m、w、M、W、@、#、%、& 等较宽字符
+  ALPHANUM: 0.68, // 大写字母和数字
+  NARROW_PUNCT: 0.38, // 窄标点和引号
+  DEFAULT: 0.58, // 其他小写字母和一般字符
+});
+
 function estimateTopicCharWidth(char, fontSize) {
-  if (CJK_OR_FULLWIDTH_RE.test(char)) return fontSize * 1.0;
-  if (/\s/.test(char)) return fontSize * 0.36;
-  if (/[mwMW@#%&]/.test(char)) return fontSize * 0.86;
-  if (/[A-Z0-9]/.test(char)) return fontSize * 0.68;
-  if (/[.,;:!?'"`|()[\]{}]/.test(char)) return fontSize * 0.38;
-  return fontSize * 0.58;
+  if (CJK_OR_FULLWIDTH_RE.test(char)) return fontSize * CHAR_WIDTH_RATIOS.CJK;
+  if (/\s/.test(char)) return fontSize * CHAR_WIDTH_RATIOS.SPACE;
+  if (/[mwMW@#%&]/.test(char)) return fontSize * CHAR_WIDTH_RATIOS.WIDE_LETTER;
+  if (/[A-Z0-9]/.test(char)) return fontSize * CHAR_WIDTH_RATIOS.ALPHANUM;
+  if (/[.,;:!?'"`|()[\]{}]/.test(char)) return fontSize * CHAR_WIDTH_RATIOS.NARROW_PUNCT;
+  return fontSize * CHAR_WIDTH_RATIOS.DEFAULT;
 }

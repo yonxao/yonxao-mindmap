@@ -33,7 +33,11 @@ import {
   VIEW_MODES,
 } from './defaultMindConfig.js';
 
-// 支持字体和主题最大宽度按层级覆盖的级别索引，和 FONT_LEVEL_KEYS 对应。
+/*
+ * 支持字体和主题最大宽度按层级覆盖的级别索引，对应 FONT_LEVEL_KEYS / TOPIC_MAX_WIDTH_LEVEL_KEYS
+ * 中的 'level1'/'level2'/'level3'，这里只取数字后缀用于 key 查找。
+ * 如果新增 level4，需要同步更新 defaultMindConfig.js 中的 FONT_LEVEL_KEYS 和 TOPIC_MAX_WIDTH_LEVEL_KEYS。
+ */
 const LEVEL_SUFFIXES = ['1', '2', '3'];
 
 export function normalizeMindConfig(rawConfig) {

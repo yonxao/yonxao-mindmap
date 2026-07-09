@@ -24,14 +24,6 @@ const VIRTUAL_ROOT_LAYOUT = 'mindmap-bidirectional';
 
 /*
  * 作用：
- * yxmm 源码解析入口，把原始字符串切成行并转交给 主题级别标记解析器。
- */
-export function parseMind(source) {
-  return parseMindDocument(source).root;
-}
-
-/*
- * 作用：
  * 解析完整 yxmm 文档，包括顶部配置区和 主题级别标记正文。
  *
  * 调用链：

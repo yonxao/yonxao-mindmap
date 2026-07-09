@@ -285,12 +285,11 @@ export function placeOrgRightDescendants(parent, collapsedIds, branchExpansion =
   const subtopics = visibleSubtopics(parent, collapsedIds);
   if (!subtopics.length) return;
 
-  if (
-    Number(parent?.level || 1) >= HANGING_EXPANSION_LEVEL_THRESHOLD &&
-    branchExpansion === 'side'
-  ) {
-    placeOrgRightNaturalDescendants(parent, collapsedIds, branchExpansion);
-    return;
+  if (Number(parent?.level || 1) >= HANGING_EXPANSION_LEVEL_THRESHOLD) {
+    if (branchExpansion === 'side') {
+      placeOrgRightNaturalDescendants(parent, collapsedIds, branchExpansion);
+      return;
+    }
   }
 
   const parentBox = parent._layout;

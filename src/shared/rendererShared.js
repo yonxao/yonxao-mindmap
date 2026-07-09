@@ -80,6 +80,7 @@ export { applyTopicLevelKey } from '../source/topicLevelKeys.js';
 export { themeConnectorOpacity, themeTopicFillAlpha } from '../theme/mindThemes.js';
 export { ConfigModal } from '../ui/ConfigModal.js';
 export {
+  appendFontOptionsToSelect,
   getLocalizedFontFamilyGroups,
   isValidFontFamilyInput,
   isPresetFontValue,

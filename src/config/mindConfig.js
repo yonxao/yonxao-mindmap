@@ -46,7 +46,6 @@ export {
 } from './defaultMindConfig.js';
 
 export {
-  clonePlainObject,
   deleteMindConfigPath,
   deepMergePlainObjects,
   isPlainObject,

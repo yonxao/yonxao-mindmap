@@ -1,9 +1,18 @@
 /*
- * 文件作用：
+ * 作用：
  * 解析和序列化插件配置使用的小型 YAML 子集。
+ *
+ * 协作说明：
+ * 解析流程：parseSimpleYaml 先逐行调用 stripYamlComment 移除行内注释（# 到行尾），
+ * 再交给 parseYamlScalar 解析标量值。引号内的 # 由 stripYamlComment 保证不被误删。
+ * stringifyYamlScalar 序列化时，对包含 # 的字符串（如 hex 颜色值）自动加引号，
+ * 避免下次解析时被当成注释。
  */
 
 import { isPlainObject } from './configAccessors.js';
+
+// YAML 缩进步长固定为 2 个空格，符合常见 Obsidian 配置区书写习惯
+const YAML_INDENT_STEP = 2;
 
 export function parseSimpleYaml(lines) {
   const root = {};
@@ -14,7 +23,7 @@ export function parseSimpleYaml(lines) {
     if (!withoutComment.trim()) continue;
 
     const indent = withoutComment.match(/^ */)?.[0].length || 0;
-    if (indent % 2 !== 0) {
+    if (indent % YAML_INDENT_STEP !== 0) {
       throw new Error('配置区缩进请使用 2 个空格。');
     }
 
@@ -53,7 +62,7 @@ export function parseSimpleYaml(lines) {
 export function stringifySimpleYaml(value, depth = 0, path = []) {
   if (!isPlainObject(value)) return '';
 
-  const indent = '  '.repeat(depth);
+  const indent = ' '.repeat(YAML_INDENT_STEP).repeat(depth);
   const lines = [];
 
   for (const [key, entryValue] of orderedConfigEntries(value, path)) {

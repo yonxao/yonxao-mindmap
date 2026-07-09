@@ -10,7 +10,7 @@
  * ConfigModal -> getConfigValue()/setConfigValue()/deleteConfigValue()/parseDraftConfigText()
  */
 
-import { parseSimpleYaml, stringifySimpleYaml } from './mindConfig.js';
+import { parseSimpleYaml, stringifySimpleYaml } from './yamlConfig.js';
 
 /*
  * 作用：
@@ -47,7 +47,7 @@ export function setConfigValue(config, path, value) {
 
   let current = config;
   for (const key of path.slice(0, -1)) {
-    if (!current[key] || typeof current[key] !== 'object' || Array.isArray(current[key])) {
+    if (!(current[key] && typeof current[key] === 'object') || Array.isArray(current[key])) {
       current[key] = {};
     }
     current = current[key];

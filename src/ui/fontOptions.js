@@ -24,6 +24,25 @@ export {
  * 实现逻辑：
  * FONT_FAMILY_GROUPS 的标签存储为 i18n key，这里通过 t() 翻译。
  */
+/*
+ * 作用：
+ * 把本地化后的字体选项追加到 <select> 下拉框中。
+ * 被配置面板和主题编辑面板复用，避免两处重复实现相同的 DOM 构建逻辑。
+ */
+export function appendFontOptionsToSelect(select, t, options = {}) {
+  for (const group of getLocalizedFontFamilyGroups(t, options)) {
+    const groupEl = document.createElement('optgroup');
+    groupEl.label = group.group;
+    for (const [optionValue, optionLabel] of group.options) {
+      const option = document.createElement('option');
+      option.value = optionValue;
+      option.textContent = optionLabel;
+      groupEl.appendChild(option);
+    }
+    select.appendChild(groupEl);
+  }
+}
+
 export function getLocalizedFontFamilyGroups(t, options = {}) {
   const includeInherit = options.includeInherit !== false;
   const groups = FONT_FAMILY_GROUPS.map((group) => ({
