@@ -31,6 +31,26 @@
 }
 
 /*
+ * 底部左侧的项目引导和星标链接，颜色极浅不抢夺按钮焦点。
+ */
+.yonxao-mindmap-config-footer {
+  margin-right: auto;
+  align-self: center;
+  font-size: var(--font-ui-smaller);
+  color: var(--text-faint);
+}
+
+.yonxao-mindmap-config-footer a {
+  color: var(--text-faint);
+  text-decoration: none;
+}
+
+.yonxao-mindmap-config-footer a:hover {
+  color: var(--text-accent);
+  text-decoration: underline;
+}
+
+/*
  * 窄屏下改成单列字段，避免标签挤压输入框。
  */
 @media (max-width: 640px) {

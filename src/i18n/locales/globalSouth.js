@@ -132,6 +132,7 @@ export const globalSouthLocaleMessages = Object.freeze({
       configStatusSaved: 'Konfigurasi disimpan.',
       configStatusValid: 'Sintaks konfigurasi valid.',
       configStatusInvalid: 'Kesalahan sintaks konfigurasi: {message}',
+      configFooterStar: 'Tolong beri ⭐ gratis — dukungan Anda sangat berarti bagi penulis!',
 
       auto: 'Otomatis',
       defaultValue: 'Default',
@@ -422,6 +423,7 @@ export const globalSouthLocaleMessages = Object.freeze({
       configStatusSaved: 'Yapılandırma kaydedildi.',
       configStatusValid: 'Yapılandırma söz dizimi geçerli.',
       configStatusInvalid: 'Yapılandırma söz dizimi hatası: {message}',
+      configFooterStar: 'Lütfen ücretsiz bir ⭐ verin — desteğiniz yazar için çok önemli!',
 
       auto: 'Otomatik',
       defaultValue: 'Varsayılan',
@@ -712,6 +714,7 @@ export const globalSouthLocaleMessages = Object.freeze({
       configStatusSaved: 'Đã lưu cấu hình.',
       configStatusValid: 'Cú pháp cấu hình hợp lệ.',
       configStatusInvalid: 'Lỗi cú pháp cấu hình: {message}',
+      configFooterStar: 'Vui lòng cho một ⭐ miễn phí — sự ủng hộ của bạn là động lực cho tác giả!',
 
       auto: 'Tự động',
       defaultValue: 'Mặc định',
@@ -1000,6 +1003,7 @@ export const globalSouthLocaleMessages = Object.freeze({
       configStatusSaved: 'บันทึกการตั้งค่าแล้ว',
       configStatusValid: 'ไวยากรณ์การตั้งค่าถูกต้อง',
       configStatusInvalid: 'ข้อผิดพลาดไวยากรณ์การตั้งค่า: {message}',
+      configFooterStar: 'กรุณากด ⭐ ฟรี — กำลังใจของคุณมีความหมายต่อผู้เขียนมาก!',
 
       auto: 'อัตโนมัติ',
       defaultValue: 'ค่าเริ่มต้น',
@@ -1285,6 +1289,7 @@ export const globalSouthLocaleMessages = Object.freeze({
       configStatusSaved: 'कॉन्फ़िग सहेजा गया।',
       configStatusValid: 'कॉन्फ़िग सिंटैक्स मान्य है।',
       configStatusInvalid: 'कॉन्फ़िग सिंटैक्स त्रुटि: {message}',
+      configFooterStar: 'कृपया मुफ्त ⭐ दें — आपका समर्थन लेखक के लिए बहुत मायने रखता है!',
 
       auto: 'स्वचालित',
       defaultValue: 'डिफ़ॉल्ट',

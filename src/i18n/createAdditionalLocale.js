@@ -159,6 +159,7 @@ export function createAdditionalLocale(text) {
     'configModal.status.saved': text.configStatusSaved,
     'configModal.status.valid': text.configStatusValid,
     'configModal.status.invalid': text.configStatusInvalid,
+    'configModal.footer.star': text.configFooterStar,
 
     // ── 配置面板：占位符 ──
     'configModal.placeholder.auto': text.auto,

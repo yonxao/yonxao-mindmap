@@ -134,6 +134,7 @@ export const europeanLocaleMessages = Object.freeze({
       configStatusSaved: 'Configuration enregistrée.',
       configStatusValid: 'La syntaxe de configuration est valide.',
       configStatusInvalid: 'Erreur de syntaxe de configuration : {message}',
+      configFooterStar: "Une ⭐ gratuite, merci ! Votre soutien compte pour l'auteur.",
 
       auto: 'Auto',
       defaultValue: 'Par défaut',
@@ -429,6 +430,7 @@ export const europeanLocaleMessages = Object.freeze({
       configStatusSaved: 'Konfiguration gespeichert.',
       configStatusValid: 'Konfigurationssyntax ist gültig.',
       configStatusInvalid: 'Konfigurationssyntaxfehler: {message}',
+      configFooterStar: 'Bitte geben Sie eine ⭐ — Ihre Unterstützung bedeutet dem Autor viel!',
 
       auto: 'Auto',
       defaultValue: 'Standard',
@@ -722,6 +724,7 @@ export const europeanLocaleMessages = Object.freeze({
       configStatusSaved: 'Configuración guardada.',
       configStatusValid: 'La sintaxis de configuración es válida.',
       configStatusInvalid: 'Error de sintaxis de configuración: {message}',
+      configFooterStar: 'Por favor, da una ⭐ gratis — ¡tu apoyo ayuda al autor!',
 
       auto: 'Auto',
       defaultValue: 'Predeterminado',
@@ -1014,6 +1017,7 @@ export const europeanLocaleMessages = Object.freeze({
       configStatusSaved: 'Configuração salva.',
       configStatusValid: 'A sintaxe da configuração é válida.',
       configStatusInvalid: 'Erro de sintaxe na configuração: {message}',
+      configFooterStar: 'Por favor, dê uma ⭐ grátis — seu apoio faz a diferença para o autor!',
 
       auto: 'Auto',
       defaultValue: 'Padrão',
@@ -1304,6 +1308,7 @@ export const europeanLocaleMessages = Object.freeze({
       configStatusSaved: 'Конфигурация сохранена.',
       configStatusValid: 'Синтаксис конфигурации верен.',
       configStatusInvalid: 'Ошибка синтаксиса конфигурации: {message}',
+      configFooterStar: 'Пожалуйста, поставьте ⭐ — ваша поддержка важна для автора!',
 
       auto: 'Авто',
       defaultValue: 'По умолчанию',
@@ -1595,6 +1600,8 @@ export const europeanLocaleMessages = Object.freeze({
       configStatusSaved: 'Configurazione salvata.',
       configStatusValid: 'La sintassi della configurazione è valida.',
       configStatusInvalid: 'Errore di sintassi della configurazione: {message}',
+      configFooterStar:
+        "Per favore, regala una ⭐ gratuita — per l'autore il tuo supporto conta molto!",
 
       auto: 'Auto',
       defaultValue: 'Predefinito',

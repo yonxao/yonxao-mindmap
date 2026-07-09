@@ -143,6 +143,7 @@ export const eastAsianLocaleMessages = Object.freeze({
       configStatusSaved: '設定を保存しました。',
       configStatusValid: '設定の構文は有効です。',
       configStatusInvalid: '設定の構文エラー：{message}',
+      configFooterStar: '⭐をお願いします。作者の励みになります！',
 
       // ── 設定パネル：プレースホルダー ──
       auto: '自動',
@@ -451,6 +452,7 @@ export const eastAsianLocaleMessages = Object.freeze({
       configStatusSaved: '설정이 저장되었습니다.',
       configStatusValid: '설정 구문이 유효합니다.',
       configStatusInvalid: '설정 구문 오류: {message}',
+      configFooterStar: '⭐를 눌러주세요 — 여러분의 응원이 제게 큰 힘이 됩니다!',
 
       // ── 설정 패널：플레이스홀더 ──
       auto: '자동',

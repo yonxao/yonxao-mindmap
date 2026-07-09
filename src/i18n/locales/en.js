@@ -204,6 +204,7 @@ export const enMessages = Object.freeze({
   'configModal.actions.saveAndClose': 'Save and close',
   'configModal.actions.cancel': 'Cancel',
   'configModal.actions.close': 'Close',
+  'configModal.footer.star': 'Please give a ⭐ — your support means a lot to me!',
   'configModal.status.saved': 'Config saved.',
   'configModal.status.valid': 'Config syntax is valid.',
   'configModal.status.invalid': 'Config syntax error: {message}',

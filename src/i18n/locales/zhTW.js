@@ -196,6 +196,7 @@ export const zhTWMessages = Object.freeze({
   'configModal.actions.saveAndClose': '儲存並關閉',
   'configModal.actions.cancel': '取消',
   'configModal.actions.close': '關閉',
+  'configModal.footer.star': '覺得好用請給顆免費的星⭐，作者需要你的鼓勵！',
   'configModal.status.saved': '設定已儲存。',
   'configModal.status.valid': '設定語法有效。',
   'configModal.status.invalid': '設定語法錯誤：{message}',

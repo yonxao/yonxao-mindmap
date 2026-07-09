@@ -196,6 +196,7 @@ export const zhCNMessages = Object.freeze({
   'configModal.actions.saveAndClose': '保存并关闭',
   'configModal.actions.cancel': '取消',
   'configModal.actions.close': '关闭',
+  'configModal.footer.star': '觉得好用请给颗免费的星⭐，作者需要你的鼓励！',
   'configModal.status.saved': '配置已保存。',
   'configModal.status.valid': '配置语法有效。',
   'configModal.status.invalid': '配置语法错误：{message}',

@@ -85,6 +85,19 @@ export class ConfigModal extends Modal {
     this.statusEl = contentEl.createDiv({ cls: 'yonxao-mindmap-config-status' });
 
     const actionsEl = contentEl.createDiv({ cls: 'yonxao-mindmap-config-actions' });
+    const footerEl = actionsEl.createDiv({ cls: 'yonxao-mindmap-config-footer' });
+    const readmeUrl = 'https://github.com/yonxao/yonxao-mindmap/blob/main/README.md';
+    const readmeZhUrl = 'https://github.com/yonxao/yonxao-mindmap/blob/main/README.zh-CN.md';
+    const starUrl = 'https://github.com/yonxao/yonxao-mindmap';
+    footerEl.createEl('a', { href: readmeUrl, text: 'Docs', attr: { target: '_blank' } });
+    footerEl.appendChild(document.createTextNode(' · '));
+    footerEl.createEl('a', { href: readmeZhUrl, text: '文档', attr: { target: '_blank' } });
+    footerEl.appendChild(document.createTextNode(' · '));
+    footerEl.createEl('a', {
+      href: starUrl,
+      text: this.t('configModal.footer.star'),
+      attr: { target: '_blank' },
+    });
     this.applyButton = this.createActionButton(
       actionsEl,
       this.t('configModal.actions.apply'),
