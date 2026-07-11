@@ -1261,12 +1261,12 @@ font:
 ```yxmm
 ---
 structure:
-  layout: fishbone-right
+  layout: fishbone-left
 color:
-  scheme: forest
+  scheme: grape
 ---
 
-# 右向鱼骨小图
+# 左向鱼骨小图
 ## 原因一
 ## 原因二
 ```
@@ -1276,12 +1276,12 @@ color:
 ```yxmm
 ---
 structure:
-  layout: fishbone-right
+  layout: fishbone-left
 color:
-  scheme: forest
+  scheme: grape
 ---
 
-# 右向鱼骨中图
+# 左向鱼骨中图
 ## 原因一
 ### 子原因一
 ### 子原因二
@@ -1300,19 +1300,19 @@ color:
 ```yxmm
 ---
 structure:
-  layout: fishbone-right
+  layout: fishbone-left
   branchExpansion: hanging
   topicMaxWidth:
     global: 260
     level2: 340
 color:
-  scheme: forest
+  scheme: grape
 font:
   size: 16
   lineHeight: 22
 ---
 
-# 右向鱼骨长文本
+# 左向鱼骨长文本
 ## 多行大分支 [maxWidth=360]
 第一行检查鱼骨图斜骨线。
 第二行检查大分支宽高不一致时是否重叠。
@@ -1527,6 +1527,72 @@ font:
 ### 删除带子主题的主题应提示确认
 #### 被删除确认覆盖的后代主题
 ### 新增子主题后级别应正确
+```
+
+## 富内容专项
+
+```yxmm
+---
+structure:
+  layout: mindmap-right
+  connectorStyle: elbow
+  branchExpansion: hanging
+color:
+  scheme: ocean
+font:
+  lineHeight: 22
+---
+
+# 富内容专项
+## 标签、链接与混合样式
+### 行内语法 [外部链接](https://example.com) 和 #标签
+### 内部链接 [[本地笔记|显示别名]] 和 **加粗** *斜体*
+### ~~中划线~~ ++下划线++ {red|语义色} {#3b82f6|十六进制色}
+## 任务项
+### 未完成任务
+- [ ] 任务描述一
+- [ ] 任务描述二
+#列表
+### 已完成任务
+- [x] 已勾选事项一
+- [x] 已勾选事项二
+#列表
+## 嵌套列表
+### 无序列表
+- 一级列表项一
+  - 二级列表项一
+  - 二级列表项二
+- 一级列表项二
+#列表
+### 有序列表
+1. 第一步
+   2. 嵌套有序
+   2. 嵌套有序
+2. 第二步
+#列表
+## 图片
+### Markdown 图片
+![示例图片](https://picsum.photos/id/287/300/200)
+### 带尺寸图片
+![固定宽高](xhttps://picsum.photos/id/287/800/800|400x200)
+### Obsidian 附件图片
+![[attachments/sample.png]]
+## 备注与附件
+### 备注浮层
+> 这是备注浮层内容
+> 连续多行合并为一个浮层
+### Markdown 附件
+@[附件名称](https://example.com/file.pdf)
+### Obsidian 附件
+@[[attachments/document|文档]]
+## 方程式
+$$
+E = mc^2
+$$
+## 代码块
+~~~javascript
+console.log("hello")
+~~~
 ```
 
 ## 配置面板专项

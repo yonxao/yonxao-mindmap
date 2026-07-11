@@ -823,6 +823,22 @@ export const topicDrawMethods = {
       this.registerDomEvent(imageEl, 'load', () => {
         this.captureTopicImageNaturalSize(block, href);
       });
+      this.registerDomEvent(imageEl, 'error', () => {
+        imageEl.remove();
+        imageGroup
+          .querySelector('.yonxao-mindmap-topic-image-frame')
+          ?.classList.remove('is-loaded');
+        imageGroup.querySelector('.yonxao-mindmap-topic-image-frame')?.classList.add('is-missing');
+        this.appendTopicImagePlaceholder(
+          imageGroup,
+          block,
+          box,
+          imageX,
+          imageY,
+          renderWidth,
+          renderHeight
+        );
+      });
       imageGroup.appendChild(imageEl);
     } else {
       this.appendTopicImagePlaceholder(
