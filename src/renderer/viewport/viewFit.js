@@ -34,6 +34,9 @@ import {
 } from '../../shared/rendererShared.js';
 import { canvasToMapX, canvasToMapY } from './viewportMath.js';
 
+/* A4 默认边距下单页可用高度的保守值，用于区分整页展示和自然跨页。 */
+const PRINT_SINGLE_PAGE_CONTENT_HEIGHT = 1000;
+
 function isFullscreenViewport(renderer) {
   return Boolean(renderer.isFullscreenViewportActive?.());
 }
@@ -365,6 +368,18 @@ export const viewFitMethods = {
     this.svgEl.setAttribute(
       'viewBox',
       `${this.viewBox.x} ${this.viewBox.y} ${this.viewBox.width} ${this.viewBox.height}`
+    );
+    /* 打印宽度与屏幕宽度不同，记录当前视口比例，供 PDF 导出重算幕布高度。 */
+    this.containerEl?.style.setProperty(
+      '--yonxao-mindmap-viewbox-aspect-ratio',
+      `${this.viewBox.width} / ${this.viewBox.height}`
+    );
+    const containerWidth = this.containerEl?.getBoundingClientRect().width || 0;
+    const projectedPrintHeight =
+      containerWidth > 0 ? (containerWidth * this.viewBox.height) / this.viewBox.width : 0;
+    this.containerEl?.classList.toggle(
+      'is-print-page-breakable',
+      projectedPrintHeight > PRINT_SINGLE_PAGE_CONTENT_HEIGHT
     );
   },
 };

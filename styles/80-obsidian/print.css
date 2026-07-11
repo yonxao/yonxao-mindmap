@@ -1,0 +1,27 @@
+/*
+ * Obsidian 导出 PDF 时会尽量避免 SVG 跨页，导致长导图被整体推到下一页并留下空白页。
+ */
+@media print {
+  .yonxao-mindmap-container {
+    /* 短导图默认保持整体，当前页空间不足时整体移到下一页。 */
+    height: auto !important;
+    aspect-ratio: var(--yonxao-mindmap-viewbox-aspect-ratio);
+    overflow: visible !important;
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+
+  .yonxao-mindmap-container.is-print-page-breakable {
+    /* 只有单页无法容纳的长导图才允许在页底自然截断。 */
+    break-inside: auto;
+    page-break-inside: auto;
+  }
+
+  .yonxao-mindmap-svg {
+    position: absolute;
+    inset: 0;
+    /* 允许导图在页面底部截断，并从下一页原位续接。 */
+    break-inside: auto !important;
+    page-break-inside: auto !important;
+  }
+}

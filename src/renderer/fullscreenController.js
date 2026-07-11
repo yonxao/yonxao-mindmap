@@ -525,6 +525,8 @@ export const fullscreenControllerMethods = {
       role: 'img',
       'aria-label': 'Mind map',
       tabindex: '0',
+      /* 导出 PDF 会复制当前 DOM，顶部对齐可避免长 SVG 在跨页幕布中垂直居中产生空白页。 */
+      preserveAspectRatio: 'xMidYMin meet',
     });
     this.svgEl.style.setProperty(
       '--yonxao-mindmap-connector-stroke-width',
