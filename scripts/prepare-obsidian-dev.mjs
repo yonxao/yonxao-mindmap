@@ -9,13 +9,13 @@
  * .hotreload 文件，才能在 dist/main.js 或 dist/styles.css 更新后自动重载插件。
  *
  * 执行逻辑：
- * 1. npm run dev:obsidian 先执行 npm run release:prepare，生成干净的 dist/。
+ * 1. npm run dev:prepare 先执行 npm run build，并复制 manifest.json 到 dist/。
  * 2. 本脚本读取项目根目录的 .hotreload。
  * 3. 将它复制到 dist/.hotreload。
  * 4. dist/ 变成适合本地 Obsidian 调试的插件目录：main.js、styles.css、manifest.json、.hotreload。
  *
  * 调用链位置：
- * package.json scripts.dev:obsidian -> release:prepare -> prepare-obsidian-dev.mjs -> dist/.hotreload
+ * package.json scripts.dev:prepare -> build + prepare-release.mjs -> prepare-obsidian-dev.mjs -> dist/.hotreload
  */
 
 import fs from 'node:fs';
@@ -28,12 +28,12 @@ const targetHotReloadFile = path.join(distDir, '.hotreload');
 
 if (!fs.existsSync(sourceHotReloadFile)) {
   // .hotreload 是本地调试输入文件；缺失时直接失败，避免生成一个不可热重载的调试目录。
-  throw new Error('找不到根目录 .hotreload，请先创建该文件再运行 npm run dev:obsidian。');
+  throw new Error('找不到根目录 .hotreload，请先创建该文件再运行 npm run dev:prepare。');
 }
 
 if (!fs.existsSync(distDir)) {
-  // dev:obsidian 理论上会先跑 release:prepare；这里作为防御性检查，给单独运行脚本的人明确提示。
-  throw new Error('找不到 dist/，请先运行 npm run release:prepare。');
+  // dev:prepare 理论上会先完成构建；这里作为防御性检查，给单独运行脚本的人明确提示。
+  throw new Error('找不到 dist/，请先运行 npm run dev:prepare。');
 }
 
 // dist/ 被 Obsidian 当作插件目录时，Hot Reload 插件需要在 dist/ 内看到这个标记文件。

@@ -33,11 +33,18 @@
 
 ## 测试与验证
 
-- 修改源码、配置、i18n、构建脚本或发布产物后，优先运行 `npm run ai:validate`。
-- 只改轻量文档时，至少运行 `npm run format`。
-- 修改发布流程或产物结构时，必须运行 `npm run release:prepare`。
-- 修改布局、渲染、视口、导出、保存或交互后，按回归清单做人工检查。
+- AI 默认只格式化、检查本次修改的文件，并运行直接相关的测试；不要默认运行全量 `verify`。
+- JS 改动影响插件入口时运行 `npm run build:js`；只改 CSS 时运行 `npm run build:css`。
+- 准备提交时运行 `npm run verify`；发布门禁由 GitHub Actions 运行 `npm run release:verify`。
+- 修改布局、渲染、视口、导出、保存或交互后，只列出本次相关的人工回归项。
 - 如果无法运行检查，交付时必须说明原因和替代验证方式。
+
+## 脏工作区保护
+
+- 开始修改前记录暂存和未暂存状态；验证范围以本次实际修改为准，不以仓库全部 diff 为准。
+- 任务开始前干净的文件可自动格式化；已有暂存或未暂存改动的文件只做格式检查，不做整文件自动格式化。
+- 不要擅自执行 `git add`、`git stash`、`git restore`、`git reset` 或其它改变用户改动状态的命令。
+- 交付时说明与既有改动重叠的文件，以及本次未执行的检查。
 
 ## 禁止修改的内容
 
@@ -48,12 +55,12 @@
 ## 依赖管理
 
 - 新增生产依赖前必须说明原因、替代方案和影响。
-- 依赖变更后必须运行 `npm run validate`；涉及本地 Obsidian 调试时再运行 `npm run ai:validate`。
+- 依赖变更后必须运行 `npm run verify`；需要本地 Obsidian 调试产物时运行 `npm run dev:prepare`。
 
 ## 项目特有陷阱
 
 - `npm run release:prepare` 会清理并重建 `dist/`，可能移除 `dist/.hotreload`。
-- `npm run dev:obsidian` 需要根目录存在 `.hotreload`。
+- `npm run dev:prepare` 不清理 `dist/`、不生成发布正文，但需要根目录存在 `.hotreload`。
 - 阅读视图应禁用编辑类功能，Live Preview / 编辑视图应保留编辑能力。
 - Obsidian 内部链接和附件打开前要先解析目标，避免自动创建不存在的文档。
 - 全屏逻辑依赖 body 级覆盖层承载 `hostEl`，不要直接对原代码块 DOM 请求全屏。

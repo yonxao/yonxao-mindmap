@@ -17,8 +17,8 @@
 
 - 默认先给方案，用户确认后再改；用户明确要求直接执行时才跳过确认。
 - 图中元素统一称为“主题/topic”，不要新增“节点/node”作为核心术语。
-- 修改源码、配置、i18n、构建脚本或发布产物后，优先运行 `npm run ai:validate`。
-- 只改文档且改动轻量时，至少运行 `npm run format`。
+- AI 默认只格式化和检查本次修改的文件，并运行直接相关的测试或构建。
+- 准备提交时运行 `npm run verify`；发布门禁由 GitHub Actions 运行 `npm run release:verify`。
 - 不要回滚用户已有改动；遇到无关脏文件时忽略，遇到相关改动时先读懂再继续。
 
 ### 0.3 常用入口
@@ -118,10 +118,33 @@ package license 字段：
 
 ### 2.3 验证命令
 
-- 修改源码、配置、i18n、构建脚本或发布产物后，优先运行 `npm run ai:validate`。
-- 只改文档且改动轻量时，至少运行 `npm run format`。
-- 如果 `ai:validate` 因格式失败，先运行 `npm run format`，再重跑 `npm run ai:validate`。
+- AI 日常验证只处理本次修改：使用 `format:file` 和 `lint:file` 处理变动文件，使用 `test:file` 运行直接相关的测试。
+- 任务开始前已有暂存或未暂存改动的文件只运行格式检查，不执行整文件自动格式化。
+- JS 改动影响插件入口时运行 `npm run build:js`；只改 CSS 时运行 `npm run build:css`。
+- 准备提交时运行 `npm run verify`，执行全量测试、构建、lint 和格式检查。
+- GitHub Actions 使用 `npm run release:verify` 完成发布门禁；需要本地 Obsidian 调试产物时运行 `npm run dev:prepare`。
 - 如果无法运行验证，交付时必须说明原因和已做的替代检查。
+
+命令按职责分层：
+
+| 层级     | 命令                                      | 范围与用途                                            |
+| -------- | ----------------------------------------- | ----------------------------------------------------- |
+| 原子操作 | `build:*`、`test:*`、`lint:*`、`format:*` | 单独构建、测试或检查；AI 日常只选与变动直接相关的命令 |
+| 提交门禁 | `verify`                                  | 全量测试、lint、格式检查、构建和构建产物语法检查      |
+| 本地调试 | `dev:prepare`                             | 增量构建调试产物并复制 `.hotreload`，不清理 `dist/`   |
+| 发布准备 | `release:body`、`release:prepare`         | 单独生成发布正文，或清理并重建完整发布目录            |
+| 发布门禁 | `release:verify`                          | 全量质量检查后生成并检查正式发布产物                  |
+
+按文件执行示例：
+
+```bash
+npm run format:file -- src/parser/parseMind.js test/parser/parseMind.test.mjs
+npm run format:check:file -- src/parser/parseMind.js
+npm run lint:file -- src/parser/parseMind.js test/parser/parseMind.test.mjs
+npm run test:file -- test/parser/parseMind.test.mjs
+```
+
+验证范围以 AI 本次实际修改为准，不得把任务开始前已有的全部 diff 当成本次改动。AI 不得擅自暂存、隐藏、恢复或撤销用户改动。
 
 ### 2.4 回归范围
 
@@ -1365,16 +1388,10 @@ src/
 
 #### 8.1.1 dist 目录被清理后 `.hotreload` 丢失
 
-运行 `release:prepare` 会清理并重建 `dist/`，可能移除 `.hotreload`。开发时使用：
+运行 `release:prepare` 会清理并重建 `dist/`，可能移除 `.hotreload`。需要本地 Obsidian 调试产物时使用不会清理目录、不会生成发布正文的命令：
 
 ```bash
-npm run ai:validate
-```
-
-或：
-
-```bash
-npm run dev:obsidian
+npm run dev:prepare
 ```
 
 ### 8.2 配置问题

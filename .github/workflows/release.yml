@@ -8,7 +8,7 @@
 # 1. 检出代码。
 # 2. 安装 Node.js（从 package.json engines 读取）。
 # 3. 安装依赖。
-# 4. 执行构建与发布准备（clean → build → 复制 manifest.json）。
+# 4. 执行测试、静态检查、构建与发布准备。
 # 5. 读取 .github/release-body.md 模板，并从 CHANGELOG.md 填充 dist/release-body.md。
 # 6. 从 manifest.json 读取版本号。
 # 7. 将 dist/ 目录（main.js, styles.css, manifest.json）打包为 Obsidian 插件压缩包。
@@ -46,8 +46,8 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Build and prepare release artifacts
-        run: npm run release:prepare
+      - name: Verify and prepare release artifacts
+        run: npm run release:verify
 
       - name: Show generated release body
         run: cat dist/release-body.md
