@@ -9,6 +9,46 @@ All notable changes to this project will be documented in this file.
 <!-- The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), -->
 <!-- and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html). -->
 
+## [1.5.0] - 2026-07-12
+
+### Added
+
+- Added three advanced mind map structures:
+  - **Relationship**: connects topics across branches; supports three connector styles (curve, straight, elbow) with direction configuration, and draggable curve adjustment.
+  - **Summary**: groups consecutive sibling topics and auto-generates a labeled bracket border around them.
+  - **Boundary**: encloses a region of topics; the boundary title is automatically positioned to avoid overlapping the enclosed topics.
+- Added source syntax parsing for relationships, summaries, and boundaries, with editor syntax highlighting.
+- Added a Structures tab in the config modal for managing relationship, summary, and boundary settings.
+- Added full interaction and export support for relationships, summaries, and boundaries, including drag-and-drop, undo/redo, and PNG/SVG export.
+- Added a guide area at the bottom of the config modal with documentation links (English and Chinese) and a GitHub star prompt.
+
+### Fixed
+
+- Improved PDF export pagination for long mind maps:
+  - Set `preserveAspectRatio` on the SVG element to prevent blank pages when content spans multiple print pages.
+  - Recorded viewport aspect ratio as a CSS variable so print styles can dynamically recalculate canvas height.
+  - Implemented natural truncation and continuation at the bottom of print pages so long maps flow across pages without cutting topics in half.
+  - Added a dedicated print stylesheet to control page-break behavior during PDF export.
+
+### 新增
+
+- 新增三大高级导图结构能力：
+  - **关联**：支持跨主题连接，三种线型（曲线、直线、折线）与方向配置，可拖拽调整曲线弧度。
+  - **概要**：分组同级连续主题，自动生成带标签的括号边框。
+  - **外框**：圈选主题区域，标题自动避让布局，避免与内部主题重叠。
+- 新增关联、概要、外框的源码语法解析与编辑器语法高亮。
+- 配置面板新增结构页，集中管理关联、概要、外框的各项配置。
+- 关联、概要、外框支持完整的交互与导出，包括拖拽、撤销/重做、PNG/SVG 导出。
+- 配置模态框底部新增引导区域，包含中英文文档链接和 GitHub 星标提示。
+
+### 修复
+
+- 优化长导图 PDF 导出的分页处理：
+  - 为 SVG 元素添加 `preserveAspectRatio` 属性，避免跨页时产生空白页。
+  - 记录视口宽高比到 CSS 变量，供打印样式动态重新计算画布高度。
+  - 实现长导图在页面底部的自然截断和续接，避免主题被从中间截断。
+  - 新增专用打印样式文件，控制 PDF 导出时的分页行为。
+
 ## [1.4.1] - 2026-07-09
 
 ### Added
