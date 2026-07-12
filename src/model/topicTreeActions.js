@@ -123,6 +123,8 @@ export function cloneTopicSubtree(topic, options = {}) {
   const includeAttributes = Boolean(options.includeAttributes);
   const includeSubtopics = Boolean(options.includeSubtopics);
   const attributes = includeAttributes ? { ...(topic.attributes || {}) } : {};
+  // 稳定主题 ID 只标识原主题；复制子树时必须移除，避免粘贴后出现重复引用目标。
+  delete attributes.id;
   const subtopics = includeSubtopics
     ? (topic.subtopics || [])
         .map((subtopic) => cloneTopicSubtree(subtopic, options))

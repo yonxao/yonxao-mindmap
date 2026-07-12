@@ -131,6 +131,10 @@ export const topicDrawMethods = {
     if (topic.id && topic.id === this.focusedTopicId) {
       classNames.push('is-keyboard-focused');
     }
+    // 主题被高级结构选中时加上标记 class，CSS 据此绘制虚线边框以区分于键盘焦点。
+    if (this.structureSelection?.topicIds?.has(topic.id)) {
+      classNames.push('is-structure-selected');
+    }
 
     // 每个主题都是一个 <g> 分组，组上保存 data-topic-id，点击时用它反查原始树主题。
     const group = svg('g', {

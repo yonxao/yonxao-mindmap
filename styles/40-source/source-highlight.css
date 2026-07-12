@@ -75,6 +75,34 @@
   color: var(--color-purple);
 }
 
+/* ─── 结构定义语法高亮 ───────────────────────────────────── */
+/* @structures/@end/@relation/@summary/@boundary 等关键字 */
+.yonxao-mindmap-source-token-structure-keyword {
+  color: var(--color-purple);
+  font-weight: 700;
+}
+
+/* 结构声明中的属性名，如 id=、title= */
+.yonxao-mindmap-source-token-structure-attribute {
+  color: var(--color-blue);
+}
+
+/* id 属性值使用特殊颜色，突出其作为主题引用标识的关键语义 */
+.yonxao-mindmap-source-token-structure-id {
+  color: var(--color-orange);
+  font-weight: 600;
+}
+
+/* 普通属性值 */
+.yonxao-mindmap-source-token-structure-value {
+  color: var(--color-green);
+}
+
+/* 方括号和等号等标点符号 */
+.yonxao-mindmap-source-token-structure-punctuation {
+  color: var(--text-muted);
+}
+
 .yonxao-mindmap-source-token-comment {
   color: var(--text-faint);
   font-style: italic;

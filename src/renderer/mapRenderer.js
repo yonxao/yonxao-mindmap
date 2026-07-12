@@ -33,6 +33,10 @@ export const mapRendererMethods = {
     const connectorLayer = svg('g', { class: 'yonxao-mindmap-connectors' });
     const topicLayer = svg('g', { class: 'yonxao-mindmap-topics' });
     const controlLayer = svg('g', { class: 'yonxao-mindmap-topic-controls-layer' });
+    // 渲染关联/概要/外框等高级结构 SVG，返回背景层和前景层两个 <g> 分组。
+    const structureLayers = this.renderMindStructures(layout);
+    // 适配视图必须复用包含高级结构的完整边界，不能重新只计算主题树，否则外框/关联会被裁切。
+    this.renderedMapBounds = { ...layout.bounds };
 
     // 收集所有主干/轴线绘制结果到连接层；每个方法返回 null 时自动跳过。
     const trunkElements = [
@@ -70,8 +74,14 @@ export const mapRendererMethods = {
       }
     }
 
+    // 关联路径箭头定义必须先于 usage 放入 SVG，否则浏览器渲染 <marker> 引用时找不到定义。
+    this.mapEl.appendChild(this.relationArrowDefs());
+    // 背景层（外框填充/概要连线）放在连接线和主题下方，避免遮挡主题卡片。
+    this.mapEl.appendChild(structureLayers.backgroundLayer);
     this.mapEl.appendChild(connectorLayer);
     this.mapEl.appendChild(topicLayer);
+    // 前景层（外框描边/标签/关联控制柄）放在主题上方，保证选中态描边不被遮挡。
+    this.mapEl.appendChild(structureLayers.foregroundLayer);
     this.mapEl.appendChild(controlLayer);
 
     if (fitAfterRender || !this.viewBox) {

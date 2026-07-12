@@ -65,6 +65,17 @@ export const colorTabMethods = {
     };
     buttonColorModeSelect.addEventListener('change', updateCustomColorVisibility);
     updateCustomColorVisibility();
+
+    // 高级结构颜色区：分别设置关联、概要和外框的描边色，允许用户按语义独立配色。
+    this.createSection(this.t('configModal.color.advancedStructureSection'));
+    for (const type of ['relation', 'summary', 'boundary']) {
+      this.createColorTextField(
+        this.t(`configModal.color.advancedStructure.${type}`),
+        ['color', 'advancedStructure', type],
+        normalized.advancedStructureColor?.[type] || '',
+        this.t('configModal.color.advancedStructure.help')
+      );
+    }
   },
 
   shouldWarnDefaultColorOverridesTheme() {

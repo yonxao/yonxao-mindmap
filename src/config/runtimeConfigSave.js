@@ -38,6 +38,8 @@ export const runtimeConfigSaveMethods = {
    * options.notice 控制是否显示保存成功提示。
    */
   async saveTreeToSourceAndFile(successMessage, options = {}) {
+    // 主题树变更后清理结构中已删除或不再存在的主题引用，避免保存时携带无效结构数据。
+    this.cleanupStructuresAfterTopicChange?.();
     /*
      * 部分导图编辑只改变源码语义，不改变布局几何。
      * 例如任务复选框从 [ ] 切换到 [x] 时，主题尺寸和连线都不变；
@@ -54,11 +56,13 @@ export const runtimeConfigSaveMethods = {
     // 3. saveSourceToMarkdownFile(nextSource) 只替换当前 Markdown 文件里的这个代码块内容。
     // 4. 更新 textarea，保证源码模式立刻看到导图编辑后的结果。
     assignIds(this.root, '0');
+    // 序列化时传入 this.structures，使 `@structures` 块随主题变更一起持久化。
     const nextSource = serializeMindDocument(
       this.root,
       this.documentConfigForSave(this.rawConfig),
       this.hasConfigBlock,
-      this.plugin?.getGlobalDefaultValueConfig?.() || {}
+      this.plugin?.getGlobalDefaultValueConfig?.() || {},
+      this.structures
     );
     // 只有源码真实变化时才压入撤销栈，避免重复点击失败或无效保存污染历史记录。
     if (nextSource !== this.source) {
@@ -148,7 +152,9 @@ export const runtimeConfigSaveMethods = {
         this.root,
         {},
         false,
-        this.plugin?.getGlobalDefaultValueConfig?.() || {}
+        this.plugin?.getGlobalDefaultValueConfig?.() || {},
+        // 运行时保存时也传入 structures，保证 `@structures` 块在配置变更时不被丢弃。
+        this.structures
       ),
       rawConfig: this.documentConfigForSave(this.rawConfig),
     };
@@ -351,6 +357,10 @@ export const runtimeConfigSaveMethods = {
       'color.defaultTopicColor': ['topic', 'defaultColor'],
       'color.buttonColorMode': ['button', 'colorMode'],
       'color.buttonColor': ['button', 'color'],
+      // advancedStructure 颜色路径映射到运行时 advancedStructureColor 子字段。
+      'color.advancedStructure.relation': ['advancedStructureColor', 'relation'],
+      'color.advancedStructure.summary': ['advancedStructureColor', 'summary'],
+      'color.advancedStructure.boundary': ['advancedStructureColor', 'boundary'],
       'interaction.topicControlVisibility': ['button', 'topicControlVisibility'],
       'interaction.tabIndent': ['source', 'enableTabIndent'],
       'interaction.toolbar.corner': ['toolbar', 'corner'],

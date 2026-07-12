@@ -53,6 +53,9 @@ import { topicEditorStateMethods } from '../ui/topic-editor/topicEditorState.js'
 import { floatingToolbarMethods } from '../ui/toolbar/FloatingToolbar.js';
 import { toolbarButtonMethods } from '../ui/toolbar/toolbarButtons.js';
 import { toolbarPositionMethods } from '../ui/toolbar/toolbarPosition.js';
+// 高级结构（关联/概要/外框）的业务逻辑和 SVG 绘制分别来自 model 和 renderer/draw。
+import { mindStructureMethods } from '../model/mindStructures.js';
+import { structureDrawMethods } from './draw/drawStructures.js';
 
 let sourceViewIdCounter = 0;
 
@@ -70,6 +73,21 @@ export class YonxaoMindmapRenderer extends Component {
     this.ctx = ctx;
     this.editorContext = editorContext || null;
     this.root = null;
+    // 高级结构数据（关联/概要/外框），由 parseMindDocument 解析后注入。
+    this.structures = [];
+    // 当前选中的结构状态：null 表示未选中，对象包含 topicIds、type 等字段。
+    this.structureSelection = null;
+    // 选中结构的 id，用于查找和状态管理。
+    this.selectedStructureId = '';
+    // 关联曲线控制柄拖拽状态，非 null 时表示用户正在拖拽控制点调整关联路径。
+    this.structureControlDragState = null;
+    // 结构选中后底部操作栏的 DOM 引用。
+    this.structureSelectionBarEl = null;
+    this.structureSelectionStatusEl = null;
+    this.structureSelectionHintEl = null;
+    this.structureSelectionFinishButton = null;
+    // 操作栏拖拽状态，用于在桌面端拖拽移动操作栏位置。
+    this.structureSelectionBarDragState = null;
     this.rawConfig = {};
     this.config = normalizeMindConfig({});
     this.hasConfigBlock = false;
@@ -118,6 +136,8 @@ export class YonxaoMindmapRenderer extends Component {
     this.topicById = new Map();
     this.collapsedIds = new Set();
     this.viewBox = null;
+    // 上次渲染时包含高级结构边界的完整矩形，供视图适配复用，避免重算遗漏 outer structures。
+    this.renderedMapBounds = null;
     this.panState = null;
     this.topicDragState = null;
     this.heightResizeState = null;
@@ -191,9 +211,13 @@ Object.assign(
   topicEditorStateMethods,
   topicCommandMethods,
   topicHistoryMethods,
+  // 高级结构业务逻辑：创建/删除/验证/选中/取消关联、概要、外框。
+  mindStructureMethods,
   collapseStateMethods,
   runtimeConfigSaveMethods,
   mapRendererMethods,
+  // 高级结构 SVG 绘制：关联路径/箭头、概要标签、外框矩形及其交互控制柄。
+  structureDrawMethods,
   branchTrunkDrawMethods,
   timelineDrawMethods,
   fishboneDrawMethods,

@@ -23,11 +23,24 @@ import {
   ICON_EXPAND_ALL,
   ICON_COLLAPSE_ALL,
   ICON_DELETE_TOPIC,
+  ICON_RELATION,
+  ICON_SUMMARY,
+  ICON_BOUNDARY,
+  ICON_STRUCTURE_FINISH,
+  ICON_STRUCTURE_CANCEL,
 } from '../../icons/iconNames.js';
 
 export const topicContextMenuMethods = {
   handleTopicContextMenu(event) {
     const target = event.target;
+    const structure = this.mindStructureFromTarget?.(target);
+    if (structure) {
+      event.preventDefault();
+      event.stopPropagation();
+      if (!this.canEditMindMap()) return;
+      this.openMindStructureContextMenu(event, structure);
+      return;
+    }
     const id = this.topicIdFromTarget(target);
     if (!id) {
       event.preventDefault();
@@ -41,11 +54,36 @@ export const topicContextMenuMethods = {
     const topic = this.topicById.get(id);
     if (!topic || topic._virtual) return;
 
+    if (this.structureSelection?.type === 'relation' && !this.structureSelection.topicIds.has(id)) {
+      event.preventDefault();
+      event.stopPropagation();
+      this.toggleStructureSelectionTopic(topic);
+      return;
+    }
+
     event.preventDefault();
     event.stopPropagation();
     // 右键某个具体主题时，让该主题获得焦点，而不是留给 focus 事件默认回退到一级主题
     this.setFocusedTopic(id, { focusSvg: false, ensureInView: false });
     this.openTopicContextMenu(event, topic);
+  },
+
+  openMindStructureContextMenu(event, structure) {
+    this._closeCurrentContextMenu();
+    const menu = new Menu();
+    menu.setUseNativeMenu(false);
+    this.plugin._currentContextMenu = menu;
+    this._setupMenuAutoClose(menu);
+    this.addTopicContextMenuItem(menu, this.t('contextMenu.editStructure'), ICON_EDIT_TOPIC, () =>
+      this.editMindStructure(structure)
+    );
+    this.addTopicContextMenuItem(
+      menu,
+      this.t('contextMenu.deleteStructure'),
+      ICON_DELETE_TOPIC,
+      () => this.deleteMindStructure(structure)
+    );
+    menu.showAtMouseEvent(event);
   },
 
   _closeCurrentContextMenu() {
@@ -125,6 +163,22 @@ export const topicContextMenuMethods = {
     const hasSubtopics = topic.subtopics.length > 0;
     const isCollapsed = this.collapsedIds.has(topic.id);
 
+    if (this.structureSelection) {
+      this.addTopicContextMenuItem(
+        menu,
+        this.t('contextMenu.finishStructure'),
+        ICON_STRUCTURE_FINISH,
+        () => this.finishStructureSelection()
+      );
+      this.addTopicContextMenuItem(
+        menu,
+        this.t('contextMenu.cancelStructureSelection'),
+        ICON_STRUCTURE_CANCEL,
+        () => this.cancelStructureSelection()
+      );
+      menu.addSeparator();
+    }
+
     this.addTopicContextMenuItem(menu, this.t('contextMenu.editTopic'), ICON_EDIT_TOPIC, () =>
       this.openInlineTextEditor(topic)
     );
@@ -202,6 +256,17 @@ export const topicContextMenuMethods = {
         this.deleteTopicFromContextMenu(topic)
       );
     }
+
+    menu.addSeparator();
+    this.addTopicContextMenuItem(menu, this.t('contextMenu.createRelation'), ICON_RELATION, () =>
+      this.beginStructureSelection('relation', topic)
+    );
+    this.addTopicContextMenuItem(menu, this.t('contextMenu.createSummary'), ICON_SUMMARY, () =>
+      this.beginStructureSelection('summary', topic)
+    );
+    this.addTopicContextMenuItem(menu, this.t('contextMenu.createBoundary'), ICON_BOUNDARY, () =>
+      this.beginStructureSelection('boundary', topic)
+    );
 
     menu.showAtMouseEvent(event);
   },

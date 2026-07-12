@@ -80,6 +80,10 @@ export const sourceHighlightMethods = {
       return;
     }
 
+    // 优先检查当前行是否为 `@structures`/`@end`/`@relation`/`@summary`/`@boundary` 等结构定义行，
+    // 匹配成功后直接返回，不再走主题标记解析流程。
+    if (this.appendMindStructureHighlightedLine(lineEl, sourceLine)) return;
+
     const topicMatch = sourceLine.match(/^(\s*)(#{1,6})(\s+)(.*)$/);
     if (!topicMatch) {
       lineEl.classList.add(sourceLine.trim() ? 'is-continuation' : 'is-blank');
@@ -101,6 +105,75 @@ export const sourceHighlightMethods = {
 
     this.appendSourceToken(lineEl, attributeMatch[1], 'yonxao-mindmap-source-token-topic');
     this.appendSourceToken(lineEl, attributeMatch[2], 'yonxao-mindmap-source-token-attribute');
+  },
+
+  // 高亮处理结构定义块中的特殊行：块标记（`@structures`/`@end`）和结构声明（`@relation [...]` 等）。
+  // 返回 true 表示该行已被结构高亮处理，调用方应跳过后续主题标记解析。
+  appendMindStructureHighlightedLine(lineEl, sourceLine) {
+    // 匹配 `@structures` 或 `@end` 块标记行：纯关键字，无属性。
+    const blockMarkerMatch = sourceLine.match(/^(\s*)(@(structures|end))(\s*)$/);
+    if (blockMarkerMatch) {
+      lineEl.classList.add('is-structure-line');
+      lineEl.appendChild(document.createTextNode(blockMarkerMatch[1]));
+      this.appendSourceToken(
+        lineEl,
+        blockMarkerMatch[2],
+        'yonxao-mindmap-source-token-structure-keyword'
+      );
+      lineEl.appendChild(document.createTextNode(blockMarkerMatch[4]));
+      return true;
+    }
+
+    // 匹配结构声明行：`@relation [...]`、`@summary [...]`、`@boundary [...]`。
+    // 结构语法 = 关键字 + 空格 + 方括号包裹的属性列表。
+    const structureMatch = sourceLine.match(
+      /^(\s*)(@(relation|summary|boundary))(\s+)(\[)(.*)(\])(\s*)$/
+    );
+    if (!structureMatch) return false;
+
+    lineEl.classList.add('is-structure-line');
+    lineEl.appendChild(document.createTextNode(structureMatch[1]));
+    this.appendSourceToken(
+      lineEl,
+      structureMatch[2],
+      'yonxao-mindmap-source-token-structure-keyword'
+    );
+    lineEl.appendChild(document.createTextNode(structureMatch[4]));
+    this.appendSourceToken(
+      lineEl,
+      structureMatch[5],
+      'yonxao-mindmap-source-token-structure-punctuation'
+    );
+    this.appendMindStructureAttributes(lineEl, structureMatch[6]);
+    this.appendSourceToken(
+      lineEl,
+      structureMatch[7],
+      'yonxao-mindmap-source-token-structure-punctuation'
+    );
+    lineEl.appendChild(document.createTextNode(structureMatch[8]));
+    return true;
+  },
+
+  // 解析结构声明中 `[...]` 内的属性列表，按属性名/等号/值三段分别染色。
+  // 其中 id 属性的值使用特殊颜色，与其他属性值区分开以突出稳定 ID 的重要性。
+  appendMindStructureAttributes(lineEl, source) {
+    const attributePattern = /([a-zA-Z][\w-]*)(=)("(?:\\.|[^"])*"|'(?:\\.|[^'])*'|[^\s]+)/g;
+    let sourceIndex = 0;
+    let match;
+    while ((match = attributePattern.exec(source))) {
+      lineEl.appendChild(document.createTextNode(source.slice(sourceIndex, match.index)));
+      this.appendSourceToken(lineEl, match[1], 'yonxao-mindmap-source-token-structure-attribute');
+      this.appendSourceToken(lineEl, match[2], 'yonxao-mindmap-source-token-structure-punctuation');
+      this.appendSourceToken(
+        lineEl,
+        match[3],
+        match[1] === 'id'
+          ? 'yonxao-mindmap-source-token-structure-id'
+          : 'yonxao-mindmap-source-token-structure-value'
+      );
+      sourceIndex = attributePattern.lastIndex;
+    }
+    lineEl.appendChild(document.createTextNode(source.slice(sourceIndex)));
   },
 
   appendSourceToken(parentEl, text, className) {

@@ -92,6 +92,24 @@ export const enMessages = Object.freeze({
   'notice.rootCannotAddSibling': 'yonxao-mindmap: The root topic cannot add sibling topics.',
   'notice.rootCannotDeleteInMap': 'yonxao-mindmap: The root topic cannot be deleted in map view.',
   'notice.rootCannotDelete': 'yonxao-mindmap: The root topic cannot be deleted.',
+  'notice.structureSelectRelation': 'Select another topic to complete the relation.',
+  'notice.structureSelectMulti':
+    'Continue clicking topics to select, then finish with the bottom action bar.',
+  'notice.structureMinimumTopics': '{type} requires at least {minimum} topics.',
+  'notice.structureCreated': '{type} created.',
+  'notice.structureSaved': '{type} saved.',
+  'notice.structureDeleted': '{type} deleted.',
+  'notice.structureControlAdjusted': 'Relation curve adjusted.',
+  'structureSelection.status': '{type}: {count} topics selected',
+  'structureSelection.type.summary': 'Summary',
+  'structureSelection.type.boundary': 'Boundary',
+  'structureSelection.cancel': 'Cancel',
+  'structureSelection.create': 'Create',
+  'structureSelection.minimum': 'Select at least {minimum} topics.',
+  'structureSelection.summarySameParent': 'A summary can only use topics with the same parent.',
+  'structureSelection.summaryContiguous': 'A summary can only use consecutive sibling topics.',
+  'structureSelection.summaryReady': 'The selection is valid and ready to finish.',
+  'structureSelection.boundaryReady': 'Select more topics or finish the boundary now.',
 
   // ── Attachment popover ──
   'attachment.open': 'Open',
@@ -179,6 +197,14 @@ export const enMessages = Object.freeze({
   'contextMenu.expandAllSubtopics': 'Expand all subtopics',
   'contextMenu.collapseAllSubtopics': 'Collapse all subtopics',
   'contextMenu.deleteTopic': 'Delete topic',
+  'contextMenu.editStructure': 'Edit structure',
+  'contextMenu.deleteStructure': 'Delete structure',
+  'contextMenu.finishStructure': 'Finish structure',
+  'contextMenu.cancelStructureSelection': 'Cancel selection',
+  'contextMenu.createRelation': 'Create relation',
+  'contextMenu.createSummary': 'Create summary',
+  'contextMenu.createBoundary': 'Create boundary',
+
   'contextMenu.copyBody': 'Copy body',
   'contextMenu.copyIndentedBody': 'Copy indented body',
   'contextMenu.copySource': 'Copy source',
@@ -186,6 +212,25 @@ export const enMessages = Object.freeze({
   'contextMenu.exportPng': 'Export image',
   'contextMenu.copyPng': 'Copy image',
   'contextMenu.deleteMindMap': 'Delete code block',
+
+  // ── Structure editor modal ──
+  'structureEditor.title.relation': 'Relation settings',
+  'structureEditor.title.summary': 'Summary settings',
+  'structureEditor.title.boundary': 'Boundary settings',
+  'structureEditor.label.text': 'Text',
+  'structureEditor.label.direction': 'Direction',
+  'structureEditor.label.lineStyle': 'Line style',
+  'structureEditor.direction.none': 'None',
+  'structureEditor.direction.forward': 'Forward',
+  'structureEditor.direction.backward': 'Backward',
+  'structureEditor.direction.both': 'Both',
+  'structureEditor.lineStyle.curve': 'Curve',
+  'structureEditor.lineStyle.straight': 'Straight',
+  'structureEditor.lineStyle.elbow': 'Elbow',
+  'structureEditor.action.cancel': 'Cancel',
+  'structureEditor.action.save': 'Save',
+  'structureEditor.placeholder.text': 'Optional',
+  'structureEditor.placeholder.textMultiline': 'Optional; supports line breaks shown as entered',
 
   // ── Config panel: title, tabs, actions, status ──
   'configModal.title': 'Config Panel',
@@ -364,6 +409,12 @@ export const enMessages = Object.freeze({
   'configModal.color.buttonColor': 'Custom button color',
   'configModal.color.buttonColor.help':
     'Custom color for buttons, only applies when mode is Custom.',
+  'configModal.color.advancedStructureSection': 'Advanced structure colors',
+  'configModal.color.advancedStructure.relation': 'Relation color',
+  'configModal.color.advancedStructure.summary': 'Summary color',
+  'configModal.color.advancedStructure.boundary': 'Boundary color',
+  'configModal.color.advancedStructure.help':
+    'Default color for this advanced structure type. A structure color attribute still has priority.',
 
   // ── Config panel: structure tab ──
   'configModal.structure.layoutSection': 'Layout',

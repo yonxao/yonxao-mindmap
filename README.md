@@ -226,17 +226,46 @@ Add attributes in `[key=value]` format at the end of a topic-level marker line:
 
 Supported attributes:
 
-| Attribute    | Example                  | Description                                    |
-| ------------ | ------------------------ | ---------------------------------------------- |
-| `color`      | `[color=#3b82f6]`        | Topic color                                    |
-| `icon`       | `[icon=book]`            | Topic icon (Lucide icon name)                  |
-| `layout`     | `[layout=mindmap-right]` | Local layout type, overrides code block config |
-| `fontSize`   | `[fontSize=16]`          | Font size override (9-96px)                    |
-| `fontWeight` | `[fontWeight=700]`       | Font weight override (100-900)                 |
-| `fontFamily` | `[fontFamily="..."]`     | Font family override                           |
-| `lineHeight` | `[lineHeight=20]`        | Line height override (12-160px)                |
-| `align`      | `[align=center]`         | Text alignment: auto/left/center/right         |
-| `maxWidth`   | `[maxWidth=300]`         | Max width override (120-2000px)                |
+| Attribute    | Example                  | Description                                                    |
+| ------------ | ------------------------ | -------------------------------------------------------------- |
+| `color`      | `[color=#3b82f6]`        | Topic color                                                    |
+| `icon`       | `[icon=book]`            | Topic icon (Lucide icon name)                                  |
+| `layout`     | `[layout=mindmap-right]` | Local layout type, overrides code block config                 |
+| `fontSize`   | `[fontSize=16]`          | Font size override (9-96px)                                    |
+| `fontWeight` | `[fontWeight=700]`       | Font weight override (100-900)                                 |
+| `fontFamily` | `[fontFamily="..."]`     | Font family override                                           |
+| `lineHeight` | `[lineHeight=20]`        | Line height override (12-160px)                                |
+| `align`      | `[align=center]`         | Text alignment: auto/left/center/right                         |
+| `maxWidth`   | `[maxWidth=300]`         | Max width override (120-2000px)                                |
+| `id`         | `[id=t-123]`             | Stable ID generated when advanced structures reference a topic |
+
+### Advanced Structures: Relations, Summaries, and Boundaries
+
+Right-click a topic in map mode to create structures beyond the normal parent-child hierarchy:
+
+- **Relation**: Connects two topics with a curve, straight line, or elbow line. The default is a forward curve; select a curve to reveal two draggable control points. Relation text supports manual line breaks and follows the adjusted curve.
+- **Summary**: Groups consecutive sibling topics and their visible descendants with a bracket and a framed, multi-line label.
+- **Boundary**: Wraps selected topics and their visible subtrees. Its label appears as a tab outside the upper-left corner, and surrounding topics reserve space for it.
+
+Summary and boundary creation uses a draggable, translucent action bar at the bottom of the canvas. It shows the selected topic count and complete validation message; drag the text area to uncover topics underneath. Use **Create** / **Cancel**, press `Enter` to create, or press `Esc` to cancel. The original context-menu finish action remains available. The action bar also works in window and physical fullscreen modes.
+
+Structures are stored in a dedicated block at the end of the body. Map operations generate three-digit IDs automatically:
+
+```yxmm
+# Feature List
+## Editing [id=t-101]
+### Add Topic [id=t-102]
+### Delete Topic [id=t-103]
+## Export [id=t-104]
+
+@structures
+@relation [id=r-101 from=t-101 to=t-104 text="Edit then export"]
+@summary [id=s-101 topics=t-102,t-103 text="Topic actions"]
+@boundary [id=b-101 topics=t-101 text="Editing scope"]
+@end
+```
+
+Default relation options (`direction=forward` and `lineStyle=curve`) are omitted when config trimming is enabled and written explicitly when **Save all config items** is enabled. A structure-level `color` attribute overrides the code-block and global advanced-structure colors. Source mode provides basic highlighting for structure keywords, attributes, IDs, and values.
 
 ### Config Block
 
@@ -257,6 +286,10 @@ structure:
 color:
   scheme: rainbow
   buttonColorMode: topic
+  advancedStructure:
+    relation: "#526b8a"
+    summary: "#705b8f"
+    boundary: "#477970"
 font:
   family: "var(--font-text)"
   size: 16
@@ -532,6 +565,7 @@ Open the visual config panel in Obsidian `Settings` → `Community plugins` → 
 - Rainbow theme override warning: shown when both default color and rainbow theme are set
 - Button color mode: `inherit-accent` / `subtle` / `topic` / `custom`
 - Custom button color (10 presets + color picker)
+- Advanced structure colors: separate defaults for relations, summaries, and boundaries
 
 **4. Font**
 

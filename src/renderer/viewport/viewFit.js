@@ -69,6 +69,8 @@ export const viewFitMethods = {
 
     const currentBounds =
       bounds ||
+      // 使用包含高级结构边界的缓存矩形，避免重新布局时外框/关联区域被裁切。
+      this.renderedMapBounds ||
       layoutTree(this.root, this.collapsedIds, this.config, this.topicRichTextLayoutOptions())
         .bounds;
     if (!options.preserveCanvasHeight) {
@@ -193,6 +195,8 @@ export const viewFitMethods = {
 
     const currentBounds =
       bounds ||
+      // fitView 同样需要结构边界，否则选中外框后适配视图可能导致外框超出可见区域。
+      this.renderedMapBounds ||
       layoutTree(this.root, this.collapsedIds, this.config, this.topicRichTextLayoutOptions())
         .bounds;
     const minX = currentBounds.minX - VIEWBOX_MARGIN_X;

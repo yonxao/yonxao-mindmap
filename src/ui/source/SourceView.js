@@ -261,6 +261,8 @@ export const sourceViewMethods = {
 
     this.source = nextSource;
     this.root = nextDocument.root;
+    // 保存源码时同步更新 structures，确保后续从源码模式切回导图时结构数据一致。
+    this.structures = nextDocument.structures || [];
     this.rawConfig = canonicalizeMindConfig(nextDocument.rawConfig || {});
     this.refreshNormalizedConfig();
     this.hasConfigBlock = nextDocument.hasConfig;

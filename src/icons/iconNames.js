@@ -58,6 +58,13 @@ export const ICON_COLLAPSE_TOGGLE = 'chevrons-down-up';
 export const ICON_EXPAND_ALL = 'chevrons-left-right';
 export const ICON_COLLAPSE_ALL = 'chevrons-right-left';
 export const ICON_DELETE_TOPIC = 'trash-2';
+// 高级结构类型图标，用于工具栏按钮、选中底栏和右键菜单。
+export const ICON_RELATION = 'git-compare-arrows'; // 关联线：双向箭头表示主题间关系。
+export const ICON_SUMMARY = 'braces'; // 概要：花括号轮廓表示包裹一组主题。
+export const ICON_BOUNDARY = 'square-dashed'; // 外框：虚线方框表示圈定区域边界。
+// 结构编辑模式操作按钮图标。
+export const ICON_STRUCTURE_FINISH = 'check'; // 完成/确认当前结构选择。
+export const ICON_STRUCTURE_CANCEL = 'x'; // 取消当前结构操作。
 
 // ─── 右键菜单（地图空白） ─────────────────────────────────────
 export const ICON_COPY_BODY = 'files';

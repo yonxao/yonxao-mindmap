@@ -46,6 +46,23 @@ export function canonicalizeMindConfig(rawConfig) {
   setConfigValueIfPresent(next, ['color', 'defaultTopicColor'], color.defaultTopicColor);
   setConfigValueIfPresent(next, ['color', 'buttonColorMode'], color.buttonColorMode);
   setConfigValueIfPresent(next, ['color', 'buttonColor'], color.buttonColor);
+  // 规范化 advancedStructure 颜色子字段，与 relation/summary/boundary 三个结构类型一一对应。
+  const advancedStructure = isPlainObject(color.advancedStructure) ? color.advancedStructure : {};
+  setConfigValueIfPresent(
+    next,
+    ['color', 'advancedStructure', 'relation'],
+    advancedStructure.relation
+  );
+  setConfigValueIfPresent(
+    next,
+    ['color', 'advancedStructure', 'summary'],
+    advancedStructure.summary
+  );
+  setConfigValueIfPresent(
+    next,
+    ['color', 'advancedStructure', 'boundary'],
+    advancedStructure.boundary
+  );
 
   const interaction = isPlainObject(raw.interaction) ? raw.interaction : {};
   const toolbar = isPlainObject(interaction.toolbar) ? interaction.toolbar : {};

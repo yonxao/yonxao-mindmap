@@ -27,6 +27,7 @@
 @import './50-map/topics.css';
 @import './50-map/topic-controls.css';
 @import './50-map/drag-drop.css';
+@import './50-map/structures.css';
 
 @import './60-panels/topic-editor.css';
 @import './60-panels/topic-content-editor.css';

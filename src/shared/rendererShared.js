@@ -76,6 +76,8 @@ export {
 export { markYonxaoMindmapEmbedWrapper } from '../obsidian/embed.js';
 export { assignIds, createMindTopic, parseMindDocument } from '../parser/parseMind.js';
 export { serializeMindDocument, serializeTopic } from '../parser/serializeMind.js';
+// 高级结构模块中按 stable id 查找主题和验证结构引用的函数，供 rendererContext 和 source 使用。
+export { findTopicByStableId, validateMindStructures } from '../parser/mindStructures.js';
 export { applyTopicLevelKey } from '../source/topicLevelKeys.js';
 export { themeConnectorOpacity, themeTopicFillAlpha } from '../theme/mindThemes.js';
 export { ConfigModal } from '../ui/ConfigModal.js';

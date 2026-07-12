@@ -211,6 +211,36 @@ function matchesViewControlShortcut(event, shortcut) {
 
 export const topicKeyboardShortcutMethods = {
   handleMapKeyDown(event) {
+    // Escape: 取消正在进行的结构选择（边界/摘要成员选取），回到普通导航模式。
+    if (event.key === 'Escape' && this.structureSelection) {
+      event.preventDefault();
+      event.stopPropagation();
+      this.cancelStructureSelection();
+      return;
+    }
+    // Enter: 确认结构成员选择完成（关系线不需要选取成员，直接跳过）。
+    if (
+      event.key === 'Enter' &&
+      this.structureSelection &&
+      this.structureSelection.type !== 'relation'
+    ) {
+      event.preventDefault();
+      event.stopPropagation();
+      this.finishStructureSelection();
+      return;
+    }
+    // Delete/Backspace: 删除当前选中的高级结构（边界/摘要/关系），需确认结构存在。
+    if ((event.key === 'Delete' || event.key === 'Backspace') && this.selectedStructureId) {
+      const structure = this.structures.find(
+        (candidate) => candidate.id === this.selectedStructureId
+      );
+      if (structure) {
+        event.preventDefault();
+        event.stopPropagation();
+        this.deleteMindStructure(structure);
+        return;
+      }
+    }
     if (this.isSourceMode) return;
     if (event.target !== this.svgEl || event.isComposing) return;
 

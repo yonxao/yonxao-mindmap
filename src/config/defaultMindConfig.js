@@ -297,6 +297,14 @@ export const DEFAULT_MIND_CONFIG = Object.freeze({
     buttonColorMode: 'inherit-accent',
     // 自定义按钮颜色，仅在 buttonColorMode 为 custom 时生效。
     buttonColor: '',
+    advancedStructure: Object.freeze({
+      // 关联、概要和外框使用不同默认色，便于快速区分结构语义。
+      // 蓝灰色调用于关联线（连接两个独立主题）、紫灰色调用于概要（包裹一组主题）、
+      // 青灰色调用于外框（圈定区域），三种颜色在视觉上有明显区分但不刺眼。
+      relation: '#526b8a',
+      summary: '#705b8f',
+      boundary: '#477970',
+    }),
   }),
   font: Object.freeze({
     // 默认继承 Obsidian 正文字体。

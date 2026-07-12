@@ -1,4 +1,6 @@
 import { normalizeMindConfig, splitMindSourceConfig } from '../config/mindConfig.js';
+// 解析 `@structures/`@end 结构定义块，以及验证结构引用指向已存在的主题 ID。
+import { splitMindStructureBlock, validateMindStructures } from './mindStructures.js';
 
 // 虚拟根主题的默认配置常量
 const VIRTUAL_ROOT_TEXT = 'Mind';
@@ -35,13 +37,19 @@ const VIRTUAL_ROOT_LAYOUT = 'mindmap-bidirectional';
  */
 export function parseMindDocument(source) {
   const document = splitMindSourceConfig(source);
-  const lines = document.body.split(/\r?\n/);
+  // 先剥离 `@structures`/`@end` 块，只保留主题体正文供 parseTopicMind 解析。
+  const structureDocument = splitMindStructureBlock(document.body);
+  const lines = structureDocument.topicBody.split(/\r?\n/);
   const root = parseTopicMind(lines);
+  // 结构定义块中引用的 topic-id 必须在当前主题树中存在，否则视为无效配置。
+  validateMindStructures(root, structureDocument.structures);
 
   return {
     ...document,
     config: normalizeMindConfig(document.rawConfig),
     root,
+    // 把解析好的结构定义一并返回，后续 renderer/layout 据此绘制关联/概要/外框。
+    structures: structureDocument.structures,
   };
 }
 

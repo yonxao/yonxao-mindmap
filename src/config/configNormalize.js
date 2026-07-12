@@ -103,6 +103,8 @@ export function normalizeMindConfig(rawConfig) {
     font: normalizeFontConfig(font),
     topic: normalizeTopicConfig(color, structure),
     button: normalizeButtonConfig(color, interaction),
+    // 高级结构颜色：关联/概要/外框各自独立配色，与 layout/draw 阶段按类型读取。
+    advancedStructureColor: normalizeAdvancedStructureColorConfig(color.advancedStructure),
     source: {
       enableTabIndent:
         typeof interaction.tabIndent === 'boolean'
@@ -186,6 +188,8 @@ function normalizeRuntimeMindConfig(config) {
     font: normalizeFontConfig(config.font),
     topic: normalizeRuntimeTopicConfig(config.topic),
     button: normalizeRuntimeButtonConfig(config.button),
+    // 运行时配置也需规范化 advancedStructureColor，与文档配置走同一归一化路径。
+    advancedStructureColor: normalizeAdvancedStructureColorConfig(config.advancedStructureColor),
     source: {
       enableTabIndent:
         typeof source.enableTabIndent === 'boolean'
@@ -245,6 +249,18 @@ export function normalizeTopicConfig(rawTheme, rawLayout) {
       normalizeOptionalNumber(topicMaxWidth.global, TOPIC_MAX_WIDTH_MIN, TOPIC_MAX_WIDTH_MAX) ||
       DEFAULT_MIND_CONFIG.structure.topicMaxWidth.global,
     levels: normalizedLevels,
+  };
+}
+
+// 规范高级结构颜色配置：关联线、概要和外框各自独立配色，用户可分别指定。
+// 未配置时使用 DEFAULT_MIND_CONFIG 中的默认色，保证三种结构首次创建时就有区分度。
+function normalizeAdvancedStructureColorConfig(rawConfig) {
+  const config = isPlainObject(rawConfig) ? rawConfig : {};
+  const defaults = DEFAULT_MIND_CONFIG.color.advancedStructure;
+  return {
+    relation: normalizeText(config.relation) || defaults.relation,
+    summary: normalizeText(config.summary) || defaults.summary,
+    boundary: normalizeText(config.boundary) || defaults.boundary,
   };
 }
 

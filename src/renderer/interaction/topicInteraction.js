@@ -101,6 +101,8 @@ function keyboardNavigationCandidateScore(currentBox, candidateBox, direction, o
 export const topicInteractionMethods = {
   handleMapFocus() {
     if (this.isSourceMode) return;
+    // SVG 获得焦点时清除高级结构选中状态，避免焦点与结构选择视觉混淆。
+    this.clearSelectedMindStructure?.();
     // 阅读视图中不自动聚焦主题，避免焦点无法消除；编辑视图中保持原有行为，
     // SVG 获得焦点时保证至少有一个可见主题可被方向键接管。
     if (!this.canEditMindMap()) return;
@@ -230,6 +232,8 @@ export const topicInteractionMethods = {
     const topic = this.topicById.get(topicId);
     if (!topic || !topic._layout) return false;
 
+    // 切换焦点主题时清除高级结构选中状态，使键盘导航/点击回到普通主题交互。
+    this.clearSelectedMindStructure?.();
     const previousTopicId = this.focusedTopicId;
     const shouldFocusSvg = options.focusSvg !== false || document.activeElement === this.svgEl;
     this.updateFocusedTopicId(topic.id, { focusSvg: shouldFocusSvg });
@@ -468,6 +472,8 @@ export const topicInteractionMethods = {
   },
 
   handleTopicClick(event) {
+    // 优先将点击交给高级结构处理（边界/摘要/关系），命中则不再执行主题点击逻辑。
+    if (this.handleMindStructureClick?.(event)) return;
     if (this.suppressNextTopicClick) {
       this.suppressNextTopicClick = false;
       event.preventDefault();
@@ -481,6 +487,13 @@ export const topicInteractionMethods = {
 
     const topic = this.topicById.get(id);
     if (!topic) return;
+
+    // 处于结构选择（边界/摘要成员选取）模式时，点击主题切换其选中状态，不触发焦点切换。
+    if (this.structureSelection && this.toggleStructureSelectionTopic(topic)) {
+      event.preventDefault();
+      event.stopPropagation();
+      return;
+    }
 
     this.setFocusedTopic(id, { focusSvg: true, ensureInView: false });
 
@@ -530,6 +543,8 @@ export const topicInteractionMethods = {
   },
 
   handleTopicDoubleClick(event) {
+    // 优先将双击交给高级结构处理（如编辑边界标签、关系标签等），命中则不再进入主题编辑。
+    if (this.handleMindStructureDoubleClick?.(event)) return;
     if (!this.canEditMindMap()) return;
 
     const target = event.target;

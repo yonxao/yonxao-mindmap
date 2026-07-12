@@ -173,6 +173,8 @@ export const topicHistoryMethods = {
 
   applyTopicHistoryDocument(document, nextSource) {
     this.root = document.root;
+    // 撤销/重做时同步恢复 structures，保证结构定义与主题树一起回退到历史状态。
+    this.structures = document.structures || [];
     this.source = nextSource;
     this.rawConfig = document.rawConfig || {};
     this.refreshNormalizedConfig();

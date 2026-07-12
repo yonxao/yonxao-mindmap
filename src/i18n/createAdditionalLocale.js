@@ -80,6 +80,34 @@ export function createAdditionalLocale(text) {
     'notice.siblingTopicAdded': text.noticeSiblingTopicAdded,
     'notice.topicDeleted': text.noticeTopicDeleted,
     'notice.rootCannotAddSibling': text.noticeRootCannotAddSibling,
+    'notice.structureSelectRelation':
+      text.structureSelectRelation || 'Select another topic to complete the relation.',
+    'notice.structureSelectMulti':
+      text.structureSelectMulti ||
+      'Continue clicking topics to select, then finish through the context menu.',
+    'notice.structureMinimumTopics':
+      text.structureMinimumTopics || '{type} requires at least {minimum} topics.',
+    'notice.structureCreated': text.structureCreated || '{type} created.',
+    'notice.structureSaved': text.structureSaved || '{type} saved.',
+    'notice.structureDeleted': text.structureDeleted || '{type} deleted.',
+    'notice.structureControlAdjusted': text.structureControlAdjusted || 'Relation curve adjusted.',
+    'structureSelection.status': text.structureSelectionStatus || '{type}: {count} topics selected',
+    'structureSelection.type.summary': text.summary || 'Summary',
+    'structureSelection.type.boundary': text.boundary || 'Boundary',
+    'structureSelection.cancel': text.cancel || 'Cancel',
+    'structureSelection.create': text.create || 'Create',
+    'structureSelection.minimum':
+      text.structureSelectionMinimum || 'Select at least {minimum} topics.',
+    'structureSelection.summarySameParent':
+      text.structureSelectionSummarySameParent ||
+      'A summary can only use topics with the same parent.',
+    'structureSelection.summaryContiguous':
+      text.structureSelectionSummaryContiguous ||
+      'A summary can only use consecutive sibling topics.',
+    'structureSelection.summaryReady':
+      text.structureSelectionSummaryReady || 'The selection is valid and ready to finish.',
+    'structureSelection.boundaryReady':
+      text.structureSelectionBoundaryReady || 'Select more topics or finish the boundary now.',
     'notice.rootCannotDeleteInMap': text.noticeRootCannotDeleteInMap,
     'notice.rootCannotDelete': text.noticeRootCannotDelete,
 
@@ -133,6 +161,14 @@ export function createAdditionalLocale(text) {
     'contextMenu.expandAllSubtopics': text.expandAllSubtopics,
     'contextMenu.collapseAllSubtopics': text.collapseAllSubtopics,
     'contextMenu.deleteTopic': text.deleteTopic,
+    'contextMenu.editStructure': text.editStructure || 'Edit structure',
+    'contextMenu.deleteStructure': text.deleteStructure || 'Delete structure',
+    'contextMenu.finishStructure': text.finishStructure || 'Finish structure',
+    'contextMenu.cancelStructureSelection': text.cancelStructureSelection || 'Cancel selection',
+    'contextMenu.createRelation': text.createRelation || 'Create relation',
+    'contextMenu.createSummary': text.createSummary || 'Create summary',
+    'contextMenu.createBoundary': text.createBoundary || 'Create boundary',
+
     'contextMenu.copyBody': text.copyBody,
     'contextMenu.copyIndentedBody': text.copyIndentedBody,
     'contextMenu.copySource': text.copySource,
@@ -140,6 +176,27 @@ export function createAdditionalLocale(text) {
     'contextMenu.exportPng': text.exportPng,
     'contextMenu.copyPng': text.copyPng,
     'contextMenu.deleteMindMap': text.deleteMindMap,
+
+    // ── 结构编辑弹窗 ──
+    'structureEditor.title.relation': text.structureEditorTitleRelation || 'Relation settings',
+    'structureEditor.title.summary': text.structureEditorTitleSummary || 'Summary settings',
+    'structureEditor.title.boundary': text.structureEditorTitleBoundary || 'Boundary settings',
+    'structureEditor.label.text': text.structureEditorLabelText || 'Text',
+    'structureEditor.label.direction': text.structureEditorLabelDirection || 'Direction',
+    'structureEditor.label.lineStyle': text.structureEditorLabelLineStyle || 'Line style',
+    'structureEditor.direction.none': text.directionNone || 'None',
+    'structureEditor.direction.forward': text.directionForward || 'Forward',
+    'structureEditor.direction.backward': text.directionBackward || 'Backward',
+    'structureEditor.direction.both': text.directionBoth || 'Both',
+    'structureEditor.lineStyle.curve': text.lineStyleCurve || 'Curve',
+    'structureEditor.lineStyle.straight': text.lineStyleStraight || 'Straight',
+    'structureEditor.lineStyle.elbow': text.lineStyleElbow || 'Elbow',
+    'structureEditor.action.cancel': text.cancel,
+    'structureEditor.action.save': text.save,
+    'structureEditor.placeholder.text': text.structureEditorPlaceholderText || 'Optional',
+    'structureEditor.placeholder.textMultiline':
+      text.structureEditorPlaceholderTextMultiline ||
+      'Optional; supports line breaks shown as entered',
 
     // ── 配置面板：标题与基本信息 ──
     'configModal.title': text.configPanel,
@@ -201,6 +258,14 @@ export function createAdditionalLocale(text) {
     'configModal.color.buttonColor.custom': text.buttonColorCustom,
     'configModal.color.buttonColor': text.buttonColorCustom,
     'configModal.color.buttonColor.help': text.buttonColorHelp,
+    'configModal.color.advancedStructureSection':
+      text.advancedStructureColorSection || 'Advanced structure colors',
+    'configModal.color.advancedStructure.relation': text.relationColor || 'Relation color',
+    'configModal.color.advancedStructure.summary': text.summaryColor || 'Summary color',
+    'configModal.color.advancedStructure.boundary': text.boundaryColor || 'Boundary color',
+    'configModal.color.advancedStructure.help':
+      text.advancedStructureColorHelp ||
+      'Default color for this advanced structure type. A structure color attribute still has priority.',
 
     // ── 配置面板：结构 ──
     'configModal.structure.layoutSection': text.layout,

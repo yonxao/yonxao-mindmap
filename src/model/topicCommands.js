@@ -322,6 +322,13 @@ export const topicCommandMethods = {
     }
 
     for (const pastedTopic of pastedTopics) {
+      // 粘贴时递归移除所有子主题的 stable id，避免粘贴后的主题与源主题共享同一稳定 ID，
+      // 导致结构定义引用冲突。新的 stable id 会在后续 assignIds 中重新分配。
+      const removeStableIds = (current) => {
+        delete current.attributes?.id;
+        for (const subtopic of current.subtopics || []) removeStableIds(subtopic);
+      };
+      removeStableIds(pastedTopic);
       topic.subtopics.push(pastedTopic);
     }
     this.collapsedIds.delete(topic.id);

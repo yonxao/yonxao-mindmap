@@ -120,7 +120,11 @@ function configKeyOrder(path) {
     return ['layout', 'connectorStyle', 'branchExpansion', 'topicMaxWidth'];
   }
   if (keyPath === 'structure.topicMaxWidth') return ['global', 'level1', 'level2', 'level3'];
-  if (keyPath === 'color') return ['scheme', 'defaultTopicColor', 'buttonColorMode', 'buttonColor'];
+  if (keyPath === 'color') {
+    // advancedStructure 放在最后，表示它是配色区的扩展子段，与基础配色项不重叠。
+    return ['scheme', 'defaultTopicColor', 'buttonColorMode', 'buttonColor', 'advancedStructure'];
+  }
+  if (keyPath === 'color.advancedStructure') return ['relation', 'summary', 'boundary'];
   if (keyPath === 'font') {
     return ['family', 'size', 'weight', 'lineHeight', 'align', 'level1', 'level2', 'level3'];
   }

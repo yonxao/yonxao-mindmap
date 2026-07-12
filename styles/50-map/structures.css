@@ -1,0 +1,258 @@
+/*
+ * 文件作用：
+ * 高级结构（关联/概要/外框）的 SVG 样式，包括通用样式、三种结构类型各自的视觉风格、
+ * 选中态高亮、关联控制柄交互、主题选中态虚线边框，以及底部选中操作栏的布局。
+ *
+ * 视觉原则：
+ * - 三种结构共享 --structure-color CSS 变量，颜色值来自运行时 advancedStructureColor。
+ * - 结构选中时描边切换为 --interactive-accent，与插件其它选中态保持一致。
+ * - 主题被结构选中时使用虚线边框，与键盘焦点实线边框区分。
+ */
+
+/* ─── 结构通用基础样式 ──────────────────────────────────── */
+/* 所有结构元素可点击，并继承结构色变量 */
+.yonxao-mindmap-structure {
+  cursor: pointer;
+  color: var(--structure-color, #64748b);
+  outline: none;
+}
+
+/* 透明的点击热区：加宽不可见描边增加点击面积，但保留 stroke 事件不干扰可见层。 */
+.yonxao-mindmap-structure-hit-target {
+  fill: none;
+  stroke: transparent !important;
+  stroke-width: 18 !important;
+  pointer-events: stroke;
+}
+
+/* ─── 外框（Boundary） ───────────────────────────────────── */
+/* 外框填充半透明显色，描边虚线区分于概要/关联的实线风格。 */
+.yonxao-mindmap-boundary rect {
+  fill: color-mix(in srgb, var(--structure-color) 8%, transparent);
+  stroke: var(--structure-color);
+  stroke-width: 1.5;
+  stroke-dasharray: 7 5;
+}
+
+/* ─── 概要/关联路径 ─────────────────────────────────────── */
+/* 概要和外框路径共享描边颜色和宽度，线帽圆角。 */
+.yonxao-mindmap-summary path,
+.yonxao-mindmap-relation-path {
+  fill: none;
+  stroke: var(--structure-color);
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+/* 关联线使用虚线，与概要的实线路径做视觉区分。 */
+.yonxao-mindmap-relation-path {
+  stroke-dasharray: 6 5;
+}
+
+/* 所有结构主体的默认透明度，选中时提升到不透明。 */
+.yonxao-mindmap-boundary-frame,
+.yonxao-mindmap-summary > path:not(.yonxao-mindmap-structure-hit-target),
+.yonxao-mindmap-relation-path {
+  opacity: 0.78;
+}
+
+/* 关联线末端箭头标记：继承 line 的描边色。 */
+.yonxao-mindmap-relation-arrow {
+  fill: context-stroke;
+}
+
+/* ─── 结构标签 ───────────────────────────────────────────── */
+/* 文字底色用 paint-order stroke 绘制描边效果，模拟文字周围一圈背景色遮挡下方线条。 */
+.yonxao-mindmap-structure-label {
+  fill: var(--structure-color, #64748b);
+  font-size: 13px;
+  font-weight: 600;
+  paint-order: stroke;
+  stroke: var(--background-primary);
+  stroke-width: 4px;
+  stroke-linejoin: round;
+}
+
+/* 概要标签背景框：白色底色 + 结构色边框，与标签文字独立。 */
+.yonxao-mindmap-summary-label-box {
+  fill: var(--background-primary);
+  stroke: var(--structure-color);
+  stroke-width: 1.5;
+}
+
+/* 外框标签背景框：结构色填充，白色文字，与外框虚线描边统一。 */
+.yonxao-mindmap-boundary .yonxao-mindmap-boundary-label-box {
+  fill: var(--structure-color);
+  stroke: var(--structure-color);
+  stroke-width: 1.5;
+  stroke-dasharray: none;
+}
+
+.yonxao-mindmap-boundary .yonxao-mindmap-boundary-label {
+  fill: white;
+  stroke: none;
+}
+
+/* ─── 选中态 ─────────────────────────────────────────────── */
+/* 结构选中时描边加粗并切换为交互强调色，drop-shadow 增强视觉层次。 */
+.yonxao-mindmap-structure.is-selected path,
+.yonxao-mindmap-structure.is-selected rect {
+  stroke: var(--interactive-accent);
+  stroke-width: 3;
+}
+
+.yonxao-mindmap-structure.is-selected > path:not(.yonxao-mindmap-structure-hit-target),
+.yonxao-mindmap-structure.is-selected > rect {
+  filter: drop-shadow(0 0 3px color-mix(in srgb, var(--interactive-accent) 55%, transparent));
+}
+
+/* 选中时标签文字色也切换为交互强调色。 */
+.yonxao-mindmap-structure.is-selected .yonxao-mindmap-structure-label {
+  fill: var(--interactive-accent);
+}
+
+/* 选中时结构主体不透明度提升，与未选中态的 0.78 形成对比。 */
+.yonxao-mindmap-boundary.is-selected .yonxao-mindmap-boundary-frame,
+.yonxao-mindmap-summary.is-selected > path:not(.yonxao-mindmap-structure-hit-target),
+.yonxao-mindmap-relation.is-selected .yonxao-mindmap-relation-path {
+  opacity: 0.95;
+}
+
+/* ─── 关联控制柄 ─────────────────────────────────────────── */
+/* 关联线的控制柄组默认隐藏，选中时才显示，避免视觉干扰。 */
+.yonxao-mindmap-relation-controls {
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 120ms ease;
+}
+
+.yonxao-mindmap-relation.is-selected .yonxao-mindmap-relation-controls {
+  opacity: 1;
+  pointer-events: all;
+}
+
+/* 控制柄的连接辅助虚线，标记控制点与关联路径端点的关系。 */
+.yonxao-mindmap-relation-control-line {
+  stroke: var(--interactive-accent);
+  stroke-width: 1;
+  stroke-dasharray: 3 3;
+  opacity: 0.7;
+  pointer-events: none;
+}
+
+/* 圆形拖拽控制柄，选中时才可交互以避免误操作。 */
+.yonxao-mindmap-relation-control-handle {
+  fill: var(--background-primary);
+  stroke: var(--interactive-accent);
+  stroke-width: 2;
+  cursor: move;
+  pointer-events: none;
+}
+
+.yonxao-mindmap-relation.is-selected .yonxao-mindmap-relation-control-handle {
+  pointer-events: all;
+}
+
+.yonxao-mindmap-relation-control-handle:active {
+  cursor: grabbing;
+}
+
+/* ─── 主题选中态（被结构选中） ───────────────────────────── */
+/* 当主题被结构选中时，主题卡片使用虚线描边，与键盘焦点实线描边区分。 */
+.yonxao-mindmap-topic.is-structure-selected .yonxao-mindmap-topic-card {
+  stroke: var(--interactive-accent);
+  stroke-width: 3;
+  stroke-dasharray: 6 3;
+}
+
+/* ─── 结构编辑弹窗 ───────────────────────────────────────── */
+.yonxao-mindmap-structure-editor-field {
+  display: grid;
+  gap: 6px;
+  margin-bottom: 16px;
+  color: var(--text-muted);
+  font-size: var(--font-ui-small);
+}
+
+.yonxao-mindmap-structure-editor-field input,
+.yonxao-mindmap-structure-editor-field textarea,
+.yonxao-mindmap-structure-editor-field select {
+  width: 100%;
+}
+
+.yonxao-mindmap-structure-editor-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.yonxao-mindmap-structure-modal-container {
+  z-index: 10001;
+}
+
+/* ─── 底部选中操作栏 ────────────────────────────────────── */
+/* 固定在容器底部居中，半透明毛玻璃效果，显示当前选中结构的描述和操作按钮。 */
+.yonxao-mindmap-structure-selection-bar {
+  position: absolute;
+  z-index: 900;
+  bottom: 14px;
+  left: 50%;
+  display: flex;
+  width: min(520px, calc(100% - 28px));
+  align-items: center;
+  gap: 16px;
+  box-sizing: border-box;
+  padding: 8px 10px;
+  border: 1px solid var(--background-modifier-border);
+  border-radius: var(--yonxao-mindmap-radius-lg);
+  background: color-mix(in srgb, var(--background-primary) 52%, transparent);
+  box-shadow: var(--shadow-s);
+  backdrop-filter: blur(8px);
+  transform: translateX(-50%);
+}
+
+/* hidden 属性隐藏时连带 backdrop-filter 一起禁用。 */
+.yonxao-mindmap-structure-selection-bar[hidden] {
+  display: none;
+}
+
+/* 选中状态摘要文本区域，可拖拽移动操作栏位置。 */
+.yonxao-mindmap-structure-selection-copy {
+  display: grid;
+  flex: 1 1 auto;
+  min-width: 0;
+  gap: 2px;
+  color: var(--text-normal);
+  font-size: var(--font-ui-small);
+  cursor: grab;
+  user-select: none;
+  touch-action: none;
+}
+
+.yonxao-mindmap-structure-selection-bar.is-dragging .yonxao-mindmap-structure-selection-copy {
+  cursor: grabbing;
+}
+
+/* 提示文本，显示操作指引或快捷键说明。 */
+.yonxao-mindmap-structure-selection-hint {
+  color: var(--text-muted);
+  font-size: var(--font-ui-smaller);
+  line-height: 1.35;
+  white-space: normal;
+}
+
+.yonxao-mindmap-structure-selection-actions {
+  display: flex;
+  flex: 0 0 auto;
+  gap: 6px;
+}
+
+/* 小屏幕时缩减操作栏宽度和间距，避免溢出容器。 */
+@media (max-width: 520px) {
+  .yonxao-mindmap-structure-selection-bar {
+    width: calc(100% - 20px);
+    gap: 8px;
+    padding: 7px 8px;
+  }
+}

@@ -15,7 +15,6 @@ import {
   setTooltip,
   canonicalizeMindConfig,
   hasMeaningfulConfig,
-  serializeMindSource,
   markYonxaoMindmapEmbedWrapper,
   assignIds,
   createMindTopic,
@@ -38,6 +37,10 @@ import {
 
 export const rendererContextMethods = {
   onunload() {
+    // 卸载时取消正在进行的结构控制柄拖拽，避免未释放的指针事件残留。
+    this.cancelStructureControlDrag?.();
+    // 移除结构选中底部操作栏 DOM，避免卸载后仍有浮层挂载在 body 上。
+    this.removeStructureSelectionBar?.();
     this.closeTopicEditor();
     this.closeInlineTextEditor(false);
     this.hideTopicAdornmentPopover?.();
@@ -158,6 +161,8 @@ export const rendererContextMethods = {
 
   parseAndApplyDocument(source) {
     const document = parseMindDocument(source);
+    // 解析后的高级结构定义保存在实例上，供 layout/render 阶段绘制关联、概要和外框。
+    this.structures = document.structures || [];
     this.rawConfig = canonicalizeMindConfig(document.rawConfig || {});
     this.refreshNormalizedConfig();
     this.hasConfigBlock = document.hasConfig;
@@ -274,6 +279,9 @@ export const rendererContextMethods = {
       if (!saved) return;
     }
 
+    if (!this.isSourceMode && this.structureSelection) {
+      this.cancelStructureSelection?.({ render: false });
+    }
     this.isSourceMode = !this.isSourceMode;
     this.containerEl.classList.toggle('is-source-mode', this.isSourceMode);
     this.hostEl.classList.toggle('is-source-mode', this.isSourceMode);
@@ -452,18 +460,24 @@ export const rendererContextMethods = {
       }
 
       nextRoot = document.root;
-      nextSource = serializeMindSource(
+      // 源码模式保存配置时，用新解析的结构数据更新实例状态。
+      this.structures = document.structures || [];
+      // 序列化时传入 structures，保证 `@structures` 块在配置变更后仍保留且同步更新。
+      nextSource = serializeMindDocument(
+        document.root,
         rawConfig,
-        document.body,
         shouldWriteConfig,
-        this.plugin?.getGlobalDefaultValueConfig?.() || {}
+        this.plugin?.getGlobalDefaultValueConfig?.() || {},
+        document.structures || []
       );
     } else {
+      // 导图模式下 structures 由实例持有，序列化时直接传入即可。
       nextSource = serializeMindDocument(
         this.root,
         rawConfig,
         shouldWriteConfig,
-        this.plugin?.getGlobalDefaultValueConfig?.() || {}
+        this.plugin?.getGlobalDefaultValueConfig?.() || {},
+        this.structures
       );
     }
 

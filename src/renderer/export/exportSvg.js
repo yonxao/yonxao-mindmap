@@ -153,12 +153,11 @@ export const exportSvgMethods = {
       throw new Error('当前没有可导出的导图。');
     }
 
-    const bounds = layoutTree(
-      this.root,
-      this.collapsedIds,
-      this.config,
-      this.topicRichTextLayoutOptions()
-    ).bounds;
+    // 当前渲染边界已经包含高级结构及其布局占位；重新布局只会得到主题边界并可能改写现有坐标。
+    const bounds =
+      this.renderedMapBounds ||
+      layoutTree(this.root, this.collapsedIds, this.config, this.topicRichTextLayoutOptions())
+        .bounds;
     const viewBox = {
       x: bounds.minX - VIEWBOX_MARGIN_X,
       y: bounds.minY - VIEWBOX_MARGIN_Y,
@@ -183,8 +182,30 @@ export const exportSvgMethods = {
       })
     );
 
-    const mapClone = this.mapEl.cloneNode(true);
-    this.inlineExportSvgComputedStyles(this.mapEl, mapClone);
+    // 临时移除当前导图 DOM 中的焦点/选中样式，避免克隆后残留视觉状态；
+    // 先保存原元素及对应类名，克隆完成后即刻恢复，保证用户操作不被打断。
+    const transientFocusElements = Array.from(
+      this.mapEl.querySelectorAll('.is-keyboard-focused, .is-structure-selected, .is-selected')
+    );
+    const transientFocusClasses = transientFocusElements.map((element) =>
+      ['is-keyboard-focused', 'is-structure-selected', 'is-selected'].filter((className) =>
+        element.classList.contains(className)
+      )
+    );
+    for (const element of transientFocusElements) {
+      element.classList.remove('is-keyboard-focused', 'is-structure-selected', 'is-selected');
+    }
+
+    let mapClone;
+    try {
+      mapClone = this.mapEl.cloneNode(true);
+      this.inlineExportSvgComputedStyles(this.mapEl, mapClone);
+    } finally {
+      // 无论克隆是否成功，都必须恢复原元素的焦点/选中样式。
+      transientFocusElements.forEach((element, index) => {
+        element.classList.add(...transientFocusClasses[index]);
+      });
+    }
     await this.replaceExportEquationForeignObjects(this.mapEl, mapClone);
     this.cleanupExportMapClone(mapClone);
     this.inlineExportSvgColors(mapClone);
@@ -196,6 +217,16 @@ export const exportSvgMethods = {
     const styleEl = svg('style');
     styleEl.textContent = `
       .yonxao-mindmap-connector{fill:none;stroke-width:${CONNECTOR_STROKE_WIDTH};stroke-linecap:round;stroke-linejoin:round;opacity:.62}
+      /* 高级结构（边界框、摘要括号、关系路径、标签）的 SVG 样式，导出为独立文件时需显式声明。 */
+      .yonxao-mindmap-boundary-frame{fill:color-mix(in srgb,var(--structure-color,#64748b) 8%,transparent);stroke:var(--structure-color,#64748b);stroke-width:1.5;stroke-dasharray:7 5;opacity:.78}
+      .yonxao-mindmap-summary path,.yonxao-mindmap-relation-path{fill:none;stroke:var(--structure-color,#64748b);stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+      .yonxao-mindmap-summary>path,.yonxao-mindmap-relation-path{opacity:.78}
+      .yonxao-mindmap-relation-path{stroke-dasharray:6 5}
+      .yonxao-mindmap-relation-arrow{fill:context-stroke}
+      .yonxao-mindmap-structure-label{fill:var(--structure-color,#64748b);font-size:13px;font-weight:600;paint-order:stroke;stroke:var(--background-primary,#fff);stroke-width:4px;stroke-linejoin:round}
+      .yonxao-mindmap-summary-label-box{fill:var(--background-primary,#fff);stroke:var(--structure-color,#64748b);stroke-width:1.5}
+      .yonxao-mindmap-boundary-label-box{fill:var(--structure-color,#64748b);stroke:var(--structure-color,#64748b);stroke-width:1.5}
+      .yonxao-mindmap-boundary-label{fill:#fff;stroke:none}
       .yonxao-mindmap-topic-card{stroke-width:1.4}
       .yonxao-mindmap-topic-default .yonxao-mindmap-topic-card{stroke-width:1.6}
       .yonxao-mindmap-topic-tree-table .yonxao-mindmap-topic-card{stroke-width:1.5}
@@ -627,6 +658,8 @@ export const exportSvgMethods = {
       '.yonxao-mindmap-topic-sibling-actions',
       '.yonxao-mindmap-topic-subtopic-add',
       '.yonxao-mindmap-drop-indicator',
+      '.yonxao-mindmap-relation-controls', // 关系线编辑手柄（拖拽、删除），导出时不需要交互控件。
+      '.yonxao-mindmap-structure-hit-target', // 结构不可见点击区，导出时不显示且不应参与 DOM。
       'title',
     ];
     for (const element of mapClone.querySelectorAll(selectors.join(','))) {

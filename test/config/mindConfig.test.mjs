@@ -58,6 +58,55 @@ test('normalizeMindConfig keeps legal topic control visibility', () => {
   assert.equal(config.button.topicControlVisibility, 'hover');
 });
 
+test('normalizeMindConfig resolves advanced structure colors with per-type defaults', () => {
+  const config = normalizeMindConfig({
+    color: {
+      advancedStructure: {
+        relation: '#123456',
+      },
+    },
+  });
+
+  assert.deepEqual(config.advancedStructureColor, {
+    relation: '#123456',
+    summary: '#705b8f',
+    boundary: '#477970',
+  });
+  assert.deepEqual(
+    normalizeMindConfig(config).advancedStructureColor,
+    config.advancedStructureColor
+  );
+});
+
+test('advanced structure colors inherit globally and allow code block overrides', () => {
+  const config = normalizeMindConfig(
+    mergeMindConfigSources(
+      {
+        color: {
+          advancedStructure: {
+            relation: '#111111',
+            summary: '#222222',
+            boundary: '#333333',
+          },
+        },
+      },
+      {
+        color: {
+          advancedStructure: {
+            summary: '#abcdef',
+          },
+        },
+      }
+    )
+  );
+
+  assert.deepEqual(config.advancedStructureColor, {
+    relation: '#111111',
+    summary: '#abcdef',
+    boundary: '#333333',
+  });
+});
+
 test('mergeMindConfigObjects recursively merges plain objects', () => {
   assert.deepEqual(
     mergeMindConfigObjects(

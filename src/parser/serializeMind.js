@@ -1,4 +1,10 @@
-import { serializeMindSource } from '../config/mindConfig.js';
+// 序列化时需要合并配置源以获取 saveFullConfig 开关，同时引入结构块序列化能力。
+import {
+  mergeMindConfigSources,
+  normalizeMindConfig,
+  serializeMindSource,
+} from '../config/mindConfig.js';
+import { serializeMindStructures } from './mindStructures.js';
 
 /*
  * 文件作用：
@@ -41,8 +47,17 @@ export function serializeMind(root) {
  * 实现逻辑：
  * 主题树先用 serializeMind 转成标题正文，再交给 serializeMindSource 包上配置区。
  */
-export function serializeMindDocument(root, rawConfig, forceConfig, baseConfig) {
-  return serializeMindSource(rawConfig, serializeMind(root), forceConfig, baseConfig);
+export function serializeMindDocument(root, rawConfig, forceConfig, baseConfig, structures = []) {
+  // 需要合并全局默认配置和文档配置才能判断 saveFullConfig 开关，决定结构块是否写入。
+  const effectiveConfig = normalizeMindConfig(mergeMindConfigSources(baseConfig, rawConfig));
+  // 主题体 + 结构定义块拼接成完整 yxmm 正文。saveFullConfig 为 false 时结构块默认可省略。
+  const body = [
+    serializeMind(root),
+    serializeMindStructures(structures, { saveFullConfig: effectiveConfig.view.saveFullConfig }),
+  ]
+    .filter(Boolean)
+    .join('\n\n');
+  return serializeMindSource(rawConfig, body, forceConfig, baseConfig);
 }
 
 /*
@@ -80,6 +95,8 @@ export function serializeTopicAttributes(attributes) {
     'fontWeight',
     'lineHeight',
     'align',
+    // 稳定主题 ID 由 assignIds 分配，序列化时保留，供结构定义通过 id=xxx 精确引用。
+    'id',
   ];
   const keys = [
     ...orderedKeys.filter((key) => topicAttributes[key]),

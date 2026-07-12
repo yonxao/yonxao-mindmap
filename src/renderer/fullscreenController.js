@@ -543,9 +543,15 @@ export const fullscreenControllerMethods = {
     this.registerDomEvent(this.svgEl, 'pointerout', (event) => this.handleTopicPointerOut(event));
     this.registerDomEvent(this.svgEl, 'wheel', (event) => this.handleWheel(event));
     this.registerDomEvent(this.svgEl, 'focus', () => this.handleMapFocus());
+    // focusin 比 focus 更早触发且能冒泡，用于捕获结构元素（边界/摘要/关系）的焦点进入。
+    this.registerDomEvent(this.svgEl, 'focusin', (event) => this.handleMindStructureFocus?.(event));
     this.registerDomEvent(this.svgEl, 'blur', (event) => this.handleMapBlur(event));
     this.registerDomEvent(this.svgEl, 'keydown', (event) => this.handleMapKeyDown(event));
-    this.registerDomEvent(this.svgEl, 'pointerdown', (event) => this.handlePanPointerDown(event));
+    // pointerdown 优先检查是否命中结构控件（如关系线拖拽手柄），命中后不再启动平移。
+    this.registerDomEvent(this.svgEl, 'pointerdown', (event) => {
+      if (this.handleStructureControlPointerDown?.(event)) return;
+      this.handlePanPointerDown(event);
+    });
     this.registerDomEvent(this.svgEl, 'pointermove', (event) => this.handlePanPointerMove(event));
     this.registerDomEvent(this.svgEl, 'pointerup', (event) => this.handlePanPointerUp(event));
     this.registerDomEvent(this.svgEl, 'pointercancel', (event) => this.handlePanPointerUp(event));

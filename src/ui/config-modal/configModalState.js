@@ -55,6 +55,10 @@ function runtimePathForDraftPath(path) {
     'color.defaultTopicColor': ['topic', 'defaultColor'],
     'color.buttonColorMode': ['button', 'colorMode'],
     'color.buttonColor': ['button', 'color'],
+    // 高级结构颜色从草稿配置的 .color.advancedStructure 映射到运行时 advancedStructureColor。
+    'color.advancedStructure.relation': ['advancedStructureColor', 'relation'],
+    'color.advancedStructure.summary': ['advancedStructureColor', 'summary'],
+    'color.advancedStructure.boundary': ['advancedStructureColor', 'boundary'],
     'interaction.toolbar.corner': ['toolbar', 'corner'],
     'interaction.toolbar.placement': ['toolbar', 'placement'],
     'interaction.topicControlVisibility': ['button', 'topicControlVisibility'],
