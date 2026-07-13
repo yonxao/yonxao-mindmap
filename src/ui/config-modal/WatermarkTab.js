@@ -112,16 +112,19 @@ export const watermarkTabMethods = {
       signature.position,
       style === 'bar' ? this.watermarkBarPositions() : this.watermarkPositionOptions()
     );
-    this.createWatermarkColorField(
+    this.createColorTextField(
       this.t('configModal.watermark.color'),
       ['watermark', 'signature', 'color'],
       signature.color
     );
-    this.createWatermarkColorField(
+    this.createColorTextField(
       this.t('configModal.watermark.backgroundColor'),
       ['watermark', 'signature', 'backgroundColor'],
       signature.backgroundColor,
-      { allowTransparent: true }
+      {
+        allowTransparent: true,
+        transparentLabel: this.t('configModal.watermark.transparent'),
+      }
     );
     this.createWatermarkNumberPair(this.t('configModal.watermark.appearance'), [
       {
@@ -211,7 +214,7 @@ export const watermarkTabMethods = {
         ['watermark', 'normal', 'text'],
         normal.text
       );
-      this.createWatermarkColorField(
+      this.createColorTextField(
         this.t('configModal.watermark.color'),
         ['watermark', 'normal', 'color'],
         normal.color

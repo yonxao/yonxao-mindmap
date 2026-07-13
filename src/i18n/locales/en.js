@@ -286,7 +286,6 @@ export const enMessages = Object.freeze({
   'configModal.watermark.size': 'Watermark size',
   'configModal.watermark.offset': 'Position offset',
   'configModal.watermark.gap': 'Tile spacing',
-  'configModal.watermark.customColor': 'Custom color',
   'configModal.watermark.transparent': 'Transparent',
   'configModal.watermark.value': 'Value',
   'configModal.watermark.decrease': 'Decrease',
@@ -474,6 +473,7 @@ export const enMessages = Object.freeze({
 
   // ── Config panel: color tab ──
   'configModal.color.schemeSection': 'Color scheme',
+  'configModal.color.customColor': 'Custom color',
   'configModal.color.scheme': 'Color scheme',
   'configModal.color.defaultTopicColor': 'Default topic color',
   'configModal.color.defaultTopicColor.help':

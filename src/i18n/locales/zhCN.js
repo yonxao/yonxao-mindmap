@@ -275,7 +275,6 @@ export const zhCNMessages = Object.freeze({
   'configModal.watermark.size': '水印尺寸',
   'configModal.watermark.offset': '位置偏移',
   'configModal.watermark.gap': '平铺间距',
-  'configModal.watermark.customColor': '自定义颜色',
   'configModal.watermark.transparent': '透明',
   'configModal.watermark.value': '数值',
   'configModal.watermark.decrease': '减小',
@@ -457,6 +456,7 @@ export const zhCNMessages = Object.freeze({
 
   // ── 配置面板：颜色标签页 ──
   'configModal.color.schemeSection': '配色方案',
+  'configModal.color.customColor': '自定义颜色',
   'configModal.color.scheme': '配色方案',
   'configModal.color.defaultTopicColor': '默认主题颜色',
   'configModal.color.defaultTopicColor.help':

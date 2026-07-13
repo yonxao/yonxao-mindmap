@@ -151,45 +151,6 @@
   box-shadow: inset 0 0 0 2px var(--interactive-accent-hover);
 }
 
-.yonxao-mindmap-watermark-color-control {
-  display: grid;
-  grid-template-columns: minmax(120px, 1fr) 36px minmax(150px, 1.4fr);
-  gap: 8px;
-  align-items: center;
-}
-
-.yonxao-mindmap-watermark-color-control > input[type='text'] {
-  min-width: 0;
-}
-
-.yonxao-mindmap-watermark-color-control > input[type='color'] {
-  width: 36px;
-  height: 30px;
-  padding: 2px;
-}
-
-.yonxao-mindmap-watermark-color-swatches {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 4px;
-}
-
-.yonxao-mindmap-watermark-color-swatches .yonxao-mindmap-config-color-swatch {
-  width: 18px;
-  height: 18px;
-}
-
-.yonxao-mindmap-watermark-color-swatches .yonxao-mindmap-config-color-swatch.is-transparent {
-  background:
-    linear-gradient(45deg, var(--background-modifier-border) 25%, transparent 25%) 0 0 / 8px 8px,
-    linear-gradient(45deg, transparent 75%, var(--background-modifier-border) 75%) 0 0 / 8px 8px,
-    linear-gradient(45deg, transparent 75%, var(--background-modifier-border) 75%) 4px -4px / 8px
-      8px,
-    linear-gradient(45deg, var(--background-modifier-border) 25%, transparent 25%) -4px 4px / 8px
-      8px;
-  background-color: var(--background-primary);
-}
-
 .yonxao-mindmap-watermark-number-pair {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -261,13 +222,5 @@
 @media (max-width: 640px) {
   .yonxao-mindmap-watermark-number-pair {
     grid-template-columns: minmax(0, 1fr);
-  }
-
-  .yonxao-mindmap-watermark-color-control {
-    grid-template-columns: minmax(120px, 1fr) 36px;
-  }
-
-  .yonxao-mindmap-watermark-color-swatches {
-    grid-column: 1 / -1;
   }
 }

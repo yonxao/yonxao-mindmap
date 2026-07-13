@@ -4,7 +4,7 @@
  *
  * 功能范围：
  * - 每个主题级别（level）的折叠卡片容器
- * - 颜色预设色块（swatch）选择
+ * - 通用颜色输入、原生色盘与预设色块（swatch）选择
  * - 组合输入（combo）字段布局
  */
 .yonxao-mindmap-config-level {
@@ -59,6 +59,24 @@
   gap: var(--yonxao-mindmap-gap-md);
 }
 
+/* 配置面板的颜色字段统一按“值输入、原生色盘、预设色块”排列。 */
+.yonxao-mindmap-config-color-control {
+  display: grid;
+  grid-template-columns: minmax(120px, 1fr) 36px minmax(150px, 1.4fr);
+  gap: 8px;
+  align-items: center;
+}
+
+.yonxao-mindmap-config-color-control > input[type='text'] {
+  min-width: 0;
+}
+
+.yonxao-mindmap-config-color-control > input[type='color'] {
+  width: 36px;
+  height: 30px;
+  padding: 2px;
+}
+
 /*
  * 颜色预设色块容器。
  */
@@ -67,6 +85,11 @@
   flex-wrap: wrap;
   gap: var(--yonxao-mindmap-gap-sm);
   padding-top: 4px;
+}
+
+.yonxao-mindmap-config-color-control .yonxao-mindmap-config-color-swatches {
+  gap: 4px;
+  padding-top: 0;
 }
 
 /*
@@ -82,6 +105,23 @@
     transform 0.12s ease,
     border-color 0.12s ease;
   padding: 0;
+}
+
+.yonxao-mindmap-config-color-control .yonxao-mindmap-config-color-swatch {
+  width: 18px;
+  height: 18px;
+}
+
+/* 仅允许透明色的字段会生成该色块，用棋盘格区分透明与白色。 */
+.yonxao-mindmap-config-color-control .yonxao-mindmap-config-color-swatch.is-transparent {
+  background:
+    linear-gradient(45deg, var(--background-modifier-border) 25%, transparent 25%) 0 0 / 8px 8px,
+    linear-gradient(45deg, transparent 75%, var(--background-modifier-border) 75%) 0 0 / 8px 8px,
+    linear-gradient(45deg, transparent 75%, var(--background-modifier-border) 75%) 4px -4px / 8px
+      8px,
+    linear-gradient(45deg, var(--background-modifier-border) 25%, transparent 25%) -4px 4px / 8px
+      8px;
+  background-color: var(--background-primary);
 }
 
 .yonxao-mindmap-config-color-swatch:hover {
@@ -102,4 +142,14 @@
 
 .yonxao-mindmap-config-combo > input {
   min-width: 0;
+}
+
+@media (max-width: 640px) {
+  .yonxao-mindmap-config-color-control {
+    grid-template-columns: minmax(120px, 1fr) 36px;
+  }
+
+  .yonxao-mindmap-config-color-control .yonxao-mindmap-config-color-swatches {
+    grid-column: 1 / -1;
+  }
 }

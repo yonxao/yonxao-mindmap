@@ -1,9 +1,9 @@
 /*
  * 文件作用：
- * 水印选项卡专用字段控件，统一处理分段单选、颜色组合输入和带上下限的数字步进器。
+ * 水印选项卡专用字段控件，统一处理分段单选和带上下限的数字步进器。
  */
 
-import { BUTTON_COLOR_PRESETS, getConfigValue, numberFromInput } from './configModalShared.js';
+import { getConfigValue, numberFromInput } from './configModalShared.js';
 
 export const watermarkFieldMethods = {
   /* 二到三个互斥选项使用分段单选，避免下拉框隐藏当前可选范围。 */
@@ -32,53 +32,6 @@ export const watermarkFieldMethods = {
       });
     }
     return currentValue;
-  },
-
-  /* 水印专用颜色字段：值输入在前，自定义色盘居中，预设色块紧随其后。 */
-  createWatermarkColorField(label, path, normalizedValue, options = {}) {
-    const inheritedValue = this.prepareConfigFieldDefault(path, normalizedValue || '');
-    const controlEl = this.createField(label);
-    this.syncInheritedValueStyle(controlEl, path);
-    const rowEl = controlEl.createDiv({ cls: 'yonxao-mindmap-watermark-color-control' });
-    const textInput = rowEl.createEl('input');
-    textInput.type = 'text';
-    textInput.value = String(getConfigValue(this.draftConfig, path, inheritedValue) || '');
-    this.setConfigInputInheritedValue(textInput, inheritedValue);
-    const colorInput = rowEl.createEl('input');
-    colorInput.type = 'color';
-    colorInput.value = this.configColorPickerValue(textInput.value, inheritedValue);
-    colorInput.setAttribute('aria-label', this.t('configModal.watermark.customColor'));
-    const swatchesEl = rowEl.createDiv({ cls: 'yonxao-mindmap-watermark-color-swatches' });
-
-    const storeColor = (value) => {
-      textInput.value = value;
-      colorInput.value = this.configColorPickerValue(value, inheritedValue);
-      this.setConfigValueOrDeleteInherited(path, value, inheritedValue);
-      this.syncInheritedValueStyle(controlEl, path);
-      this.updateActionButtons();
-    };
-    textInput.addEventListener('input', () => storeColor(textInput.value.trim()));
-    textInput.addEventListener('blur', () => this.restoreConfigInputInheritedValue(textInput));
-    colorInput.addEventListener('input', () => storeColor(colorInput.value));
-    const presetColors = options.allowTransparent
-      ? ['transparent', ...BUTTON_COLOR_PRESETS]
-      : BUTTON_COLOR_PRESETS;
-    for (const color of presetColors) {
-      const button = swatchesEl.createEl('button', {
-        cls: 'yonxao-mindmap-config-color-swatch',
-        type: 'button',
-      });
-      if (color === 'transparent') {
-        button.classList.add('is-transparent');
-      } else {
-        button.style.backgroundColor = color;
-      }
-      button.setAttribute(
-        'aria-label',
-        color === 'transparent' ? this.t('configModal.watermark.transparent') : color
-      );
-      button.addEventListener('click', () => storeColor(color));
-    }
   },
 
   createWatermarkNumberStepper(label, path, normalizedValue, options) {

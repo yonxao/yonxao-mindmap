@@ -22,7 +22,7 @@ export const colorTabMethods = {
       this.t('configModal.color.defaultTopicColor'),
       ['color', 'defaultTopicColor'],
       normalized.topic.defaultColor,
-      this.t('configModal.color.defaultTopicColor.help')
+      { help: this.t('configModal.color.defaultTopicColor.help') }
     );
     const warningEl = this.createWarning('');
     const updateWarning = () => {
@@ -57,7 +57,7 @@ export const colorTabMethods = {
       this.t('configModal.color.buttonColor'),
       ['color', 'buttonColor'],
       normalized.button?.color || '',
-      this.t('configModal.color.buttonColor.help')
+      { help: this.t('configModal.color.buttonColor.help') }
     );
     const updateCustomColorVisibility = () => {
       const isCustom = buttonColorModeSelect.value === 'custom';
@@ -73,7 +73,7 @@ export const colorTabMethods = {
         this.t(`configModal.color.advancedStructure.${type}`),
         ['color', 'advancedStructure', type],
         normalized.advancedStructureColor?.[type] || '',
-        this.t('configModal.color.advancedStructure.help')
+        { help: this.t('configModal.color.advancedStructure.help') }
       );
     }
   },

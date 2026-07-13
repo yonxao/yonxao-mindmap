@@ -390,74 +390,56 @@ export const configFieldMethods = {
     appendFontOptionsToSelect(select, this.t, options);
   },
 
-  createColorTextField(label, path, value, help) {
+  /* 所有配置颜色统一使用“值输入、原生色盘、预设色块”的横向组合布局。 */
+  createColorTextField(label, path, value, options = {}) {
     const inheritedValue = this.prepareConfigFieldDefault(path, value ?? '');
-    const fieldEl = this.createField(label, undefined, help);
+    const fieldEl = this.createField(label, options.parentEl, options.help);
     this.syncInheritedValueStyle(fieldEl, path);
-    const rowEl = fieldEl.createDiv({ cls: 'yonxao-mindmap-config-combo' });
-    const colorInput = rowEl.createEl('input');
+    const rowEl = fieldEl.createDiv({ cls: 'yonxao-mindmap-config-color-control' });
     const textInput = rowEl.createEl('input');
-    colorInput.type = 'color';
     textInput.type = 'text';
-    const rawValue = getConfigValue(this.draftConfig, path, value);
-    const currentValue =
-      typeof rawValue === 'string' || typeof rawValue === 'number' ? String(rawValue) : '';
-
-    textInput.value = currentValue;
+    textInput.value = String(getConfigValue(this.draftConfig, path, inheritedValue) || '');
     this.setConfigInputInheritedValue(textInput, inheritedValue);
-    colorInput._yonxaoMindmapInheritedValue = inheritedValue;
-    colorInput.value = this.configColorPickerValue(currentValue, inheritedValue);
-    colorInput._yonxaoMindmapControlEl = fieldEl;
+    const colorInput = rowEl.createEl('input');
+    colorInput.type = 'color';
+    colorInput.value = this.configColorPickerValue(textInput.value, inheritedValue);
+    colorInput.setAttribute('aria-label', this.t('configModal.color.customColor'));
+    const swatchesEl = rowEl.createDiv({ cls: 'yonxao-mindmap-config-color-swatches' });
     textInput._yonxaoMindmapControlEl = fieldEl;
+    colorInput._yonxaoMindmapControlEl = fieldEl;
 
-    colorInput.addEventListener('input', () => {
-      textInput.value = colorInput.value;
-      this.setConfigValueOrDeleteInherited(
-        path,
-        colorInput.value,
-        colorInput._yonxaoMindmapInheritedValue
-      );
+    const storeColor = (nextColor) => {
+      textInput.value = nextColor;
+      colorInput.value = this.configColorPickerValue(nextColor, inheritedValue);
+      this.setConfigValueOrDeleteInherited(path, nextColor, inheritedValue);
       this.syncInheritedValueStyle(fieldEl, path);
-    });
-    textInput.addEventListener('input', () => {
-      this.setConfigValueOrDeleteInherited(
-        path,
-        textInput.value.trim(),
-        textInput._yonxaoMindmapInheritedValue
-      );
-      if (!String(textInput.value || '').trim()) {
-        colorInput.value = this.configColorPickerValue('', textInput._yonxaoMindmapInheritedValue);
-      } else {
-        colorInput.value = this.configColorPickerValue(
-          textInput.value,
-          textInput._yonxaoMindmapInheritedValue
-        );
-      }
-      this.syncInheritedValueStyle(fieldEl, path);
-    });
+      this.updateActionButtons();
+    };
+    textInput.addEventListener('input', () => storeColor(textInput.value.trim()));
     textInput.addEventListener('blur', () => {
       this.restoreConfigInputInheritedValue(textInput);
-      colorInput.value = this.configColorPickerValue(
-        textInput.value,
-        textInput._yonxaoMindmapInheritedValue
-      );
+      colorInput.value = this.configColorPickerValue(textInput.value, inheritedValue);
     });
+    colorInput.addEventListener('input', () => storeColor(colorInput.value));
 
-    const swatches = fieldEl.createDiv({ cls: 'yonxao-mindmap-config-color-swatches' });
-    for (const color of BUTTON_COLOR_PRESETS) {
-      const button = swatches.createEl('button', { type: 'button' });
-      button.className = 'yonxao-mindmap-config-color-swatch';
-      button.style.backgroundColor = color;
-      button.setAttribute('aria-label', color);
-      button.dataset.color = color;
-      button.addEventListener('click', (event) => {
-        event.preventDefault();
-        textInput.value = color;
-        colorInput.value = color;
-        this.setConfigValueOrDeleteInherited(path, color, textInput._yonxaoMindmapInheritedValue);
-        this.syncInheritedValueStyle(fieldEl, path);
-        this.updateActionButtons();
+    const presetColors = options.allowTransparent
+      ? ['transparent', ...BUTTON_COLOR_PRESETS]
+      : BUTTON_COLOR_PRESETS;
+    for (const color of presetColors) {
+      const button = swatchesEl.createEl('button', {
+        cls: 'yonxao-mindmap-config-color-swatch',
+        type: 'button',
       });
+      if (color === 'transparent') {
+        button.classList.add('is-transparent');
+      } else {
+        button.style.backgroundColor = color;
+      }
+      button.setAttribute(
+        'aria-label',
+        color === 'transparent' ? options.transparentLabel || color : color
+      );
+      button.addEventListener('click', () => storeColor(color));
     }
 
     this.appendFieldHelp(fieldEl);
