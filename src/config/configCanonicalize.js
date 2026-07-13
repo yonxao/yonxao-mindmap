@@ -8,12 +8,18 @@
  * - color：配色方案、默认主题色和按钮颜色。
  * - font：全局字体和按主题级别字体覆盖。
  * - interaction：工具栏、主题按钮和鼠标键盘交互。
+ * - watermark：签名或普通水印及其显示参数。
  *
  * 项目仍处开发阶段，不保留旧 basic/theme/layout 聚合结构兼容。
  */
 
 import { isPlainObject, setConfigValueIfPresent } from './configAccessors.js';
-import { FONT_LEVEL_FIELD_KEYS, FONT_LEVEL_KEYS } from './defaultMindConfig.js';
+import {
+  FONT_LEVEL_FIELD_KEYS,
+  FONT_LEVEL_KEYS,
+  WATERMARK_NORMAL_CONFIG_KEYS,
+  WATERMARK_SIGNATURE_CONFIG_KEYS,
+} from './defaultMindConfig.js';
 
 export function canonicalizeMindConfig(rawConfig) {
   const raw = isPlainObject(rawConfig) ? rawConfig : {};
@@ -86,6 +92,18 @@ export function canonicalizeMindConfig(rawConfig) {
     for (const fontKey of FONT_LEVEL_FIELD_KEYS) {
       setConfigValueIfPresent(next, ['font', levelKey, fontKey], levelConfig[fontKey]);
     }
+  }
+
+  const watermark = isPlainObject(raw.watermark) ? raw.watermark : {};
+  const signature = isPlainObject(watermark.signature) ? watermark.signature : {};
+  const normal = isPlainObject(watermark.normal) ? watermark.normal : {};
+  setConfigValueIfPresent(next, ['watermark', 'enabled'], watermark.enabled);
+  setConfigValueIfPresent(next, ['watermark', 'mode'], watermark.mode);
+  for (const key of WATERMARK_SIGNATURE_CONFIG_KEYS) {
+    setConfigValueIfPresent(next, ['watermark', 'signature', key], signature[key]);
+  }
+  for (const key of WATERMARK_NORMAL_CONFIG_KEYS) {
+    setConfigValueIfPresent(next, ['watermark', 'normal', key], normal[key]);
   }
 
   return next;

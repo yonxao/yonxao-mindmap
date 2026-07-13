@@ -150,6 +150,67 @@ export const CUSTOM_FONT_VALUE = '__custom_font__';
 // 主题普通文本对齐方式：auto 表示根据布局方向自动判断。
 export const TEXT_ALIGN_VALUES = Object.freeze(['auto', 'left', 'center', 'right']);
 
+// 水印配置元数据，同时供配置面板、序列化和运行时归一化使用。
+export const WATERMARK_MODES = Object.freeze(['signature', 'normal']);
+export const WATERMARK_SIGNATURE_STYLES = Object.freeze(['corner', 'bar']);
+export const WATERMARK_TYPES = Object.freeze(['text', 'image']);
+export const WATERMARK_ARRANGEMENTS = Object.freeze(['single', 'tiled']);
+export const WATERMARK_IMAGE_SOURCE_TYPES = Object.freeze(['url', 'vault']);
+export const WATERMARK_POSITIONS = Object.freeze([
+  'top-left',
+  'top-center',
+  'top-right',
+  'center-left',
+  'center',
+  'center-right',
+  'bottom-left',
+  'bottom-center',
+  'bottom-right',
+]);
+export const WATERMARK_FONT_SIZE_MIN = 8;
+export const WATERMARK_FONT_SIZE_MAX = 160;
+export const WATERMARK_OPACITY_MIN = 0.01;
+export const WATERMARK_OPACITY_MAX = 1;
+export const WATERMARK_ROTATION_MIN = -180;
+export const WATERMARK_ROTATION_MAX = 180;
+export const WATERMARK_SIZE_MIN = 8;
+export const WATERMARK_SIZE_MAX = 2000;
+export const WATERMARK_GAP_MIN = 0;
+export const WATERMARK_GAP_MAX = 2000;
+export const WATERMARK_OFFSET_MIN = -2000;
+export const WATERMARK_OFFSET_MAX = 2000;
+
+// 规范化和 YAML 序列化共用字段顺序；新增水印字段时只需维护这里。
+export const WATERMARK_SIGNATURE_CONFIG_KEYS = Object.freeze([
+  'style',
+  'text',
+  'position',
+  'color',
+  'backgroundColor',
+  'fontSize',
+  'opacity',
+  'barHeight',
+  'padding',
+]);
+export const WATERMARK_NORMAL_CONFIG_KEYS = Object.freeze([
+  'type',
+  'arrangement',
+  'position',
+  'text',
+  'imageSourceType',
+  'imageSource',
+  'color',
+  'fontSize',
+  'opacity',
+  'rotation',
+  'width',
+  'height',
+  'gapX',
+  'gapY',
+  'offsetX',
+  'offsetY',
+]);
+
 /*
  * 可按主题级别覆盖的字体字段名。
  * 用于配置合并时按来源遮蔽全局默认值的 levelN 字段，
@@ -245,7 +306,7 @@ export const FONT_FAMILY_OPTIONS = Object.freeze(
 
 /*
  * 作用：
- * 插件配置系统默认值，结构与 YAML 配置区一致（display/structure/color/font/interaction 五分组）。
+ * 插件配置系统默认值，结构与 YAML 配置区一致。
  *
  * 关键点：
  * 这个对象直接映射到 canonicalizeMindConfig() 识别的规范分组，因此可以直接用于
@@ -331,5 +392,40 @@ export const DEFAULT_MIND_CONFIG = Object.freeze({
     tabIndent: true,
     // 默认不拦截滚轮缩放，避免影响 Obsidian 页面滚动。
     wheelZoom: false,
+  }),
+  watermark: Object.freeze({
+    // 水印是可选扩展功能，默认不改变任何现有导图。
+    enabled: false,
+    mode: 'signature',
+    signature: Object.freeze({
+      style: 'corner',
+      text: 'Made with Yonxao Mind Map',
+      position: 'bottom-right',
+      color: '#64748b',
+      // 自定义背景默认透明；水印条仍由渲染层叠加低透明度强调底。
+      backgroundColor: 'transparent',
+      fontSize: 14,
+      opacity: 0.7,
+      barHeight: 36,
+      padding: 16,
+    }),
+    normal: Object.freeze({
+      type: 'text',
+      arrangement: 'tiled',
+      position: 'center',
+      text: '© Yonxao',
+      imageSourceType: 'url',
+      imageSource: '',
+      color: '#64748b',
+      fontSize: 24,
+      opacity: 0.18,
+      rotation: -30,
+      width: 160,
+      height: 80,
+      gapX: 120,
+      gapY: 100,
+      offsetX: 0,
+      offsetY: 0,
+    }),
   }),
 });

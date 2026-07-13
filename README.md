@@ -540,7 +540,7 @@ Topic attributes > Code block config > Plugin global defaults > Plugin built-in 
 
 ### Global Default Configuration
 
-Open the visual config panel in Obsidian `Settings` → `Community plugins` → `yonxao-mindmap`. There are 7 tabs:
+Open the visual config panel in Obsidian `Settings` → `Community plugins` → `yonxao-mindmap`. There are 8 tabs:
 
 **1. Display**
 
@@ -593,7 +593,16 @@ Open the visual config panel in Obsidian `Settings` → `Community plugins` → 
   - View control
   - Map control
 
-**7. Advanced**
+**7. Watermark**
+
+- On first use, open the GitHub support entry, then return to self-confirm the unlock; no GitHub account is read or verified
+- Signature watermark: corner signature or top/bottom watermark bar
+- Standard watermark: text or image, arranged as a single item or tiled
+- Image sources: URL, vault file, or upload to the vault
+- Configurable position, color, size, opacity, rotation, spacing, and offset
+- Appears immediately on the map canvas, in fullscreen, and in exported images
+
+**8. Advanced**
 
 - YAML raw text editing
 - Real-time parse validation (shows valid/invalid status)
@@ -653,6 +662,7 @@ Additional trimming rules:
 
 - Automatically inlines all CSS color values before export for color consistency
 - Automatically removes interactive controls (collapse buttons, etc.) during export
+- Enabled watermarks are exported directly with the current map, matching the canvas appearance
 - Export resolution is automatically optimized based on pixel ratio
 
 ## 📋 Clipboard & Undo/Redo

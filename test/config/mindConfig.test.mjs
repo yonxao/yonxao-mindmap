@@ -58,6 +58,62 @@ test('normalizeMindConfig keeps legal topic control visibility', () => {
   assert.equal(config.button.topicControlVisibility, 'hover');
 });
 
+test('normalizeMindConfig keeps watermark config stable and clamps numeric values', () => {
+  const config = normalizeMindConfig({
+    watermark: {
+      enabled: true,
+      mode: 'normal',
+      normal: {
+        type: 'image',
+        arrangement: 'tiled',
+        position: 'bottom-right',
+        imageSourceType: 'vault',
+        imageSource: 'assets/logo.png',
+        opacity: 5,
+        rotation: -999,
+        width: 1,
+        height: 9999,
+        gapX: -1,
+        gapY: 9999,
+        offsetX: Number.MAX_VALUE,
+        offsetY: -Number.MAX_VALUE,
+      },
+    },
+  });
+
+  assert.equal(config.watermark.enabled, true);
+  assert.equal(config.watermark.mode, 'normal');
+  assert.equal(config.watermark.signature.backgroundColor, 'transparent');
+  assert.equal(config.watermark.normal.type, 'image');
+  assert.equal(config.watermark.normal.imageSource, 'assets/logo.png');
+  assert.equal(config.watermark.normal.opacity, 1);
+  assert.equal(config.watermark.normal.rotation, -180);
+  assert.equal(config.watermark.normal.width, 8);
+  assert.equal(config.watermark.normal.height, 2000);
+  assert.equal(config.watermark.normal.gapX, 0);
+  assert.equal(config.watermark.normal.gapY, 2000);
+  assert.equal(config.watermark.normal.offsetX, 2000);
+  assert.equal(config.watermark.normal.offsetY, -2000);
+  assert.deepEqual(normalizeMindConfig(config).watermark, config.watermark);
+});
+
+test('watermark config survives YAML round trip', () => {
+  const raw = {
+    watermark: {
+      enabled: true,
+      mode: 'signature',
+      signature: {
+        style: 'bar',
+        text: 'Created by Yonxao',
+        position: 'bottom-center',
+        opacity: 0.6,
+      },
+    },
+  };
+
+  assert.deepEqual(parseSimpleYaml(stringifySimpleYaml(raw).split('\n')), raw);
+});
+
 test('normalizeMindConfig resolves advanced structure colors with per-type defaults', () => {
   const config = normalizeMindConfig({
     color: {

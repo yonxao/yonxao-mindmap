@@ -21,6 +21,7 @@ import { fishboneDrawMethods } from './draw/drawFishbone.js';
 import { timelineDrawMethods } from './draw/drawTimeline.js';
 import { topicDrawMethods } from './draw/drawTopic.js';
 import { topicControlDrawMethods } from './draw/drawTopicControls.js';
+import { watermarkDrawMethods } from './draw/drawWatermark.js';
 import { trunkSegmentDrawMethods } from './draw/drawTrunkSegments.js';
 import { connectorGeometryMethods } from './draw/connectorGeometry.js';
 import { topicControlPointMethods } from './draw/topicControlPoints.js';
@@ -227,6 +228,7 @@ Object.assign(
   trunkSegmentDrawMethods,
   topicDrawMethods,
   topicControlDrawMethods,
+  watermarkDrawMethods,
   topicControlPointMethods,
   topicPointGeometryMethods,
   topicInteractionMethods,

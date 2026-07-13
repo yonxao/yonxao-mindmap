@@ -203,6 +203,44 @@ export class YonxaoMindmapPlugin extends Plugin {
     this.refreshActiveRenderers();
   }
 
+  /* 水印解锁是插件级状态，不写入任何 Markdown 文档。 */
+  isWatermarkUnlocked() {
+    // settings 在读取和每次更新时都已规范化，渲染热路径直接读取即可。
+    return this.settings.watermarkUnlocked === true;
+  }
+
+  /* 解锁采用用户自行确认，不读取 GitHub 账号；这里只负责可靠持久化插件级状态。 */
+  async unlockWatermark() {
+    if (this.watermarkUnlockPromise) return this.watermarkUnlockPromise;
+    if (this.isWatermarkUnlocked()) return;
+
+    const unlockPromise = (async () => {
+      const previousSettings = this.settings;
+      const nextSettings = normalizePluginSettings(
+        { ...this.settings, watermarkUnlocked: true },
+        this.getObsidianLanguage()
+      );
+      this.settings = nextSettings;
+      try {
+        await this.saveSettings();
+      } catch (error) {
+        // 持久化失败时同步回滚内存状态，避免界面显示已解锁但重启后失效。
+        this.settings = previousSettings;
+        throw error;
+      }
+      this.refreshActiveRenderers();
+    })();
+    // 多个配置面板同时确认时复用同一次持久化，避免成功和回滚互相覆盖。
+    this.watermarkUnlockPromise = unlockPromise;
+    try {
+      await unlockPromise;
+    } finally {
+      if (this.watermarkUnlockPromise === unlockPromise) {
+        this.watermarkUnlockPromise = null;
+      }
+    }
+  }
+
   /*
    * 作用：
    * 跟踪当前挂载的 renderer，renderer 卸载时自动从集合移除。

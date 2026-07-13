@@ -10,6 +10,10 @@
  */
 
 import { isPlainObject } from './configAccessors.js';
+import {
+  WATERMARK_NORMAL_CONFIG_KEYS,
+  WATERMARK_SIGNATURE_CONFIG_KEYS,
+} from './defaultMindConfig.js';
 
 // YAML 缩进步长固定为 2 个空格，符合常见 Obsidian 配置区书写习惯
 const YAML_INDENT_STEP = 2;
@@ -111,7 +115,7 @@ function orderedConfigEntries(value, path) {
 function configKeyOrder(path) {
   const keyPath = path.join('.');
   if (keyPath === '') {
-    return ['display', 'structure', 'color', 'font', 'interaction'];
+    return ['display', 'structure', 'color', 'font', 'interaction', 'watermark'];
   }
   if (keyPath === 'display') {
     return ['canvasHeight', 'sourceHeight', 'viewFit', 'fitViewNoUpscale', 'fitViewMaxScale'];
@@ -135,6 +139,9 @@ function configKeyOrder(path) {
     return ['toolbar', 'topicControlVisibility', 'wheelZoom', 'tabIndent'];
   }
   if (keyPath === 'interaction.toolbar') return ['corner', 'placement'];
+  if (keyPath === 'watermark') return ['enabled', 'mode', 'signature', 'normal'];
+  if (keyPath === 'watermark.signature') return WATERMARK_SIGNATURE_CONFIG_KEYS;
+  if (keyPath === 'watermark.normal') return WATERMARK_NORMAL_CONFIG_KEYS;
   return [];
 }
 

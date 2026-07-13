@@ -72,6 +72,30 @@ export const configFieldMethods = {
     return input;
   },
 
+  createTextField(label, path, normalizedValue, options = {}) {
+    const inheritedValue = this.prepareConfigFieldDefault(path, normalizedValue ?? '');
+    const fieldEl = this.createField(label, options.parentEl, options.help);
+    this.syncInheritedValueStyle(fieldEl, path);
+    const input = fieldEl.createEl('input');
+    input.type = options.type || 'text';
+    input.value = String(getConfigValue(this.draftConfig, path, inheritedValue) ?? '');
+    input.placeholder = options.placeholder || '';
+    input.disabled = Boolean(options.disabled);
+    this.setConfigInputInheritedValue(input, inheritedValue, options.placeholder || '');
+    input.addEventListener('input', () => {
+      this.setConfigValueOrDeleteInherited(
+        path,
+        input.value.trim(),
+        input._yonxaoMindmapInheritedValue
+      );
+      this.syncInheritedValueStyle(fieldEl, path);
+    });
+    input.addEventListener('blur', () => this.restoreConfigInputInheritedValue(input));
+    input._yonxaoMindmapControlEl = fieldEl;
+    this.appendFieldHelp(fieldEl);
+    return input;
+  },
+
   createSelectField(label, path, value, options, fieldOptions = {}) {
     const inheritedValue = this.prepareConfigFieldDefault(path, value);
     const fieldEl = this.createField(label, fieldOptions.parentEl, fieldOptions.help);

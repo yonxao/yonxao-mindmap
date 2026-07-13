@@ -31,6 +31,24 @@ import {
   TOPIC_MAX_WIDTH_MIN,
   VIEW_FIT_MODES,
   VIEW_MODES,
+  WATERMARK_ARRANGEMENTS,
+  WATERMARK_FONT_SIZE_MAX,
+  WATERMARK_FONT_SIZE_MIN,
+  WATERMARK_GAP_MAX,
+  WATERMARK_GAP_MIN,
+  WATERMARK_IMAGE_SOURCE_TYPES,
+  WATERMARK_MODES,
+  WATERMARK_OFFSET_MAX,
+  WATERMARK_OFFSET_MIN,
+  WATERMARK_OPACITY_MAX,
+  WATERMARK_OPACITY_MIN,
+  WATERMARK_POSITIONS,
+  WATERMARK_ROTATION_MAX,
+  WATERMARK_ROTATION_MIN,
+  WATERMARK_SIGNATURE_STYLES,
+  WATERMARK_SIZE_MAX,
+  WATERMARK_SIZE_MIN,
+  WATERMARK_TYPES,
 } from './defaultMindConfig.js';
 
 /*
@@ -52,6 +70,7 @@ export function normalizeMindConfig(rawConfig) {
   const font = isPlainObject(raw.font) ? raw.font : {};
   const interaction = isPlainObject(raw.interaction) ? raw.interaction : {};
   const toolbar = isPlainObject(interaction.toolbar) ? interaction.toolbar : {};
+  const watermark = isPlainObject(raw.watermark) ? raw.watermark : {};
 
   return {
     canvas: {
@@ -112,6 +131,7 @@ export function normalizeMindConfig(rawConfig) {
           : DEFAULT_MIND_CONFIG.interaction.tabIndent,
       height: normalizeOptionalNumber(display.sourceHeight, CANVAS_MIN_HEIGHT, CANVAS_MAX_HEIGHT),
     },
+    watermark: normalizeWatermarkConfig(watermark),
   };
 }
 
@@ -196,6 +216,99 @@ function normalizeRuntimeMindConfig(config) {
           ? source.enableTabIndent
           : DEFAULT_MIND_CONFIG.interaction.tabIndent,
       height: normalizeOptionalNumber(source.height, CANVAS_MIN_HEIGHT, CANVAS_MAX_HEIGHT),
+    },
+    watermark: normalizeWatermarkConfig(config.watermark),
+  };
+}
+
+/*
+ * 作用：把文档水印配置清洗为渲染器可直接消费的稳定结构。
+ * 字符串枚举非法时回退默认值，所有尺寸和透明度都限制在配置面板允许范围内。
+ */
+function normalizeWatermarkConfig(rawConfig) {
+  const raw = isPlainObject(rawConfig) ? rawConfig : {};
+  const signature = isPlainObject(raw.signature) ? raw.signature : {};
+  const normal = isPlainObject(raw.normal) ? raw.normal : {};
+  const defaults = DEFAULT_MIND_CONFIG.watermark;
+  const enumValue = (value, values, fallback) =>
+    values.includes(String(value || '')) ? String(value) : fallback;
+  const text = (value, fallback) => {
+    const normalized = normalizeText(value);
+    return normalized || fallback;
+  };
+
+  return {
+    enabled: typeof raw.enabled === 'boolean' ? raw.enabled : defaults.enabled,
+    mode: enumValue(raw.mode, WATERMARK_MODES, defaults.mode),
+    signature: {
+      style: enumValue(signature.style, WATERMARK_SIGNATURE_STYLES, defaults.signature.style),
+      text: text(signature.text, defaults.signature.text),
+      position: enumValue(signature.position, WATERMARK_POSITIONS, defaults.signature.position),
+      color: text(signature.color, defaults.signature.color),
+      backgroundColor: text(signature.backgroundColor, defaults.signature.backgroundColor),
+      fontSize:
+        normalizeOptionalNumber(
+          signature.fontSize,
+          WATERMARK_FONT_SIZE_MIN,
+          WATERMARK_FONT_SIZE_MAX
+        ) || defaults.signature.fontSize,
+      opacity:
+        normalizeOptionalNumber(signature.opacity, WATERMARK_OPACITY_MIN, WATERMARK_OPACITY_MAX) ||
+        defaults.signature.opacity,
+      barHeight:
+        normalizeOptionalNumber(signature.barHeight, WATERMARK_SIZE_MIN, WATERMARK_SIZE_MAX) ||
+        defaults.signature.barHeight,
+      padding:
+        normalizeOptionalNumber(signature.padding, WATERMARK_GAP_MIN, WATERMARK_GAP_MAX) ??
+        defaults.signature.padding,
+    },
+    normal: {
+      type: enumValue(normal.type, WATERMARK_TYPES, defaults.normal.type),
+      arrangement: enumValue(
+        normal.arrangement,
+        WATERMARK_ARRANGEMENTS,
+        defaults.normal.arrangement
+      ),
+      position: enumValue(normal.position, WATERMARK_POSITIONS, defaults.normal.position),
+      text: text(normal.text, defaults.normal.text),
+      imageSourceType: enumValue(
+        normal.imageSourceType,
+        WATERMARK_IMAGE_SOURCE_TYPES,
+        defaults.normal.imageSourceType
+      ),
+      imageSource: normalizeText(normal.imageSource),
+      color: text(normal.color, defaults.normal.color),
+      fontSize:
+        normalizeOptionalNumber(
+          normal.fontSize,
+          WATERMARK_FONT_SIZE_MIN,
+          WATERMARK_FONT_SIZE_MAX
+        ) || defaults.normal.fontSize,
+      opacity:
+        normalizeOptionalNumber(normal.opacity, WATERMARK_OPACITY_MIN, WATERMARK_OPACITY_MAX) ||
+        defaults.normal.opacity,
+      rotation:
+        normalizeOptionalNumber(normal.rotation, WATERMARK_ROTATION_MIN, WATERMARK_ROTATION_MAX) ??
+        defaults.normal.rotation,
+      width:
+        normalizeOptionalNumber(normal.width, WATERMARK_SIZE_MIN, WATERMARK_SIZE_MAX) ||
+        defaults.normal.width,
+      height:
+        normalizeOptionalNumber(normal.height, WATERMARK_SIZE_MIN, WATERMARK_SIZE_MAX) ||
+        defaults.normal.height,
+      gapX:
+        normalizeOptionalNumber(normal.gapX, WATERMARK_GAP_MIN, WATERMARK_GAP_MAX) ??
+        defaults.normal.gapX,
+      gapY:
+        normalizeOptionalNumber(normal.gapY, WATERMARK_GAP_MIN, WATERMARK_GAP_MAX) ??
+        defaults.normal.gapY,
+      // 偏移也必须钳制；超大浮点数会让平铺起点回退循环失去进展并卡住渲染。
+      offsetX:
+        normalizeOptionalNumber(normal.offsetX, WATERMARK_OFFSET_MIN, WATERMARK_OFFSET_MAX) ??
+        defaults.normal.offsetX,
+      offsetY:
+        normalizeOptionalNumber(normal.offsetY, WATERMARK_OFFSET_MIN, WATERMARK_OFFSET_MAX) ??
+        defaults.normal.offsetY,
     },
   };
 }

@@ -1679,6 +1679,66 @@ console.log("hello")
 ~~~
 ```
 
+## 水印专项
+
+先在配置面板的“水印”选项卡完成自行确认解锁，再分别检查以下两个代码块。
+
+### 底部签名水印条
+
+```yxmm
+---
+display:
+  viewFit: fit
+watermark:
+  enabled: true
+  mode: signature
+  signature:
+    style: bar
+    text: "Made with Yonxao Mind Map"
+    position: bottom-right
+---
+
+# 水印条回归
+## 视口定位
+### 缩放和平移后仍贴合底部
+## 图层顺序
+### 不遮挡主题和编辑控件
+```
+
+预期：水印条占满视口宽度、保留浅色底且不显示分隔线；主题内容不进入水印条区域，编辑控件仍位于签名上方；深浅主题切换后内置文字颜色立即变化。
+
+### 普通平铺文字水印
+
+```yxmm
+---
+display:
+  viewFit: fit
+watermark:
+  enabled: true
+  mode: normal
+  normal:
+    type: text
+    arrangement: tiled
+    position: center
+    text: "© Yonxao"
+    color: "#64748b"
+    opacity: 0.18
+    rotation: -30
+    width: 160
+    height: 80
+    gapX: 120
+    gapY: 100
+---
+
+# 平铺水印回归
+## 内容层级
+### 水印位于主题和连线下方
+## 导出一致性
+### 复制图片与导出图片保持一致
+```
+
+预期：平铺水印限制在导图内容边界内、位于主题和连线下方且不拦截交互；复制图片和导出图片中的位置、透明度和旋转与画布一致。
+
 ## 配置面板专项
 
 ```yxmm

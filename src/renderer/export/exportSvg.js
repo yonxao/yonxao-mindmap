@@ -209,6 +209,8 @@ export const exportSvgMethods = {
     await this.replaceExportEquationForeignObjects(this.mapEl, mapClone);
     this.cleanupExportMapClone(mapClone);
     this.inlineExportSvgColors(mapClone);
+    // 签名水印跟随当前 viewBox；导出时改用导出视口，保证位置不受用户平移影响。
+    this.syncSignatureWatermarkToViewBox(mapClone, viewBox);
     exportSvg.appendChild(mapClone);
     return exportSvg;
   },
@@ -309,9 +311,17 @@ export const exportSvgMethods = {
    */
   async inlineExportSvgImages(exportSvg) {
     const imageElements = Array.from(exportSvg.querySelectorAll('image[href]'));
+    // 平铺水印可能引用数百次同一图片；同一次导出只读取或请求一次相同资源。
+    const dataUrlPromises = new Map();
     await Promise.all(
       imageElements.map(async (imageEl) => {
-        const dataUrl = await this.resolveExportImageDataUrl(imageEl);
+        const href = String(imageEl.getAttribute('href') || '').trim();
+        const source = String(imageEl.getAttribute('data-image-source') || '').trim();
+        const cacheKey = `${source}\u0000${href}`;
+        if (!dataUrlPromises.has(cacheKey)) {
+          dataUrlPromises.set(cacheKey, this.resolveExportImageDataUrl(imageEl));
+        }
+        const dataUrl = await dataUrlPromises.get(cacheKey);
         if (!dataUrl) return;
         imageEl.setAttribute('href', dataUrl);
         imageEl.setAttributeNS('http://www.w3.org/1999/xlink', 'xlink:href', dataUrl);

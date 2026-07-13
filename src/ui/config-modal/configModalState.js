@@ -40,6 +40,8 @@ function readConfigPath(config, path, fallback = '') {
 
 function runtimePathForDraftPath(path) {
   const key = path.join('.');
+  // 水印的草稿结构与运行时结构一致，直接按原路径读取，保证内置值和全局继承值正确回填。
+  if (path[0] === 'watermark') return path;
   const directPaths = {
     'display.canvasHeight': ['canvas', 'height'],
     'display.sourceHeight': ['source', 'height'],

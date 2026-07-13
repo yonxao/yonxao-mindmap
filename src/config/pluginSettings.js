@@ -23,6 +23,7 @@ import { isPlainObject } from './configAccessors.js';
 export const DEFAULT_PLUGIN_SETTINGS = Object.freeze({
   language: FALLBACK_LANGUAGE,
   defaultConfig: Object.freeze({}),
+  watermarkUnlocked: false,
 });
 
 /*
@@ -40,5 +41,6 @@ export function normalizePluginSettings(rawSettings, defaultLanguage = FALLBACK_
     defaultConfig: isPlainObject(settings.defaultConfig)
       ? canonicalizeMindConfig(settings.defaultConfig)
       : {},
+    watermarkUnlocked: settings.watermarkUnlocked === true,
   };
 }

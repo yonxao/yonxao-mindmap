@@ -424,6 +424,9 @@ export const rendererContextMethods = {
       t: this.t.bind(this),
       baseConfig: this.plugin?.getGlobalDefaultValueConfig?.() || {},
       rawConfig: this.documentConfigForSave(this.rawConfig),
+      sourcePath: this.ctx?.sourcePath || '',
+      watermarkUnlocked: this.plugin.isWatermarkUnlocked(),
+      onUnlockWatermark: () => this.plugin.unlockWatermark(),
       onApply: async (nextConfig) => this.applyConfigFromModal(nextConfig),
     });
     modal.open();

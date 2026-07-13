@@ -13,6 +13,14 @@
 export const SVG_NS = 'http://www.w3.org/2000/svg';
 export const CODE_BLOCK_NAME = 'yxmm';
 
+// 项目文档和 GitHub 支持入口在配置面板多个位置复用，集中定义避免链接漂移。
+export const PROJECT_REPOSITORY_URL = 'https://github.com/yonxao/yonxao-mindmap';
+export const PROJECT_README_URL = `${PROJECT_REPOSITORY_URL}/blob/main/README.md`;
+export const PROJECT_README_ZH_CN_URL = `${PROJECT_REPOSITORY_URL}/blob/main/README.zh-CN.md`;
+
+// 水印条只裁剪导图内容层，不应覆盖编辑控件或其他 SVG 定义。
+export const MAP_CONTENT_LAYER_ATTRIBUTE = 'data-yonxao-map-content-layer';
+
 // 布局常量集中放在这里，后面做设置页时可以直接把这些值抽成用户配置。
 export const LEVEL_GAP = 84;
 export const SIBLING_GAP = 18;

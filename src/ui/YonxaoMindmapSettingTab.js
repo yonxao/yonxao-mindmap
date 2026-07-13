@@ -114,6 +114,8 @@ export class YonxaoMindmapSettingTab extends PluginSettingTab {
       title: this.t('configModal.globalDefaultValueTitle'),
       t: this.t.bind(this),
       rawConfig: this.yonxaoPlugin.getGlobalDefaultValueConfig(),
+      watermarkUnlocked: this.yonxaoPlugin.isWatermarkUnlocked(),
+      onUnlockWatermark: async () => this.yonxaoPlugin.unlockWatermark(),
       onApply: async (nextConfig) => {
         const sanitizedConfig = this.sanitizeGlobalDefaultValueConfig(nextConfig);
         await this.yonxaoPlugin.updateGlobalDefaultValueConfig(sanitizedConfig);

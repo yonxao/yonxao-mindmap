@@ -15,6 +15,7 @@ export { Menu, Notice, setIcon, setTooltip } from 'obsidian';
 
 export {
   CODE_BLOCK_NAME,
+  MAP_CONTENT_LAYER_ATTRIBUTE,
   VIEWBOX_MARGIN_X,
   VIEWBOX_MARGIN_Y,
   CANVAS_MIN_HEIGHT,

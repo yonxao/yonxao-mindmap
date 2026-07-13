@@ -31,6 +31,7 @@ export const configModalRuleMethods = {
       font: this.t('configModal.tabs.font'),
       interaction: this.t('configModal.tabs.interaction'),
       shortcuts: this.t('configModal.tabs.shortcuts'),
+      watermark: this.t('configModal.tabs.watermark'),
       advanced: this.t('configModal.tabs.advanced'),
     }[tab];
   },
@@ -43,6 +44,7 @@ export const configModalRuleMethods = {
       ['font', this.t('configModal.tabs.font')],
       ['interaction', this.t('configModal.tabs.interaction')],
       ['shortcuts', this.t('configModal.tabs.shortcuts')],
+      ['watermark', this.t('configModal.tabs.watermark')],
       ['advanced', this.t('configModal.tabs.advanced')],
     ];
   },

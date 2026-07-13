@@ -1,0 +1,273 @@
+/* 水印解锁、配置字段和图片来源操作区。 */
+.yonxao-mindmap-watermark-locked {
+  display: grid;
+  gap: 12px;
+  max-width: 520px;
+  margin: 24px auto;
+  padding: 20px;
+  text-align: center;
+  border: 1px solid var(--background-modifier-border);
+  border-radius: var(--yonxao-mindmap-radius-md);
+  background: var(--background-secondary);
+}
+
+.yonxao-mindmap-watermark-locked h3,
+.yonxao-mindmap-watermark-locked p {
+  margin: 0;
+}
+
+.yonxao-mindmap-watermark-unlock-steps {
+  display: grid;
+  gap: 8px;
+  margin: 4px 0;
+  text-align: left;
+}
+
+.yonxao-mindmap-watermark-unlock-step {
+  display: grid;
+  grid-template-columns: 28px minmax(0, 1fr);
+  gap: 10px;
+  align-items: start;
+  padding: 10px;
+  color: var(--text-faint);
+  border: 1px solid var(--background-modifier-border);
+  border-radius: var(--yonxao-mindmap-radius-md);
+  background: var(--background-primary);
+}
+
+.yonxao-mindmap-watermark-unlock-step.is-active {
+  color: var(--text-normal);
+  border-color: var(--interactive-accent);
+}
+
+.yonxao-mindmap-watermark-unlock-step.is-complete {
+  color: var(--text-muted);
+}
+
+.yonxao-mindmap-watermark-unlock-step-number {
+  display: inline-flex;
+  width: 24px;
+  height: 24px;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-muted);
+  font-weight: var(--font-semibold);
+  border-radius: 50%;
+  background: var(--background-modifier-hover);
+}
+
+.yonxao-mindmap-watermark-unlock-step.is-active .yonxao-mindmap-watermark-unlock-step-number {
+  color: var(--text-on-accent);
+  background: var(--interactive-accent);
+}
+
+.yonxao-mindmap-watermark-unlock-step.is-complete .yonxao-mindmap-watermark-unlock-step-number {
+  color: var(--text-success);
+}
+
+.yonxao-mindmap-watermark-unlock-step-title {
+  font-weight: var(--font-semibold);
+}
+
+.yonxao-mindmap-watermark-unlock-step-description {
+  margin-top: 2px;
+  color: var(--text-muted);
+  font-size: var(--font-ui-smaller);
+}
+
+.yonxao-mindmap-watermark-locked-actions,
+.yonxao-mindmap-watermark-image-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: center;
+}
+
+.yonxao-mindmap-watermark-locked .yonxao-mindmap-watermark-existing-support {
+  width: fit-content;
+  margin: 0 auto;
+  padding: 2px 4px;
+  color: var(--text-muted);
+  font-size: var(--font-ui-smaller);
+  text-decoration: underline;
+  border: 0;
+  box-shadow: none;
+  background: transparent;
+}
+
+.yonxao-mindmap-watermark-locked .yonxao-mindmap-watermark-existing-support:hover {
+  color: var(--text-normal);
+  background: transparent;
+}
+
+.yonxao-mindmap-watermark-image-actions input[type='file'] {
+  display: none;
+}
+
+.yonxao-mindmap-watermark-choice-group {
+  display: inline-flex;
+  width: fit-content;
+  max-width: 100%;
+  overflow: hidden;
+  border: 1px solid var(--background-modifier-border);
+  border-radius: var(--yonxao-mindmap-radius-md);
+}
+
+.yonxao-mindmap-watermark-choice {
+  position: relative;
+  cursor: pointer;
+}
+
+.yonxao-mindmap-watermark-choice + .yonxao-mindmap-watermark-choice {
+  border-left: 1px solid var(--background-modifier-border);
+}
+
+.yonxao-mindmap-config-control .yonxao-mindmap-watermark-choice input[type='radio'] {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: 0;
+  padding: 0;
+  opacity: 0;
+  appearance: none;
+  border: 0;
+  background: transparent;
+  pointer-events: none;
+}
+
+.yonxao-mindmap-watermark-choice span {
+  display: block;
+  padding: 6px 14px;
+  color: var(--text-muted);
+  background: var(--background-primary);
+}
+
+.yonxao-mindmap-watermark-choice input:checked + span {
+  color: var(--text-on-accent);
+  background: var(--interactive-accent);
+}
+
+.yonxao-mindmap-watermark-choice input:focus-visible + span {
+  box-shadow: inset 0 0 0 2px var(--interactive-accent-hover);
+}
+
+.yonxao-mindmap-watermark-color-control {
+  display: grid;
+  grid-template-columns: minmax(120px, 1fr) 36px minmax(150px, 1.4fr);
+  gap: 8px;
+  align-items: center;
+}
+
+.yonxao-mindmap-watermark-color-control > input[type='text'] {
+  min-width: 0;
+}
+
+.yonxao-mindmap-watermark-color-control > input[type='color'] {
+  width: 36px;
+  height: 30px;
+  padding: 2px;
+}
+
+.yonxao-mindmap-watermark-color-swatches {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.yonxao-mindmap-watermark-color-swatches .yonxao-mindmap-config-color-swatch {
+  width: 18px;
+  height: 18px;
+}
+
+.yonxao-mindmap-watermark-color-swatches .yonxao-mindmap-config-color-swatch.is-transparent {
+  background:
+    linear-gradient(45deg, var(--background-modifier-border) 25%, transparent 25%) 0 0 / 8px 8px,
+    linear-gradient(45deg, transparent 75%, var(--background-modifier-border) 75%) 0 0 / 8px 8px,
+    linear-gradient(45deg, transparent 75%, var(--background-modifier-border) 75%) 4px -4px / 8px
+      8px,
+    linear-gradient(45deg, var(--background-modifier-border) 25%, transparent 25%) -4px 4px / 8px
+      8px;
+  background-color: var(--background-primary);
+}
+
+.yonxao-mindmap-watermark-number-pair {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.yonxao-mindmap-watermark-number-item {
+  display: grid;
+  min-width: 0;
+  gap: 4px;
+}
+
+.yonxao-mindmap-watermark-number-label {
+  color: var(--text-muted);
+  font-size: var(--font-ui-smaller);
+}
+
+.yonxao-mindmap-watermark-number-item.is-inherited-value .yonxao-mindmap-watermark-number-label {
+  color: var(--text-faint);
+  font-style: italic;
+}
+
+.yonxao-mindmap-watermark-number-item.is-inherited-value input {
+  color: var(--text-faint);
+  border-style: dashed;
+  background-color: var(--background-secondary);
+}
+
+.yonxao-mindmap-watermark-stepper {
+  display: grid;
+  grid-template-columns: 30px minmax(54px, 1fr) 30px auto;
+  align-items: center;
+}
+
+.yonxao-mindmap-watermark-stepper button,
+.yonxao-mindmap-watermark-stepper input {
+  height: 30px;
+  border-radius: 0;
+}
+
+.yonxao-mindmap-watermark-stepper button:first-child {
+  border-radius: var(--yonxao-mindmap-radius-md) 0 0 var(--yonxao-mindmap-radius-md);
+}
+
+.yonxao-mindmap-watermark-stepper input {
+  min-width: 0;
+  text-align: center;
+  border-right: 0;
+  border-left: 0;
+  appearance: textfield;
+}
+
+.yonxao-mindmap-watermark-stepper input::-webkit-inner-spin-button,
+.yonxao-mindmap-watermark-stepper input::-webkit-outer-spin-button {
+  margin: 0;
+  appearance: none;
+}
+
+.yonxao-mindmap-watermark-stepper button:nth-of-type(2) {
+  border-radius: 0 var(--yonxao-mindmap-radius-md) var(--yonxao-mindmap-radius-md) 0;
+}
+
+.yonxao-mindmap-watermark-unit {
+  padding-left: 5px;
+  color: var(--text-faint);
+  font-size: var(--font-ui-smaller);
+}
+
+@media (max-width: 640px) {
+  .yonxao-mindmap-watermark-number-pair {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .yonxao-mindmap-watermark-color-control {
+    grid-template-columns: minmax(120px, 1fr) 36px;
+  }
+
+  .yonxao-mindmap-watermark-color-swatches {
+    grid-column: 1 / -1;
+  }
+}

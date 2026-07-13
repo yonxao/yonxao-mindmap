@@ -373,6 +373,7 @@ export const viewFitMethods = {
       'viewBox',
       `${this.viewBox.x} ${this.viewBox.y} ${this.viewBox.width} ${this.viewBox.height}`
     );
+    this.syncSignatureWatermarkToViewBox();
     /* 打印宽度与屏幕宽度不同，记录当前视口比例，供 PDF 导出重算幕布高度。 */
     this.containerEl?.style.setProperty(
       '--yonxao-mindmap-viewbox-aspect-ratio',

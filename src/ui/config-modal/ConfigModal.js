@@ -6,6 +6,11 @@
 import { Modal } from 'obsidian';
 
 import {
+  PROJECT_README_URL,
+  PROJECT_README_ZH_CN_URL,
+  PROJECT_REPOSITORY_URL,
+} from '../../constants.js';
+import {
   canonicalizeMindConfig,
   cloneConfig,
   createTranslator,
@@ -18,6 +23,9 @@ import { fontTabMethods } from './FontTab.js';
 import { interactionTabMethods } from './InteractionTab.js';
 import { shortcutsTabMethods } from './ShortcutsTab.js';
 import { advancedTabMethods } from './AdvancedTab.js';
+import { watermarkTabMethods } from './WatermarkTab.js';
+import { watermarkFieldMethods } from './WatermarkFields.js';
+import { watermarkUnlockMethods } from './WatermarkUnlock.js';
 import { configFieldMethods } from './configFields.js';
 import { configModalStateMethods } from './configModalState.js';
 import { configModalRuleMethods } from './configModalRules.js';
@@ -37,6 +45,9 @@ export class ConfigModal extends Modal {
     this.initialConfig = cloneConfig(canonicalizeMindConfig(options.rawConfig));
     this.draftConfig = cloneConfig(canonicalizeMindConfig(options.rawConfig));
     this.onApply = options.onApply;
+    this.watermarkUnlocked = Boolean(options.watermarkUnlocked);
+    this.onUnlockWatermark = options.onUnlockWatermark;
+    this.sourcePath = options.sourcePath || '';
     this.activeTab = 'display';
     this.formEl = null;
     this.advancedInputEl = null;
@@ -86,15 +97,20 @@ export class ConfigModal extends Modal {
 
     const actionsEl = contentEl.createDiv({ cls: 'yonxao-mindmap-config-actions' });
     const footerEl = actionsEl.createDiv({ cls: 'yonxao-mindmap-config-footer' });
-    const readmeUrl = 'https://github.com/yonxao/yonxao-mindmap/blob/main/README.md';
-    const readmeZhUrl = 'https://github.com/yonxao/yonxao-mindmap/blob/main/README.zh-CN.md';
-    const starUrl = 'https://github.com/yonxao/yonxao-mindmap';
-    footerEl.createEl('a', { href: readmeUrl, text: 'Docs', attr: { target: '_blank' } });
-    footerEl.appendChild(document.createTextNode(' · '));
-    footerEl.createEl('a', { href: readmeZhUrl, text: '文档', attr: { target: '_blank' } });
+    footerEl.createEl('a', {
+      href: PROJECT_README_URL,
+      text: 'Docs',
+      attr: { target: '_blank' },
+    });
     footerEl.appendChild(document.createTextNode(' · '));
     footerEl.createEl('a', {
-      href: starUrl,
+      href: PROJECT_README_ZH_CN_URL,
+      text: '文档',
+      attr: { target: '_blank' },
+    });
+    footerEl.appendChild(document.createTextNode(' · '));
+    footerEl.createEl('a', {
+      href: PROJECT_REPOSITORY_URL,
       text: this.t('configModal.footer.star'),
       attr: { target: '_blank' },
     });
@@ -148,6 +164,7 @@ export class ConfigModal extends Modal {
       font: () => this.renderFontTab(normalized),
       interaction: () => this.renderInteractionTab(normalized),
       shortcuts: () => this.renderShortcutsTab(),
+      watermark: () => this.renderWatermarkTab(normalized),
       advanced: () => this.renderAdvancedTab(),
     };
     tabRenderers[this.activeTab]?.();
@@ -166,6 +183,9 @@ Object.assign(
   fontTabMethods,
   interactionTabMethods,
   shortcutsTabMethods,
+  watermarkFieldMethods,
+  watermarkTabMethods,
+  watermarkUnlockMethods,
   advancedTabMethods,
   configFieldMethods,
   configModalStateMethods,
