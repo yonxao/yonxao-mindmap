@@ -9,6 +9,26 @@ All notable changes to this project will be documented in this file.
 <!-- The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), -->
 <!-- and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html). -->
 
+## [1.5.1] - 2026-07-13
+
+### Added
+
+- Added watermark support with two watermark modes to choose from in a new Watermark tab in the config modal:
+  - **Signature watermark**: bound to the viewport; available in _corner_ style (text placed at one of nine positions with optional rounded background) and _bar_ style (a horizontal strip along the bottom of the viewport with tinted background and emphasized text). Configurable text, position, color, background color, font size, opacity, bar height, and padding.
+  - **Normal watermark**: bound to the content area; supports _text_ and _image_ types, with _single_ or _tiled_ arrangement. Text watermarks allow full control over font size, color, opacity, rotation, and position (9 anchor points). Image watermarks support URL and vault-file sources, custom width/height, gap, and offset. Tiled mode auto-fills the content area with configurable spacing and an upper element count limit to keep large maps responsive.
+- Added a watermark unlock mechanism using a user self-confirmation flow; watermark rendering is skipped until the user unlocks the feature through the plugin settings.
+- Added watermark configuration normalization and canonicalization, including range validation for font size, opacity, rotation, size, gap, and offset, so out-of-range values are clamped to the allowed bounds before rendering.
+- Added watermark rendering in exported PNG and SVG so watermarks remain visible after export.
+
+### 新增
+
+- 配置面板新增水印选项卡，提供两种水印模式可选：
+  - **签名水印**：绑定视口，有角标样式（在 9 个位置之一显示文字，可带圆角背景）和底栏样式（在视口底部显示一条横向条幅，带低透明度强调底色和突出文字）两种风格，可配置文字、位置、颜色、背景色、字号、不透明度、条栏高度和内边距。
+  - **普通水印**：绑定内容区域，支持文字和图片两种类型，单个或平铺两种排列方式。文字水印可完整控制字号、颜色、不透明度、旋转角度和位置（9 个锚点）；图片水印支持 URL 和仓库文件两种来源，可自定义宽高、间距和偏移。平铺模式自动填满内容区域，可配置间距，并设置单次元素数量上限以保证大型导图的渲染性能。
+- 新增水印解锁机制，采用用户自行确认方式免费解锁；未解锁时水印渲染不会生效。
+- 新增水印配置的归一化和标准化处理，对字号、不透明度、旋转角度、尺寸、间距和偏移进行范围校验，超出允许范围的值会在渲染前被自动修正到合法区间。
+- 导出 PNG 和 SVG 时同步渲染水印图层，确保导出图片与画布显示一致。
+
 ## [1.5.0] - 2026-07-12
 
 ### Added

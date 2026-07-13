@@ -1,6 +1,6 @@
 {
   "name": "yonxao-mindmap",
-  "version": "1.5.0",
+  "version": "1.5.1",
   "description": "Obsidian plugin for rendering Markdown topic-level mind maps from yxmm code blocks.",
   "main": "dist/main.js",
   "scripts": {
