@@ -9,7 +9,16 @@
  * topicControlDrawMethods -> topicControlPointMethods -> SVG 控件定位。
  */
 
-import { TOPIC_CONTROL_AVOID_OFFSET } from '../../shared/rendererShared.js';
+import { EDIT_BUTTON_SIZE, TOPIC_CONTROL_AVOID_OFFSET } from '../../shared/rendererShared.js';
+
+// 不提供子线出口控件点的连接器类型列表；这些类型使用主干/骨架等结构线，不依赖主题子线出口。
+const STRUCTURAL_CONNECTOR_ANCHOR_KINDS = Object.freeze([
+  'tree-branch',
+  'trunk-branch',
+  'skip',
+  'fishbone-primary-bone',
+  'fishbone-rib-topic',
+]);
 
 export const topicControlPointMethods = {
   resolveTopicControlPositions(topic) {
@@ -22,8 +31,8 @@ export const topicControlPointMethods = {
 
     if (canEdit) {
       positions.edit = this.pointToButtonPosition(points.parentConnectorInlet, {
-        width: 20,
-        height: 20,
+        width: EDIT_BUTTON_SIZE,
+        height: EDIT_BUTTON_SIZE,
       });
 
       if (this.shouldShowSiblingTopicControls(topic)) {
@@ -171,13 +180,7 @@ export const topicControlPointMethods = {
   },
 
   isStructuralConnectorAnchor(anchors) {
-    return [
-      'tree-branch',
-      'trunk-branch',
-      'skip',
-      'fishbone-primary-bone',
-      'fishbone-rib-topic',
-    ].includes(String(anchors?.kind || ''));
+    return STRUCTURAL_CONNECTOR_ANCHOR_KINDS.includes(String(anchors?.kind || ''));
   },
 
   multiChildConnectorOutletPoint(topic, connectorPoints) {

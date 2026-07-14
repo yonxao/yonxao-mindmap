@@ -35,6 +35,9 @@ const TOPIC_ID_PREFIX = 't-';
 // 主题 ID 池大小：整张导图最多生成 1000 个主题稳定 ID，超限报错。
 const TOPIC_ID_LIMIT = 1000;
 
+// 结构选择操作栏拖拽时与容器边缘保留的最小间距（像素），防止操作栏紧贴或溢出视口。
+const SELECTION_BAR_EDGE_GAP = 6;
+
 /*
  * 为指定类型生成一个未使用的三位结构 ID。
  * 策略：随机取起点，循环探测 000-999 范围内未被占用的 ID。
@@ -455,14 +458,16 @@ export const mindStructureMethods = {
     event.preventDefault();
     const containerRect = this.containerEl.getBoundingClientRect();
     const barRect = bar.getBoundingClientRect();
-    const edgeGap = 6;
     const left = Math.min(
-      Math.max(edgeGap, event.clientX - containerRect.left - state.offsetX),
-      Math.max(edgeGap, containerRect.width - barRect.width - edgeGap)
+      Math.max(SELECTION_BAR_EDGE_GAP, event.clientX - containerRect.left - state.offsetX),
+      Math.max(SELECTION_BAR_EDGE_GAP, containerRect.width - barRect.width - SELECTION_BAR_EDGE_GAP)
     );
     const top = Math.min(
-      Math.max(edgeGap, event.clientY - containerRect.top - state.offsetY),
-      Math.max(edgeGap, containerRect.height - barRect.height - edgeGap)
+      Math.max(SELECTION_BAR_EDGE_GAP, event.clientY - containerRect.top - state.offsetY),
+      Math.max(
+        SELECTION_BAR_EDGE_GAP,
+        containerRect.height - barRect.height - SELECTION_BAR_EDGE_GAP
+      )
     );
     bar.style.left = `${left}px`;
     bar.style.top = `${top}px`;

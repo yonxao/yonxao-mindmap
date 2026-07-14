@@ -219,10 +219,6 @@ export const branchTrunkDrawMethods = {
     return groupEl;
   },
 
-  orgRightBranchX(parentBox) {
-    return parentBox.x;
-  },
-
   radialConnectorPoint(box, angle) {
     /*
      * 放射线仍先按分支角度找到真实边界交点，再吸附到最近的固定锚点。

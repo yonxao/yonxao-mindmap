@@ -73,6 +73,16 @@ const RELATION_ENDPOINT_HANDLE_SCREEN_RADIUS = 7;
 const RELATION_ENDPOINT_HIT_SCREEN_RADIUS = 16;
 const RELATION_ANCHOR_TARGET_SCREEN_RADIUS = 4;
 const RELATION_CURVE_CONTROL_SCREEN_RADIUS = 8;
+// 线段与障碍物碰撞检测时在路径上等距采样的间隔（像素），平衡精度与性能。
+const RELATION_SEGMENT_SAMPLE_STEP = 8;
+// 曲线关联默认控制点的弯曲偏移量上/下限（像素）和占路径长度的比例。
+const RELATION_CURVE_OFFSET_MIN = 24;
+const RELATION_CURVE_OFFSET_MAX = 56;
+const RELATION_CURVE_OFFSET_RATIO = 0.18;
+// 概要钩子线末端拐点的水平延伸长度（像素），形成视觉上的 L 形末端。
+const SUMMARY_HOOK_LENGTH = 10;
+// 曲线关联在两点直线连接时，为贝塞尔弯曲预留的最小额外空间（像素）。
+const RELATION_CURVE_DIRECT_PADDING = 56;
 
 /**
  * 获取主题作为"障碍物"的包围盒，相比实际布局盒外扩 RELATION_TOPIC_CLEARANCE 像素，
@@ -148,7 +158,10 @@ function boundaryAvailablePadding(box, includedTopics, layoutTopics, requestedPa
  * 调用链：routeCollisionCount()
  */
 function segmentIntersectsBox(start, end, box) {
-  const steps = Math.max(2, Math.ceil(Math.hypot(end.x - start.x, end.y - start.y) / 8));
+  const steps = Math.max(
+    2,
+    Math.ceil(Math.hypot(end.x - start.x, end.y - start.y) / RELATION_SEGMENT_SAMPLE_STEP)
+  );
   // 在路径上等距采样，检查样本点是否进入障碍物矩形
   for (let index = 1; index < steps; index += 1) {
     const ratio = index / steps;
@@ -222,7 +235,10 @@ function defaultCurveControls(routePoints) {
   const dx = end.x - start.x;
   const dy = end.y - start.y;
   const length = Math.hypot(dx, dy) || 1;
-  const curveOffset = Math.min(56, Math.max(24, length * 0.18));
+  const curveOffset = Math.min(
+    RELATION_CURVE_OFFSET_MAX,
+    Math.max(RELATION_CURVE_OFFSET_MIN, length * RELATION_CURVE_OFFSET_RATIO)
+  );
   const normalX = -dy / length;
   const normalY = dx / length;
   return [
@@ -698,7 +714,7 @@ export const structureDrawMethods = {
     const side = averageX >= rootX ? 1 : -1;
     const x = side > 0 ? box.maxX + SUMMARY_OFFSET : box.minX - SUMMARY_OFFSET;
     const middleY = (box.minY + box.maxY) / 2;
-    const hook = side * 10;
+    const hook = side * SUMMARY_HOOK_LENGTH;
     const path = `M ${x - hook} ${box.minY} Q ${x} ${box.minY} ${x} ${box.minY + 10} L ${x} ${middleY - 8} Q ${x} ${middleY} ${x + hook} ${middleY} Q ${x} ${middleY} ${x} ${middleY + 8} L ${x} ${box.maxY - 10} Q ${x} ${box.maxY} ${x - hook} ${box.maxY}`;
     const group = this.structureGroup(structure, 'yonxao-mindmap-summary');
     group.style.setProperty('--structure-color', this.structureColor(structure));
@@ -1052,7 +1068,8 @@ export const structureDrawMethods = {
       group.appendChild(label);
     }
     const bounds = routeBounds([...renderPoints, ...(curveGeometry?.controls || [])]);
-    const directCurvePadding = lineStyle === 'curve' && renderPoints.length === 2 ? 56 : 0;
+    const directCurvePadding =
+      lineStyle === 'curve' && renderPoints.length === 2 ? RELATION_CURVE_DIRECT_PADDING : 0;
     return {
       el: group,
       bounds: {
@@ -1069,6 +1086,9 @@ export const structureDrawMethods = {
    * 同时创建正向（marker-end）和反向（marker-start）两个箭头标记。
    * 作用：为关联线的起点和/或终点添加箭头指示方向。
    * 调用链：drawLayout() 初始化时调用一次
+   *
+   * orient: 'auto-start-reverse' 让正向箭头（marker-end）指向路径方向，
+   * 反向箭头（marker-start）自动翻转指向路径的反方向，避免为反向单独定义 marker。
    */
   relationArrowDefs() {
     const defs = svg('defs');
