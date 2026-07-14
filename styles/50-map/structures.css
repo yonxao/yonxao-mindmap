@@ -10,6 +10,7 @@
  */
 
 /* ─── 结构通用基础样式 ──────────────────────────────────── */
+
 /* 所有结构元素可点击，并继承结构色变量 */
 .yonxao-mindmap-structure {
   cursor: pointer;
@@ -26,6 +27,7 @@
 }
 
 /* ─── 外框（Boundary） ───────────────────────────────────── */
+
 /* 外框填充半透明显色，描边虚线区分于概要/关联的实线风格。 */
 .yonxao-mindmap-boundary rect {
   fill: color-mix(in srgb, var(--structure-color) 8%, transparent);
@@ -35,6 +37,7 @@
 }
 
 /* ─── 概要/关联路径 ─────────────────────────────────────── */
+
 /* 概要和外框路径共享描边颜色和宽度，线帽圆角。 */
 .yonxao-mindmap-summary path,
 .yonxao-mindmap-relation-path {
@@ -63,6 +66,7 @@
 }
 
 /* ─── 结构标签 ───────────────────────────────────────────── */
+
 /* 文字底色用 paint-order stroke 绘制描边效果，模拟文字周围一圈背景色遮挡下方线条。 */
 .yonxao-mindmap-structure-label {
   fill: var(--structure-color, #64748b);
@@ -95,6 +99,7 @@
 }
 
 /* ─── 选中态 ─────────────────────────────────────────────── */
+
 /* 结构选中时描边加粗并切换为交互强调色，drop-shadow 增强视觉层次。 */
 .yonxao-mindmap-structure.is-selected path,
 .yonxao-mindmap-structure.is-selected rect {
@@ -120,6 +125,7 @@
 }
 
 /* ─── 关联控制柄 ─────────────────────────────────────────── */
+
 /* 关联线的控制柄组默认隐藏，选中时才显示，避免视觉干扰。 */
 .yonxao-mindmap-relation-controls {
   opacity: 0;
@@ -159,6 +165,7 @@
 }
 
 /* ─── 主题选中态（被结构选中） ───────────────────────────── */
+
 /* 当主题被结构选中时，主题卡片使用虚线描边，与键盘焦点实线描边区分。 */
 .yonxao-mindmap-topic.is-structure-selected .yonxao-mindmap-topic-card {
   stroke: var(--interactive-accent);
@@ -192,6 +199,7 @@
 }
 
 /* ─── 底部选中操作栏 ────────────────────────────────────── */
+
 /* 固定在容器底部居中，半透明毛玻璃效果，显示当前选中结构的描述和操作按钮。 */
 .yonxao-mindmap-structure-selection-bar {
   position: absolute;
@@ -249,7 +257,7 @@
 }
 
 /* 小屏幕时缩减操作栏宽度和间距，避免溢出容器。 */
-@media (max-width: 520px) {
+@media (width <= 520px) {
   .yonxao-mindmap-structure-selection-bar {
     width: calc(100% - 20px);
     gap: 8px;

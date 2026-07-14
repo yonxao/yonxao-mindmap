@@ -36,6 +36,7 @@
 .yonxao-mindmap-container {
   position: relative;
   width: 100%;
+
   /* 默认幕布最多占 800px 或当前视口 75%，避免未计算前过高，同时给中型导图更多初始空间。 */
   height: min(800px, 75vh);
   min-height: 96px;
@@ -173,6 +174,7 @@
  * 配合 is-fullscreen 的同类规则，覆盖层内部和原生 Fullscreen API 进入的
  * 全屏保持一致的幕布高度行为。
  */
+
 /*
  * 覆盖层自身已经扣除了 padding，内部 host 也取消了 is-fullscreen padding，
  * 因此幕布直接填满 host 即可。

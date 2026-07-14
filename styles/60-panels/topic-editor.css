@@ -231,6 +231,7 @@
  */
 .yonxao-mindmap-topic-rich-text-toolbar {
   --yonxao-mindmap-topic-rich-text-button-size: 24px;
+
   display: flex;
   width: 100%;
   min-width: 0;
@@ -340,6 +341,7 @@
 .yonxao-mindmap-topic-rich-text-color-dropdown {
   position: relative;
   flex: 0 0 auto;
+
   --yonxao-mindmap-topic-rich-text-current-color: #ef4444;
 }
 
@@ -483,7 +485,7 @@
   height: 1px;
   padding: 0;
   overflow: hidden;
-  clip: rect(0, 0, 0, 0);
+  clip-path: inset(50%);
   border: 0;
   margin: -1px;
   white-space: nowrap;

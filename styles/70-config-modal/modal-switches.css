@@ -43,7 +43,7 @@
   height: 16px;
   border-radius: 50%;
   background: var(--background-primary);
-  box-shadow: 0 1px 3px rgb(0 0 0 / 0.24);
+  box-shadow: 0 1px 3px rgb(0 0 0 / 24%);
   transition: transform 120ms ease;
 }
 

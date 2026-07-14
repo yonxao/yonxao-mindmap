@@ -144,7 +144,7 @@
   min-width: 0;
 }
 
-@media (max-width: 640px) {
+@media (width <= 640px) {
   .yonxao-mindmap-config-color-control {
     grid-template-columns: minmax(120px, 1fr) 36px;
   }

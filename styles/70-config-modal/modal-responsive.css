@@ -6,6 +6,7 @@
  * - 窄屏（≤640px）时弹框宽度占满视口并留出 12px 边距
  * - 字段和组合输入改为单列布局，避免标签挤压输入框
  */
+
 /*
  * 状态文本预留最小高度，避免"配置已保存"出现时按钮区上下跳动。
  */
@@ -53,7 +54,7 @@
 /*
  * 窄屏下改成单列字段，避免标签挤压输入框。
  */
-@media (max-width: 640px) {
+@media (width <= 640px) {
   .yonxao-mindmap-config-modal-host {
     width: calc(100vw - 24px);
     max-width: calc(100vw - 24px);

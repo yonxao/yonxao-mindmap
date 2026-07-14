@@ -88,7 +88,7 @@
   background: var(--background-primary);
 }
 
-@media (max-width: 620px) {
+@media (width <= 620px) {
   .yonxao-mindmap-shortcuts-header {
     display: none;
   }
@@ -109,13 +109,9 @@
   .yonxao-mindmap-shortcuts-key-cell::before,
   .yonxao-mindmap-shortcuts-description::before {
     flex: 0 0 78px;
+    content: attr(data-label);
     color: var(--text-faint);
     font-size: var(--font-ui-smaller);
     font-weight: 600;
-  }
-
-  .yonxao-mindmap-shortcuts-key-cell::before,
-  .yonxao-mindmap-shortcuts-description::before {
-    content: attr(data-label);
   }
 }

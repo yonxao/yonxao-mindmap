@@ -20,10 +20,10 @@
   outline: none;
   background: var(--background-primary);
   box-shadow:
-    0 0 0 2px rgba(var(--interactive-accent-rgb), 0.22),
+    0 0 0 2px rgb(var(--interactive-accent-rgb), 0.22),
     var(--shadow-l);
   white-space: pre-wrap;
-  word-break: break-word;
+  overflow-wrap: anywhere;
 }
 
 /*

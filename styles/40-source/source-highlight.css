@@ -40,10 +40,7 @@
 
 .yonxao-mindmap-source-highlight-line.is-active-line::before {
   position: absolute;
-  top: 0;
-  right: -100vw;
-  bottom: 0;
-  left: -62px;
+  inset: 0 -100vw 0 -62px;
   background: color-mix(in srgb, var(--interactive-accent) 10%, transparent);
   content: '';
 }
@@ -76,6 +73,7 @@
 }
 
 /* ─── 结构定义语法高亮 ───────────────────────────────────── */
+
 /* @structures/@end/@relation/@summary/@boundary 等关键字 */
 .yonxao-mindmap-source-token-structure-keyword {
   color: var(--color-purple);

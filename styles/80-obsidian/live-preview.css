@@ -10,11 +10,11 @@
  * 调用链位置：
  * markYonxaoMindmapEmbedWrapper() 给 .cm-embed-block 加 class -> 本文件让插件内部按钮和输入框可交互。
  */
+
 /*
  * 作用：
  * 支持现代选择器的 Obsidian 环境中，解除包含导图的 cm-embed-block 裁剪。
  */
-/* stylelint-disable-next-line */
 .markdown-source-view.mod-cm6 .cm-embed-block:has(.yonxao-mindmap-host) {
   overflow: visible;
 }

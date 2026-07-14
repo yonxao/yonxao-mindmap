@@ -8,20 +8,18 @@
     aspect-ratio: var(--yonxao-mindmap-viewbox-aspect-ratio);
     overflow: visible !important;
     break-inside: avoid;
-    page-break-inside: avoid;
   }
 
   .yonxao-mindmap-container.is-print-page-breakable {
     /* 只有单页无法容纳的长导图才允许在页底自然截断。 */
     break-inside: auto;
-    page-break-inside: auto;
   }
 
   .yonxao-mindmap-svg {
     position: absolute;
     inset: 0;
+
     /* 允许导图在页面底部截断，并从下一页原位续接。 */
     break-inside: auto !important;
-    page-break-inside: auto !important;
   }
 }

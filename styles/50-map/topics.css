@@ -4,7 +4,7 @@
  */
 .yonxao-mindmap-topic-card {
   stroke-width: 1.4;
-  filter: drop-shadow(0 4px 12px rgba(0, 0, 0, 0.08));
+  filter: drop-shadow(0 4px 12px rgb(0 0 0 / 8%));
 }
 
 /*
@@ -450,7 +450,7 @@
   justify-content: center;
   overflow: auto;
   padding: 24px;
-  background: rgba(0, 0, 0, 0.72);
+  background: rgb(0 0 0 / 72%);
   cursor: zoom-out;
 }
 
@@ -459,7 +459,7 @@
   max-height: calc(100vh - 48px);
   object-fit: contain;
   border-radius: 6px;
-  box-shadow: 0 18px 52px rgba(0, 0, 0, 0.45);
+  box-shadow: 0 18px 52px rgb(0 0 0 / 45%);
   cursor: zoom-in;
 }
 

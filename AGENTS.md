@@ -36,8 +36,9 @@
 
 ## 测试与验证
 
-- AI 默认只格式化、检查本次修改的文件，并运行直接相关的测试；不要默认运行全量 `verify`。
+- AI 默认只格式化、检查本次修改的文件，并运行直接相关的测试；JS 使用 `lint:file`，CSS 使用 `lint:css:file`，不要默认运行全量 `verify`。
 - JS 改动影响插件入口时运行 `npm run build:js && npm run build:check:js`；只改 CSS 时运行 `npm run build:css && npm run build:check:css`。
+- CSS 以 `stylelint-config-standard` 和 `minAppVersion` 对应的现代运行时为准，不为更旧 Electron/WebView 保留弃用回退。
 - AI 需要本地调试产物时运行 `npm run dev`；`npm run dev:check` 供人工执行完整质量检查后再准备调试产物。
 - 准备提交时运行 `npm run verify`；完整发布流程由 GitHub Actions 运行 `npm run release`。
 - 修改布局、渲染、视口、导出、保存或交互后，只列出本次相关的人工回归项。

@@ -219,7 +219,7 @@
   font-size: var(--font-ui-smaller);
 }
 
-@media (max-width: 640px) {
+@media (width <= 640px) {
   .yonxao-mindmap-watermark-number-pair {
     grid-template-columns: minmax(0, 1fr);
   }
