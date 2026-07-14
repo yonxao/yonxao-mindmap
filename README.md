@@ -247,6 +247,8 @@ Right-click a topic in map mode to create structures beyond the normal parent-ch
 - **Summary**: Groups consecutive sibling topics and their visible descendants with a bracket and a framed, multi-line label.
 - **Boundary**: Wraps selected topics and their visible subtrees. Its label appears as a tab outside the upper-left corner, and surrounding topics reserve space for it.
 
+When a boundary title avoids a topic above it, the renderer reserves vertical space across the remaining layout so tree parents stay aligned with their children and top-level branches remain visually separated.
+
 Summary and boundary creation uses a draggable, translucent action bar at the bottom of the canvas. It shows the selected topic count and complete validation message; drag the text area to uncover topics underneath. Use **Create** / **Cancel**, press `Enter` to create, or press `Esc` to cancel. The original context-menu finish action remains available. The action bar also works in window and physical fullscreen modes.
 
 Structures are stored in a dedicated block at the end of the body. Map operations generate three-digit IDs automatically:

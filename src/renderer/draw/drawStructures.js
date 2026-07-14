@@ -28,6 +28,11 @@ import {
   RELATION_DEFAULT_LINE_STYLE,
 } from '../../parser/mindStructures.js';
 import { estimateTopicTextWidth } from '../../utils/text.js';
+import {
+  rangesOverlap,
+  reserveBoundaryLabelVerticalSpace,
+  topicLayoutBox,
+} from './structureBounds.js';
 
 // 外框内边缘与内部主题之间的间距，即边界框的外扩 padding。
 const BOUNDARY_PADDING = 12;
@@ -72,41 +77,6 @@ function topicObstacleBox(topic) {
     maxX: box.x + box.width / 2 + RELATION_TOPIC_CLEARANCE,
     maxY: box.y + box.height / 2 + RELATION_TOPIC_CLEARANCE,
   };
-}
-
-/**
- * 获取主题的实际布局包围盒，直接取自 layout 数据，不含额外间距。
- * 作用：用于边界框大小计算、相邻主题碰撞检测等精确几何判断。
- * 调用链：boundaryAvailablePadding(), reserveBoundaryLabelSpace()
- */
-function topicLayoutBox(topic) {
-  const box = topic._layout;
-  return {
-    minX: box.x - box.width / 2,
-    minY: box.y - box.height / 2,
-    maxX: box.x + box.width / 2,
-    maxY: box.y + box.height / 2,
-  };
-}
-
-/**
- * 判断两个一维区间 [min, max] 是否有重叠（非接触即可判定为重叠）。
- * 作用：一维范围重叠检测，作为 boxesOverlap 的基础。
- */
-function rangesOverlap(minA, maxA, minB, maxB) {
-  return maxA > minB && maxB > minA;
-}
-
-/**
- * 判断两个二维轴对齐矩形是否重叠。
- * 作用：主题盒、障碍物盒、标签盒之间的碰撞检测。
- * 调用链：boundaryAvailablePadding(), reserveBoundaryLabelSpace()
- */
-function boxesOverlap(first, second) {
-  return (
-    rangesOverlap(first.minX, first.maxX, second.minX, second.maxX) &&
-    rangesOverlap(first.minY, first.maxY, second.minY, second.maxY)
-  );
 }
 
 /**
@@ -501,7 +471,6 @@ export const structureDrawMethods = {
       if (structure.type !== 'boundary' || !structure.text) continue;
       const includedTopics = this.visibleTopicsForStructure(structure, layout.topics);
       if (!includedTopics.length) continue;
-      const included = new Set(includedTopics);
       const box = unionTopicBoxes(includedTopics);
       const textWidth = Math.ceil(
         estimateTopicTextWidth(structure.text, { size: 13, weight: 600 })
@@ -517,30 +486,13 @@ export const structureDrawMethods = {
           BOUNDARY_LABEL_HORIZONTAL_PADDING * 2,
         maxY: box.minY - BOUNDARY_PADDING,
       };
-      const labelClearanceBox = {
-        ...labelBox,
-        minY: labelBox.minY - BOUNDARY_LABEL_NEIGHBOR_GAP,
-      };
-      // 找出与标签区域发生碰撞的相邻主题（排除包含在框内的）
-      const collisions = layout.topics
-        .filter((topic) => !included.has(topic))
-        .map((topic) => topicLayoutBox(topic))
-        .filter((topicBox) => boxesOverlap(labelClearanceBox, topicBox));
-      // 没有碰撞则不需要偏移
-      if (!collisions.length) continue;
-
-      // 计算需要下移的最小距离，使标签完全避开所有碰撞主题
-      const shiftY = Math.max(
-        ...collisions.map((topicBox) => topicBox.maxY + BOUNDARY_LABEL_NEIGHBOR_GAP - labelBox.minY)
+      reserveBoundaryLabelVerticalSpace(
+        layout.topics,
+        includedTopics,
+        box,
+        labelBox,
+        BOUNDARY_LABEL_NEIGHBOR_GAP
       );
-      // 将框内主题和紧随框下方的主题整体下移，为标签腾出空间
-      for (const topic of layout.topics) {
-        const topicBox = topicLayoutBox(topic);
-        const followsBoundary =
-          topicBox.minY >= box.minY &&
-          rangesOverlap(box.minX, box.maxX, topicBox.minX, topicBox.maxX);
-        if (included.has(topic) || followsBoundary) topic._layout.y += shiftY;
-      }
     }
 
     const topicBounds = unionTopicBoxes(layout.topics);

@@ -62,6 +62,50 @@ color:
 - 点击适配视图、原始大小、复制图片和导出图片时，高级结构及标题不被裁切；导出结果不包含焦点、透明命中线和控制点。
 - 源码模式对 `@structures`、结构类型、属性名、ID 和属性值显示基础高亮。
 
+### 树形图多外框后续分支对齐样例
+
+用于检查外框标题累计避让后，底部分支的父子主题仍保持正确分组。
+
+```yxmm
+---
+structure:
+  layout: tree-right
+color:
+  scheme: pastel-rainbow
+---
+
+# 完成功能
+## 样式
+### 加粗
+### 斜体 [id=t-style-1]
+### 下划线 [id=t-style-2]
+### 删除线 [id=t-style-3]
+### 颜色
+## 高级结构
+### 关联 [id=t-structure-1]
+### 概要 [id=t-structure-2]
+### 外框
+## 键盘
+### 移动焦点 [id=t-keyboard-1]
+### 编辑
+### 添加 [id=t-keyboard-2]
+### 全屏备份
+## 其他
+### 水印
+
+@structures
+@boundary [id=b-style topics=t-style-1,t-style-2,t-style-3 text=测试]
+@boundary [id=b-structure topics=t-structure-1,t-structure-2 text=这个是外框]
+@relation [id=r-keyboard from=t-keyboard-1 to=t-keyboard-2 text="一二三\n四五六\n七八" direction=both control1=0.106,-55.9 control2=0.892,-56.7]
+@end
+```
+
+预期：
+
+- 外框标题不覆盖上方主题，两次避让不会只累加到三级主题。
+- “键盘”位于四个子主题的视觉中线；“其他”与唯一子主题“水印”水平对齐。
+- “其他”不会插入“键盘”的子主题范围，两个一级分支之间保留清晰间距。
+
 ### 概要和外框交互创建样例
 
 先粘贴以下无高级结构版本，再在导图模式中完成创建：
