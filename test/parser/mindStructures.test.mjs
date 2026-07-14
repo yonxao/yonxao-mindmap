@@ -67,6 +67,30 @@ test('relation text preserves manual line breaks', () => {
   assert.equal(reparsed.structures[0].text, '编辑后\n导出');
 });
 
+test('relation endpoint anchors round-trip through structure syntax', () => {
+  const document = parseMindDocument(SOURCE);
+  document.structures[0].attributes.fromAnchor = 'bottom-right';
+  document.structures[0].attributes.toAnchor = 'top-left';
+  const serialized = serializeMindDocument(document.root, {}, false, {}, document.structures);
+  const reparsed = parseMindDocument(serialized);
+  assert.match(serialized, /fromAnchor=bottom-right/);
+  assert.match(serialized, /toAnchor=top-left/);
+  assert.equal(reparsed.structures[0].attributes.fromAnchor, 'bottom-right');
+  assert.equal(reparsed.structures[0].attributes.toAnchor, 'top-left');
+});
+
+test('relation rejects unknown endpoint anchors', () => {
+  assert.throws(
+    () =>
+      parseMindDocument(`# 根 [id=root]
+## A [id=a]
+@structures
+@relation [id=r1 from=root to=a fromAnchor=center]
+@end`),
+    /fromAnchor 无效/
+  );
+});
+
 test('summary rejects non-contiguous sibling topics', () => {
   assert.throws(
     () =>

@@ -8,7 +8,8 @@
  * - 结构/主题使用三位 ID（前缀 + 三位数字），通过随机起始 + 线性探测避免冲突。
  * - 创建结构走「选择主题 → 弹出编辑器 Modal → 存入 structures 数组 → 持久化」流程。
  * - 编辑/删除直接操作 structures 数组，通过 saveTreeToSourceAndFile() 持久化。
- * - 关联线条的控制点（control1/control2）以起终点投影比值 + 法向偏移量存储，支持拖拽调整。
+ * - 关联线端点吸附主题边框的 8 个固定锚点，并以 fromAnchor/toAnchor 持久化；
+ *   曲线控制点（control1/control2）以起终点投影比值 + 法向偏移量存储。
  * - 主题删除或移动后，cleanupStructuresAfterTopicChange() 清除引用失效或校验不通过的结构。
 
  * 调用链
@@ -23,6 +24,7 @@ import {
   STRUCTURE_ID_PREFIXES,
 } from '../parser/mindStructures.js';
 import { Notice, findTopicByStableId, validateMindStructures } from '../shared/rendererShared.js';
+import { nearestRelationAnchor } from './relationAnchors.js';
 
 // 结构 ID 池大小：每种结构最多生成 1000 个三位 ID（000-999），超限报错。
 const STRUCTURE_ID_LIMIT = 1000;
@@ -526,6 +528,7 @@ export const mindStructureMethods = {
   async deleteMindStructure(structure) {
     this.structures = this.structures.filter((candidate) => candidate.id !== structure.id);
     this.selectedStructureId = '';
+    this.svgEl?.classList.remove('has-selected-relation');
     return this.saveTreeToSourceAndFile(
       this.t('notice.structureDeleted', { type: this.t('structureEditor.title.' + structure.type) })
     );
@@ -544,6 +547,7 @@ export const mindStructureMethods = {
    * 清除当前选中的结构（清除 DOM 上的 is-selected 类）。
    */
   clearSelectedMindStructure() {
+    this.svgEl?.classList.remove('has-selected-relation');
     if (!this.selectedStructureId) return;
     this.selectedStructureId = '';
     for (const element of this.mapEl?.querySelectorAll?.('.yonxao-mindmap-structure.is-selected') ||
@@ -585,6 +589,7 @@ export const mindStructureMethods = {
    */
   syncSelectedMindStructure(structure) {
     this.selectedStructureId = structure.id;
+    this.svgEl?.classList.toggle('has-selected-relation', structure.type === 'relation');
     let selectedElement = null;
     for (const element of this.mapEl?.querySelectorAll?.('.yonxao-mindmap-structure') || []) {
       const selected = element.getAttribute('data-structure-id') === structure.id;
@@ -611,11 +616,38 @@ export const mindStructureMethods = {
   },
 
   /*
-   * 开始拖拽关联的贝塞尔控制点手柄。
-   * 从手柄的 data 属性读取起终点坐标和控制点 key（control1/control2），
+   * 开始拖拽关联端点或贝塞尔控制点手柄。
+   * 端点拖动吸附同一主题的 8 个锚点；曲线手柄读取 control1/control2 和路径起终点，
    * 在 document 上注册全局 pointermove/pointerup 以支持跨元素拖拽。
    */
   handleStructureControlPointerDown(event) {
+    const endpointHandle = event.target?.closest?.(
+      '.yonxao-mindmap-relation-endpoint-hit-target, .yonxao-mindmap-relation-endpoint-handle'
+    );
+    if (endpointHandle && event.button === 0) {
+      const structure = this.mindStructureFromTarget(endpointHandle);
+      if (!structure || structure.type !== 'relation') return false;
+      event.preventDefault();
+      event.stopPropagation();
+      const endpoint =
+        endpointHandle.getAttribute('data-relation-endpoint') === 'to' ? 'to' : 'from';
+      const dragState = {
+        kind: 'anchor',
+        structure,
+        endpoint,
+        changed: false,
+      };
+      const onMove = (moveEvent) => this.handleStructureControlPointerMove(moveEvent);
+      const onUp = (upEvent) => this.finishStructureControlDrag(upEvent);
+      dragState.onMove = onMove;
+      dragState.onUp = onUp;
+      this.structureControlDragState = dragState;
+      this.svgEl?.classList.add('is-dragging-relation-endpoint');
+      document.addEventListener('pointermove', onMove, true);
+      document.addEventListener('pointerup', onUp, true);
+      document.addEventListener('pointercancel', onUp, true);
+      return true;
+    }
     const handle = event.target?.closest?.('.yonxao-mindmap-relation-control-handle');
     if (!handle || event.button !== 0) return false;
     const structure = this.mindStructureFromTarget(handle);
@@ -624,6 +656,7 @@ export const mindStructureMethods = {
     event.preventDefault();
     event.stopPropagation();
     const dragState = {
+      kind: 'control',
       structure,
       controlKey: handle.getAttribute('data-structure-control') === '2' ? 'control2' : 'control1',
       start: {
@@ -658,6 +691,18 @@ export const mindStructureMethods = {
     if (!state) return;
     event.preventDefault();
     const point = this.clientPointToSvg(event.clientX, event.clientY);
+    if (state.kind === 'anchor') {
+      const topicIndex = state.endpoint === 'to' ? 1 : 0;
+      const topic = this.topicForStableId(state.structure.topicIds[topicIndex]);
+      const nearestAnchor = topic?._layout ? nearestRelationAnchor(topic._layout, point) : null;
+      if (!nearestAnchor) return;
+      const attributeName = `${state.endpoint}Anchor`;
+      if (state.structure.attributes[attributeName] === nearestAnchor.name) return;
+      state.structure.attributes[attributeName] = nearestAnchor.name;
+      state.changed = true;
+      this.renderMap(false);
+      return;
+    }
     const dx = state.end.x - state.start.x;
     const dy = state.end.y - state.start.y;
     const lengthSquared = dx * dx + dy * dy || 1;
@@ -681,6 +726,10 @@ export const mindStructureMethods = {
     event.preventDefault();
     const structure = state.structure;
     this.cancelStructureControlDrag();
+    if (state.kind === 'anchor' && !state.changed) {
+      this.selectedStructureId = structure.id;
+      return;
+    }
     await this.saveTreeToSourceAndFile(this.t('notice.structureControlAdjusted'));
     this.selectedStructureId = structure.id;
   },
@@ -695,6 +744,9 @@ export const mindStructureMethods = {
     document.removeEventListener('pointermove', state.onMove, true);
     document.removeEventListener('pointerup', state.onUp, true);
     document.removeEventListener('pointercancel', state.onUp, true);
+    if (state.kind === 'anchor') {
+      this.svgEl?.classList.remove('is-dragging-relation-endpoint');
+    }
     this.structureControlDragState = null;
   },
 

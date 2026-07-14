@@ -97,7 +97,7 @@ color:
 @structures
 @boundary [id=b-style topics=t-style-1,t-style-2,t-style-3 text=测试]
 @boundary [id=b-structure topics=t-structure-1,t-structure-2 text=这个是外框]
-@relation [id=r-keyboard from=t-keyboard-1 to=t-keyboard-2 text="一二三\n四五六\n七八" direction=both control1=0.106,-55.9 control2=0.892,-56.7]
+@relation [id=r-keyboard from=t-keyboard-1 to=t-keyboard-2 text="一二三\n四五六\n七八" direction=both fromAnchor=right toAnchor=left control1=0.106,-55.9 control2=0.892,-56.7]
 @end
 ```
 
@@ -135,8 +135,9 @@ color:
 5. 再次创建外框并点击“创建”，确认外框包含所选主题及其可见子树，标题固定在左上角外侧。
 6. 分别在窗口全屏和物理全屏中重复概要多选、拖动操作条、创建和取消。
 7. 右键“编辑能力”创建关联，再点击“导出能力”；设置框默认方向应为正向、线型应为曲线。
-8. 保存后进入源码模式：裁剪保存应省略 `direction=forward` 和 `lineStyle=curve`。在配置面板开启“保存全部配置项”并保存后，两项应完整写出。
-9. 在配色选项卡分别修改关联、概要和外框颜色，确认代码块配置覆盖全局配置，结构自身 `color` 属性优先级最高。
+8. 选中关联，把起点拖到“编辑能力”的右中锚点、终点拖到“导出能力”的左中锚点；保存重载后位置不变，源码写出 `fromAnchor=right toAnchor=left`。
+9. 保存后进入源码模式：裁剪保存应省略 `direction=forward` 和 `lineStyle=curve`。在配置面板开启“保存全部配置项”并保存后，两项应完整写出。
+10. 在配色选项卡分别修改关联、概要和外框颜色，确认代码块配置覆盖全局配置，结构自身 `color` 属性优先级最高。
 
 ## 连线线型与下挂展开专项
 

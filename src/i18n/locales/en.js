@@ -99,7 +99,7 @@ export const enMessages = Object.freeze({
   'notice.structureCreated': '{type} created.',
   'notice.structureSaved': '{type} saved.',
   'notice.structureDeleted': '{type} deleted.',
-  'notice.structureControlAdjusted': 'Relation curve adjusted.',
+  'notice.structureControlAdjusted': 'Relation adjusted.',
   'structureSelection.status': '{type}: {count} topics selected',
   'structureSelection.type.summary': 'Summary',
   'structureSelection.type.boundary': 'Boundary',

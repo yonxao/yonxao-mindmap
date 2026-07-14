@@ -482,6 +482,15 @@ export const topicInteractionMethods = {
     }
 
     const target = event.target;
+    // 关联线获得焦点时，主题操作按钮应完全让位给端点抓手，避免旧 DOM 上的点击误触新增或折叠。
+    if (
+      this.svgEl?.classList.contains('has-selected-relation') &&
+      target?.closest?.('.yonxao-mindmap-topic-controls')
+    ) {
+      event.preventDefault();
+      event.stopPropagation();
+      return;
+    }
     const id = this.topicIdFromTarget(target);
     if (!id) return;
 

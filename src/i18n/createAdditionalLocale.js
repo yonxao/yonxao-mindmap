@@ -90,7 +90,7 @@ export function createAdditionalLocale(text) {
     'notice.structureCreated': text.structureCreated || '{type} created.',
     'notice.structureSaved': text.structureSaved || '{type} saved.',
     'notice.structureDeleted': text.structureDeleted || '{type} deleted.',
-    'notice.structureControlAdjusted': text.structureControlAdjusted || 'Relation curve adjusted.',
+    'notice.structureControlAdjusted': text.structureControlAdjusted || 'Relation adjusted.',
     'structureSelection.status': text.structureSelectionStatus || '{type}: {count} topics selected',
     'structureSelection.type.summary': text.summary || 'Summary',
     'structureSelection.type.boundary': text.boundary || 'Boundary',

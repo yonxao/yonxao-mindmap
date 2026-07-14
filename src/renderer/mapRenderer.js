@@ -112,6 +112,7 @@ export const mapRendererMethods = {
       this.applyConfiguredViewFit(this.renderedMapBounds, options);
     }
     this.syncSignatureWatermarkToViewBox();
+    this.syncRelationControlHandleSizes?.();
 
     this.didInitialMapRender = true;
   },

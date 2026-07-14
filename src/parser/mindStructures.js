@@ -6,6 +6,17 @@ export const MIND_STRUCTURE_TYPES = new Set(['relation', 'summary', 'boundary'])
 // 关联默认方向为正向，默认线型为曲线
 export const RELATION_DEFAULT_DIRECTION = 'forward';
 export const RELATION_DEFAULT_LINE_STYLE = 'curve';
+export const RELATION_ANCHOR_ATTRIBUTES = ['fromAnchor', 'toAnchor'];
+export const RELATION_ANCHOR_NAMES = [
+  'top-left',
+  'top',
+  'top-right',
+  'left',
+  'right',
+  'bottom-left',
+  'bottom',
+  'bottom-right',
+];
 // 各类型结构 ID 前缀：关联 r-、概要 s-、外框 b-
 export const STRUCTURE_ID_PREFIXES = { relation: 'r-', summary: 's-', boundary: 'b-' };
 
@@ -133,6 +144,12 @@ export function parseMindStructures(lines) {
       }
       if (!['curve', 'straight', 'elbow'].includes(lineStyle)) {
         throw new Error(`关联 ${id} 的 lineStyle 无效。`);
+      }
+      for (const attributeName of RELATION_ANCHOR_ATTRIBUTES) {
+        const anchor = structureAttributes[attributeName];
+        if (anchor && !RELATION_ANCHOR_NAMES.includes(anchor)) {
+          throw new Error(`关联 ${id} 的 ${attributeName} 无效。`);
+        }
       }
       structureAttributes.direction = direction;
       structureAttributes.lineStyle = lineStyle;

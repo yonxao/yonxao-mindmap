@@ -243,7 +243,7 @@ Supported attributes:
 
 Right-click a topic in map mode to create structures beyond the normal parent-child hierarchy:
 
-- **Relation**: Connects two topics with a curve, straight line, or elbow line. The default is a forward curve; select a curve to reveal two draggable control points. Relation text supports manual line breaks and follows the adjusted curve.
+- **Relation**: Connects two topics with a curve, straight line, or elbow line. Select a relation to reveal eight fixed anchors on each endpoint topic and drag either endpoint to the top-left, top, top-right, left, right, bottom-left, bottom, or bottom-right anchor. Curves also expose two draggable control points. Relation text supports manual line breaks and follows the adjusted path.
 - **Summary**: Groups consecutive sibling topics and their visible descendants with a bracket and a framed, multi-line label.
 - **Boundary**: Wraps selected topics and their visible subtrees. Its label appears as a tab outside the upper-left corner, and surrounding topics reserve space for it.
 
@@ -261,13 +261,13 @@ Structures are stored in a dedicated block at the end of the body. Map operation
 ## Export [id=t-104]
 
 @structures
-@relation [id=r-101 from=t-101 to=t-104 text="Edit then export"]
+@relation [id=r-101 from=t-101 to=t-104 text="Edit then export" fromAnchor=right toAnchor=left]
 @summary [id=s-101 topics=t-102,t-103 text="Topic actions"]
 @boundary [id=b-101 topics=t-101 text="Editing scope"]
 @end
 ```
 
-Default relation options (`direction=forward` and `lineStyle=curve`) are omitted when config trimming is enabled and written explicitly when **Save all config items** is enabled. A structure-level `color` attribute overrides the code-block and global advanced-structure colors. Source mode provides basic highlighting for structure keywords, attributes, IDs, and values.
+Default relation options (`direction=forward` and `lineStyle=curve`) are omitted when config trimming is enabled and written explicitly when **Save all config items** is enabled. Manually dragged endpoints are persisted as `fromAnchor` / `toAnchor`; supported values are `top-left`, `top`, `top-right`, `left`, `right`, `bottom-left`, `bottom`, and `bottom-right`. A structure-level `color` attribute overrides the code-block and global advanced-structure colors. Source mode provides basic highlighting for structure keywords, attributes, IDs, and values.
 
 ### Config Block
 

@@ -90,7 +90,7 @@ export const zhTWMessages = Object.freeze({
   'notice.structureCreated': '{type}已創建。',
   'notice.structureSaved': '{type}已儲存。',
   'notice.structureDeleted': '{type}已刪除。',
-  'notice.structureControlAdjusted': '關聯曲線已調整。',
+  'notice.structureControlAdjusted': '關聯線已調整。',
   'structureSelection.status': '{type}：已選擇 {count} 個主題',
   'structureSelection.type.summary': '概要',
   'structureSelection.type.boundary': '外框',

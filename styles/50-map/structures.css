@@ -164,6 +164,52 @@
   cursor: grabbing;
 }
 
+/* 端点候选锚点标出主题边框上的 8 个固定吸附位置。 */
+.yonxao-mindmap-relation-anchor-target {
+  fill: var(--background-primary);
+  stroke: var(--interactive-accent);
+  stroke-width: 1.5;
+  opacity: 0.65;
+  pointer-events: none;
+  vector-effect: non-scaling-stroke;
+}
+
+.yonxao-mindmap-relation-anchor-target.is-active {
+  fill: var(--interactive-accent);
+  opacity: 1;
+}
+
+/* 当前关联线端点可直接拖向同一主题上的任意候选锚点。 */
+.yonxao-mindmap-relation-endpoint-handle {
+  fill: var(--interactive-accent);
+  stroke: var(--background-primary);
+  stroke-width: 2;
+  pointer-events: none;
+  vector-effect: non-scaling-stroke;
+}
+
+/* 透明命中圈扩大端点可拖区域，不增加视觉遮挡。 */
+.yonxao-mindmap-relation-endpoint-hit-target {
+  fill: transparent;
+  stroke: none;
+  cursor: grab;
+  pointer-events: all;
+}
+
+.yonxao-mindmap-relation-endpoint-hit-target:hover {
+  cursor: grab;
+}
+
+.yonxao-mindmap-relation-endpoint-hit-target:active {
+  cursor: grabbing;
+}
+
+/* 拖动中即使关系线重绘并替换原抓手 DOM，也持续显示抓取光标。 */
+.yonxao-mindmap-svg.is-dragging-relation-endpoint,
+.yonxao-mindmap-svg.is-dragging-relation-endpoint * {
+  cursor: grabbing;
+}
+
 /* ─── 主题选中态（被结构选中） ───────────────────────────── */
 
 /* 当主题被结构选中时，主题卡片使用虚线描边，与键盘焦点实线描边区分。 */

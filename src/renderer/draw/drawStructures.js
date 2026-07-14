@@ -7,6 +7,7 @@
  *   （reserveBoundaryLabelSpace）。
  * - 概要 (summary)：在主题组外侧绘制 L 形钩子线，附带居中标签；钩子方向由主题分布自动决定。
  * - 关联 (relation)：支持直线、直角线（elbow）、贝塞尔曲线三种线型；
+ *   两端可固定到主题边框的 8 个锚点，未指定时继续使用自动路由；
  *   曲线模式下自动计算默认控制点（defaultCurveControls），也支持用户指定的 control1/control2；
  *   路径自动避让中间主题（relationRoute → routeCollisionCount），从多个候选路径中选取最优。
  * - 关联箭头通过 SVG marker 实现，支持单向（forward/backward）和双向。
@@ -28,6 +29,11 @@ import {
   RELATION_DEFAULT_LINE_STYLE,
 } from '../../parser/mindStructures.js';
 import { estimateTopicTextWidth } from '../../utils/text.js';
+import {
+  applyRelationAnchorEndpoints,
+  relationAnchorPoints,
+  relationControlMapUnitsPerPixel,
+} from '../../model/relationAnchors.js';
 import {
   rangesOverlap,
   reserveBoundaryLabelVerticalSpace,
@@ -62,6 +68,11 @@ const RELATION_ROUTE_MARGIN = 48;
 const RELATION_NEAR_DISTANCE = 160;
 // 结构标签各行之间的行高，用于多行文本的垂直间距计算。
 const STRUCTURE_LABEL_LINE_HEIGHT = 16;
+// 关联端点抓手保持固定屏幕尺寸，避免适配视图缩小时难以看清或命中。
+const RELATION_ENDPOINT_HANDLE_SCREEN_RADIUS = 7;
+const RELATION_ENDPOINT_HIT_SCREEN_RADIUS = 16;
+const RELATION_ANCHOR_TARGET_SCREEN_RADIUS = 4;
+const RELATION_CURVE_CONTROL_SCREEN_RADIUS = 8;
 
 /**
  * 获取主题作为"障碍物"的包围盒，相比实际布局盒外扩 RELATION_TOPIC_CLEARANCE 像素，
@@ -319,6 +330,55 @@ function elbowRoutePath(points) {
 }
 
 /**
+ * 手动锚点可能改变自动路径的首尾坐标；这里补齐直角拐点，避免 elbow 线型出现斜线段。
+ * 角部锚点位于上/下边框，因此与 top/bottom 一样沿垂直方向离开主题。
+ */
+function orthogonalRelationPoints(points, fromAnchor, toAnchor) {
+  const routePoints = normalizedRoutePoints(points);
+  if (routePoints.length < 2) return routePoints;
+  const anchorAxis = (anchor) =>
+    anchor?.startsWith('top') || anchor?.startsWith('bottom') ? 'vertical' : 'horizontal';
+  const fromAxis = anchorAxis(fromAnchor);
+  const toAxis = anchorAxis(toAnchor);
+
+  if (routePoints.length === 2) {
+    const [start, end] = routePoints;
+    if (start.x === end.x || start.y === end.y) return routePoints;
+    if (fromAxis === 'vertical' && toAxis === 'horizontal') {
+      return [start, { x: start.x, y: end.y }, end];
+    }
+    if (fromAxis === 'horizontal' && toAxis === 'vertical') {
+      return [start, { x: end.x, y: start.y }, end];
+    }
+    if (fromAxis === 'vertical' && toAxis === 'vertical') {
+      const middleY = (start.y + end.y) / 2;
+      return [start, { x: start.x, y: middleY }, { x: end.x, y: middleY }, end];
+    }
+    const middleX = (start.x + end.x) / 2;
+    return [start, { x: middleX, y: start.y }, { x: middleX, y: end.y }, end];
+  }
+
+  const orthogonal = [routePoints[0]];
+  for (let index = 1; index < routePoints.length; index += 1) {
+    const previous = orthogonal[orthogonal.length - 1];
+    const current = routePoints[index];
+    if (previous.x !== current.x && previous.y !== current.y) {
+      const isFirstSegment = index === 1;
+      const isLastSegment = index === routePoints.length - 1;
+      if (isFirstSegment && fromAxis === 'vertical') {
+        orthogonal.push({ x: previous.x, y: current.y });
+      } else if (isLastSegment && toAxis === 'horizontal') {
+        orthogonal.push({ x: previous.x, y: current.y });
+      } else {
+        orthogonal.push({ x: current.x, y: previous.y });
+      }
+    }
+    orthogonal.push(current);
+  }
+  return normalizedRoutePoints(orthogonal);
+}
+
+/**
  * 计算两个主题间的"直达"路径端点——从各自边界引出，方向沿主轴（水平或垂直）。
  * 选择跨度更大的轴作为连接方向，使路径更短且视觉更自然。
  * 作用：作为 relationRoute() 的第一候选路径和阻塞检测的基线。
@@ -389,6 +449,30 @@ function mergeBounds(target, source) {
 }
 
 export const structureDrawMethods = {
+  /**
+   * 按当前 viewBox 比例同步关联端点、候选锚点和曲线控制点尺寸。
+   * SVG viewBox 缩放会同步缩小普通 circle；换算为导图单位后，控件可稳定保持屏幕像素尺寸。
+   */
+  syncRelationControlHandleSizes() {
+    if (!this.mapEl || !this.svgEl || !this.viewBox) return;
+    const viewport = this.svgEl.getBoundingClientRect();
+    const mapUnitsPerPixel = relationControlMapUnitsPerPixel(
+      this.viewBox,
+      viewport.width,
+      viewport.height
+    );
+    const syncRadius = (selector, screenRadius) => {
+      const radius = (screenRadius * mapUnitsPerPixel).toFixed(2);
+      for (const element of this.mapEl.querySelectorAll(selector)) {
+        element.setAttribute('r', radius);
+      }
+    };
+    syncRadius('.yonxao-mindmap-relation-anchor-target', RELATION_ANCHOR_TARGET_SCREEN_RADIUS);
+    syncRadius('.yonxao-mindmap-relation-endpoint-hit-target', RELATION_ENDPOINT_HIT_SCREEN_RADIUS);
+    syncRadius('.yonxao-mindmap-relation-endpoint-handle', RELATION_ENDPOINT_HANDLE_SCREEN_RADIUS);
+    syncRadius('.yonxao-mindmap-relation-control-handle', RELATION_CURVE_CONTROL_SCREEN_RADIUS);
+  },
+
   /**
    * 收集结构中涉及的所有可见主题（包含子树递归展开）。
    * - boundary/summary 类型需要遍历子主题的完整可见分支。
@@ -679,7 +763,7 @@ export const structureDrawMethods = {
    * 作用：确保关联线在有多主题阻挡时仍能找到清晰可读的路径。
    * 调用链：renderRelationStructure()
    */
-  relationRoute(from, to, layoutTopics, layoutMode) {
+  relationRoute(from, to, layoutTopics, layoutMode, attributes = {}) {
     const a = from._layout;
     const b = to._layout;
     // 构建障碍物列表：排除自身以外的所有主题，并扩展 clearance
@@ -757,23 +841,29 @@ export const structureDrawMethods = {
     });
 
     // 距离较近时只保留左右两侧候选，避免绕行路径过于迂回
+    const hasManualAnchor = Boolean(attributes.fromAnchor || attributes.toAnchor);
     const routeCandidates =
-      Math.hypot(b.x - a.x, b.y - a.y) < RELATION_NEAR_DISTANCE ? candidates.slice(-2) : candidates;
-    return (
-      routeCandidates
-        .map((candidate) => ({
-          ...candidate,
-          collisions: routeCollisionCount(candidate.points, obstacles),
-          length: routeLength(candidate.points),
-        }))
-        // 按碰撞数 → 优先级 → 路径长度三级排序，取最优
-        .sort(
-          (left, right) =>
-            left.collisions - right.collisions ||
-            left.priority - right.priority ||
-            left.length - right.length
-        )[0]
-    );
+      !hasManualAnchor && Math.hypot(b.x - a.x, b.y - a.y) < RELATION_NEAR_DISTANCE
+        ? candidates.slice(-2)
+        : candidates;
+    const selectedRoute = routeCandidates
+      .map((candidate) => ({
+        ...candidate,
+        points: applyRelationAnchorEndpoints(candidate.points, a, b, attributes),
+      }))
+      .map((candidate) => ({
+        ...candidate,
+        collisions: routeCollisionCount(candidate.points, obstacles),
+        length: routeLength(candidate.points),
+      }))
+      // 按碰撞数 → 优先级 → 路径长度三级排序，取最优
+      .sort(
+        (left, right) =>
+          left.collisions - right.collisions ||
+          left.priority - right.priority ||
+          left.length - right.length
+      )[0];
+    return selectedRoute;
   },
 
   /**
@@ -789,9 +879,21 @@ export const structureDrawMethods = {
     const route =
       lineStyle === 'straight'
         ? { points: directRelationPoints(from._layout, to._layout) }
-        : this.relationRoute(from, to, layoutTopics, layoutMode);
+        : this.relationRoute(from, to, layoutTopics, layoutMode, structure.attributes);
     const direction = structure.attributes?.direction || RELATION_DEFAULT_DIRECTION;
-    const renderPoints = route.points.map((point) => ({ ...point }));
+    let renderPoints = applyRelationAnchorEndpoints(
+      route.points,
+      from._layout,
+      to._layout,
+      structure.attributes
+    );
+    if (lineStyle === 'elbow') {
+      renderPoints = orthogonalRelationPoints(
+        renderPoints,
+        structure.attributes?.fromAnchor,
+        structure.attributes?.toAnchor
+      );
+    }
     const curveGeometry =
       lineStyle === 'curve' ? curveRouteGeometry(renderPoints, structure.attributes) : null;
     // 根据线型生成对应的 SVG path 字符串
@@ -818,13 +920,56 @@ export const structureDrawMethods = {
       path.setAttribute('marker-start', 'url(#yonxao-mindmap-relation-arrow-start)');
     }
     group.appendChild(path);
-    // 曲线模式下绘制控制点手柄，供用户拖动微调曲线形状
+    const routePoints = normalizedRoutePoints(renderPoints);
+    const start = routePoints[0];
+    const end = routePoints[routePoints.length - 1];
+    // 选中关联时显示两端主题的 8 个候选锚点，以及当前端点的拖拽手柄。
+    const controlGroup = svg('g', { class: 'yonxao-mindmap-relation-controls' });
+    for (const [endpointIndex, topic] of [from, to].entries()) {
+      const endpoint = endpointIndex === 0 ? 'from' : 'to';
+      const activeAnchor = structure.attributes?.[`${endpoint}Anchor`] || '';
+      for (const anchor of relationAnchorPoints(topic._layout)) {
+        controlGroup.appendChild(
+          svg('circle', {
+            cx: anchor.x,
+            cy: anchor.y,
+            r: 4,
+            class: `yonxao-mindmap-relation-anchor-target${anchor.name === activeAnchor ? ' is-active' : ''}`,
+            'data-relation-endpoint': endpoint,
+            'data-relation-anchor': anchor.name,
+          })
+        );
+      }
+    }
+    for (const [endpoint, point] of [
+      ['from', start],
+      ['to', end],
+    ]) {
+      // 透明命中圈提供更大的抓取范围；可见端点只负责视觉反馈，避免大圆遮挡主题内容。
+      controlGroup.appendChild(
+        svg('circle', {
+          cx: point.x,
+          cy: point.y,
+          r: RELATION_ENDPOINT_HIT_SCREEN_RADIUS,
+          class: 'yonxao-mindmap-relation-endpoint-hit-target',
+          'data-structure-id': structure.id,
+          'data-relation-endpoint': endpoint,
+        })
+      );
+      controlGroup.appendChild(
+        svg('circle', {
+          cx: point.x,
+          cy: point.y,
+          r: RELATION_ENDPOINT_HANDLE_SCREEN_RADIUS,
+          class: 'yonxao-mindmap-relation-endpoint-handle',
+          'data-structure-id': structure.id,
+          'data-relation-endpoint': endpoint,
+        })
+      );
+    }
+    // 曲线模式额外绘制两个贝塞尔控制点，供用户微调弯曲形状。
     if (lineStyle === 'curve') {
-      const routePoints = normalizedRoutePoints(renderPoints);
-      const start = routePoints[0];
-      const end = routePoints[routePoints.length - 1];
       const controls = curveGeometry.controls;
-      const controlGroup = svg('g', { class: 'yonxao-mindmap-relation-controls' });
       // 遍历两个控制点，分别连接到起点或终点
       for (let index = 0; index < controls.length; index += 1) {
         const control = controls[index];
@@ -853,8 +998,8 @@ export const structureDrawMethods = {
           })
         );
       }
-      group.appendChild(controlGroup);
     }
+    group.appendChild(controlGroup);
     // 计算标签居中位置：曲线模式下取贝塞尔曲线中点，折线模式下取路径中段的中点
     const labelSegmentIndex = Math.max(1, Math.floor(renderPoints.length / 2));
     const labelSegmentStart = renderPoints[labelSegmentIndex - 1];

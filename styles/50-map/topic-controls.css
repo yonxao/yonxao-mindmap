@@ -27,6 +27,12 @@
   pointer-events: auto;
 }
 
+/* 关联线获得焦点后，隐藏并禁用全部主题按钮，把交点附近的命中区域完整让给端点抓手。 */
+.yonxao-mindmap-svg.has-selected-relation .yonxao-mindmap-topic-controls {
+  visibility: hidden;
+  pointer-events: none;
+}
+
 /*
  * 作用：
  * 主题编辑按钮。

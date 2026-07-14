@@ -90,7 +90,7 @@ export const zhCNMessages = Object.freeze({
   'notice.structureCreated': '{type}已创建。',
   'notice.structureSaved': '{type}已保存。',
   'notice.structureDeleted': '{type}已删除。',
-  'notice.structureControlAdjusted': '关联曲线已调整。',
+  'notice.structureControlAdjusted': '关联线已调整。',
   'structureSelection.status': '{type}：已选择 {count} 个主题',
   'structureSelection.type.summary': '概要',
   'structureSelection.type.boundary': '外框',
