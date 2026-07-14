@@ -170,6 +170,10 @@ export const exportSvgMethods = {
       height: Math.ceil(viewBox.height),
       viewBox: `${viewBox.x} ${viewBox.y} ${viewBox.width} ${viewBox.height}`,
     });
+    const backgroundColor = this.resolveCssColor('--background-primary', '#ffffff');
+    // 导出 SVG 脱离 Obsidian 后仍需要解析概要背景和结构文字描边中的主题变量。
+    // 如果只内联 fill/stroke 展示属性，导出样式表的类规则仍会覆盖它们并回退到浅色。
+    exportSvg.style.setProperty('--background-primary', backgroundColor);
 
     exportSvg.appendChild(this.createExportSvgStyle());
     exportSvg.appendChild(
@@ -178,7 +182,7 @@ export const exportSvgMethods = {
         y: viewBox.y,
         width: viewBox.width,
         height: viewBox.height,
-        fill: this.resolveCssColor('--background-primary', '#ffffff'),
+        fill: backgroundColor,
       })
     );
 
