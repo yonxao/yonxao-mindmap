@@ -332,6 +332,11 @@ function elbowRoutePath(points) {
 /**
  * 手动锚点可能改变自动路径的首尾坐标；这里补齐直角拐点，避免 elbow 线型出现斜线段。
  * 角部锚点位于上/下边框，因此与 top/bottom 一样沿垂直方向离开主题。
+ * 调用链：renderRelationStructure()
+ * @param {Array<{ x: number, y: number }>} points - 原始路径点
+ * @param {string} [fromAnchor] - 起点锚点名称
+ * @param {string} [toAnchor] - 终点锚点名称
+ * @returns {Array<{ x: number, y: number }>}
  */
 function orthogonalRelationPoints(points, fromAnchor, toAnchor) {
   const routePoints = normalizedRoutePoints(points);
@@ -847,15 +852,15 @@ export const structureDrawMethods = {
         ? candidates.slice(-2)
         : candidates;
     const selectedRoute = routeCandidates
-      .map((candidate) => ({
-        ...candidate,
-        points: applyRelationAnchorEndpoints(candidate.points, a, b, attributes),
-      }))
-      .map((candidate) => ({
-        ...candidate,
-        collisions: routeCollisionCount(candidate.points, obstacles),
-        length: routeLength(candidate.points),
-      }))
+      .map((candidate) => {
+        const points = applyRelationAnchorEndpoints(candidate.points, a, b, attributes);
+        return {
+          ...candidate,
+          points,
+          collisions: routeCollisionCount(points, obstacles),
+          length: routeLength(points),
+        };
+      })
       // 按碰撞数 → 优先级 → 路径长度三级排序，取最优
       .sort(
         (left, right) =>
@@ -933,7 +938,7 @@ export const structureDrawMethods = {
           svg('circle', {
             cx: anchor.x,
             cy: anchor.y,
-            r: 4,
+            r: RELATION_ANCHOR_TARGET_SCREEN_RADIUS,
             class: `yonxao-mindmap-relation-anchor-target${anchor.name === activeAnchor ? ' is-active' : ''}`,
             'data-relation-endpoint': endpoint,
             'data-relation-anchor': anchor.name,
@@ -987,7 +992,7 @@ export const structureDrawMethods = {
           svg('circle', {
             cx: control.x,
             cy: control.y,
-            r: 8,
+            r: RELATION_CURVE_CONTROL_SCREEN_RADIUS,
             class: 'yonxao-mindmap-relation-control-handle',
             'data-structure-id': structure.id,
             'data-structure-control': String(index + 1),

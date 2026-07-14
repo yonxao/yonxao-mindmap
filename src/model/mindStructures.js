@@ -631,21 +631,13 @@ export const mindStructureMethods = {
       event.stopPropagation();
       const endpoint =
         endpointHandle.getAttribute('data-relation-endpoint') === 'to' ? 'to' : 'from';
-      const dragState = {
+      this.beginStructureControlDrag({
         kind: 'anchor',
         structure,
         endpoint,
         changed: false,
-      };
-      const onMove = (moveEvent) => this.handleStructureControlPointerMove(moveEvent);
-      const onUp = (upEvent) => this.finishStructureControlDrag(upEvent);
-      dragState.onMove = onMove;
-      dragState.onUp = onUp;
-      this.structureControlDragState = dragState;
+      });
       this.svgEl?.classList.add('is-dragging-relation-endpoint');
-      document.addEventListener('pointermove', onMove, true);
-      document.addEventListener('pointerup', onUp, true);
-      document.addEventListener('pointercancel', onUp, true);
       return true;
     }
     const handle = event.target?.closest?.('.yonxao-mindmap-relation-control-handle');
@@ -655,7 +647,7 @@ export const mindStructureMethods = {
 
     event.preventDefault();
     event.stopPropagation();
-    const dragState = {
+    this.beginStructureControlDrag({
       kind: 'control',
       structure,
       controlKey: handle.getAttribute('data-structure-control') === '2' ? 'control2' : 'control1',
@@ -667,8 +659,15 @@ export const mindStructureMethods = {
         x: Number(handle.getAttribute('data-route-end-x')),
         y: Number(handle.getAttribute('data-route-end-y')),
       },
-    };
+    });
+    return true;
+  },
 
+  /*
+   * 初始化拖拽状态并在 document 上注册全局 pointermove/pointerup 监听。
+   * 端点拖拽和曲线控制柄拖拽共用此入口，避免重复的事件绑定代码。
+   */
+  beginStructureControlDrag(dragState) {
     const onMove = (moveEvent) => this.handleStructureControlPointerMove(moveEvent);
     const onUp = (upEvent) => this.finishStructureControlDrag(upEvent);
     dragState.onMove = onMove;
@@ -677,7 +676,6 @@ export const mindStructureMethods = {
     document.addEventListener('pointermove', onMove, true);
     document.addEventListener('pointerup', onUp, true);
     document.addEventListener('pointercancel', onUp, true);
-    return true;
   },
 
   /*

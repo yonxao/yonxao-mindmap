@@ -101,6 +101,8 @@ export function parseMindStructures(lines) {
   const structures = [];
   const ids = new Set();
   const typeCounts = { relation: 0, summary: 0, boundary: 0 };
+  // 这些字段从 attributes 中分离出来作为结构对象的顶层属性，不混入 attributes
+  const reserved = new Set(['id', 'from', 'to', 'topics', 'text', 'direction', 'lineStyle']);
   // 逐行解析结构定义
   for (let index = 0; index < lines.length; index += 1) {
     const line = lines[index].trim();
@@ -130,8 +132,6 @@ export function parseMindStructures(lines) {
       throw new Error(`高级结构 ${id} 引用的主题数量无效。`);
     }
 
-    // 这些字段从 attributes 中分离出来作为结构对象的顶层属性，不混入 attributes
-    const reserved = new Set(['id', 'from', 'to', 'topics', 'text', 'direction', 'lineStyle']);
     const structureAttributes = Object.fromEntries(
       Object.entries(attributes).filter(([key]) => !reserved.has(key))
     );
