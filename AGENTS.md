@@ -31,11 +31,15 @@
 
 命令以 `package.json` 的 `scripts` 字段为准。
 
+- npm 命令面向开发者任务，只暴露可独立使用的入口；内部辅助脚本不要求一一映射为 npm 命令。
+- 命令使用常见任务名，并通过 `:<variant>` 表达同一任务的变体；不要按内部文件或临时实现细节命名。
+
 ## 测试与验证
 
 - AI 默认只格式化、检查本次修改的文件，并运行直接相关的测试；不要默认运行全量 `verify`。
-- JS 改动影响插件入口时运行 `npm run build:js`；只改 CSS 时运行 `npm run build:css`。
-- 准备提交时运行 `npm run verify`；发布门禁由 GitHub Actions 运行 `npm run release:verify`。
+- JS 改动影响插件入口时运行 `npm run build:js && npm run build:check:js`；只改 CSS 时运行 `npm run build:css && npm run build:check:css`。
+- AI 需要本地调试产物时运行 `npm run dev`；`npm run dev:check` 供人工执行完整质量检查后再准备调试产物。
+- 准备提交时运行 `npm run verify`；完整发布流程由 GitHub Actions 运行 `npm run release`。
 - 修改布局、渲染、视口、导出、保存或交互后，只列出本次相关的人工回归项。
 - 如果无法运行检查，交付时必须说明原因和替代验证方式。
 
@@ -55,12 +59,12 @@
 ## 依赖管理
 
 - 新增生产依赖前必须说明原因、替代方案和影响。
-- 依赖变更后必须运行 `npm run verify`；需要本地 Obsidian 调试产物时运行 `npm run dev:prepare`。
+- 依赖变更后必须运行 `npm run verify`；需要本地 Obsidian 调试产物时运行 `npm run dev`。
 
 ## 项目特有陷阱
 
-- `npm run release:prepare` 会清理并重建 `dist/`，可能移除 `dist/.hotreload`。
-- `npm run dev:prepare` 不清理 `dist/`、不生成发布正文，但需要根目录存在 `.hotreload`。
+- `npm run release` 会检查源码、清理并重建 `dist/`，可能移除 `dist/.hotreload`。
+- `npm run dev` 会构建并检查 JS/CSS 产物，不清理 `dist/`、不生成发布正文，但需要根目录存在 `.hotreload`。
 - 阅读视图应禁用编辑类功能，Live Preview / 编辑视图应保留编辑能力。
 - Obsidian 内部链接和附件打开前要先解析目标，避免自动创建不存在的文档。
 - 全屏逻辑依赖 body 级覆盖层承载 `hostEl`，不要直接对原代码块 DOM 请求全屏。

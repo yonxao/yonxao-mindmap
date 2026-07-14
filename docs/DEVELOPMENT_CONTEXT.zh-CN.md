@@ -18,12 +18,12 @@
 - 默认先给方案，用户确认后再改；用户明确要求直接执行时才跳过确认。
 - 图中元素统一称为“主题/topic”，不要新增“节点/node”作为核心术语。
 - AI 默认只格式化和检查本次修改的文件，并运行直接相关的测试或构建。
-- 准备提交时运行 `npm run verify`；发布门禁由 GitHub Actions 运行 `npm run release:verify`。
+- 准备提交时运行 `npm run verify`；完整发布流程由 GitHub Actions 运行 `npm run release`。
 - 不要回滚用户已有改动；遇到无关脏文件时忽略，遇到相关改动时先读懂再继续。
 
 ### 0.3 常用入口
 
-- 构建脚本：`scripts/build-js.mjs`、`scripts/build-css.mjs`、`scripts/prepare-release.mjs`
+- 命令脚本：`scripts/clean.mjs`、`scripts/build-js.mjs`、`scripts/build-css.mjs`、`scripts/prepare-plugin-dir.mjs`、`scripts/copy-hotreload.mjs`、`scripts/generate-release-body.mjs`
 - 插件入口：`src/main.js`
 - 配置相关：`src/config/`
 - 布局相关：`src/layout/`
@@ -120,20 +120,35 @@ package license 字段：
 
 - AI 日常验证只处理本次修改：使用 `format:file` 和 `lint:file` 处理变动文件，使用 `test:file` 运行直接相关的测试。
 - 任务开始前已有暂存或未暂存改动的文件只运行格式检查，不执行整文件自动格式化。
-- JS 改动影响插件入口时运行 `npm run build:js`；只改 CSS 时运行 `npm run build:css`。
+- JS 改动影响插件入口时运行 `npm run build:js && npm run build:check:js`；只改 CSS 时运行 `npm run build:css && npm run build:check:css`。
 - 准备提交时运行 `npm run verify`，执行全量测试、构建、lint 和格式检查。
-- GitHub Actions 使用 `npm run release:verify` 完成发布门禁；需要本地 Obsidian 调试产物时运行 `npm run dev:prepare`。
+- GitHub Actions 使用 `npm run release` 完成质量检查、产物生成和发布门禁；AI 需要本地 Obsidian 调试产物时运行 `npm run dev`，人工需要完整检查时运行 `npm run dev:check`。
 - 如果无法运行验证，交付时必须说明原因和已做的替代检查。
 
-命令按职责分层：
+npm 命令面向开发者任务，内部辅助脚本不要求一一暴露。基础命令用于单独处理某类工作，流程命令用于完成一次开发、提交或发布目标。
 
-| 层级     | 命令                                      | 范围与用途                                            |
-| -------- | ----------------------------------------- | ----------------------------------------------------- |
-| 原子操作 | `build:*`、`test:*`、`lint:*`、`format:*` | 单独构建、测试或检查；AI 日常只选与变动直接相关的命令 |
-| 提交门禁 | `verify`                                  | 全量测试、lint、格式检查、构建和构建产物语法检查      |
-| 本地调试 | `dev:prepare`                             | 增量构建调试产物并复制 `.hotreload`，不清理 `dist/`   |
-| 发布准备 | `release:body`、`release:prepare`         | 单独生成发布正文，或清理并重建完整发布目录            |
-| 发布门禁 | `release:verify`                          | 全量质量检查后生成并检查正式发布产物                  |
+基础命令：
+
+| 职责     | 命令                                                         | 范围与用途                                   |
+| -------- | ------------------------------------------------------------ | -------------------------------------------- |
+| 清理     | `clean`                                                      | 删除整个 `dist/`                             |
+| 构建     | `build:js`、`build:css`                                      | 分别生成 `dist/main.js` 和 `dist/styles.css` |
+| 产物检查 | `build:check:js`、`build:check:css`、`build:check`           | 分别检查生成的 JS、CSS 语法，或同时检查两者  |
+| 测试     | `test`、`test:file`                                          | 运行全部测试或指定测试文件                   |
+| 代码检查 | `lint`、`lint:file`、`lint:fix`                              | 全量检查、按文件检查或全量自动修复           |
+| 格式化   | `format`、`format:file`、`format:check`、`format:check:file` | 全量或按文件写入格式，以及对应的只读格式检查 |
+| 发布正文 | `release:body`                                               | 生成 `dist/release-body.md`                  |
+
+流程命令：
+
+| 层级     | 命令        | 组合职责                                                            |
+| -------- | ----------- | ------------------------------------------------------------------- |
+| 完整构建 | `build`     | 依次执行 JS 和 CSS 构建                                             |
+| 质量检查 | `check`     | 全量测试、lint 和只读格式检查，不生成构建产物                       |
+| 提交门禁 | `verify`    | 质量检查、完整构建和构建产物语法检查                                |
+| 本地开发 | `dev`       | 完整构建并检查产物，准备插件目录并复制 `.hotreload`；不清理 `dist/` |
+| 人工开发 | `dev:check` | 先执行完整质量检查，再运行 `dev`                                    |
+| 正式发布 | `release`   | 质量检查、清理重建、产物检查、插件目录准备和发布正文生成            |
 
 按文件执行示例：
 
@@ -1400,10 +1415,10 @@ src/
 
 #### 8.1.1 dist 目录被清理后 `.hotreload` 丢失
 
-运行 `release:prepare` 会清理并重建 `dist/`，可能移除 `.hotreload`。需要本地 Obsidian 调试产物时使用不会清理目录、不会生成发布正文的命令：
+运行 `release` 会检查源码、清理并重建 `dist/`，可能移除 `.hotreload`。需要本地 Obsidian 调试产物时使用不会清理目录、不会生成发布正文的命令：
 
 ```bash
-npm run dev:prepare
+npm run dev
 ```
 
 ### 8.2 配置问题

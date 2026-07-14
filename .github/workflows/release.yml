@@ -47,7 +47,7 @@ jobs:
         run: npm ci
 
       - name: Verify and prepare release artifacts
-        run: npm run release:verify
+        run: npm run release
 
       - name: Show generated release body
         run: cat dist/release-body.md

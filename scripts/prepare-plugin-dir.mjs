@@ -1,14 +1,14 @@
 /*
  * 文件作用：
- * 这个脚本负责准备干净的 Obsidian 插件发布目录 dist/。
+ * 这个脚本负责把 manifest.json 复制到 dist/，并检查 Obsidian 插件基础文件是否齐全。
  *
  * 执行逻辑：
- * 1. release:prepare 会先执行 clean 和 build，生成 dist/main.js 与 dist/styles.css。
+ * 1. dev 或 release 先执行 build 和 build:check，生成并检查 dist/main.js 与 dist/styles.css。
  * 2. 本脚本把 manifest.json 复制到 dist/manifest.json。
- * 3. 最后检查发布必需文件是否齐全，避免打包时漏文件。
+ * 3. 最后检查插件三件套是否齐全；开发准备和发布准备都复用这一步。
  *
  * 调用链位置：
- * package.json scripts.release:prepare -> scripts/prepare-release.mjs -> dist/
+ * package.json dev/release -> scripts/prepare-plugin-dir.mjs -> dist/
  */
 
 import fs from 'node:fs';
@@ -28,7 +28,7 @@ const missingFiles = requiredFiles.filter(
 );
 
 if (missingFiles.length) {
-  throw new Error(`release:prepare 缺少发布文件：${missingFiles.join(', ')}`);
+  throw new Error(`插件目录缺少基础文件：${missingFiles.join(', ')}`);
 }
 
-console.log(`Prepared Obsidian release directory: ${distDir}`);
+console.log(`Prepared Obsidian plugin directory: ${distDir}`);

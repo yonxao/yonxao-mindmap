@@ -9,7 +9,7 @@
  * 4. 写入 dist/release-body.md，供 GitHub Actions 发布 Release 时使用。
  *
  * 调用链位置：
- * package.json scripts.release:prepare -> scripts/generate-release-body.mjs -> dist/release-body.md
+ * package.json scripts.release:body -> scripts/generate-release-body.mjs -> dist/release-body.md
  */
 
 import fs from 'node:fs';
