@@ -9,6 +9,50 @@ All notable changes to this project will be documented in this file.
 <!-- The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), -->
 <!-- and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html). -->
 
+## [1.5.2] - 2026-07-14
+
+### Added
+
+- Added relationship line endpoint anchor support: both ends of a relationship line can now be fixed to one of 8 anchor points on the topic border. Dragging an endpoint automatically snaps to the nearest anchor, and the anchor positions are persisted as `fromAnchor`/`toAnchor` attributes. New visual feedback controls appear on the endpoints during drag, and a dedicated `relationAnchors.js` module handles anchor coordinate calculation and nearest-point snapping.
+- Improved radial layout collision detection and connector handling:
+  - Added segment-to-rectangle intersection detection using slab clipping to avoid missing diagonal line crossings.
+  - Implemented connector obstacle repulsion that calculates the displacement needed for branches to clear the connector corridor.
+  - Added root branch collision resolution to prevent center connectors from passing through other branch topics.
+  - Improved collapsed topic child-line exit angle logic to record the actual expansion direction.
+- Optimized image rendering performance to eliminate flicker:
+  - Implemented image element pool reuse to avoid repeated creation and destruction.
+  - Added cross-renderer caching of image natural dimensions to prevent redundant loading and measurement.
+  - Established image resource address mapping to support reuse of the same image across multiple locations.
+  - Set cache size limits to prevent unbounded memory growth.
+  - Improved image size capture logic for better cache hit rates.
+- Refactored structure control drag logic into a dedicated `beginStructureControlDrag` method, removing duplicate event listener bindings and improving code clarity.
+
+### Fixed
+
+- Fixed PNG export dark mode background fallback: solidified the `--background-primary` CSS variable value during SVG export, preventing export styles from overriding summary background and text stroke display properties. Ensures summary text box backgrounds remain consistent with the preview in dark mode, and prevents incorrect fallback to white backgrounds.
+- Fixed boundary title avoidance breaking tree layout branch alignment: refactored boundary title vertical space reservation into `structureBounds.js` with a dedicated `reserveBoundaryLabelVerticalSpace` function that correctly offsets subsequent topics as a whole, preventing parent-child misalignment caused by boundary titles pushing only same-column topics.
+
+### 新增
+
+- 关联线端点锚点功能：关联线两端可固定到主题边框的 8 个锚点位置，拖拽端点时自动吸附最近锚点，锚点位置持久化为 `fromAnchor`/`toAnchor` 属性。新增端点拖拽视觉反馈控件，独立的 `relationAnchors.js` 模块负责锚点坐标计算与最近点吸附。
+- 改进放射布局碰撞检测与连接线处理：
+  - 新增线段与矩形边界相交检测算法，使用 slab 裁剪避免斜线漏判。
+  - 实现连接线障碍物推离功能，计算分支移出连线走廊所需的最小位移。
+  - 新增根节点分支碰撞解决机制，防止中心连线穿过其他分支主题。
+  - 优化折叠主题子线出口角度逻辑，记录实际展开方向以保持折叠状态下的连线一致性。
+- 优化图片渲染性能，消除闪动：
+  - 实现图片元素池复用机制，避免重复创建和销毁。
+  - 新增图片自然尺寸的跨渲染器缓存，防止重复加载和测量。
+  - 建立图片资源地址映射，支持同一图片多处复用。
+  - 设置缓存大小上限，防止内存无限增长。
+  - 改进图片尺寸捕获逻辑，提升缓存命中率。
+- 重构结构控制拖拽逻辑，提取为独立的 `beginStructureControlDrag` 方法，移除重复的事件监听器绑定，提升代码清晰度。
+
+### 修复
+
+- 修复 PNG 导出在深色模式下背景回退为白色的问题：在 SVG 导出时固化 `--background-primary` CSS 变量值，防止导出样式覆盖概要背景和文字描边的展示属性，确保深色模式下概要文字框背景与预览一致。
+- 修复外框标题避让导致树形图分支对齐错乱的问题：将外框标题垂直空间预留逻辑重构到 `structureBounds.js` 中的 `reserveBoundaryLabelVerticalSpace` 函数，正确处理后续主题的整体偏移，避免仅移动同列主题导致父子节点对齐被破坏。
+
 ## [1.5.1] - 2026-07-13
 
 ### Added
