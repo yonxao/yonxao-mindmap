@@ -65,6 +65,8 @@ export class YonxaoMindmapRenderer extends Component {
   static sourceStatusMemory = new Map();
   static topicFocusMemory = new Map();
   static topicHistoryMemory = new Map();
+  // Obsidian 保存后可能重建代码块；跨 renderer 复用图片尺寸可避免先按默认比例、再按真实比例布局。
+  static topicImageNaturalSizeMemory = new Map();
 
   constructor(plugin, source, hostEl, ctx, editorContext) {
     super();
@@ -123,7 +125,8 @@ export class YonxaoMindmapRenderer extends Component {
     this.topicAdornmentDocumentClickInstalled = false;
     this.topicImagePreviewEl = null;
     this.topicImagePreviewKeydownInstalled = false;
-    this.topicImageNaturalSizeCache = new Map();
+    // 整图重绘期间临时复用已解码的 SVG 图片元素，避免图片短暂消失造成画布闪动。
+    this.topicImageElementPool = null;
     this.pendingTopicImageNaturalSizeFrame = null;
     this.inlineTextEditorEl = null;
     this.inlineTextEditorInput = null;

@@ -37,6 +37,8 @@ const UNORDERED_LIST_MARKER_CENTER_OFFSET_RATIO = 0.28;
 const CODE_BLOCK_MIN_RENDER_WIDTH = 48;
 const CODE_BLOCK_TEXT_ASCENT_RATIO = 0.75;
 const EQUATION_RENDER_WAIT_MS = 600;
+// 图片尺寸跨 renderer 缓存上限，防止长时间使用 Obsidian 时资源记录无限增长。
+const TOPIC_IMAGE_NATURAL_SIZE_CACHE_LIMIT = 128;
 // 任务复选框的可点击方框边长，和列表行高解耦，避免字号变化时方框过大。
 const TASK_CHECKBOX_SIZE = 11;
 // 任务复选框的圆角半径，只影响视觉，不参与布局测量。
@@ -814,35 +816,48 @@ export const topicDrawMethods = {
     );
 
     if (href) {
-      const imageEl = svg('image', {
+      const imageEl = this.takeReusableTopicImageElement(href) || svg('image');
+      const isReusedImage = imageEl.hasAttribute('data-image-loaded');
+      const imageAttributes = {
         class: 'yonxao-mindmap-topic-image',
         'data-image-source': block.source || '',
-        href,
+        'data-image-href': href,
         x: imageX,
         y: imageY,
         width: renderWidth,
         height: renderHeight,
         preserveAspectRatio: 'xMidYMid meet',
-      });
-      this.registerDomEvent(imageEl, 'load', () => {
-        this.captureTopicImageNaturalSize(block, href);
-      });
-      this.registerDomEvent(imageEl, 'error', () => {
-        imageEl.remove();
-        imageGroup
-          .querySelector('.yonxao-mindmap-topic-image-frame')
-          ?.classList.remove('is-loaded');
-        imageGroup.querySelector('.yonxao-mindmap-topic-image-frame')?.classList.add('is-missing');
-        this.appendTopicImagePlaceholder(
-          imageGroup,
-          block,
-          box,
-          imageX,
-          imageY,
-          renderWidth,
-          renderHeight
-        );
-      });
+      };
+      for (const [attribute, value] of Object.entries(imageAttributes)) {
+        imageEl.setAttribute(attribute, String(value));
+      }
+      // 复用元素的 href 保持不变，避免浏览器把同一资源重新加入加载队列。
+      if (imageEl.getAttribute('href') !== href) imageEl.setAttribute('href', href);
+      if (!isReusedImage) {
+        this.registerDomEvent(imageEl, 'load', () => {
+          imageEl.setAttribute('data-image-loaded', 'true');
+          this.captureTopicImageNaturalSize(block, href);
+        });
+        this.registerDomEvent(imageEl, 'error', () => {
+          imageEl.removeAttribute('data-image-loaded');
+          imageEl.remove();
+          imageGroup
+            .querySelector('.yonxao-mindmap-topic-image-frame')
+            ?.classList.remove('is-loaded');
+          imageGroup
+            .querySelector('.yonxao-mindmap-topic-image-frame')
+            ?.classList.add('is-missing');
+          this.appendTopicImagePlaceholder(
+            imageGroup,
+            block,
+            box,
+            imageX,
+            imageY,
+            renderWidth,
+            renderHeight
+          );
+        });
+      }
       imageGroup.appendChild(imageEl);
     } else {
       this.appendTopicImagePlaceholder(
@@ -875,6 +890,35 @@ export const topicDrawMethods = {
     }
 
     contentGroup.appendChild(imageGroup);
+  },
+
+  /*
+   * 收集当前画面中已经成功加载的图片元素，按实际资源地址建立一次性复用池。
+   * 同一图片可能出现多次，因此每个地址保存数组并逐个消费。
+   */
+  collectReusableTopicImageElements() {
+    const pool = new Map();
+    for (const imageEl of this.mapEl?.querySelectorAll?.(
+      '.yonxao-mindmap-topic-image[data-image-loaded="true"][data-image-href]'
+    ) || []) {
+      const href = imageEl.getAttribute('data-image-href') || '';
+      if (!href) continue;
+      if (!pool.has(href)) pool.set(href, []);
+      pool.get(href).push(imageEl);
+    }
+    return pool.size ? pool : null;
+  },
+
+  /*
+   * 取出一个与新图片资源完全一致的已加载元素。
+   * 元素只在当前同步 renderMap() 中复用，避免旧 DOM 长期驻留。
+   */
+  takeReusableTopicImageElement(href) {
+    const elements = this.topicImageElementPool?.get(href);
+    if (!elements?.length) return null;
+    const imageEl = elements.shift();
+    if (!elements.length) this.topicImageElementPool.delete(href);
+    return imageEl;
   },
 
   appendTopicImagePlaceholder(imageGroup, block, box, imageX, imageY, renderWidth, renderHeight) {
@@ -919,15 +963,21 @@ export const topicDrawMethods = {
    */
   captureTopicImageNaturalSize(block, href) {
     const cacheKey = this.topicImageNaturalSizeKey(block, href);
-    if (!cacheKey || this.topicImageNaturalSizeCache.has(cacheKey)) return;
+    const sizeMemory = this.constructor.topicImageNaturalSizeMemory;
+    if (!cacheKey || sizeMemory.has(cacheKey)) return;
 
     const image = new Image();
     image.crossOrigin = 'anonymous';
     image.onload = () => {
       const width = Number(image.naturalWidth) || 0;
       const height = Number(image.naturalHeight) || 0;
-      if (!width || !height || this.topicImageNaturalSizeCache.has(cacheKey)) return;
-      this.topicImageNaturalSizeCache.set(cacheKey, { width, height });
+      if (!width || !height || sizeMemory.has(cacheKey)) return;
+      sizeMemory.set(cacheKey, { width, height });
+      while (sizeMemory.size > TOPIC_IMAGE_NATURAL_SIZE_CACHE_LIMIT) {
+        const oldestKey = sizeMemory.keys().next().value;
+        if (oldestKey === undefined) break;
+        sizeMemory.delete(oldestKey);
+      }
       this.scheduleTopicImageNaturalSizeRelayout();
     };
     image.src = href;
@@ -1354,7 +1404,7 @@ export const topicDrawMethods = {
       richText: {
         isImageResolved: (block) => Boolean(this.resolveTopicImageHref(block)),
         resolveImageSize: (block) =>
-          this.topicImageNaturalSizeCache.get(
+          this.constructor.topicImageNaturalSizeMemory.get(
             this.topicImageNaturalSizeKey(block, this.resolveTopicImageHref(block))
           ) || null,
       },

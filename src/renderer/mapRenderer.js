@@ -23,6 +23,8 @@ export const mapRendererMethods = {
     this.closeInlineTextEditor(false);
     this.hoveredTopicControlId = '';
     this.topicById.clear();
+    // 清空旧图层前先保留已加载图片；同一次同步重绘会把它们移动到新主题 DOM 中。
+    this.topicImageElementPool = this.collectReusableTopicImageElements?.() || null;
     this.mapEl.textContent = '';
 
     this.applyButtonColorMode();
@@ -113,6 +115,8 @@ export const mapRendererMethods = {
     }
     this.syncSignatureWatermarkToViewBox();
     this.syncRelationControlHandleSizes?.();
+    // 未被新布局消费的旧图片到此可以释放，不能跨后续重绘持有已脱离 DOM 的元素。
+    this.topicImageElementPool = null;
 
     this.didInitialMapRender = true;
   },
