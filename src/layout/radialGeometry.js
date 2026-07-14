@@ -7,6 +7,8 @@
  * 碰撞推离时额外增加的最小像素，确保两个矩形不再紧贴或仍有 1px 重叠。
  */
 const RADIAL_PUSH_EXTRA_PX = 1;
+// 线段与矩形边界计算时忽略浮点误差。
+const RADIAL_SEGMENT_EPSILON = 1e-9;
 
 export function radialSubtreeBounds(topic, collapsedIds, margin = 0) {
   const topics = radialVisibleSubtreeTopics(topic, collapsedIds);
@@ -60,6 +62,77 @@ export function radialCollisionPush(fixedBounds, movingBounds) {
   }
 
   return { dx: 0, dy: signY * (overlapY + RADIAL_PUSH_EXTRA_PX) };
+}
+
+/*
+ * 判断线段是否穿过轴对齐矩形。
+ * 使用 slab 裁剪，避免只检查端点或四条边造成的斜线漏判。
+ */
+export function radialSegmentIntersectsBounds(start, end, bounds) {
+  let minimumProgress = 0;
+  let maximumProgress = 1;
+
+  for (const axis of ['x', 'y']) {
+    const delta = end[axis] - start[axis];
+    const minimum = axis === 'x' ? bounds.left : bounds.top;
+    const maximum = axis === 'x' ? bounds.right : bounds.bottom;
+
+    if (Math.abs(delta) <= RADIAL_SEGMENT_EPSILON) {
+      if (start[axis] < minimum || start[axis] > maximum) return false;
+      continue;
+    }
+
+    const firstProgress = (minimum - start[axis]) / delta;
+    const secondProgress = (maximum - start[axis]) / delta;
+    const entryProgress = Math.min(firstProgress, secondProgress);
+    const exitProgress = Math.max(firstProgress, secondProgress);
+    minimumProgress = Math.max(minimumProgress, entryProgress);
+    maximumProgress = Math.min(maximumProgress, exitProgress);
+    if (minimumProgress > maximumProgress) return false;
+  }
+
+  return true;
+}
+
+/*
+ * 计算把一整个分支移出某条放射连线走廊所需的法向位移。
+ * preferredBox 决定向线段哪一侧移动，避免同一分支在迭代中左右抖动。
+ */
+export function radialConnectorObstaclePush(start, end, obstacleBoxes, preferredBox, margin = 0) {
+  const segmentDx = end.x - start.x;
+  const segmentDy = end.y - start.y;
+  const segmentLength = Math.hypot(segmentDx, segmentDy);
+  if (segmentLength <= RADIAL_SEGMENT_EPSILON) return null;
+
+  const normal = {
+    x: -segmentDy / segmentLength,
+    y: segmentDx / segmentLength,
+  };
+  const preferredDistance =
+    (preferredBox.x - start.x) * normal.x + (preferredBox.y - start.y) * normal.y;
+  const direction = preferredDistance < 0 ? -1 : 1;
+  let requiredDistance = 0;
+  let intersects = false;
+
+  for (const box of obstacleBoxes) {
+    const bounds = radialTopicBounds(box, margin);
+    if (!radialSegmentIntersectsBounds(start, end, bounds)) continue;
+
+    intersects = true;
+    const signedDistance = (box.x - start.x) * normal.x + (box.y - start.y) * normal.y;
+    const perpendicularExtent =
+      Math.abs(normal.x) * (box.width / 2) + Math.abs(normal.y) * (box.height / 2) + margin;
+    requiredDistance = Math.max(
+      requiredDistance,
+      perpendicularExtent - direction * signedDistance + RADIAL_PUSH_EXTRA_PX
+    );
+  }
+
+  if (!intersects || requiredDistance <= 0) return null;
+  return {
+    dx: normal.x * direction * requiredDistance,
+    dy: normal.y * direction * requiredDistance,
+  };
 }
 
 /*

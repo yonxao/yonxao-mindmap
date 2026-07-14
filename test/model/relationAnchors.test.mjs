@@ -4,6 +4,7 @@ import test from 'node:test';
 import {
   applyRelationAnchorEndpoints,
   nearestRelationAnchor,
+  nearestRelationAnchorForAngle,
   relationAnchorPoints,
   relationControlMapUnitsPerPixel,
 } from '../../src/model/relationAnchors.js';
@@ -32,6 +33,13 @@ test('relationControlMapUnitsPerPixel keeps controls stable across viewBox zoom'
 test('nearestRelationAnchor snaps to the closest fixed anchor', () => {
   assert.equal(nearestRelationAnchor(LAYOUT, { x: 156, y: 52 }).name, 'top-right');
   assert.equal(nearestRelationAnchor(LAYOUT, { x: 42, y: 82 }).name, 'left');
+});
+
+test('nearestRelationAnchorForAngle keeps radial direction and snaps to fixed anchors', () => {
+  assert.equal(nearestRelationAnchorForAngle(LAYOUT, 0).name, 'right');
+  assert.equal(nearestRelationAnchorForAngle(LAYOUT, Math.PI / 4).name, 'bottom-right');
+  assert.equal(nearestRelationAnchorForAngle(LAYOUT, Math.PI / 2).name, 'bottom');
+  assert.equal(nearestRelationAnchorForAngle(LAYOUT, (Math.PI * 3) / 4).name, 'bottom-left');
 });
 
 test('applyRelationAnchorEndpoints only replaces manually configured endpoints', () => {

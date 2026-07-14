@@ -85,6 +85,19 @@ export const topicControlPointMethods = {
       return this.topicBorderPoint(box, controlSide);
     }
 
+    if (
+      this.config.layout === 'radial' &&
+      topic !== this.root &&
+      Number.isFinite(box.radialChildAngle)
+    ) {
+      /*
+       * 放射图的折叠/添加按钮必须与子线共用同一出口。
+       * radialChildAngle 记录后代的实际展开方向，不受一级分支碰撞平移后的父线入口角度影响。
+       */
+      const outlet = this.radialConnectorPoint(box, box.radialChildAngle);
+      return this.globalPointToTopicPoint(box, outlet.x, outlet.y);
+    }
+
     if (this.shouldUseDefaultChildConnectorOutlet(topic)) {
       return this.defaultChildConnectorOutletPoint(box);
     }

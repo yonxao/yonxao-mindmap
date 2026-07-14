@@ -5,6 +5,8 @@
 
 // 普通主题卡片的圆角半径为 8px；锚点向内收缩后才会真正落在描边上。
 const TOPIC_CARD_CORNER_ANCHOR_INSET = 8;
+// 放射角接近水平或垂直时，忽略浮点运算产生的极小方向分量。
+const RADIAL_ANGLE_COMPONENT_EPSILON = 1e-9;
 
 /**
  * 计算主题边框上的 8 个固定锚点坐标。
@@ -52,6 +54,28 @@ export function nearestRelationAnchor(layout, point) {
     const distance = Math.hypot(point.x - anchor.x, point.y - anchor.y);
     return !nearest || distance < nearest.distance ? { ...anchor, distance } : nearest;
   }, null);
+}
+
+/**
+ * 按放射分支角度计算矩形边界交点，再返回最近的固定锚点。
+ * 用于让放射图父子连线保持原分支方向，同时将出入口归拢到 8 个统一点位。
+ * @param {{ x: number, y: number, width: number, height: number }} layout - 主题布局盒
+ * @param {number} angle - 以弧度表示的放射方向
+ * @returns {{ name: string, x: number, y: number, distance: number }}
+ */
+export function nearestRelationAnchorForAngle(layout, angle) {
+  const dx = Math.cos(angle);
+  const dy = Math.sin(angle);
+  const tx =
+    Math.abs(dx) > RADIAL_ANGLE_COMPONENT_EPSILON ? layout.width / 2 / Math.abs(dx) : Infinity;
+  const ty =
+    Math.abs(dy) > RADIAL_ANGLE_COMPONENT_EPSILON ? layout.height / 2 / Math.abs(dy) : Infinity;
+  const distance = Math.min(tx, ty);
+
+  return nearestRelationAnchor(layout, {
+    x: layout.x + dx * distance,
+    y: layout.y + dy * distance,
+  });
 }
 
 /**

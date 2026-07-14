@@ -16,6 +16,7 @@ import {
 } from './layoutShared.js';
 import {
   radialCollisionPush,
+  radialConnectorObstaclePush,
   radialExtent,
   radialNormal,
   radialPerpendicularExtent,
@@ -23,9 +24,11 @@ import {
   radialSubtreeBounds,
   radialTopicBounds,
   radialUnit,
+  radialVisibleSubtreeTopics,
   translateRadialSubtree,
   updateRadialRootBranchDirection,
 } from './radialGeometry.js';
+import { nearestRelationAnchorForAngle } from '../model/relationAnchors.js';
 
 /*
  * 放射图分支角度分配的权重系数。
@@ -74,6 +77,8 @@ const RADIAL_SAFE_SLICE_RATIO = 0.48;
  * 即使扇区很宽，也不让分支展开角度超过此值，保持放射聚拢感。
  */
 const RADIAL_SAFE_HALF_ANGLE_MAX = Math.PI / 2.6;
+// 中心到一级分支的放射线与其他主题之间保留的最小走廊。
+const RADIAL_CONNECTOR_TOPIC_MARGIN = 10;
 
 export function layoutRadial(root, collapsedIds) {
   const subtopics = visibleSubtopics(root, collapsedIds);
@@ -216,10 +221,12 @@ export function placeRadialRootBranch(root, topic, angle, radius, collapsedIds) 
  * 多个子主题沿射线垂直方向分散，并让子主题组的中线对齐父主题出口。
  */
 export function placeRadialDescendants(parent, angle, collapsedIds) {
+  const parentBox = parent._layout;
+  // 子线继续沿原分支角度展开；即使当前主题折叠，控件也需要保留这个出口方向。
+  parentBox.radialChildAngle = angle;
   const subtopics = visibleSubtopics(parent, collapsedIds);
   if (!subtopics.length) return;
 
-  const parentBox = parent._layout;
   const unit = radialUnit(angle);
   const normal = radialNormal(angle);
   const breadths = subtopics.map((subtopic) => radialSubtreeBreadth(subtopic, angle, collapsedIds));
@@ -392,6 +399,38 @@ export function resolveRadialRootBranchCollisions(root, rootSubtopics, collapsed
         translateRadialSubtree(rightTopic, push.dx / 2, push.dy / 2, collapsedIds);
         updateRadialRootBranchDirection(root, leftTopic);
         updateRadialRootBranchDirection(root, rightTopic);
+        moved = true;
+      }
+    }
+
+    /*
+     * 外接矩形不重叠，不代表中心放射线不会穿过另一个分支的主题。
+     * 这里把实际固定锚点之间的线段也当作碰撞走廊，将被穿过的整个分支沿法向移开。
+     */
+    for (const connectorTopic of rootSubtopics) {
+      const connectorBox = connectorTopic._layout;
+      const connectorAngle = connectorBox.radialAngle;
+      if (!Number.isFinite(connectorAngle)) continue;
+
+      const start = nearestRelationAnchorForAngle(root._layout, connectorAngle);
+      const end = nearestRelationAnchorForAngle(connectorBox, connectorAngle + Math.PI);
+
+      for (const obstacleTopic of rootSubtopics) {
+        if (obstacleTopic === connectorTopic) continue;
+        const obstacleBoxes = radialVisibleSubtreeTopics(obstacleTopic, collapsedIds).map(
+          (topic) => topic._layout
+        );
+        const push = radialConnectorObstaclePush(
+          start,
+          end,
+          obstacleBoxes,
+          obstacleTopic._layout,
+          RADIAL_CONNECTOR_TOPIC_MARGIN
+        );
+        if (!push) continue;
+
+        translateRadialSubtree(obstacleTopic, push.dx, push.dy, collapsedIds);
+        updateRadialRootBranchDirection(root, obstacleTopic);
         moved = true;
       }
     }

@@ -14,8 +14,8 @@ import {
   connectorColor,
   svg,
   DEFAULT_CONNECTOR_STROKE,
-  GEOMETRY_EPSILON,
 } from '../../shared/rendererShared.js';
+import { nearestRelationAnchorForAngle } from '../../model/relationAnchors.js';
 
 export const branchTrunkDrawMethods = {
   renderTreeTrunk(layout) {
@@ -224,15 +224,11 @@ export const branchTrunkDrawMethods = {
   },
 
   radialConnectorPoint(box, angle) {
-    const dx = Math.cos(angle);
-    const dy = Math.sin(angle);
-    const tx = Math.abs(dx) > GEOMETRY_EPSILON ? box.width / 2 / Math.abs(dx) : Infinity;
-    const ty = Math.abs(dy) > GEOMETRY_EPSILON ? box.height / 2 / Math.abs(dy) : Infinity;
-    const distance = Math.min(tx, ty);
-
-    return {
-      x: box.x + dx * distance,
-      y: box.y + dy * distance,
-    };
+    /*
+     * 放射线仍先按分支角度找到真实边界交点，再吸附到最近的固定锚点。
+     * 这样不会改变分支所在方向，同一方向的子线出口却能归拢到与关联线相同的 8 个点位。
+     */
+    const anchor = nearestRelationAnchorForAngle(box, angle);
+    return { x: anchor.x, y: anchor.y };
   },
 };
