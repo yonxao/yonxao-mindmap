@@ -190,7 +190,7 @@ export const topicCommandMethods = {
       return false;
     }
 
-    if (!this.confirmDeleteTopic(topic)) return false;
+    if (!(await this.confirmDeleteTopic(topic))) return false;
 
     this.closeTopicEditor();
     this.closeInlineTextEditor(false);
@@ -201,19 +201,25 @@ export const topicCommandMethods = {
     return this.saveTreeToSourceAndFile(this.t('notice.topicDeleted'));
   },
 
-  confirmDeleteTopic(topic) {
+  async confirmDeleteTopic(topic) {
     return this.confirmTopicAction(
       topic,
       'confirm.deleteTopic',
-      'confirm.deleteTopicWithDescendants'
+      'confirm.deleteTopicWithDescendants',
+      'contextMenu.deleteTopic'
     );
   },
 
-  confirmCutTopic(topic) {
-    return this.confirmTopicAction(topic, 'confirm.cutTopic', 'confirm.cutTopicWithDescendants');
+  async confirmCutTopic(topic) {
+    return this.confirmTopicAction(
+      topic,
+      'confirm.cutTopic',
+      'confirm.cutTopicWithDescendants',
+      'configModal.shortcuts.action.cutTopicContent'
+    );
   },
 
-  confirmTopicAction(topic, singleTopicKey, topicWithDescendantsKey) {
+  async confirmTopicAction(topic, singleTopicKey, topicWithDescendantsKey, actionLabelKey) {
     const descendantCount = countTopicDescendants(topic);
     const message =
       descendantCount > 0
@@ -223,7 +229,98 @@ export const topicCommandMethods = {
           })
         : this.t(singleTopicKey, { topic: topic.text });
 
+    if (this.isFullscreenViewportActive?.()) {
+      // 原生 window.confirm() 会让浏览器退出物理全屏；全屏内改用插件自己的确认浮层。
+      return this.confirmTopicActionInFullscreen(message, this.t(actionLabelKey));
+    }
+
     return window.confirm(message);
+  },
+
+  confirmTopicActionInFullscreen(message, confirmLabel) {
+    return new Promise((resolve) => {
+      this.fullscreenConfirmEl?.remove();
+
+      const overlayEl = document.createElement('div');
+      overlayEl.className = 'yonxao-mindmap-fullscreen-confirm-overlay';
+
+      const confirmEl = document.createElement('div');
+      confirmEl.className = 'yonxao-mindmap-fullscreen-confirm';
+      confirmEl.tabIndex = -1;
+      confirmEl.setAttribute('role', 'dialog');
+      confirmEl.setAttribute('aria-modal', 'true');
+      overlayEl.appendChild(confirmEl);
+
+      const textEl = document.createElement('div');
+      textEl.className = 'yonxao-mindmap-fullscreen-confirm-text';
+      textEl.textContent = message;
+      confirmEl.appendChild(textEl);
+
+      const actionsEl = document.createElement('div');
+      actionsEl.className = 'yonxao-mindmap-fullscreen-confirm-actions';
+
+      const cancelButton = document.createElement('button');
+      cancelButton.type = 'button';
+      cancelButton.className = 'yonxao-mindmap-fullscreen-confirm-button';
+      cancelButton.textContent = this.t('configModal.actions.cancel');
+
+      const confirmButton = document.createElement('button');
+      confirmButton.type = 'button';
+      confirmButton.className =
+        'yonxao-mindmap-fullscreen-confirm-button yonxao-mindmap-fullscreen-confirm-primary';
+      confirmButton.textContent = confirmLabel || this.t('configModal.actions.apply');
+
+      const finish = (confirmed) => {
+        if (this.fullscreenConfirmEl === overlayEl) {
+          this.fullscreenConfirmEl = null;
+        }
+        overlayEl.remove();
+        resolve(confirmed);
+      };
+
+      overlayEl.addEventListener('mousedown', (event) => {
+        event.stopPropagation();
+      });
+      overlayEl.addEventListener('click', (event) => {
+        event.stopPropagation();
+      });
+      cancelButton.addEventListener('click', () => finish(false), { once: true });
+      confirmButton.addEventListener('click', () => finish(true), { once: true });
+      confirmEl.addEventListener(
+        'keydown',
+        (event) => {
+          event.stopPropagation();
+
+          if (event.key === 'Tab') {
+            // 确认浮层打开时不能让 Tab 冒泡到导图，否则会触发创建子主题等快捷键。
+            event.preventDefault();
+            const buttons = [cancelButton, confirmButton];
+            const focusedIndex = buttons.indexOf(document.activeElement);
+            const nextIndex = event.shiftKey
+              ? (focusedIndex + buttons.length - 1) % buttons.length
+              : (focusedIndex + 1) % buttons.length;
+            buttons[nextIndex].focus();
+            return;
+          }
+          if (event.key === 'Escape') {
+            event.preventDefault();
+            finish(false);
+            return;
+          }
+          if (event.key === 'Enter') {
+            event.preventDefault();
+            finish(true);
+          }
+        },
+        true
+      );
+
+      actionsEl.append(cancelButton, confirmButton);
+      confirmEl.appendChild(actionsEl);
+      this.hostEl.appendChild(overlayEl);
+      this.fullscreenConfirmEl = overlayEl;
+      confirmButton.focus();
+    });
   },
 
   async copyTopicContentForShortcut(topic) {
@@ -241,7 +338,7 @@ export const topicCommandMethods = {
       new Notice(this.t('notice.rootCannotDelete'));
       return false;
     }
-    if (!this.confirmCutTopic(topic)) return false;
+    if (!(await this.confirmCutTopic(topic))) return false;
 
     const parentTopic = this.findTopicParentInTree(topic.id);
     // 剪切必须保存完整主题快照，否则删除子树后普通粘贴只能恢复根主题文字。

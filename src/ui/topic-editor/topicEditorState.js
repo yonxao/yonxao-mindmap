@@ -286,7 +286,7 @@ export const topicEditorStateMethods = {
       return false;
     }
 
-    if (!this.confirmDeleteTopic(topic)) return false;
+    if (!(await this.confirmDeleteTopic(topic))) return false;
 
     const parentTopic = this.findTopicParentInTree(topic.id);
     if (parentTopic?.id) {

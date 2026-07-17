@@ -96,6 +96,64 @@
   cursor: default;
 }
 
+.yonxao-mindmap-fullscreen-confirm-overlay {
+  position: absolute;
+  z-index: 30;
+  inset: 0;
+  background: rgb(0 0 0 / 24%);
+}
+
+.yonxao-mindmap-fullscreen-confirm {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  display: grid;
+  gap: var(--yonxao-mindmap-gap-lg);
+  width: min(460px, calc(100% - 32px));
+  padding: 16px;
+  transform: translate(-50%, -50%);
+  border: 1px solid var(--background-modifier-border);
+  border-radius: var(--yonxao-mindmap-radius-lg);
+  color: var(--text-normal);
+  background: var(--background-secondary);
+  box-shadow: 0 16px 48px rgb(0 0 0 / 28%);
+  font-size: var(--font-ui-medium);
+  line-height: 1.45;
+}
+
+.yonxao-mindmap-fullscreen-confirm-text {
+  min-width: 0;
+}
+
+.yonxao-mindmap-fullscreen-confirm-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--yonxao-mindmap-gap-md);
+  justify-content: flex-end;
+}
+
+.yonxao-mindmap-fullscreen-confirm-button {
+  min-height: 32px;
+  padding: 5px 12px;
+  border: 1px solid var(--background-modifier-border);
+  border-radius: var(--yonxao-mindmap-radius-md);
+  color: var(--text-normal);
+  background: var(--background-primary);
+  font-size: var(--font-ui-smaller);
+  cursor: pointer;
+}
+
+.yonxao-mindmap-fullscreen-confirm-button:hover,
+.yonxao-mindmap-fullscreen-confirm-button:focus-visible {
+  border-color: var(--interactive-accent);
+}
+
+.yonxao-mindmap-fullscreen-confirm-primary {
+  color: var(--text-on-accent);
+  border-color: var(--interactive-accent);
+  background: var(--interactive-accent);
+}
+
 /*
  * 作用：
  * 浏览器全屏查看时，让当前导图成为完整工作区。

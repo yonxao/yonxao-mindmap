@@ -70,9 +70,10 @@ export const runtimeConfigSaveMethods = {
     }
 
     // 全屏模式下跳过文件保存，避免触发 Obsidian 重渲染导致全屏退出。
+    // 用统一判断覆盖物理全屏 pending、覆盖层和窗口全屏，不能只看 isFullscreen/isWindowFullscreen。
     // 仅在内存中更新并重新渲染导图，退出全屏时再统一写入文件。
     // 任务勾选这类轻量保存也要进入这里，否则全屏中写文件会打断全屏体验。
-    if (this.isFullscreen || this.isWindowFullscreen) {
+    if (this.isFullscreenViewportActive?.()) {
       this.source = nextSource;
       this.rawConfig = this.documentConfigForSave(this.rawConfig);
       this.refreshNormalizedConfig();

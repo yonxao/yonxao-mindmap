@@ -186,6 +186,7 @@ export class YonxaoMindmapRenderer extends Component {
     this.fullscreenDraftIdentity = null;
     this.pendingFullscreenDraftSnapshot = null;
     this.fullscreenDraftRecoveryEl = null;
+    this.fullscreenConfirmEl = null;
     this._configModalOpen = false;
     this.topicUndoStack = [];
     this.topicRedoStack = [];
