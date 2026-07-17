@@ -1190,6 +1190,7 @@ src/
 │   ├── topicCommands.js                     # 面向 UI 的主题命令：新增子/兄弟主题、删除确认、复制、折叠后保存
 │   ├── topicClipboard.js                    # 主题文字、完整子树剪切和带属性复制的剪贴板语义
 │   ├── topicHistory.js                      # 主题树撤销/重做历史、代码块重建后的短期历史恢复
+│   ├── topicHistoryMemory.js                # 撤销历史的 session memory 容量预算管理
 │   ├── mindStructures.js                    # 高级结构创建、编辑、选择和控制点/端点拖动交互
 │   ├── relationAnchors.js                   # 关联线 8 锚点坐标、最近点吸附和端点覆盖
 │   └── collapseState.js                     # 折叠状态集合读写、后代折叠/展开、重置折叠
@@ -1266,7 +1267,8 @@ src/
 │   │   ├── sourceDocument.js                # 源码模式配置区/正文区拆分和组合
 │   │   ├── sourceCodeEditor.js              # 源码编辑区核心
 │   │   ├── sourceHighlight.js               # 源码模式高亮行和 token 生成
-│   │   └── sourceStatus.js                  # 源码模式状态消息、错误提示、行数变化辅助
+│   │   ├── sourceStatus.js                  # 源码模式状态消息、错误提示、行数变化辅助
+│   │   └── sourceShortcuts.js               # 源码模式保存快捷键纯函数判断
 │   ├── topic-editor/
 │   │   ├── TopicEditorPanel.js              # 主题编辑面板外壳、保存/取消、继承值显示
 │   │   ├── TopicEditorFields.js             # 文本、颜色、图标、字体、数字输入等字段工厂
@@ -1291,7 +1293,8 @@ src/
 │       └── configModalShared.js             # 配置面板共享工具
 │
 ├── shared/
-│   └── rendererShared.js                    # Renderer 共享常量/工具
+│   ├── rendererShared.js                    # Renderer 共享常量/工具
+│   └── sessionMemory.js                     # 会话级短期缓存：TTL、LRU 自动淘汰、容量预算
 │
 ├── theme/
 │   └── mindThemes.js                        # 内置主题色系定义
@@ -1346,8 +1349,14 @@ src/
                    src/ui/topic-editor/*.js
 
 要改主题快捷键   → src/renderer/interaction/topicKeyboardShortcuts.js
-                   src/model/topicCommands.js
-                   src/model/topicHistory.js
+                    src/model/topicCommands.js
+                    src/model/topicHistory.js
+                    src/model/topicClipboard.js
+
+要改剪贴板语义   → src/model/topicClipboard.js
+                    src/model/topicCommands.js
+
+要改会话缓存     → src/shared/sessionMemory.js
 
 要改配置面板     → src/ui/config-modal/{TabName}Tab.js
                    入口: src/ui/config-modal/ConfigModal.js
@@ -1364,7 +1373,8 @@ src/
 要改主题色系     → src/theme/mindThemes.js
 
 要改源码模式     → src/ui/source/SourceView.js
-                   src/ui/source/sourceCodeEditor.js
+                    src/ui/source/sourceCodeEditor.js
+                    src/ui/source/sourceShortcuts.js
 
 要改解析/序列化  → src/parser/parseMind.js
                    src/parser/serializeMind.js

@@ -168,12 +168,16 @@ export const topicContextMenuMethods = {
     const isCollapsed = this.collapsedIds.has(topic.id);
 
     if (this.structureSelection) {
-      this.addTopicContextMenuItem(
-        menu,
-        this.t('contextMenu.finishStructure'),
-        ICON_STRUCTURE_FINISH,
-        () => this.finishStructureSelection()
-      );
+      // 关系不需要"完成成员选取"步骤（第二个目标主题选中后自动创建），
+      // 和 topicKeyboardShortcuts.js 中 Enter 对 relation 的处理保持一致。
+      if (this.structureSelection.type !== 'relation') {
+        this.addTopicContextMenuItem(
+          menu,
+          this.t('contextMenu.finishStructure'),
+          ICON_STRUCTURE_FINISH,
+          () => this.finishStructureSelection()
+        );
+      }
       this.addTopicContextMenuItem(
         menu,
         this.t('contextMenu.cancelStructureSelection'),

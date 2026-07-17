@@ -30,6 +30,8 @@ import {
 import { fishboneHeadSideForLayout } from '../../layout/layoutTypes.js';
 import { getSessionMemory, setSessionMemory } from '../../shared/sessionMemory.js';
 
+const YONXAO_MINMAP_BRAND = 'yonxao-mindmap';
+// 品牌字符串中需要高亮的字母索引位置：y(0), o(3), m(7), m(11)
 const BRAND_HIGHLIGHT_POSITIONS = new Set([0, 3, 7, 11]);
 const UNORDERED_LIST_MARKER_SOLID_RADIUS = 2.4;
 const UNORDERED_LIST_MARKER_HOLLOW_RADIUS = 2.6;
@@ -1294,15 +1296,14 @@ export const topicDrawMethods = {
     const segments = [];
     let buffer = '';
     let isHighlighted = false;
-    const line = 'yonxao-mindmap';
-    for (let i = 0; i < line.length; i++) {
+    for (let i = 0; i < YONXAO_MINMAP_BRAND.length; i++) {
       const shouldHighlight = BRAND_HIGHLIGHT_POSITIONS.has(i);
       if (shouldHighlight !== isHighlighted) {
         if (buffer) segments.push({ text: buffer, highlight: isHighlighted });
         buffer = '';
         isHighlighted = shouldHighlight;
       }
-      buffer += line[i];
+      buffer += YONXAO_MINMAP_BRAND[i];
     }
     if (buffer) segments.push({ text: buffer, highlight: isHighlighted });
 

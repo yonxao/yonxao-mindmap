@@ -13,6 +13,7 @@ import {
   VIEW_MODE_KEY_SOURCE_TRUNCATE_LENGTH,
 } from '../shared/rendererShared.js';
 import {
+  codeBlockMemoryKey,
   deleteSessionMemory,
   getSessionMemory,
   setSessionMemory,
@@ -38,23 +39,23 @@ export const topicHistoryMethods = {
     this.topicRedoStack = [...record.redoStack];
   },
 
+  /*
+   * 历史记录缓存的 key 在基础代码块标识前加 `history:` 前缀，
+   * 避免与其他 session memory 分类共用相同的 key 时互相覆盖。
+   */
   topicHistoryMemoryKey() {
-    const sourcePath = this.ctx?.sourcePath || 'unknown';
-    const sectionInfo =
-      this.ctx && typeof this.ctx.getSectionInfo === 'function'
-        ? this.ctx.getSectionInfo(this.hostEl)
-        : null;
-
-    if (sectionInfo) {
-      return `${sourcePath}:history:${sectionInfo.lineStart}`;
-    }
-
-    if (this.editorContext && Number.isFinite(this.editorContext.contentFrom)) {
-      return `${sourcePath}:history:editor:${this.editorContext.contentFrom}`;
-    }
-
-    const sourcePreview = String(this.source || '').slice(0, VIEW_MODE_KEY_SOURCE_TRUNCATE_LENGTH);
-    return `${sourcePath}:history:${sourcePreview}`;
+    const baseKey = codeBlockMemoryKey(
+      this.ctx,
+      this.hostEl,
+      this.editorContext,
+      this.source,
+      VIEW_MODE_KEY_SOURCE_TRUNCATE_LENGTH
+    );
+    const colonIndex = baseKey.indexOf(':');
+    // 在 sourcePath 后插入 history，变为 sourcePath:history:rest
+    return colonIndex === -1
+      ? `${baseKey}:history`
+      : `${baseKey.slice(0, colonIndex)}:history${baseKey.slice(colonIndex)}`;
   },
 
   readTopicHistoryMemory() {

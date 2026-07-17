@@ -9,11 +9,9 @@
  * YonxaoMindmapRenderer -> rendererStateMethods -> toolbar/source/map 状态同步。
  */
 
+import { SESSION_VIEW_MODE_EXPIRY_MS } from '../shared/rendererShared.js';
 import {
-  SESSION_VIEW_MODE_EXPIRY_MS,
-  VIEW_MODE_KEY_SOURCE_TRUNCATE_LENGTH,
-} from '../shared/rendererShared.js';
-import {
+  codeBlockMemoryKey,
   deleteSessionMemory,
   getSessionMemory,
   setSessionMemory,
@@ -116,40 +114,11 @@ export const rendererStateMethods = {
   },
 
   viewModeMemoryKey(source = this.source) {
-    const sourcePath = this.ctx?.sourcePath || 'unknown';
-    const sectionInfo =
-      this.ctx && typeof this.ctx.getSectionInfo === 'function'
-        ? this.ctx.getSectionInfo(this.hostEl)
-        : null;
-
-    /*
-     * 优先用 sectionInfo 行号定位同一个 yxmm 代码块。
-     * 只有 Obsidian 暂时拿不到 sectionInfo 时，才退回到源码前缀；调用方可传入 nextSource，
-     * 让保存流程提前覆盖“保存后源码”对应的 fallback key。
-     */
-    if (sectionInfo) {
-      return `${sourcePath}:${sectionInfo.lineStart}`;
-    }
-
-    return `${sourcePath}:${String(source || '').slice(0, VIEW_MODE_KEY_SOURCE_TRUNCATE_LENGTH)}`;
+    return codeBlockMemoryKey(this.ctx, this.hostEl, this.editorContext, source);
   },
 
   topicFocusMemoryKey() {
-    const sourcePath = this.ctx?.sourcePath || 'unknown';
-    const sectionInfo =
-      this.ctx && typeof this.ctx.getSectionInfo === 'function'
-        ? this.ctx.getSectionInfo(this.hostEl)
-        : null;
-
-    if (sectionInfo) {
-      return `${sourcePath}:${sectionInfo.lineStart}`;
-    }
-
-    if (this.editorContext && Number.isFinite(this.editorContext.contentFrom)) {
-      return `${sourcePath}:editor:${this.editorContext.contentFrom}`;
-    }
-
-    return `${sourcePath}:${String(this.source || '').slice(0, VIEW_MODE_KEY_SOURCE_TRUNCATE_LENGTH)}`;
+    return codeBlockMemoryKey(this.ctx, this.hostEl, this.editorContext, this.source);
   },
 
   readRememberedTopicFocusState() {

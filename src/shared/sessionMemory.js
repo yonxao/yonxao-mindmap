@@ -119,3 +119,26 @@ function oldestSessionMemoryKey(map, options = {}) {
 
   return oldestKey;
 }
+
+/*
+ * 根据代码块的 Obsidian 上下文信息生成唯一的缓存键后缀。
+ *
+ * 优先级：行号定位 > 编辑器偏移定位 > 源码前 N 字符 fallback。
+ * 行号定位最精确，编辑器定位用于没有 sectionInfo 的编辑上下文，
+ * 源码 fallback 用于跨保存重建时的兜底。
+ */
+export function codeBlockMemoryKey(ctx, hostEl, editorContext, source, truncateLength = 64) {
+  const sourcePath = ctx?.sourcePath || 'unknown';
+  const sectionInfo =
+    ctx && typeof ctx.getSectionInfo === 'function' ? ctx.getSectionInfo(hostEl) : null;
+
+  if (sectionInfo) {
+    return `${sourcePath}:${sectionInfo.lineStart}`;
+  }
+
+  if (editorContext && Number.isFinite(editorContext.contentFrom)) {
+    return `${sourcePath}:editor:${editorContext.contentFrom}`;
+  }
+
+  return `${sourcePath}:${String(source || '').slice(0, truncateLength)}`;
+}

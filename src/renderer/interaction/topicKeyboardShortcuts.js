@@ -186,6 +186,11 @@ function matchesShortcutKey(event, shortcut) {
 
 function matchesTopicCommandShortcut(event, shortcut) {
   const requiresPrimaryModifier = shortcut.modifier === 'primary';
+  /*
+   * primary modifier 检查：metaKey !== ctrlKey
+   * macOS 用 Cmd(meta) 作为 primary modifier，Windows 用 Ctrl。
+   * 当两个键同时按下时返回 false，确保 Ctrl+Cmd+X 不会误触发 Ctrl+X 或 Cmd+X。
+   */
   const matchesPrimaryModifier = requiresPrimaryModifier
     ? event.metaKey !== event.ctrlKey
     : Boolean(event.metaKey) === Boolean(shortcut.metaKey) &&

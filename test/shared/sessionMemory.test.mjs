@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 
 import {
+  codeBlockMemoryKey,
   getSessionMemory,
   setSessionMemory,
   sweepSessionMemory,
@@ -57,4 +58,25 @@ test('session memory explicit sweep removes expired records', () => {
   sweepSessionMemory(memory, { now: 111 });
 
   assert.deepEqual([...memory.keys()], ['b']);
+});
+
+test('codeBlockMemoryKey prefers sectionInfo when available', () => {
+  const ctx = { sourcePath: 'note.md', getSectionInfo: () => ({ lineStart: 42 }) };
+  assert.equal(codeBlockMemoryKey(ctx, {}, null, '# old source'), 'note.md:42');
+});
+
+test('codeBlockMemoryKey falls back to editor contentFrom', () => {
+  const ctx = { sourcePath: 'note.md', getSectionInfo: () => null };
+  const editorContext = { contentFrom: 15 };
+  assert.equal(codeBlockMemoryKey(ctx, {}, editorContext, '# source'), 'note.md:editor:15');
+});
+
+test('codeBlockMemoryKey uses source prefix as last resort', () => {
+  const ctx = { sourcePath: 'note.md', getSectionInfo: () => null };
+  assert.equal(codeBlockMemoryKey(ctx, {}, null, '# Hello World'), 'note.md:# Hello World');
+});
+
+test('codeBlockMemoryKey truncates source fallback to the given length', () => {
+  const ctx = { sourcePath: 'note.md', getSectionInfo: () => null };
+  assert.equal(codeBlockMemoryKey(ctx, {}, null, 'ABCDEFGHIJ', 5), 'note.md:ABCDE');
 });
