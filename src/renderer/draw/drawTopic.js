@@ -28,6 +28,7 @@ import {
   topicRichTextLinkMarker,
 } from '../../utils/richText.js';
 import { fishboneHeadSideForLayout } from '../../layout/layoutTypes.js';
+import { getSessionMemory, setSessionMemory } from '../../shared/sessionMemory.js';
 
 const BRAND_HIGHLIGHT_POSITIONS = new Set([0, 3, 7, 11]);
 const UNORDERED_LIST_MARKER_SOLID_RADIUS = 2.4;
@@ -39,6 +40,7 @@ const CODE_BLOCK_TEXT_ASCENT_RATIO = 0.75;
 const EQUATION_RENDER_WAIT_MS = 600;
 // 图片尺寸跨 renderer 缓存上限，防止长时间使用 Obsidian 时资源记录无限增长。
 const TOPIC_IMAGE_NATURAL_SIZE_CACHE_LIMIT = 128;
+const TOPIC_IMAGE_NATURAL_SIZE_CACHE_TTL_MS = 12 * 60 * 60 * 1000;
 // 任务复选框的可点击方框边长，和列表行高解耦，避免字号变化时方框过大。
 const TASK_CHECKBOX_SIZE = 11;
 // 任务复选框的圆角半径，只影响视觉，不参与布局测量。
@@ -964,20 +966,23 @@ export const topicDrawMethods = {
   captureTopicImageNaturalSize(block, href) {
     const cacheKey = this.topicImageNaturalSizeKey(block, href);
     const sizeMemory = this.constructor.topicImageNaturalSizeMemory;
-    if (!cacheKey || sizeMemory.has(cacheKey)) return;
+    if (!cacheKey || getSessionMemory(sizeMemory, cacheKey)) return;
 
     const image = new Image();
     image.crossOrigin = 'anonymous';
     image.onload = () => {
       const width = Number(image.naturalWidth) || 0;
       const height = Number(image.naturalHeight) || 0;
-      if (!width || !height || sizeMemory.has(cacheKey)) return;
-      sizeMemory.set(cacheKey, { width, height });
-      while (sizeMemory.size > TOPIC_IMAGE_NATURAL_SIZE_CACHE_LIMIT) {
-        const oldestKey = sizeMemory.keys().next().value;
-        if (oldestKey === undefined) break;
-        sizeMemory.delete(oldestKey);
-      }
+      if (!width || !height || getSessionMemory(sizeMemory, cacheKey)) return;
+      setSessionMemory(
+        sizeMemory,
+        cacheKey,
+        { width, height },
+        {
+          ttlMs: TOPIC_IMAGE_NATURAL_SIZE_CACHE_TTL_MS,
+          maxEntries: TOPIC_IMAGE_NATURAL_SIZE_CACHE_LIMIT,
+        }
+      );
       this.scheduleTopicImageNaturalSizeRelayout();
     };
     image.src = href;
@@ -1404,9 +1409,10 @@ export const topicDrawMethods = {
       richText: {
         isImageResolved: (block) => Boolean(this.resolveTopicImageHref(block)),
         resolveImageSize: (block) =>
-          this.constructor.topicImageNaturalSizeMemory.get(
+          getSessionMemory(
+            this.constructor.topicImageNaturalSizeMemory,
             this.topicImageNaturalSizeKey(block, this.resolveTopicImageHref(block))
-          ) || null,
+          ),
       },
     };
   },

@@ -12,6 +12,17 @@ import {
   parseMindDocument,
   VIEW_MODE_KEY_SOURCE_TRUNCATE_LENGTH,
 } from '../shared/rendererShared.js';
+import {
+  deleteSessionMemory,
+  getSessionMemory,
+  setSessionMemory,
+} from '../shared/sessionMemory.js';
+import {
+  TOPIC_HISTORY_MEMORY_MAX_BYTES,
+  TOPIC_HISTORY_MEMORY_MAX_ENTRIES,
+  topicHistoryStacksByteSize,
+  trimTopicHistoryStacksForMemoryBudget,
+} from './topicHistoryMemory.js';
 
 // 每个代码块最多保留的撤销快照数量，避免大导图多次编辑后无限增长。
 const MAX_TOPIC_HISTORY_SIZE = 80;
@@ -48,11 +59,8 @@ export const topicHistoryMethods = {
 
   readTopicHistoryMemory() {
     const key = this.topicHistoryMemoryKey();
-    const record = this.constructor.topicHistoryMemory.get(key);
-    if (!record || record.expiresAt < Date.now()) {
-      this.constructor.topicHistoryMemory.delete(key);
-      return null;
-    }
+    const record = getSessionMemory(this.constructor.topicHistoryMemory, key);
+    if (!record) return null;
 
     return {
       undoStack: record.undoStack || [],
@@ -63,14 +71,22 @@ export const topicHistoryMethods = {
   writeTopicHistoryMemory() {
     const key = this.topicHistoryMemoryKey();
     if (!this.topicUndoStack.length && !this.topicRedoStack.length) {
-      this.constructor.topicHistoryMemory.delete(key);
+      deleteSessionMemory(this.constructor.topicHistoryMemory, key);
       return;
     }
 
-    this.constructor.topicHistoryMemory.set(key, {
+    trimTopicHistoryStacksForMemoryBudget(this.topicUndoStack, this.topicRedoStack);
+
+    const value = {
       undoStack: [...this.topicUndoStack],
       redoStack: [...this.topicRedoStack],
-      expiresAt: Date.now() + TOPIC_HISTORY_MEMORY_EXPIRY_MS,
+    };
+
+    setSessionMemory(this.constructor.topicHistoryMemory, key, value, {
+      ttlMs: TOPIC_HISTORY_MEMORY_EXPIRY_MS,
+      maxEntries: TOPIC_HISTORY_MEMORY_MAX_ENTRIES,
+      maxBytes: TOPIC_HISTORY_MEMORY_MAX_BYTES,
+      byteSize: topicHistoryStacksByteSize(value.undoStack, value.redoStack),
     });
   },
 

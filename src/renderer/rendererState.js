@@ -13,9 +13,17 @@ import {
   SESSION_VIEW_MODE_EXPIRY_MS,
   VIEW_MODE_KEY_SOURCE_TRUNCATE_LENGTH,
 } from '../shared/rendererShared.js';
+import {
+  deleteSessionMemory,
+  getSessionMemory,
+  setSessionMemory,
+} from '../shared/sessionMemory.js';
 
 // 源码状态只用于跨过 Obsidian 重建后的短暂提示，不应像视图模式一样长时间保留。
 const SOURCE_STATUS_MEMORY_EXPIRY_MS = 8000;
+const VIEW_MODE_MEMORY_MAX_ENTRIES = 200;
+const SOURCE_STATUS_MEMORY_MAX_ENTRIES = 100;
+const TOPIC_FOCUS_MEMORY_MAX_ENTRIES = 200;
 
 export const rendererStateMethods = {
   applyConfiguredViewMode() {
@@ -49,28 +57,32 @@ export const rendererStateMethods = {
 
   readSessionViewMode() {
     const key = this.viewModeMemoryKey();
-    const record = this.constructor.viewModeMemory.get(key);
-    if (!record || record.expiresAt < Date.now()) {
-      this.constructor.viewModeMemory.delete(key);
-      return 'map';
-    }
-
-    return record.mode;
+    const record = getSessionMemory(this.constructor.viewModeMemory, key);
+    return record?.mode || 'map';
   },
 
   writeSessionViewMode(mode, source = this.source) {
-    this.constructor.viewModeMemory.set(this.viewModeMemoryKey(source), {
-      mode,
-      expiresAt: Date.now() + SESSION_VIEW_MODE_EXPIRY_MS,
-    });
+    setSessionMemory(
+      this.constructor.viewModeMemory,
+      this.viewModeMemoryKey(source),
+      { mode },
+      {
+        ttlMs: SESSION_VIEW_MODE_EXPIRY_MS,
+        maxEntries: VIEW_MODE_MEMORY_MAX_ENTRIES,
+      }
+    );
   },
 
   writeSourceStatusMemory(type, messageKey, source = this.source) {
-    this.constructor.sourceStatusMemory.set(this.viewModeMemoryKey(source), {
-      type,
-      messageKey,
-      expiresAt: Date.now() + SOURCE_STATUS_MEMORY_EXPIRY_MS,
-    });
+    setSessionMemory(
+      this.constructor.sourceStatusMemory,
+      this.viewModeMemoryKey(source),
+      { type, messageKey },
+      {
+        ttlMs: SOURCE_STATUS_MEMORY_EXPIRY_MS,
+        maxEntries: SOURCE_STATUS_MEMORY_MAX_ENTRIES,
+      }
+    );
   },
 
   rememberSourceModeAcrossSave(nextSource, status = null) {
@@ -93,14 +105,11 @@ export const rendererStateMethods = {
 
   restoreRememberedSourceStatus() {
     const key = this.viewModeMemoryKey();
-    const record = this.constructor.sourceStatusMemory.get(key);
-    if (!record || record.expiresAt < Date.now()) {
-      this.constructor.sourceStatusMemory.delete(key);
-      return;
-    }
+    const record = getSessionMemory(this.constructor.sourceStatusMemory, key);
+    if (!record) return;
 
     // 状态提示是一次性的：新实例接手显示后即删除，避免很久以后再次打开还看到旧的“已保存”。
-    this.constructor.sourceStatusMemory.delete(key);
+    deleteSessionMemory(this.constructor.sourceStatusMemory, key);
     if (!record.messageKey) return;
 
     this.updateSourceStatus(this.t(record.messageKey), record.type);
@@ -145,11 +154,8 @@ export const rendererStateMethods = {
 
   readRememberedTopicFocusState() {
     const key = this.topicFocusMemoryKey();
-    const record = this.constructor.topicFocusMemory.get(key);
-    if (!record || record.expiresAt < Date.now()) {
-      this.constructor.topicFocusMemory.delete(key);
-      return null;
-    }
+    const record = getSessionMemory(this.constructor.topicFocusMemory, key);
+    if (!record) return null;
 
     return {
       topicId: record.topicId || '',
@@ -160,7 +166,7 @@ export const rendererStateMethods = {
   rememberFocusedTopic(options = {}) {
     if (!this.focusedTopicId) {
       const key = this.topicFocusMemoryKey();
-      this.constructor.topicFocusMemory.delete(key);
+      deleteSessionMemory(this.constructor.topicFocusMemory, key);
       return;
     }
 
@@ -171,11 +177,18 @@ export const rendererStateMethods = {
     if (!topicId) return;
 
     const key = this.topicFocusMemoryKey();
-    this.constructor.topicFocusMemory.set(key, {
-      topicId,
-      focusSvg: Boolean(options.focusSvg),
-      expiresAt: Date.now() + SESSION_VIEW_MODE_EXPIRY_MS,
-    });
+    setSessionMemory(
+      this.constructor.topicFocusMemory,
+      key,
+      {
+        topicId,
+        focusSvg: Boolean(options.focusSvg),
+      },
+      {
+        ttlMs: SESSION_VIEW_MODE_EXPIRY_MS,
+        maxEntries: TOPIC_FOCUS_MEMORY_MAX_ENTRIES,
+      }
+    );
   },
 
   t(key, replacements) {
