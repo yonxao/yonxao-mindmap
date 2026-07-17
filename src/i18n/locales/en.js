@@ -1,29 +1,29 @@
+/* en 完整语言包；键集合以 zh-CN 为准。 */
 export const enMessages = Object.freeze({
-  // ── Plugin settings page ──
+  // ── 插件设置页 ──
   'settings.description':
-    'Configure the plugin-level global default value config here. The config block at the top of an individual yxmm code block still has priority, which is useful for per-map overrides.',
+    'Configure plugin-wide defaults here. The config section at the top of each yxmm code block takes priority, so individual mind maps can override these defaults.',
   'settings.language.name': 'Language',
   'settings.language.desc':
     'Controls yonxao-mindmap UI text. The initial default follows the current Obsidian language.',
-  'settings.globalDefaultValueConfigPanel.name': 'Global default value config panel',
+  'settings.globalDefaultValueConfigPanel.name': 'Global default configuration panel',
   'settings.globalDefaultValueConfigPanel.desc':
-    'Used as the base config for every yxmm code block; block config and topic attributes still override it.',
-  'settings.globalDefaultValueConfigPanel.edit': 'Edit default value config',
+    'Provides the base configuration for every yxmm code block. The code block config section and topic attributes still take priority.',
+  'settings.globalDefaultValueConfigPanel.edit': 'Edit default configuration',
   'settings.globalDefaultValueConfigPanel.reset': 'Reset to built-in defaults',
   'settings.globalDefaultValueConfigPanel.resetNotice':
     'yonxao-mindmap: Built-in defaults restored.',
   'settings.globalDefaultValueConfigPanel.savedNotice':
-    'yonxao-mindmap: Global default value config saved.',
+    'yonxao-mindmap: Global default configuration saved.',
   'settings.globalDefaultValueConfigPanel.empty':
-    'No global default value config is set. All maps use the plugin built-in defaults.',
-  'settings.globalDefaultValueConfigPanel.summaryTitle':
-    'Current global default value config summary:',
-  'settings.summary.theme': 'Theme',
+    'No global default configuration is set. All mind maps use the plugin built-in defaults.',
+  'settings.globalDefaultValueConfigPanel.summaryTitle': 'Current global default configuration:',
+  'settings.summary.theme': 'Color scheme',
   'settings.summary.layout': 'Layout',
   'settings.summary.connector': 'Connector style',
   'settings.summary.connector.fixedElbow': 'Fixed elbow line',
   'settings.summary.branchExpansion': 'Subtopic expansion',
-  'settings.summary.branchExpansion.elbowOnly': 'Only available with elbow lines',
+  'settings.summary.branchExpansion.elbowOnly': 'Only available with elbow connectors',
   'settings.summary.branchExpansion.unsupported': 'Not supported by this layout',
   'settings.summary.wheelZoom': 'Mouse wheel zoom',
   'settings.summary.enabled': 'Enabled',
@@ -31,7 +31,7 @@ export const enMessages = Object.freeze({
   'settings.summary.fontFamily': 'Topic font',
   'settings.summary.fontSize': 'Topic font size',
 
-  // ── Toolbar ──
+  // ── 工具栏 ──
   'toolbar.showSource': 'Show source',
   'toolbar.showMap': 'Show map',
   'toolbar.sourceFallback': 'Src',
@@ -48,24 +48,24 @@ export const enMessages = Object.freeze({
   'toolbar.resetCollapse': 'Reset collapse state',
   'toolbar.dragHandle': 'Drag toolbar',
 
-  // ── Source view ──
+  // ── 源码视图 ──
   'source.tab.config': 'Config',
   'source.tab.body': 'Body',
   'source.status.editable':
-    'Source is editable. Switch back to map or press Ctrl/Cmd+S to write Markdown.',
+    'Source is editable. Switch back to the map or press Ctrl/Cmd+S to save changes to Markdown.',
   'source.status.dirty':
-    'Source changed. Switch back to map or press Ctrl/Cmd+S to write Markdown.',
-  'source.status.synced': 'Source is synced to the current Markdown code block.',
+    'Source has changed. Switch back to the map or press Ctrl/Cmd+S to save changes to Markdown.',
+  'source.status.synced': 'Source matches the current mind map content.',
   'source.status.saved': 'Source saved to the current Markdown code block.',
   'source.status.saveFailed': 'Source save failed. Check the current Markdown code block.',
   'canvas.resizeHandle': 'Drag to resize canvas height',
 
-  // ── Notices ──
+  // ── 通知消息 ──
   'notice.configSaved': 'yonxao-mindmap: Config saved.',
   'notice.topicCopied': 'yonxao-mindmap: Content copied.',
-  'notice.bodyCopied': 'yonxao-mindmap: Body copied.',
+  'notice.bodyCopied': 'yonxao-mindmap: Map content copied.',
   'notice.sourceCopied': 'yonxao-mindmap: Source copied.',
-  'notice.configCopied': 'yonxao-mindmap: Config copied.',
+  'notice.configCopied': 'yonxao-mindmap: Config section copied.',
   'notice.imageExported': 'yonxao-mindmap: Image exported.',
   'notice.imageCopied': 'yonxao-mindmap: Image copied.',
   'notice.imageClipboardUnsupported':
@@ -83,13 +83,13 @@ export const enMessages = Object.freeze({
   'notice.topicDeleted': 'Topic deleted.',
   'notice.topicCut': 'Topic cut.',
   'notice.topicPasted': 'Topic pasted.',
-  'notice.topicWithAttributesCopied': 'Topic and attributes copied.',
+  'notice.topicWithAttributesCopied': 'Topic, attributes, and subtopics copied.',
   'notice.topicClipboardEmpty': 'yonxao-mindmap: Clipboard is empty.',
   'notice.undoApplied': 'Undo applied.',
   'notice.redoApplied': 'Redo applied.',
   'notice.undoUnavailable': 'yonxao-mindmap: Nothing to undo.',
   'notice.redoUnavailable': 'yonxao-mindmap: Nothing to redo.',
-  'notice.rootCannotAddSibling': 'yonxao-mindmap: The root topic cannot add sibling topics.',
+  'notice.rootCannotAddSibling': 'yonxao-mindmap: The root topic cannot have sibling topics.',
   'notice.rootCannotDeleteInMap': 'yonxao-mindmap: The root topic cannot be deleted in map view.',
   'notice.rootCannotDelete': 'yonxao-mindmap: The root topic cannot be deleted.',
   'notice.structureSelectRelation': 'Select another topic to complete the relation.',
@@ -111,30 +111,32 @@ export const enMessages = Object.freeze({
   'structureSelection.summaryReady': 'The selection is valid and ready to finish.',
   'structureSelection.boundaryReady': 'Select more topics or finish the boundary now.',
 
-  // ── Attachment popover ──
+  // ── 附件浮层 ──
   'attachment.open': 'Open',
   'attachment.copy': 'Copy',
 
-  // ── Fullscreen edit recovery ──
+  // ── 全屏编辑恢复 ──
   'fullscreenDraftRecovery.message':
     'The previous session appears to have exited unexpectedly, and some edits may not have been saved. You can restore them as a new map below the current one, or copy the recoverable source to the clipboard.',
   'fullscreenDraftRecovery.createMap': 'Create new map',
   'fullscreenDraftRecovery.copySource': 'Copy source',
   'fullscreenDraftRecovery.inserted': 'yonxao-mindmap: Recovery map created.',
-  'fullscreenDraftRecovery.copied': 'yonxao-mindmap: Leftover source copied.',
+  'fullscreenDraftRecovery.copied': 'yonxao-mindmap: Recoverable source copied.',
   'fullscreenDraftRecovery.insertFailed': 'yonxao-mindmap: Failed to create recovery map.',
-  'fullscreenDraftRecovery.copyFailed': 'yonxao-mindmap: Failed to copy leftover source.',
+  'fullscreenDraftRecovery.copyFailed': 'yonxao-mindmap: Failed to copy the recoverable source.',
   'fullscreenDraftRecovery.insertUnsupported':
     'yonxao-mindmap: This editor environment cannot create a recovery map automatically. Please copy the source instead.',
 
-  // ── Editor menu ──
+  // ── 编辑器菜单 ──
   'editorMenu.insertMindMap': 'Insert mind map',
 
-  // ── Confirm dialogs ──
+  // ── 确认弹窗 ──
   'confirm.deleteTopic': 'Delete "{topic}"?',
   'confirm.deleteTopicWithDescendants': 'Delete "{topic}" and its {count} subtopics?',
+  'confirm.cutTopic': 'Cut "{topic}"?',
+  'confirm.cutTopicWithDescendants': 'Cut "{topic}" and its {count} subtopics?',
 
-  // ── Topic editor panel ──
+  // ── 主题编辑面板 ──
   'topicEditor.title': 'Topic edit panel',
   'topicEditor.content': 'Content',
   'topicEditor.expandText': 'Open large text editor',
@@ -149,14 +151,15 @@ export const enMessages = Object.freeze({
   'topicEditor.lineHeight': 'Line height',
   'topicEditor.align': 'Text alignment',
   'topicEditor.maxWidth': 'Max width',
-  'topicEditor.fontCustomPlaceholder': "'LXGW WenKai', sans-serif",
+  'topicEditor.fontCustomPlaceholder': "'Inter', Arial, sans-serif",
   'topicEditor.fontFamily.invalid':
-    "Please enter a valid CSS font-family list, for example: 'SimSun', 'Songti SC', serif",
+    "Please enter a valid CSS font-family list, for example: 'Inter', Arial, sans-serif",
   'topicEditor.editContentAria': 'Edit content',
+
   // 富文本编辑工具栏提示
   'topicEditor.richText.bold': 'Bold selected text',
-  'topicEditor.richText.italic': 'Italicize selected text',
-  'topicEditor.richText.strike': 'Strike through selected text',
+  'topicEditor.richText.italic': 'Apply italic to selected text',
+  'topicEditor.richText.strike': 'Apply strikethrough to selected text',
   'topicEditor.richText.underline': 'Underline selected text',
   'topicEditor.richText.clear': 'Clear content styles',
   'topicEditor.richText.tag': 'Insert tag',
@@ -169,13 +172,13 @@ export const enMessages = Object.freeze({
   'topicEditor.richText.attachment': 'Insert attachment',
   'topicEditor.richText.equation': 'Insert equation',
   'topicEditor.richText.codeBlock': 'Insert code block',
-  'topicEditor.richText.colorNamed': 'Color selected text {color}',
-  'topicEditor.richText.colorCustom': 'Color selected text',
+  'topicEditor.richText.colorNamed': 'Set selected text color to {color}',
+  'topicEditor.richText.colorCustom': 'Set a custom color for selected text',
   'topicEditor.richText.placeholder': 'Text',
   'topicEditor.save': 'Save',
   'topicEditor.cancel': 'Cancel',
 
-  // ── Topic buttons ──
+  // ── 主题按钮 ──
   'topicButton.addSiblingLeft': 'Add sibling topic on the left',
   'topicButton.addSiblingRight': 'Add sibling topic on the right',
   'topicButton.addSiblingBefore': 'Add sibling topic before',
@@ -183,12 +186,12 @@ export const enMessages = Object.freeze({
   'topicButton.addSubtopic': 'Add subtopic',
   'topicButton.editTopic': 'Edit',
 
-  // ── Context menu ──
+  // ── 右键菜单 ──
   'contextMenu.editTopic': 'Edit',
   'contextMenu.topicEditPanel': 'Topic edit panel',
   'contextMenu.copyTopicContent': 'Copy content',
-  'contextMenu.copySubtreeBody': 'Copy subtree',
-  'contextMenu.copyIndentedSubtree': 'Copy indented subtree',
+  'contextMenu.copySubtreeBody': 'Copy subtree content',
+  'contextMenu.copyIndentedSubtree': 'Copy indented subtree content',
   'contextMenu.addSubtopic': 'Add subtopic',
   'contextMenu.addSiblingBefore': 'Add sibling topic before',
   'contextMenu.addSiblingAfter': 'Add sibling topic after',
@@ -204,16 +207,15 @@ export const enMessages = Object.freeze({
   'contextMenu.createRelation': 'Create relation',
   'contextMenu.createSummary': 'Create summary',
   'contextMenu.createBoundary': 'Create boundary',
-
-  'contextMenu.copyBody': 'Copy body',
-  'contextMenu.copyIndentedBody': 'Copy indented body',
+  'contextMenu.copyBody': 'Copy map content',
+  'contextMenu.copyIndentedBody': 'Copy indented map content',
   'contextMenu.copySource': 'Copy source',
-  'contextMenu.copyConfig': 'Copy config',
+  'contextMenu.copyConfig': 'Copy config section',
   'contextMenu.exportPng': 'Export image',
   'contextMenu.copyPng': 'Copy image',
-  'contextMenu.deleteMindMap': 'Delete code block',
+  'contextMenu.deleteMindMap': 'Delete mind map',
 
-  // ── Structure editor modal ──
+  // ── 结构编辑弹窗 ──
   'structureEditor.title.relation': 'Relation settings',
   'structureEditor.title.summary': 'Summary settings',
   'structureEditor.title.boundary': 'Boundary settings',
@@ -232,12 +234,12 @@ export const enMessages = Object.freeze({
   'structureEditor.placeholder.text': 'Optional',
   'structureEditor.placeholder.textMultiline': 'Optional; supports line breaks shown as entered',
 
-  // ── Config panel: title, tabs, actions, status ──
-  'configModal.title': 'Config Panel',
-  'configModal.globalDefaultValueTitle': 'Global Default Value Config Panel',
+  // ── 配置面板：标题、标签页、操作、状态 ──
+  'configModal.title': 'Config panel',
+  'configModal.globalDefaultValueTitle': 'Global default configuration panel',
   'configModal.info.label': 'Config rules',
   'configModal.info.tooltip':
-    'Config priority:\nTopic attributes > Code block config > Plugin global default value config > Plugin built-in defaults\n\nColor priority:\nTopic attribute color > Default topic color > Theme scheme\n\nSave cleanup logic:\nWhen a config value is the same as the effective default value from the plugin global default value config or plugin built-in defaults, it is removed to keep the config concise.',
+    'Configuration priority:\nTopic attributes > Code block config section > Plugin global defaults > Plugin built-in defaults\n\nColor priority:\nTopic attribute color > Default topic color > Color scheme\n\nSaving configuration values:\nWhen a value matches the effective global or built-in default, it is omitted from the code block config section when saved to keep the configuration concise.',
   'configModal.tabs.display': 'Display',
   'configModal.tabs.structure': 'Structure',
   'configModal.tabs.color': 'Color',
@@ -264,7 +266,7 @@ export const enMessages = Object.freeze({
   'configModal.watermark.locked.failed': 'Could not save the unlock state. Please try again.',
   'configModal.watermark.enabled': 'Enable watermark',
   'configModal.watermark.enabled.help':
-    'Shows immediately on the map canvas, in fullscreen, and in exported images.',
+    'Shows immediately on the map canvas, in fullscreen view, and in exported images.',
   'configModal.watermark.mode': 'Watermark mode',
   'configModal.watermark.mode.signature': 'Signature watermark',
   'configModal.watermark.mode.normal': 'Standard watermark',
@@ -311,9 +313,10 @@ export const enMessages = Object.freeze({
   'configModal.watermark.imageSource.placeholder': 'https://… or assets/watermark.png',
   'configModal.watermark.image.chooseVault': 'Choose from vault',
   'configModal.watermark.image.searchPlaceholder': 'Search image files in the current vault',
-  'configModal.watermark.image.upload': 'Upload to vault',
-  'configModal.watermark.image.uploaded': 'yonxao-mindmap: Watermark image uploaded.',
-  'configModal.watermark.image.uploadFailed': 'yonxao-mindmap: Failed to upload watermark image:',
+  'configModal.watermark.image.upload': 'Import into vault',
+  'configModal.watermark.image.uploaded':
+    'yonxao-mindmap: Watermark image imported into the vault.',
+  'configModal.watermark.image.uploadFailed': 'yonxao-mindmap: Failed to import watermark image:',
   'configModal.watermark.position.topLeft': 'Top left',
   'configModal.watermark.position.topCenter': 'Top center',
   'configModal.watermark.position.topRight': 'Top right',
@@ -334,7 +337,7 @@ export const enMessages = Object.freeze({
   'configModal.status.valid': 'Config syntax is valid.',
   'configModal.status.invalid': 'Config syntax error: {message}',
 
-  // ── Config panel: shortcuts tab ──
+  // ── 配置面板：快捷键标签页 ──
   'configModal.shortcuts.help': 'Current shortcuts are read-only and cannot be changed here yet',
   'configModal.shortcuts.topicCreateDeleteSection': 'Topic Creation and Deletion',
   'configModal.shortcuts.topicEditSection': 'Topic Editing',
@@ -347,45 +350,38 @@ export const enMessages = Object.freeze({
   'configModal.shortcuts.header.mac': 'Mac',
   'configModal.shortcuts.header.description': 'Description',
   'configModal.shortcuts.action.addSubtopic': 'Insert subtopic',
-  'configModal.shortcuts.action.addSiblingAfter': 'Insert next sibling',
-  'configModal.shortcuts.action.addSiblingBefore': 'Insert previous sibling',
+  'configModal.shortcuts.action.addSiblingAfter': 'Insert next sibling topic',
+  'configModal.shortcuts.action.addSiblingBefore': 'Insert previous sibling topic',
   'configModal.shortcuts.action.deleteTopic': 'Delete topic',
-
   'configModal.shortcuts.action.openTopicEditor': 'Open topic editor panel',
-  'configModal.shortcuts.action.openInlineEditor': 'Quick inline edit',
+  'configModal.shortcuts.action.openInlineEditor': 'Quick edit topic',
   'configModal.shortcuts.action.inlineNewline': 'New line during inline edit',
-  'configModal.shortcuts.action.inlineSubmit': 'Submit inline edit',
+  'configModal.shortcuts.action.inlineSubmit': 'Save inline edit',
   'configModal.shortcuts.action.inlineCancel': 'Cancel inline edit',
   'configModal.shortcuts.action.topicEditorSave': 'Save topic editor panel',
   'configModal.shortcuts.action.contentEditorSave': 'Save long-text editor overlay',
-
-  'configModal.shortcuts.action.navigateTopic': 'Move selection',
+  'configModal.shortcuts.action.navigateTopic': 'Change selected topic',
   'configModal.shortcuts.action.toggleCollapse': 'Expand/collapse subtopics',
-
-  'configModal.shortcuts.action.copyTopicContent': 'Copy topic',
+  'configModal.shortcuts.action.copyTopicContent': 'Copy topic content',
   'configModal.shortcuts.action.cutTopicContent': 'Cut topic',
   'configModal.shortcuts.action.pasteTopicContent': 'Paste topic',
   'configModal.shortcuts.action.copyTopicWithAttributes': 'Copy topic and attributes',
   'configModal.shortcuts.action.pasteTopicWithAttributes': 'Paste topic and attributes',
   'configModal.shortcuts.action.undoTopicChange': 'Undo',
   'configModal.shortcuts.action.redoTopicChange': 'Redo',
-
-  'configModal.shortcuts.action.zoomIn': 'Zoom in view',
-  'configModal.shortcuts.action.zoomOut': 'Zoom out view',
+  'configModal.shortcuts.action.zoomIn': 'Zoom in',
+  'configModal.shortcuts.action.zoomOut': 'Zoom out',
   'configModal.shortcuts.action.fitView': 'Fit view',
-  'configModal.shortcuts.action.originalSize': 'Original view',
+  'configModal.shortcuts.action.originalSize': 'Original size',
   'configModal.shortcuts.action.windowFullscreen': 'Window fullscreen',
   'configModal.shortcuts.action.fullscreen': 'Fullscreen',
-
   'configModal.shortcuts.action.openConfigModal': 'Open config panel',
-
   'configModal.shortcuts.description.addSubtopic': 'Add a subtopic to the current topic',
   'configModal.shortcuts.description.addSiblingAfter':
     'Create a sibling topic after the current topic',
   'configModal.shortcuts.description.addSiblingBefore':
     'Create a sibling topic before the current topic',
   'configModal.shortcuts.description.deleteTopic': 'Delete the current topic',
-
   'configModal.shortcuts.description.openTopicEditor':
     'Open the editor panel for the current topic',
   'configModal.shortcuts.description.openInlineEditor': 'Quickly edit the current topic text',
@@ -396,33 +392,32 @@ export const enMessages = Object.freeze({
   'configModal.shortcuts.description.topicEditorSave': 'Save all changes in the topic editor panel',
   'configModal.shortcuts.description.contentEditorSave':
     'Only save the long-text editor overlay, not the whole topic editor panel',
-
   'configModal.shortcuts.description.navigateTopic':
-    'Move the topic selection; mind map layouts follow parent/child and sibling relationships, while other layouts use spatial direction',
+    'Change the selected topic; mind map layouts follow parent/child and sibling relationships, while other layouts use spatial direction',
   'configModal.shortcuts.description.toggleCollapse': 'Expand or collapse subtopics',
-
   'configModal.shortcuts.description.copyTopicContent': 'Copy the current topic content',
-  'configModal.shortcuts.description.cutTopicContent': 'Cut the current topic content',
+  'configModal.shortcuts.description.cutTopicContent':
+    'Cut the selected topic with its attributes and subtopics',
   'configModal.shortcuts.description.pasteTopicContent': 'Paste as a subtopic of the current topic',
-  'configModal.shortcuts.description.copyTopicWithAttributes': 'Copy the current topic',
-  'configModal.shortcuts.description.pasteTopicWithAttributes': 'Paste the copied topic',
+  'configModal.shortcuts.description.copyTopicWithAttributes':
+    'Copy the selected topic, its attributes, and all subtopics',
+  'configModal.shortcuts.description.pasteTopicWithAttributes':
+    'Paste a topic with its attributes and subtopics',
   'configModal.shortcuts.description.undoTopicChange': 'Undo the previous operation',
   'configModal.shortcuts.description.redoTopicChange': 'Restore the undone operation',
-
-  'configModal.shortcuts.description.zoomIn': 'Zoom in view',
-  'configModal.shortcuts.description.zoomOut': 'Zoom out view',
+  'configModal.shortcuts.description.zoomIn': 'Zoom in',
+  'configModal.shortcuts.description.zoomOut': 'Zoom out',
   'configModal.shortcuts.description.fitView': 'Fit view based on the current viewport',
   'configModal.shortcuts.description.originalSize': 'Switch the view to original size',
   'configModal.shortcuts.description.windowFullscreen': 'Enter/exit window fullscreen mode',
   'configModal.shortcuts.description.fullscreen': 'Enter/exit fullscreen mode',
-
   'configModal.shortcuts.description.openConfigModal': 'Open the config panel',
 
-  // ── Config panel: placeholders ──
+  // ── 配置面板：占位符 ──
   'configModal.placeholder.auto': 'Auto',
   'configModal.placeholder.default': 'Default',
 
-  // ── Config panel: display tab ──
+  // ── 配置面板：显示标签页 ──
   'configModal.display.mapSection': 'Map area',
   'configModal.display.canvasHeight': 'Map height',
   'configModal.display.canvasHeight.help':
@@ -442,14 +437,14 @@ export const enMessages = Object.freeze({
     'Source mode has an independent height and does not affect map height.',
   'configModal.display.saveFullConfig': 'Save all config items',
   'configModal.display.saveFullConfig.help':
-    'When enabled, saves all config values including defaults for consistent styling when shared or migrated. When disabled, only saves configs that differ from defaults to keep it concise.',
+    'When enabled, saves all configuration values, including defaults, to preserve styling when shared or migrated. When disabled, only values that differ from the defaults are saved.',
   'configModal.viewFit.original': 'Original size',
   'configModal.viewFit.fit': 'Fit view',
   'configModal.topicControlVisibility.always': 'Always show all buttons',
   'configModal.topicControlVisibility.toggle-always': 'Always show collapse; show others on hover',
   'configModal.topicControlVisibility.hover': 'Show all buttons on hover',
 
-  // ── Config panel: interaction tab ──
+  // ── 配置面板：交互标签页 ──
   'configModal.interaction.toolbarSection': 'Toolbar',
   'configModal.interaction.toolbarCorner': 'Toolbar corner',
   'configModal.interaction.toolbarPlacement': 'Toolbar placement',
@@ -471,19 +466,19 @@ export const enMessages = Object.freeze({
   'configModal.interaction.tabIndent.help':
     'When enabled, Tab and Shift+Tab in source mode adjust the current line topic level.',
 
-  // ── Config panel: color tab ──
+  // ── 配置面板：颜色标签页 ──
   'configModal.color.schemeSection': 'Color scheme',
   'configModal.color.customColor': 'Custom color',
   'configModal.color.scheme': 'Color scheme',
   'configModal.color.defaultTopicColor': 'Default topic color',
   'configModal.color.defaultTopicColor.help':
-    'Leave empty to use the current theme auto colors. When filled, it overrides theme auto colors, while topic attribute color still has priority.',
+    'Leave empty to use automatic colors from the current color scheme. Setting a value overrides those automatic colors, while the topic color attribute still takes priority.',
   'configModal.color.overrideWarning':
-    'The current theme assigns colors by branch. Setting a default topic color hides those branch colors.',
+    'The current color scheme assigns colors by branch. Setting a default topic color hides the rainbow branch colors.',
   'configModal.color.buttonSection': 'Button color',
   'configModal.color.buttonColorMode': 'Button color',
   'configModal.color.buttonColorMode.help': 'Color mode for toggle, edit, and add buttons.',
-  'configModal.color.buttonColor.inherit-accent': 'Inherit Accent',
+  'configModal.color.buttonColor.inherit-accent': 'Inherit Obsidian accent color',
   'configModal.color.buttonColor.subtle': 'Subtle',
   'configModal.color.buttonColor.topic': 'Topic color',
   'configModal.color.buttonColor.custom': 'Custom',
@@ -495,15 +490,15 @@ export const enMessages = Object.freeze({
   'configModal.color.advancedStructure.summary': 'Summary color',
   'configModal.color.advancedStructure.boundary': 'Boundary color',
   'configModal.color.advancedStructure.help':
-    'Default color for this advanced structure type. A structure color attribute still has priority.',
+    "Sets the default color for this structure type. An individual structure's color attribute still takes priority.",
 
-  // ── Config panel: structure tab ──
+  // ── 配置面板：结构标签页 ──
   'configModal.structure.layoutSection': 'Layout',
   'configModal.structure.layout': 'Layout type',
   'configModal.structure.connectorSection': 'Connector and expansion',
   'configModal.structure.connectorStyle': 'Connector style',
   'configModal.structure.connectorStyle.fixedHelp':
-    'Only mind map layouts can choose connector style. Other layouts use a fixed elbow line to preserve their structure.',
+    'Only mind map layouts allow connector style selection. Other layouts use fixed elbow lines to preserve their layout structure.',
   'configModal.structure.branchExpansion': 'Subtopic expansion',
   'configModal.structure.branchExpansion.elbowOnlyHelp':
     'Subtopic expansion only applies when the actual connector style is elbow.',
@@ -516,7 +511,7 @@ export const enMessages = Object.freeze({
   'configModal.branchExpansion.side': 'Natural expansion',
   'configModal.branchExpansion.hanging': 'Hanging expansion',
 
-  // ── Config panel: font tab ──
+  // ── 配置面板：字体标签页 ──
   'configModal.font.globalSection': 'Global topic font',
   'configModal.font.family': 'Topic font',
   'configModal.font.family.help':
@@ -531,7 +526,7 @@ export const enMessages = Object.freeze({
   'configModal.font.align': 'Text alignment',
   'configModal.font.align.help':
     'Auto follows the layout direction. Left, center, and right override ordinary paragraph text; lists and code blocks stay left-aligned.',
-  'configModal.font.align.auto': 'Auto',
+  'configModal.font.align.auto': 'Default alignment',
   'configModal.font.align.left': 'Left',
   'configModal.font.align.center': 'Center',
   'configModal.font.align.right': 'Right',
@@ -541,10 +536,10 @@ export const enMessages = Object.freeze({
   'configModal.font.levelTitle3': 'Level 3 topic',
   'configModal.font.clearLevel': 'Clear this level',
 
-  // ── Config panel: advanced tab ──
+  // ── 配置面板：高级标签页 ──
   'configModal.advanced.section': 'Config source',
 
-  // ── Config panel: layout groups ──
+  // ── 配置面板：布局分组 ──
   'configModal.layout.group.mindmap': 'Mind map',
   'configModal.layout.group.tree': 'Tree diagram',
   'configModal.layout.group.org': 'Organization chart',
@@ -575,17 +570,17 @@ export const enMessages = Object.freeze({
   'configModal.connector.straight': 'Straight line',
   'configModal.connector.elbow': 'Elbow line',
 
-  // ── Config panel: theme colors ──
-  'configModal.color.default': 'Default: follow Obsidian',
-  'configModal.color.ocean': 'Ocean: blue-cyan tech',
-  'configModal.color.forest': 'Forest: green learning',
-  'configModal.color.sunset': 'Sunset: orange-red creative',
-  'configModal.color.mono': 'Mono: formal documents',
-  'configModal.color.rainbow': 'Rainbow: vivid standard',
-  'configModal.color.pastelRainbow': 'Pastel rainbow: long reading',
-  'configModal.color.neonRainbow': 'Neon rainbow: dark presentation',
+  // ── 配置面板：主题选择 ──
+  'configModal.color.default': 'Default: match Obsidian',
+  'configModal.color.ocean': 'Ocean: cool blue and cyan',
+  'configModal.color.forest': 'Forest: calm learning green',
+  'configModal.color.sunset': 'Sunset: creative orange and red',
+  'configModal.color.mono': 'Monochrome: formal documents',
+  'configModal.color.rainbow': 'Rainbow: vivid colors',
+  'configModal.color.pastelRainbow': 'Pastel rainbow: comfortable reading',
+  'configModal.color.neonRainbow': 'Neon rainbow: dark presentations',
 
-  // ── Font family dropdown ──
+  // ── 字体下拉 ──
   'font.group.inherit': 'Inherit and custom',
   'font.group.obsidian': 'Obsidian',
   'font.group.chinese': 'Chinese common fonts',

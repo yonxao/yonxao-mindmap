@@ -366,17 +366,17 @@ export const topicKeyboardShortcutMethods = {
     switch (command) {
       case 'addSubtopic': {
         const result = await this.addSubtopicFromContextMenu(currentTopic);
-        this.focusCreatedTopicFromShortcut(result);
+        this.focusCreatedTopic(result);
         return result;
       }
       case 'addSiblingBefore': {
         const result = await this.addSiblingFromContextMenu(currentTopic, 'before');
-        this.focusCreatedTopicFromShortcut(result);
+        this.focusCreatedTopic(result);
         return result;
       }
       case 'addSiblingAfter': {
         const result = await this.addSiblingFromContextMenu(currentTopic, 'after');
-        this.focusCreatedTopicFromShortcut(result);
+        this.focusCreatedTopic(result);
         return result;
       }
       case 'deleteTopic':
@@ -393,17 +393,17 @@ export const topicKeyboardShortcutMethods = {
       case 'copyTopicContent':
         return this.copyTopicContentForShortcut(currentTopic);
       case 'cutTopicContent':
-        return this.cutTopicContentForShortcut(currentTopic);
+        return this.cutTopicContent(currentTopic);
       case 'pasteTopicContent': {
-        const result = await this.pasteTopicContentForShortcut(currentTopic);
-        this.focusCreatedTopicFromShortcut(result);
+        const result = await this.pasteTopicContent(currentTopic);
+        this.focusCreatedTopic(result);
         return result;
       }
       case 'copyTopicWithAttributes':
-        return this.copyTopicWithAttributesForShortcut(currentTopic);
+        return this.copyTopicWithAttributes(currentTopic);
       case 'pasteTopicWithAttributes': {
-        const result = await this.pasteTopicWithAttributesForShortcut(currentTopic);
-        this.focusCreatedTopicFromShortcut(result);
+        const result = await this.pasteTopicWithAttributes(currentTopic);
+        this.focusCreatedTopic(result);
         return result;
       }
       case 'undoTopicChange':
@@ -447,12 +447,12 @@ export const topicKeyboardShortcutMethods = {
     return true;
   },
 
-  focusCreatedTopicFromShortcut(result) {
+  focusCreatedTopic(result) {
     if (!result || !result.saved || !result.topicId) return;
 
     /*
-     * 新增主题保存后会触发 renderMap()，因此 topicById 已经刷新。
-     * 这里只把焦点移到新主题，不自动打开编辑框，避免创建动作强制进入文本编辑状态。
+     * 新增或粘贴主题保存后会触发 renderMap()，因此 topicById 已经刷新。
+     * 这里只把焦点移到新主题，不自动打开编辑框，避免操作完成后强制进入文本编辑状态。
      */
     this.setFocusedTopic(result.topicId, { focusSvg: true, ensureInView: true });
   },

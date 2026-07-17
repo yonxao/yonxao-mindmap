@@ -49,8 +49,12 @@ export const ICON_RESET_COLLAPSE = 'refresh-cw';
 export const ICON_EDIT_TOPIC = 'pencil';
 export const ICON_TOPIC_EDIT_PANEL = 'sliders-horizontal';
 export const ICON_COPY_CONTENT = 'copy';
+export const ICON_CUT_TOPIC = 'scissors';
+export const ICON_PASTE_TOPIC = 'clipboard-paste';
 export const ICON_COPY_SUBTREE = 'trees';
 export const ICON_COPY_INDENTED = 'list-tree';
+export const ICON_COPY_TOPIC_WITH_ATTRIBUTES = 'copy-plus';
+export const ICON_PASTE_TOPIC_WITH_ATTRIBUTES = 'clipboard-paste';
 export const ICON_ADD_SUBTOPIC = 'circle-plus';
 export const ICON_ADD_SIBLING_BEFORE = 'circle-arrow-out-up-right';
 export const ICON_ADD_SIBLING_AFTER = 'circle-arrow-out-down-right';
@@ -67,6 +71,8 @@ export const ICON_STRUCTURE_FINISH = 'check'; // 完成/确认当前结构选择
 export const ICON_STRUCTURE_CANCEL = 'x'; // 取消当前结构操作。
 
 // ─── 右键菜单（地图空白） ─────────────────────────────────────
+export const ICON_UNDO_TOPIC_CHANGE = 'rotate-ccw';
+export const ICON_REDO_TOPIC_CHANGE = 'rotate-cw';
 export const ICON_COPY_BODY = 'files';
 export const ICON_COPY_INDENTED_BODY = 'list-tree';
 export const ICON_COPY_SOURCE = 'file-code';

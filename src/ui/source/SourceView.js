@@ -16,10 +16,7 @@ import {
   applyTopicLevelKey,
 } from '../../shared/rendererShared.js';
 import { createSourceCodeEditor } from './sourceCodeEditor.js';
-
-// 使用 KeyboardEvent.code 兜底识别物理 S 键，避免 macOS Option+S 产生特殊字符后 key 不再是 "s"。
-const SOURCE_SAVE_SHORTCUT_CODE = 'KeyS';
-const SOURCE_SAVE_SHORTCUT_KEY = 's';
+import { isSourceSaveShortcut } from './sourceShortcuts.js';
 
 export const sourceViewMethods = {
   createSourceView() {
@@ -212,14 +209,7 @@ export const sourceViewMethods = {
   },
 
   isSourceSaveShortcut(event) {
-    if (event.isComposing) return false;
-    const key = String(event.key || '').toLowerCase();
-    return (
-      (event.ctrlKey || event.metaKey) &&
-      !event.altKey &&
-      !event.shiftKey &&
-      (event.code === SOURCE_SAVE_SHORTCUT_CODE || key === SOURCE_SAVE_SHORTCUT_KEY)
-    );
+    return isSourceSaveShortcut(event);
   },
 
   isSourceShortcutTarget(target) {

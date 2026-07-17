@@ -9,12 +9,7 @@
  */
 
 import { FALLBACK_LANGUAGE, normalizeLanguage } from './languageOptions.js';
-import { enMessages } from './locales/en.js';
-import { eastAsianLocaleMessages } from './locales/eastAsian.js';
-import { europeanLocaleMessages } from './locales/european.js';
-import { globalSouthLocaleMessages } from './locales/globalSouth.js';
-import { zhCNMessages } from './locales/zhCN.js';
-import { zhTWMessages } from './locales/zhTW.js';
+import { LOCALE_MESSAGES } from './locales/index.js';
 
 export {
   FALLBACK_LANGUAGE,
@@ -23,14 +18,7 @@ export {
   normalizeLanguage,
 } from './languageOptions.js';
 
-const LOCALE_MESSAGES = Object.freeze({
-  en: enMessages,
-  'zh-CN': zhCNMessages,
-  'zh-TW': zhTWMessages,
-  ...eastAsianLocaleMessages,
-  ...europeanLocaleMessages,
-  ...globalSouthLocaleMessages,
-});
+export { LOCALE_MESSAGES };
 
 /*
  * 作用：

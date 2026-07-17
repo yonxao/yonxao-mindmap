@@ -1,36 +1,37 @@
+/* zh-TW 完整语言包；键集合以 zh-CN 为准。 */
 export const zhTWMessages = Object.freeze({
-  // ── 插件設定頁 ──
+  // ── 插件设置页 ──
   'settings.description':
-    '這裡配置的是外掛級別的全域預設值配置。單個 yxmm 程式碼區塊頂部的配置區仍然優先，適合給某一張導圖做局部覆蓋。',
+    '這裡設定的是外掛層級的全域預設值。單一 yxmm 程式碼區塊頂部的設定區仍然優先，適合針對個別心智圖進行覆寫。',
   'settings.language.name': '語言',
   'settings.language.desc':
     '控制 yonxao-mindmap 的介面文字。首次預設語言會跟隨 Obsidian 目前語言。',
-  'settings.globalDefaultValueConfigPanel.name': '全域預設值配置面板',
+  'settings.globalDefaultValueConfigPanel.name': '全域預設值設定面板',
   'settings.globalDefaultValueConfigPanel.desc':
-    '作為所有 yxmm 程式碼區塊的基礎配置；文件配置區和主題屬性會繼續覆蓋它。',
-  'settings.globalDefaultValueConfigPanel.edit': '編輯預設值配置',
+    '作為所有 yxmm 程式碼區塊的基礎設定；程式碼區塊設定區和主題屬性仍會覆寫它。',
+  'settings.globalDefaultValueConfigPanel.edit': '編輯預設值設定',
   'settings.globalDefaultValueConfigPanel.reset': '恢復內建預設值',
-  'settings.globalDefaultValueConfigPanel.resetNotice': 'yonxao-mindmap: 已恢復外掛內建預設配置。',
-  'settings.globalDefaultValueConfigPanel.savedNotice': 'yonxao-mindmap: 全域預設值配置已儲存。',
+  'settings.globalDefaultValueConfigPanel.resetNotice': 'yonxao-mindmap: 已恢復外掛內建預設設定。',
+  'settings.globalDefaultValueConfigPanel.savedNotice': 'yonxao-mindmap: 全域預設值設定已儲存。',
   'settings.globalDefaultValueConfigPanel.empty':
-    '目前未設定全域預設值配置，所有導圖使用外掛內建預設值。',
-  'settings.globalDefaultValueConfigPanel.summaryTitle': '目前全域預設值配置摘要：',
-  'settings.summary.theme': '主題色系',
-  'settings.summary.layout': '佈局類型',
+    '目前未設定全域預設值，所有心智圖皆使用外掛內建預設值。',
+  'settings.globalDefaultValueConfigPanel.summaryTitle': '目前全域預設值摘要：',
+  'settings.summary.theme': '配色方案',
+  'settings.summary.layout': '版面配置類型',
   'settings.summary.connector': '連線線型',
   'settings.summary.connector.fixedElbow': '固定折線',
   'settings.summary.branchExpansion': '子主題展開方式',
   'settings.summary.branchExpansion.elbowOnly': '僅折線連線時可用',
-  'settings.summary.branchExpansion.unsupported': '目前佈局不支援',
+  'settings.summary.branchExpansion.unsupported': '目前版面配置不支援',
   'settings.summary.wheelZoom': '滑鼠滾輪縮放',
   'settings.summary.enabled': '開啟',
   'settings.summary.disabled': '關閉',
   'settings.summary.fontFamily': '主題字型',
   'settings.summary.fontSize': '主題字號',
 
-  // ── 工具列 ──
+  // ── 工具栏 ──
   'toolbar.showSource': '顯示原始碼',
-  'toolbar.showMap': '顯示導圖',
+  'toolbar.showMap': '顯示心智圖',
   'toolbar.sourceFallback': '碼',
   'toolbar.mapFallback': '圖',
   'toolbar.config': '設定',
@@ -45,26 +46,26 @@ export const zhTWMessages = Object.freeze({
   'toolbar.resetCollapse': '重設摺疊狀態',
   'toolbar.dragHandle': '拖曳工具列',
 
-  // ── 原始碼檢視 ──
+  // ── 源码视图 ──
   'source.tab.config': '設定區',
-  'source.tab.body': '正文區',
-  'source.status.editable': '原始碼可編輯，切回導圖或按 Ctrl/Cmd+S 寫回 Markdown。',
-  'source.status.dirty': '原始碼已修改，切回導圖或按 Ctrl/Cmd+S 寫回 Markdown。',
-  'source.status.synced': '原始碼已同步到目前 Markdown 程式碼區塊。',
+  'source.tab.body': '內容區',
+  'source.status.editable': '原始碼可編輯，切回心智圖或按 Ctrl/Cmd+S 寫回 Markdown。',
+  'source.status.dirty': '原始碼已修改，切回心智圖或按 Ctrl/Cmd+S 寫回 Markdown。',
+  'source.status.synced': '原始碼與目前心智圖內容一致。',
   'source.status.saved': '原始碼已儲存到目前 Markdown 程式碼區塊。',
   'source.status.saveFailed': '原始碼儲存失敗，請檢查目前 Markdown 程式碼區塊。',
-  'canvas.resizeHandle': '拖曳調整幕布高度',
+  'canvas.resizeHandle': '拖曳調整畫布高度',
 
-  // ── 通知訊息 ──
+  // ── 通知消息 ──
   'notice.configSaved': 'yonxao-mindmap: 設定已儲存。',
   'notice.topicCopied': 'yonxao-mindmap: 內容已複製。',
-  'notice.bodyCopied': 'yonxao-mindmap: 正文已複製。',
+  'notice.bodyCopied': 'yonxao-mindmap: 心智圖內容已複製。',
   'notice.sourceCopied': 'yonxao-mindmap: 原始碼已複製。',
   'notice.configCopied': 'yonxao-mindmap: 設定區已複製。',
   'notice.imageExported': 'yonxao-mindmap: 圖片已匯出。',
   'notice.imageCopied': 'yonxao-mindmap: 圖片已複製。',
   'notice.imageClipboardUnsupported': 'yonxao-mindmap: 目前環境不支援複製圖片到剪貼簿。',
-  'notice.imageClipboardFocusRequired': 'yonxao-mindmap: 請先點擊導圖，再複製圖片。',
+  'notice.imageClipboardFocusRequired': 'yonxao-mindmap: 請先點擊心智圖，再複製圖片。',
   'notice.attachmentCopied': 'yonxao-mindmap: 附件位址已複製。',
   'notice.attachmentCopyUnsupported': 'yonxao-mindmap: 目前環境不支援複製附件位址。',
   'notice.attachmentMissing': 'yonxao-mindmap: 附件不存在或無法開啟。',
@@ -82,50 +83,52 @@ export const zhTWMessages = Object.freeze({
   'notice.undoUnavailable': 'yonxao-mindmap: 沒有可復原的操作。',
   'notice.redoUnavailable': 'yonxao-mindmap: 沒有可重做的操作。',
   'notice.rootCannotAddSibling': 'yonxao-mindmap: 根主題不能新增兄弟主題。',
-  'notice.rootCannotDeleteInMap': 'yonxao-mindmap: 根主題不能在導圖檢視中刪除。',
+  'notice.rootCannotDeleteInMap': 'yonxao-mindmap: 根主題不能在心智圖檢視中刪除。',
   'notice.rootCannotDelete': 'yonxao-mindmap: 根主題不能刪除。',
-  'notice.structureSelectRelation': '請選擇另一個主題完成關聯。',
+  'notice.structureSelectRelation': '請選取另一個主題完成關聯。',
   'notice.structureSelectMulti': '繼續點擊主題進行多選，再透過底部操作列完成結構。',
   'notice.structureMinimumTopics': '{type}至少需要 {minimum} 個主題。',
-  'notice.structureCreated': '{type}已創建。',
+  'notice.structureCreated': '{type}已建立。',
   'notice.structureSaved': '{type}已儲存。',
   'notice.structureDeleted': '{type}已刪除。',
   'notice.structureControlAdjusted': '關聯線已調整。',
-  'structureSelection.status': '{type}：已選擇 {count} 個主題',
+  'structureSelection.status': '{type}：已選取 {count} 個主題',
   'structureSelection.type.summary': '概要',
   'structureSelection.type.boundary': '外框',
   'structureSelection.cancel': '取消',
   'structureSelection.create': '建立',
-  'structureSelection.minimum': '請至少選擇 {minimum} 個主題。',
-  'structureSelection.summarySameParent': '概要只能選擇同一父主題下的主題。',
-  'structureSelection.summaryContiguous': '概要只能選擇連續的同級主題。',
-  'structureSelection.summaryReady': '選擇有效，可以完成概要。',
-  'structureSelection.boundaryReady': '可繼續選擇主題，或直接完成外框。',
+  'structureSelection.minimum': '請至少選取 {minimum} 個主題。',
+  'structureSelection.summarySameParent': '概要只能選取同一父主題下的主題。',
+  'structureSelection.summaryContiguous': '概要只能選取連續的同級主題。',
+  'structureSelection.summaryReady': '選取有效，可以完成概要。',
+  'structureSelection.boundaryReady': '可繼續選取主題，或直接完成外框。',
 
-  // ── 附件浮層 ──
+  // ── 附件浮层 ──
   'attachment.open': '開啟',
   'attachment.copy': '複製',
 
-  // ── 全螢幕編輯恢復 ──
+  // ── 全屏编辑恢复 ──
   'fullscreenDraftRecovery.message':
-    '偵測到上次異常退出，部分編輯內容可能尚未儲存。可以將其恢復為目前導圖下方的新導圖，或複製可恢復原始碼到剪貼簿。',
-  'fullscreenDraftRecovery.createMap': '建立新導圖',
+    '偵測到上次異常退出，部分編輯內容可能尚未儲存。可以將其恢復為目前心智圖下方的新心智圖，或將可恢復的原始碼複製到剪貼簿。',
+  'fullscreenDraftRecovery.createMap': '建立新心智圖',
   'fullscreenDraftRecovery.copySource': '複製原始碼',
-  'fullscreenDraftRecovery.inserted': 'yonxao-mindmap: 已建立恢復導圖。',
-  'fullscreenDraftRecovery.copied': 'yonxao-mindmap: 殘留原始碼已複製。',
-  'fullscreenDraftRecovery.insertFailed': 'yonxao-mindmap: 建立恢復導圖失敗。',
-  'fullscreenDraftRecovery.copyFailed': 'yonxao-mindmap: 複製殘留原始碼失敗。',
+  'fullscreenDraftRecovery.inserted': 'yonxao-mindmap: 已建立恢復心智圖。',
+  'fullscreenDraftRecovery.copied': 'yonxao-mindmap: 可恢復的原始碼已複製。',
+  'fullscreenDraftRecovery.insertFailed': 'yonxao-mindmap: 建立恢復心智圖失敗。',
+  'fullscreenDraftRecovery.copyFailed': 'yonxao-mindmap: 複製可恢復的原始碼失敗。',
   'fullscreenDraftRecovery.insertUnsupported':
-    'yonxao-mindmap: 目前編輯器環境暫不支援自動建立恢復導圖，請複製原始碼。',
+    'yonxao-mindmap: 目前編輯器環境暫不支援自動建立恢復心智圖，請改為複製原始碼。',
 
-  // ── 編輯器選單 ──
-  'editorMenu.insertMindMap': '插入思維導圖',
+  // ── 编辑器菜单 ──
+  'editorMenu.insertMindMap': '插入心智圖',
 
-  // ── 確認彈窗 ──
+  // ── 确认弹窗 ──
   'confirm.deleteTopic': '確定刪除「{topic}」嗎？',
   'confirm.deleteTopicWithDescendants': '確定刪除「{topic}」及其 {count} 個子主題嗎？',
+  'confirm.cutTopic': '確定剪下「{topic}」嗎？',
+  'confirm.cutTopicWithDescendants': '確定剪下「{topic}」及其 {count} 個子主題嗎？',
 
-  // ── 主題編輯面板 ──
+  // ── 主题编辑面板 ──
   'topicEditor.title': '主題編輯面板',
   'topicEditor.content': '內容',
   'topicEditor.expandText': '開啟大文字編輯器',
@@ -144,29 +147,30 @@ export const zhTWMessages = Object.freeze({
   'topicEditor.fontFamily.invalid':
     "請輸入合法的 CSS font-family 清單，例如：'SimSun', 'Songti SC', serif",
   'topicEditor.editContentAria': '編輯內容',
-  // 富文本編輯工具栏提示
-  'topicEditor.richText.bold': '加粗選中文字',
-  'topicEditor.richText.italic': '傾斜選中文字',
-  'topicEditor.richText.strike': '為選中文字加刪除線',
-  'topicEditor.richText.underline': '為選中文字加底線',
-  'topicEditor.richText.clear': '清除內容樣式',
+
+  // 富文本编辑工具栏提示
+  'topicEditor.richText.bold': '將選取的文字設為粗體',
+  'topicEditor.richText.italic': '將選取的文字設為斜體',
+  'topicEditor.richText.strike': '為選取的文字加上刪除線',
+  'topicEditor.richText.underline': '為選取的文字加上底線',
+  'topicEditor.richText.clear': '清除文字樣式',
   'topicEditor.richText.tag': '插入標籤',
   'topicEditor.richText.link': '插入連結',
-  'topicEditor.richText.unorderedList': '插入無序列表',
-  'topicEditor.richText.orderedList': '插入有序列表',
+  'topicEditor.richText.unorderedList': '插入項目符號清單',
+  'topicEditor.richText.orderedList': '插入編號清單',
   'topicEditor.richText.task': '插入任務',
   'topicEditor.richText.image': '插入圖片',
   'topicEditor.richText.note': '插入備註',
   'topicEditor.richText.attachment': '插入附件',
   'topicEditor.richText.equation': '插入方程式',
   'topicEditor.richText.codeBlock': '插入程式碼區塊',
-  'topicEditor.richText.colorNamed': '把選中文字設為 {color}',
-  'topicEditor.richText.colorCustom': '為選中文字設定顏色',
+  'topicEditor.richText.colorNamed': '將選取的文字設為 {color}',
+  'topicEditor.richText.colorCustom': '為選取的文字設定顏色',
   'topicEditor.richText.placeholder': '文字',
   'topicEditor.save': '儲存',
   'topicEditor.cancel': '取消',
 
-  // ── 主題按鈕 ──
+  // ── 主题按钮 ──
   'topicButton.addSiblingLeft': '在左側新增兄弟主題',
   'topicButton.addSiblingRight': '在右側新增兄弟主題',
   'topicButton.addSiblingBefore': '在前方新增兄弟主題',
@@ -174,12 +178,12 @@ export const zhTWMessages = Object.freeze({
   'topicButton.addSubtopic': '新增子主題',
   'topicButton.editTopic': '編輯',
 
-  // ── 右鍵選單 ──
+  // ── 右键菜单 ──
   'contextMenu.editTopic': '編輯',
   'contextMenu.topicEditPanel': '主題編輯面板',
   'contextMenu.copyTopicContent': '複製內容',
-  'contextMenu.copySubtreeBody': '複製子樹',
-  'contextMenu.copyIndentedSubtree': '複製縮排子樹',
+  'contextMenu.copySubtreeBody': '複製子樹內容',
+  'contextMenu.copyIndentedSubtree': '複製縮排子樹內容',
   'contextMenu.addSubtopic': '新增子主題',
   'contextMenu.addSiblingBefore': '在前方新增兄弟主題',
   'contextMenu.addSiblingAfter': '在後方新增兄弟主題',
@@ -191,20 +195,19 @@ export const zhTWMessages = Object.freeze({
   'contextMenu.editStructure': '編輯結構',
   'contextMenu.deleteStructure': '刪除結構',
   'contextMenu.finishStructure': '完成結構',
-  'contextMenu.cancelStructureSelection': '取消結構選擇',
-  'contextMenu.createRelation': '創建關聯',
-  'contextMenu.createSummary': '創建概要',
-  'contextMenu.createBoundary': '創建外框',
-
-  'contextMenu.copyBody': '複製正文',
-  'contextMenu.copyIndentedBody': '複製縮排正文',
+  'contextMenu.cancelStructureSelection': '取消結構選取',
+  'contextMenu.createRelation': '建立關聯',
+  'contextMenu.createSummary': '建立概要',
+  'contextMenu.createBoundary': '建立外框',
+  'contextMenu.copyBody': '複製內容',
+  'contextMenu.copyIndentedBody': '複製縮排內容',
   'contextMenu.copySource': '複製原始碼',
   'contextMenu.copyConfig': '複製設定區',
   'contextMenu.exportPng': '匯出圖片',
   'contextMenu.copyPng': '複製圖片',
-  'contextMenu.deleteMindMap': '刪除思維導圖',
+  'contextMenu.deleteMindMap': '刪除心智圖',
 
-  // ── 結構編輯彈窗 ──
+  // ── 结构编辑弹窗 ──
   'structureEditor.title.relation': '關聯設定',
   'structureEditor.title.summary': '概要設定',
   'structureEditor.title.boundary': '外框設定',
@@ -223,12 +226,12 @@ export const zhTWMessages = Object.freeze({
   'structureEditor.placeholder.text': '可留空',
   'structureEditor.placeholder.textMultiline': '可留空；支援換行，並按輸入的換行展示',
 
-  // ── 設定面板：標題、分頁、操作、狀態 ──
+  // ── 配置面板：标题、标签页、操作、状态 ──
   'configModal.title': '設定面板',
   'configModal.globalDefaultValueTitle': '全域預設值設定面板',
   'configModal.info.label': '設定規則說明',
   'configModal.info.tooltip':
-    '設定生效優先級：\n主題屬性 > 程式碼區塊設定區 > 外掛全域預設值設定 > 外掛內建預設值\n\n顏色優先級：\n主題屬性 color > 預設主題顏色 > 主題方案\n\n設定值儲存邏輯：\n當設定值與預設值（外掛全域預設值設定或外掛內建預設值中生效的值）相同，設定值會被消除以保持設定簡潔。',
+    '設定生效優先順序：\n主題屬性 > 程式碼區塊設定區 > 外掛全域預設值設定 > 外掛內建預設值\n\n顏色優先順序：\n主題屬性 color > 預設主題顏色 > 配色方案\n\n設定值儲存邏輯：\n當設定值與目前生效的全域或內建預設值相同，儲存時會從程式碼區塊設定區省略該值，以保持設定簡潔。',
   'configModal.tabs.display': '顯示',
   'configModal.tabs.structure': '結構',
   'configModal.tabs.color': '配色',
@@ -245,56 +248,49 @@ export const zhTWMessages = Object.freeze({
   'configModal.status.valid': '設定語法有效。',
   'configModal.status.invalid': '設定語法錯誤：{message}',
 
-  // ── 設定面板：快捷鍵分頁 ──
+  // ── 配置面板：快捷键标签页 ──
   'configModal.shortcuts.help': '目前快捷鍵為唯讀展示，暫不支援修改',
   'configModal.shortcuts.topicCreateDeleteSection': '主題建立與刪除',
   'configModal.shortcuts.topicEditSection': '主題編輯',
   'configModal.shortcuts.topicNavigateCollapseSection': '主題導覽與摺疊',
   'configModal.shortcuts.topicClipboardHistorySection': '複製貼上與復原重做',
-  'configModal.shortcuts.mapControlSection': '導圖控制',
+  'configModal.shortcuts.mapControlSection': '心智圖控制',
   'configModal.shortcuts.viewControlSection': '檢視控制',
   'configModal.shortcuts.header.action': '操作',
   'configModal.shortcuts.header.windows': 'Windows',
   'configModal.shortcuts.header.mac': 'Mac',
   'configModal.shortcuts.header.description': '說明',
   'configModal.shortcuts.action.addSubtopic': '插入子主題',
-  'configModal.shortcuts.action.addSiblingAfter': '插入弟主題',
-  'configModal.shortcuts.action.addSiblingBefore': '插入兄主題',
+  'configModal.shortcuts.action.addSiblingAfter': '插入後一個同級主題',
+  'configModal.shortcuts.action.addSiblingBefore': '插入前一個同級主題',
   'configModal.shortcuts.action.deleteTopic': '刪除主題',
-
   'configModal.shortcuts.action.openTopicEditor': '開啟主題編輯面板',
-  'configModal.shortcuts.action.openInlineEditor': '快速行內編輯',
-  'configModal.shortcuts.action.inlineNewline': '行內編輯中換行',
-  'configModal.shortcuts.action.inlineSubmit': '行內編輯中提交',
-  'configModal.shortcuts.action.inlineCancel': '行內編輯中取消',
-  'configModal.shortcuts.action.topicEditorSave': '主題編輯面板儲存',
-  'configModal.shortcuts.action.contentEditorSave': '長文字編輯浮層儲存',
-
-  'configModal.shortcuts.action.navigateTopic': '移動選中狀態',
+  'configModal.shortcuts.action.openInlineEditor': '快速編輯主題',
+  'configModal.shortcuts.action.inlineNewline': '在行內編輯中換行',
+  'configModal.shortcuts.action.inlineSubmit': '儲存行內編輯',
+  'configModal.shortcuts.action.inlineCancel': '取消行內編輯',
+  'configModal.shortcuts.action.topicEditorSave': '儲存主題編輯面板',
+  'configModal.shortcuts.action.contentEditorSave': '儲存長文字編輯視窗',
+  'configModal.shortcuts.action.navigateTopic': '切換選取主題',
   'configModal.shortcuts.action.toggleCollapse': '展開/摺疊子主題',
-
-  'configModal.shortcuts.action.copyTopicContent': '複製主題',
+  'configModal.shortcuts.action.copyTopicContent': '複製主題內容',
   'configModal.shortcuts.action.cutTopicContent': '剪下主題',
   'configModal.shortcuts.action.pasteTopicContent': '貼上主題',
   'configModal.shortcuts.action.copyTopicWithAttributes': '複製主題及屬性',
   'configModal.shortcuts.action.pasteTopicWithAttributes': '貼上主題及屬性',
   'configModal.shortcuts.action.undoTopicChange': '復原',
   'configModal.shortcuts.action.redoTopicChange': '重做',
-
   'configModal.shortcuts.action.zoomIn': '放大檢視',
   'configModal.shortcuts.action.zoomOut': '縮小檢視',
   'configModal.shortcuts.action.fitView': '適配檢視',
-  'configModal.shortcuts.action.originalSize': '原始檢視',
+  'configModal.shortcuts.action.originalSize': '原始大小',
   'configModal.shortcuts.action.windowFullscreen': '視窗全螢幕',
   'configModal.shortcuts.action.fullscreen': '全螢幕',
-
   'configModal.shortcuts.action.openConfigModal': '開啟設定面板',
-
-  'configModal.shortcuts.description.addSubtopic': '給目前主題新增子主題',
-  'configModal.shortcuts.description.addSiblingAfter': '在目前主題後新增同級主題',
-  'configModal.shortcuts.description.addSiblingBefore': '在目前主題前新增同級主題',
+  'configModal.shortcuts.description.addSubtopic': '為目前主題建立子主題',
+  'configModal.shortcuts.description.addSiblingAfter': '在目前主題之後建立同級主題',
+  'configModal.shortcuts.description.addSiblingBefore': '在目前主題之前建立同級主題',
   'configModal.shortcuts.description.deleteTopic': '刪除目前主題',
-
   'configModal.shortcuts.description.openTopicEditor': '開啟目前主題的編輯面板',
   'configModal.shortcuts.description.openInlineEditor': '快速編輯目前主題文字',
   'configModal.shortcuts.description.inlineNewline': '在主題文字內插入換行',
@@ -302,59 +298,55 @@ export const zhTWMessages = Object.freeze({
   'configModal.shortcuts.description.inlineCancel': '放棄修改並回到目前主題',
   'configModal.shortcuts.description.topicEditorSave': '儲存主題編輯面板中的全部改動',
   'configModal.shortcuts.description.contentEditorSave':
-    '只儲存長文字編輯浮層，不儲存整個主題編輯面板',
-
+    '只儲存長文字編輯視窗，不儲存整個主題編輯面板',
   'configModal.shortcuts.description.navigateTopic':
-    '移動主題選中狀態；思維導圖按父子/同級關係導覽，其他布局按空間方向導覽',
+    '切換選取主題；心智圖依父子/同級關係導覽，其他版面配置依空間方向導覽',
   'configModal.shortcuts.description.toggleCollapse': '展開或摺疊子主題',
-
-  'configModal.shortcuts.description.copyTopicContent': '複製選中主題內容',
-  'configModal.shortcuts.description.cutTopicContent': '剪下選中主題內容',
+  'configModal.shortcuts.description.copyTopicContent': '複製選取主題的內容',
+  'configModal.shortcuts.description.cutTopicContent': '剪下選取主題、屬性及其子主題',
   'configModal.shortcuts.description.pasteTopicContent': '貼上為目前主題的子主題',
-  'configModal.shortcuts.description.copyTopicWithAttributes': '複製主題',
-  'configModal.shortcuts.description.pasteTopicWithAttributes': '貼上主題',
+  'configModal.shortcuts.description.copyTopicWithAttributes': '複製選取主題、屬性及其子主題',
+  'configModal.shortcuts.description.pasteTopicWithAttributes': '貼上主題、屬性及其子主題',
   'configModal.shortcuts.description.undoTopicChange': '復原上一步操作',
-  'configModal.shortcuts.description.redoTopicChange': '恢復已復原的操作',
-
+  'configModal.shortcuts.description.redoTopicChange': '重做已復原的操作',
   'configModal.shortcuts.description.zoomIn': '放大檢視',
   'configModal.shortcuts.description.zoomOut': '縮小檢視',
-  'configModal.shortcuts.description.fitView': '適配檢視，以目前視口進行縮放',
+  'configModal.shortcuts.description.fitView': '適配檢視，依目前檢視區域進行縮放',
   'configModal.shortcuts.description.originalSize': '切換檢視為原始大小',
-  'configModal.shortcuts.description.windowFullscreen': '進入/退出視窗全螢幕模式',
-  'configModal.shortcuts.description.fullscreen': '進入/退出全螢幕模式',
-
+  'configModal.shortcuts.description.windowFullscreen': '進入/離開視窗全螢幕模式',
+  'configModal.shortcuts.description.fullscreen': '進入/離開全螢幕模式',
   'configModal.shortcuts.description.openConfigModal': '開啟設定面板',
 
-  // ── 設定面板：佔位符 ──
+  // ── 配置面板：占位符 ──
   'configModal.placeholder.auto': '自動',
   'configModal.placeholder.default': '預設',
 
-  // ── 設定面板：顯示分頁 ──
-  'configModal.display.mapSection': '導圖區域',
-  'configModal.display.canvasHeight': '導圖高度',
-  'configModal.display.canvasHeight.help': '留空表示自動高度。拖曳幕布底部也會寫入這個值。',
+  // ── 配置面板：显示标签页 ──
+  'configModal.display.mapSection': '心智圖區域',
+  'configModal.display.canvasHeight': '心智圖高度',
+  'configModal.display.canvasHeight.help': '留空表示自動高度。拖曳畫布底部也會寫入這個值。',
   'configModal.display.viewFit': '檢視適配',
   'configModal.display.viewFit.help':
-    '控制開啟導圖時的初始縮放方式。原始大小保持字號穩定；適配檢視會盡量顯示完整導圖。',
+    '控制開啟心智圖時的初始縮放方式。原始大小可維持穩定字號；適配檢視會盡量顯示完整心智圖。',
   'configModal.display.fitViewNoUpscale': '適配檢視不放大',
   'configModal.display.fitViewNoUpscale.help':
-    '開啟後，適配檢視只會縮小過大的導圖；小圖保持接近原始比例，不再放大。',
+    '開啟後，適配檢視只會縮小過大的心智圖；小圖會維持接近原始比例，不再放大。',
   'configModal.display.fitViewMaxScale': '適配檢視最大放大倍數',
   'configModal.display.fitViewMaxScale.help':
     '關閉「適配檢視不放大」時生效，用於限制小圖在適配檢視中的最大放大倍數。',
   'configModal.display.sourceSection': '原始碼區域',
   'configModal.display.sourceHeight': '原始碼高度',
-  'configModal.display.sourceHeight.help': '原始碼模式有獨立高度，不影響導圖高度。',
-  'configModal.display.saveFullConfig': '儲存全部設定項',
+  'configModal.display.sourceHeight.help': '原始碼模式有獨立高度，不影響心智圖高度。',
+  'configModal.display.saveFullConfig': '儲存全部設定值',
   'configModal.display.saveFullConfig.help':
-    '開啟後儲存所有設定值（包括預設值），便於分享或遷移後保持樣式一致；關閉時只儲存與預設值不同的設定，保持設定區精簡。',
+    '開啟後會儲存所有設定值（包括預設值），方便分享或移轉後維持樣式一致；關閉時只儲存與預設值不同的設定，保持設定區精簡。',
   'configModal.viewFit.original': '原始大小',
   'configModal.viewFit.fit': '適配檢視',
-  'configModal.topicControlVisibility.always': '始終顯示全部按鈕',
-  'configModal.topicControlVisibility.toggle-always': '摺疊按鈕常顯，其餘懸浮顯示',
-  'configModal.topicControlVisibility.hover': '全部按鈕懸浮顯示',
+  'configModal.topicControlVisibility.always': '一律顯示全部按鈕',
+  'configModal.topicControlVisibility.toggle-always': '摺疊按鈕常駐，其餘在游標停留時顯示',
+  'configModal.topicControlVisibility.hover': '全部按鈕皆在游標停留時顯示',
 
-  // ── 設定面板：互動分頁 ──
+  // ── 配置面板：交互标签页 ──
   'configModal.interaction.toolbarSection': '工具列',
   'configModal.interaction.toolbarCorner': '工具列角落',
   'configModal.interaction.toolbarPlacement': '工具列位置',
@@ -367,27 +359,27 @@ export const zhTWMessages = Object.freeze({
   'configModal.interaction.topicButtonSection': '主題按鈕',
   'configModal.interaction.topicControlVisibility': '主題按鈕顯示方式',
   'configModal.interaction.topicControlVisibility.help':
-    '控制導圖中編輯、摺疊和新增主題按鈕的顯示時機。閱讀檢視仍會停用編輯類按鈕。',
+    '控制心智圖中編輯、摺疊和新增主題按鈕的顯示時機。閱讀檢視仍會停用編輯類按鈕。',
   'configModal.interaction.inputSection': '滑鼠和鍵盤',
   'configModal.interaction.wheelZoom': '滑鼠滾輪縮放',
   'configModal.interaction.wheelZoom.help':
-    '關閉時滾輪會繼續捲動 Obsidian 頁面；開啟後滾輪會縮放目前導圖。',
-  'configModal.interaction.tabIndent': 'Tab 鍵調整主題級別',
+    '關閉時滾輪會繼續捲動 Obsidian 頁面；開啟後滾輪會縮放目前心智圖。',
+  'configModal.interaction.tabIndent': 'Tab 鍵調整主題層級',
   'configModal.interaction.tabIndent.help':
-    '開啟後，原始碼模式中按 Tab / Shift+Tab 會調整目前行的主題級別。',
+    '開啟後，在原始碼模式中按 Tab / Shift+Tab 會調整目前行的主題層級。',
 
-  // ── 設定面板：顏色分頁 ──
+  // ── 配置面板：颜色标签页 ──
   'configModal.color.schemeSection': '配色方案',
   'configModal.color.scheme': '配色方案',
   'configModal.color.defaultTopicColor': '預設主題顏色',
   'configModal.color.defaultTopicColor.help':
-    '留空則使用目前主題的自動配色。填寫後會覆蓋主題自動配色，但主題屬性 color 仍然優先。',
+    '留空則使用目前配色方案的自動配色。填寫後會覆寫配色方案的自動配色，但主題屬性 color 仍然優先。',
   'configModal.color.overrideWarning':
-    '目前主題會按分支自動配色；填寫預設主題顏色後，主題的彩虹分支色將不會顯示。',
+    '目前配色方案會依分支自動配色；填寫預設主題顏色後，彩虹分支色將不會顯示。',
   'configModal.color.buttonSection': '按鈕顏色',
   'configModal.color.buttonColorMode': '按鈕顏色',
   'configModal.color.buttonColorMode.help': '摺疊、編輯和新增按鈕的顏色模式。',
-  'configModal.color.buttonColor.inherit-accent': '繼承Obsidian強調色',
+  'configModal.color.buttonColor.inherit-accent': '繼承 Obsidian 強調色',
   'configModal.color.buttonColor.subtle': '低調色',
   'configModal.color.buttonColor.topic': '主題色',
   'configModal.color.buttonColor.custom': '自訂',
@@ -400,26 +392,26 @@ export const zhTWMessages = Object.freeze({
   'configModal.color.advancedStructure.help':
     '設定該類進階結構的預設顏色；單一進階結構的 color 屬性仍然優先。',
 
-  // ── 設定面板：結構分頁 ──
-  'configModal.structure.layoutSection': '佈局',
-  'configModal.structure.layout': '佈局類型',
+  // ── 配置面板：结构标签页 ──
+  'configModal.structure.layoutSection': '版面配置',
+  'configModal.structure.layout': '版面配置類型',
   'configModal.structure.connectorSection': '連線和展開',
   'configModal.structure.connectorStyle': '連線線型',
   'configModal.structure.connectorStyle.fixedHelp':
-    '只有思維導圖佈局可以選擇連線線型；其他佈局為了保持結構語義，統一使用固定折線。',
+    '只有心智圖版面配置可以選擇連線線型；其他版面配置為了維持版面結構，統一使用固定折線。',
   'configModal.structure.branchExpansion': '子主題展開方式',
   'configModal.structure.branchExpansion.elbowOnlyHelp':
     '子主題展開方式僅在實際連線線型為折線時生效。',
   'configModal.structure.topicMaxWidthSection': '主題最大寬度',
   'configModal.structure.topicMaxWidth.help': '範圍：120-2000 px。',
   'configModal.structure.topicMaxWidthGlobal': '全域',
-  'configModal.structure.topicMaxWidthLevel1': '一級主題',
-  'configModal.structure.topicMaxWidthLevel2': '二級主題',
-  'configModal.structure.topicMaxWidthLevel3': '三級主題',
+  'configModal.structure.topicMaxWidthLevel1': '第一層主題',
+  'configModal.structure.topicMaxWidthLevel2': '第二層主題',
+  'configModal.structure.topicMaxWidthLevel3': '第三層主題',
   'configModal.branchExpansion.side': '自然展開',
   'configModal.branchExpansion.hanging': '下掛展開',
 
-  // ── 設定面板：字型分頁 ──
+  // ── 配置面板：字体标签页 ──
   'configModal.font.globalSection': '全域主題字型',
   'configModal.font.family': '主題字型',
   'configModal.font.family.help':
@@ -438,29 +430,29 @@ export const zhTWMessages = Object.freeze({
   'configModal.font.align.left': '靠左',
   'configModal.font.align.center': '置中',
   'configModal.font.align.right': '靠右',
-  'configModal.font.levelSection': '依主題級別覆蓋',
-  'configModal.font.levelTitle1': '一級主題',
-  'configModal.font.levelTitle2': '二級主題',
-  'configModal.font.levelTitle3': '三級主題',
+  'configModal.font.levelSection': '依主題層級覆寫',
+  'configModal.font.levelTitle1': '第一層主題',
+  'configModal.font.levelTitle2': '第二層主題',
+  'configModal.font.levelTitle3': '第三層主題',
   'configModal.font.clearLevel': '清除此層',
 
-  // ── 設定面板：進階分頁 ──
+  // ── 配置面板：高级标签页 ──
   'configModal.advanced.section': '設定原始碼',
 
-  // ── 設定面板：佈局分組 ──
-  'configModal.layout.group.mindmap': '思維導圖',
+  // ── 配置面板：布局分组 ──
+  'configModal.layout.group.mindmap': '心智圖',
   'configModal.layout.group.tree': '樹形圖',
   'configModal.layout.group.org': '組織結構圖',
   'configModal.layout.group.timeline': '時間軸',
   'configModal.layout.group.radial': '放射圖',
   'configModal.layout.group.fishbone': '魚骨圖',
   'configModal.layout.group.treeTable': '樹形表格',
-  'configModal.layout.mindmapRight': '右向思維導圖',
-  'configModal.layout.mindmapLeft': '左向思維導圖',
-  'configModal.layout.mindmapBidirectional': '雙向思維導圖',
-  'configModal.layout.mindmapUp': '上向思維導圖',
-  'configModal.layout.mindmapDown': '下向思維導圖',
-  'configModal.layout.mindmapVertical': '垂直雙向思維導圖',
+  'configModal.layout.mindmapRight': '右向心智圖',
+  'configModal.layout.mindmapLeft': '左向心智圖',
+  'configModal.layout.mindmapBidirectional': '雙向心智圖',
+  'configModal.layout.mindmapUp': '上向心智圖',
+  'configModal.layout.mindmapDown': '下向心智圖',
+  'configModal.layout.mindmapVertical': '垂直雙向心智圖',
   'configModal.layout.tree': '樹形圖',
   'configModal.layout.treeRight': '右向樹形圖',
   'configModal.layout.treeLeft': '左向樹形圖',
@@ -478,7 +470,7 @@ export const zhTWMessages = Object.freeze({
   'configModal.connector.straight': '直線',
   'configModal.connector.elbow': '折線',
 
-  // ── 設定面板：主題選擇 ──
+  // ── 配置面板：主题选择 ──
   'configModal.color.default': '預設：跟隨 Obsidian',
   'configModal.color.ocean': '海洋：藍青技術感',
   'configModal.color.forest': '森林：綠色學習感',
@@ -488,7 +480,7 @@ export const zhTWMessages = Object.freeze({
   'configModal.color.pastelRainbow': '柔和彩虹：長期閱讀',
   'configModal.color.neonRainbow': '霓虹彩虹：深色展示',
 
-  // ── 字型下拉 ──
+  // ── 字体下拉 ──
   'font.group.inherit': '繼承與自訂',
   'font.group.obsidian': 'Obsidian',
   'font.group.chinese': '中文常用',
@@ -511,9 +503,88 @@ export const zhTWMessages = Object.freeze({
   'font.system.sans': '系統無襯線字型',
   'font.system.serif': '系統襯線字型',
   'font.system.monospace': '系統等寬字型',
-  'font.monospace.cjkStack': '中文等寬字型棧',
+  'font.monospace.cjkStack': '中文等寬字型組合',
   'font.monospace.sarasa': '更紗黑體 Mono',
   'font.monospace.lxgwwenkai': '霞鶩文楷等寬',
   'font.monospace.jetbrains': 'JetBrains Mono',
   'font.monospace.cascadia': 'Cascadia Mono',
+  'configModal.tabs.watermark': '浮水印',
+  'configModal.watermark.locked.title': '浮水印功能尚未解鎖',
+  'configModal.watermark.locked.description':
+    '如果 Yonxao Mind Map 對你有幫助，歡迎為專案按下 Star 以支援開發。完成後即可免費解鎖，外掛不會讀取或驗證你的 GitHub 帳號。',
+  'configModal.watermark.locked.step.star.title': '前往 GitHub 支援專案',
+  'configModal.watermark.locked.step.star.description': '開啟專案首頁，點擊右上角的 Star。',
+  'configModal.watermark.locked.step.unlock.title': '返回此處完成解鎖',
+  'configModal.watermark.locked.step.unlock.description':
+    '點 Star 後返回目前視窗，自行確認即可解鎖。',
+  'configModal.watermark.locked.star': '前往 GitHub 點 Star',
+  'configModal.watermark.locked.reopen': '重新開啟 GitHub',
+  'configModal.watermark.locked.unlock': '我已點 Star，完成解鎖',
+  'configModal.watermark.locked.existingSupport': '先前已經點過 Star？直接確認解鎖',
+  'configModal.watermark.locked.unlocking': '正在解鎖…',
+  'configModal.watermark.locked.success': '浮水印功能已解鎖，感謝支持！',
+  'configModal.watermark.locked.failed': '解鎖狀態儲存失敗，請重試。',
+  'configModal.watermark.enabled': '啟用浮水印',
+  'configModal.watermark.enabled.help': '啟用後會立即顯示在心智圖畫布、全螢幕檢視及匯出圖片中。',
+  'configModal.watermark.mode': '浮水印模式',
+  'configModal.watermark.mode.signature': '簽名浮水印',
+  'configModal.watermark.mode.normal': '一般浮水印',
+  'configModal.watermark.signature.section': '簽名浮水印',
+  'configModal.watermark.normal.section': '一般浮水印',
+  'configModal.watermark.signature.style': '簽名樣式',
+  'configModal.watermark.signature.style.corner': '角落簽名',
+  'configModal.watermark.signature.style.bar': '浮水印列',
+  'configModal.watermark.content': '浮水印內容',
+  'configModal.watermark.position': '顯示位置',
+  'configModal.watermark.color': '顏色',
+  'configModal.watermark.backgroundColor': '背景顏色',
+  'configModal.watermark.fontSize': '字型大小',
+  'configModal.watermark.opacity': '透明度',
+  'configModal.watermark.barHeight': '浮水印列高度',
+  'configModal.watermark.padding': '邊距',
+  'configModal.watermark.appearance': '外觀',
+  'configModal.watermark.spacing': '尺寸與邊距',
+  'configModal.watermark.size': '浮水印尺寸',
+  'configModal.watermark.offset': '位置偏移',
+  'configModal.watermark.gap': '平鋪間距',
+  'configModal.watermark.transparent': '透明',
+  'configModal.watermark.value': '數值',
+  'configModal.watermark.decrease': '減少',
+  'configModal.watermark.increase': '增加',
+  'configModal.watermark.range': '允許範圍：',
+  'configModal.watermark.type': '浮水印類型',
+  'configModal.watermark.type.text': '文字浮水印',
+  'configModal.watermark.type.image': '圖片浮水印',
+  'configModal.watermark.arrangement': '排列方式',
+  'configModal.watermark.arrangement.single': '單一',
+  'configModal.watermark.arrangement.tiled': '平鋪',
+  'configModal.watermark.rotation': '旋轉角度',
+  'configModal.watermark.width': '寬度',
+  'configModal.watermark.height': '高度',
+  'configModal.watermark.gapX': '水平間距',
+  'configModal.watermark.gapY': '垂直間距',
+  'configModal.watermark.offsetX': '水平偏移',
+  'configModal.watermark.offsetY': '垂直偏移',
+  'configModal.watermark.imageSourceType': '圖片來源',
+  'configModal.watermark.imageSourceType.url': '圖片 URL',
+  'configModal.watermark.imageSourceType.vault': '目前儲存庫',
+  'configModal.watermark.imageSource': '圖片位址',
+  'configModal.watermark.imageSource.placeholder': 'https://… 或 assets/watermark.png',
+  'configModal.watermark.image.chooseVault': '從目前儲存庫選擇',
+  'configModal.watermark.image.searchPlaceholder': '搜尋目前儲存庫中的圖片檔案',
+  'configModal.watermark.image.upload': '匯入至儲存庫',
+  'configModal.watermark.image.uploaded': 'yonxao-mindmap: 浮水印圖片已匯入儲存庫。',
+  'configModal.watermark.image.uploadFailed': 'yonxao-mindmap: 浮水印圖片匯入失敗：',
+  'configModal.watermark.position.topLeft': '左上',
+  'configModal.watermark.position.topCenter': '上方置中',
+  'configModal.watermark.position.topRight': '右上',
+  'configModal.watermark.position.centerLeft': '左側置中',
+  'configModal.watermark.position.center': '置中',
+  'configModal.watermark.position.centerRight': '右側置中',
+  'configModal.watermark.position.bottomLeft': '左下',
+  'configModal.watermark.position.bottomCenter': '下方置中',
+  'configModal.watermark.position.bottomRight': '右下',
+  'configModal.watermark.position.top': '頂端',
+  'configModal.watermark.position.bottom': '底端',
+  'configModal.color.customColor': '自訂顏色',
 });

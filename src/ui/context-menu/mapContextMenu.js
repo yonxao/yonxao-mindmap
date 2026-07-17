@@ -11,6 +11,8 @@
 
 import { Menu, Notice, CODE_BLOCK_NAME, findFenceBySection } from '../../shared/rendererShared.js';
 import {
+  ICON_UNDO_TOPIC_CHANGE,
+  ICON_REDO_TOPIC_CHANGE,
   ICON_COPY_BODY,
   ICON_COPY_INDENTED_BODY,
   ICON_COPY_SOURCE,
@@ -33,6 +35,22 @@ export const mapContextMenuMethods = {
     menu.setUseNativeMenu(false);
     this.plugin._currentContextMenu = menu;
     this._setupMenuAutoClose(menu);
+
+    if (this.canEditMindMap()) {
+      this.addTopicContextMenuItem(
+        menu,
+        this.t('configModal.shortcuts.action.undoTopicChange'),
+        ICON_UNDO_TOPIC_CHANGE,
+        () => this.undoTopicChange()
+      );
+      this.addTopicContextMenuItem(
+        menu,
+        this.t('configModal.shortcuts.action.redoTopicChange'),
+        ICON_REDO_TOPIC_CHANGE,
+        () => this.redoTopicChange()
+      );
+      menu.addSeparator();
+    }
 
     this.addTopicContextMenuItem(menu, this.t('contextMenu.copyBody'), ICON_COPY_BODY, () =>
       this.copyPlainBody()

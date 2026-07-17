@@ -376,7 +376,7 @@ interaction:
 
 |       Operation       |                     Description                     |
 | :-------------------: | :-------------------------------------------------: |
-| Double-click a topic  |        Quick inline editing of topic content        |
+| Double-click a topic  |             Quickly edit topic content              |
 | Click collapse button |              Collapse/expand subtopics              |
 |     Drag a topic      | Rearrange sibling order or move to another position |
 |  Right-click a topic  |                  Open context menu                  |
@@ -403,42 +403,53 @@ interaction:
 |       `Alt` + `2`        |         `Option` + `2`         |      Window fullscreen      | Always available |
 |       `Alt` + `3`        |         `Option` + `3`         |     Physical fullscreen     | Always available |
 |       `Alt` + `,`        |         `Option` + `,`         |      Open config panel      | Always available |
-|       `Alt` + `S`        |         `Option` + `S`         |         Save source         |   Source mode    |
+|       `Ctrl` + `S`       |          `Cmd` + `S`           |         Save source         |   Source mode    |
 
+> `Ctrl/Cmd+X` cuts the selected topic together with its attributes and all subtopics. Use `Ctrl/Cmd+V` to restore the complete subtree under the target topic. Regular `Ctrl/Cmd+C` still copies topic text only.
+>
 > **Arrow key navigation logic**: In horizontal layouts, left/right navigates parent-child relationships and up/down navigates siblings; vertical layouts are the opposite; other layouts navigate by spatial proximity.
 
 ### Context Menu
 
 **Topic context menu:**
 
-|          Action          |                   Description                    |
-| :----------------------: | :----------------------------------------------: |
-|        Edit Topic        |             Open inline text editor              |
-|     Topic Edit Panel     |        Open full attribute editing panel         |
-|    Copy Topic Content    |              Copy topic plain text               |
-|    Copy Subtree Text     |            Copy subtree as plain text            |
-|  Copy Indented Subtree   |          Copy subtree as indented text           |
-|       Add Subtopic       |       Add child topic under selected topic       |
-|    Add Sibling Above     |         Add sibling above selected topic         |
-|    Add Sibling Below     |         Add sibling below selected topic         |
-| Collapse/Expand Subtopic |              Toggle collapse state               |
-|   Expand All Subtopics   |        Recursively expand all descendants        |
-|  Collapse All Subtopics  |       Recursively collapse all descendants       |
-|       Delete Topic       | Confirm and delete (shows count if has children) |
+|            Action             |                    Description                    |
+| :---------------------------: | :-----------------------------------------------: |
+|          Edit Topic           |              Open inline text editor              |
+|       Topic Edit Panel        |         Open full attribute editing panel         |
+|      Copy Topic Content       |               Copy topic plain text               |
+|           Cut Topic           |     Cut the topic, attributes, and subtopics      |
+|          Paste Topic          |      Paste content under the selected topic       |
+|     Copy Subtree Content      |            Copy subtree as plain text             |
+| Copy Indented Subtree Content |           Copy subtree as indented text           |
+|  Copy Topic with Attributes   | Copy the topic, its attributes, and all subtopics |
+|  Paste Topic with Attributes  |   Paste the topic tree under the selected topic   |
+|         Add Subtopic          |       Add child topic under selected topic        |
+|     Add Previous Sibling      |       Add sibling before the selected topic       |
+|       Add Next Sibling        |       Add sibling after the selected topic        |
+|   Collapse/Expand Subtopic    |               Toggle collapse state               |
+|     Expand All Subtopics      |        Recursively expand all descendants         |
+|    Collapse All Subtopics     |       Recursively collapse all descendants        |
+|        Create Relation        |       Create a relation between two topics        |
+|        Create Summary         |     Create a summary for consecutive siblings     |
+|        Create Boundary        |     Create a boundary around selected topics      |
+|         Delete Topic          | Confirm and delete (shows count if has children)  |
 
 **Canvas context menu (on blank area):**
 
-|       Action       |                Description                 |
-| :----------------: | :----------------------------------------: |
-|     Copy Text      |       Copy topic tree as plain text        |
-| Copy Indented Text |     Copy topic tree as indented format     |
-|    Copy Source     |        Copy full code block content        |
-|    Copy Config     |        Copy YAML config block only         |
-|     Export PNG     |           Download as PNG image            |
-|      Copy PNG      |          Copy image to clipboard           |
-|      Fit View      | Auto-adjust viewport to fit the entire map |
-|   Original Size    |             Restore 100% zoom              |
-|  Delete Mind Map   |    Delete the entire `yxmm` code block     |
+|       Action        |                Description                 |
+| :-----------------: | :----------------------------------------: |
+|        Undo         |        Undo the previous operation         |
+|        Redo         |        Restore the undone operation        |
+|      Copy Text      |       Copy topic tree as plain text        |
+| Copy Indented Text  |     Copy topic tree as indented format     |
+|     Copy Source     |        Copy full code block content        |
+| Copy Config Section |     Copy the YAML config section only      |
+|     Export PNG      |           Download as PNG image            |
+|      Copy PNG       |          Copy image to clipboard           |
+|      Fit View       | Auto-adjust viewport to fit the entire map |
+|    Original Size    |             Restore 100% zoom              |
+|   Delete Mind Map   |    Delete the entire `yxmm` code block     |
 
 ### Topic Edit Panel
 
@@ -516,8 +527,8 @@ Click the "Source/Map Toggle" button in the toolbar or double-click the code blo
 |      Fit View       |         Auto-adjust viewport to fit the entire map          |
 |  Window Fullscreen  |                 Expand to browser viewport                  |
 | Physical Fullscreen |                     Use Fullscreen API                      |
-|       Zoom In       |                        Zoom in view                         |
-|      Zoom Out       |                        Zoom out view                        |
+|       Zoom In       |                           Zoom in                           |
+|      Zoom Out       |                          Zoom out                           |
 |   Reset Collapse    |                      Expand all topics                      |
 |     Drag Handle     | Drag toolbar to any position (auto-snaps to nearest corner) |
 
@@ -562,7 +573,7 @@ Open the visual config panel in Obsidian `Settings` → `Community plugins` → 
 
 **3. Color**
 
-- Theme scheme selector (8 color schemes)
+- Color scheme selector (8 color schemes)
 - Default topic color (hex / color picker)
 - Rainbow theme override warning: shown when both default color and rainbow theme are set
 - Button color mode: `inherit-accent` / `subtle` / `topic` / `custom`
@@ -600,9 +611,9 @@ Open the visual config panel in Obsidian `Settings` → `Community plugins` → 
 - On first use, open the GitHub support entry, then return to self-confirm the unlock; no GitHub account is read or verified
 - Signature watermark: corner signature or top/bottom watermark bar
 - Standard watermark: text or image, arranged as a single item or tiled
-- Image sources: URL, vault file, or upload to the vault
+- Image sources: URL, vault file, or a local image imported into the vault
 - Configurable position, color, size, opacity, rotation, spacing, and offset
-- Appears immediately on the map canvas, in fullscreen, and in exported images
+- Appears immediately on the map canvas, in fullscreen view, and in exported images
 
 **8. Advanced**
 
@@ -641,7 +652,7 @@ A language option is also available in preferences. The initial default language
 
 ### Config Trimming
 
-When `display.saveFullConfig` is `false` (default: off), any config item whose value matches the global default will be trimmed to keep the config block concise.
+When `display.saveFullConfig` is `false` (the default), values that match the effective global or built-in defaults are omitted when saved to keep the config section concise.
 
 Additional trimming rules:
 
@@ -652,15 +663,15 @@ Additional trimming rules:
 
 ## 🖼️ Export
 
-|      Feature       |                    Description                     |
-| :----------------: | :------------------------------------------------: |
-|     Export PNG     |             Download as PNG image file             |
-|      Copy PNG      |         Copy PNG image to system clipboard         |
-|     Copy Text      |           Copy topic tree as plain text            |
-| Copy Indented Text |            Copy as indented format text            |
-|    Copy Subtree    | Copy subtree plain text (with/without indentation) |
-|    Copy Source     |            Copy full code block content            |
-|    Copy Config     |            Copy YAML config block only             |
+|       Feature       |                    Description                     |
+| :-----------------: | :------------------------------------------------: |
+|     Export PNG      |             Download as PNG image file             |
+|      Copy PNG       |         Copy PNG image to system clipboard         |
+|      Copy Text      |           Copy topic tree as plain text            |
+| Copy Indented Text  |            Copy as indented format text            |
+|    Copy Subtree     | Copy subtree plain text (with/without indentation) |
+|     Copy Source     |            Copy full code block content            |
+| Copy Config Section |         Copy the YAML config section only          |
 
 - Automatically inlines all CSS color values before export for color consistency
 - Automatically removes interactive controls (collapse buttons, etc.) during export

@@ -19,8 +19,13 @@ import {
   createMindTopic,
   parseMindDocument,
   refreshTreeLevels,
-  serializeTopic,
 } from '../shared/rendererShared.js';
+import {
+  TOPIC_CLIPBOARD_MODE,
+  cloneTopicForAttributedPaste,
+  cloneTopicForStandardPaste,
+  createTopicClipboardEntry,
+} from './topicClipboard.js';
 
 // 新增主题时的默认显示文字
 const DEFAULT_NEW_TOPIC_TEXT = '新主题';
@@ -56,21 +61,6 @@ async function readSystemClipboardText() {
   } catch (_error) {
     return '';
   }
-}
-
-function cloneClipboardTopicSnapshot(options = {}) {
-  if (!sharedTopicClipboard?.topicSnapshot) return null;
-  return cloneTopicSubtree(sharedTopicClipboard.topicSnapshot, {
-    includeAttributes: Boolean(options.includeAttributes),
-    includeSubtopics: Boolean(options.includeSubtopics),
-  });
-}
-
-function setSharedTopicClipboard(text, topicSnapshot) {
-  sharedTopicClipboard = {
-    text: text || '',
-    topicSnapshot,
-  };
 }
 
 function createTopicFromText(text, level) {
@@ -212,14 +202,26 @@ export const topicCommandMethods = {
   },
 
   confirmDeleteTopic(topic) {
+    return this.confirmTopicAction(
+      topic,
+      'confirm.deleteTopic',
+      'confirm.deleteTopicWithDescendants'
+    );
+  },
+
+  confirmCutTopic(topic) {
+    return this.confirmTopicAction(topic, 'confirm.cutTopic', 'confirm.cutTopicWithDescendants');
+  },
+
+  confirmTopicAction(topic, singleTopicKey, topicWithDescendantsKey) {
     const descendantCount = countTopicDescendants(topic);
     const message =
       descendantCount > 0
-        ? this.t('confirm.deleteTopicWithDescendants', {
+        ? this.t(topicWithDescendantsKey, {
             topic: topic.text,
             count: descendantCount,
           })
-        : this.t('confirm.deleteTopic', { topic: topic.text });
+        : this.t(singleTopicKey, { topic: topic.text });
 
     return window.confirm(message);
   },
@@ -227,27 +229,24 @@ export const topicCommandMethods = {
   async copyTopicContentForShortcut(topic) {
     if (!topic || topic._virtual) return false;
 
-    const text = topic.text || '';
-    setSharedTopicClipboard(text, createTopicFromText(text, topic.level || 1));
-    await writeSystemClipboardText(text);
+    sharedTopicClipboard = createTopicClipboardEntry(topic, TOPIC_CLIPBOARD_MODE.TEXT);
+    await writeSystemClipboardText(sharedTopicClipboard.systemText);
     new Notice(this.t('notice.topicCopied'));
     return true;
   },
 
-  async cutTopicContentForShortcut(topic) {
+  async cutTopicContent(topic) {
     if (!this.canEditMindMap()) return false;
     if (!topic || topic === this.root || topic._virtual) {
       new Notice(this.t('notice.rootCannotDelete'));
       return false;
     }
-    if (!this.confirmDeleteTopic(topic)) return false;
+    if (!this.confirmCutTopic(topic)) return false;
 
     const parentTopic = this.findTopicParentInTree(topic.id);
-    setSharedTopicClipboard(
-      topic.text || '',
-      createTopicFromText(topic.text || '', topic.level || 1)
-    );
-    await writeSystemClipboardText(topic.text || '');
+    // 剪切必须保存完整主题快照，否则删除子树后普通粘贴只能恢复根主题文字。
+    sharedTopicClipboard = createTopicClipboardEntry(topic, TOPIC_CLIPBOARD_MODE.CUT_SUBTREE);
+    await writeSystemClipboardText(sharedTopicClipboard.systemText);
 
     this.closeTopicEditor();
     this.closeInlineTextEditor(false);
@@ -265,21 +264,20 @@ export const topicCommandMethods = {
     return saved;
   },
 
-  async pasteTopicContentForShortcut(topic) {
+  async pasteTopicContent(topic) {
     if (!this.canEditMindMap()) return false;
     if (!topic || topic._virtual) return false;
 
-    let text = sharedTopicClipboard?.text || '';
-    if (!text) {
-      text = await readSystemClipboardText();
+    let pastedTopic = cloneTopicForStandardPaste(sharedTopicClipboard, (topic.level || 1) + 1);
+    if (!pastedTopic) {
+      const text = String((await readSystemClipboardText()) || '').trim();
+      pastedTopic = text ? createTopicFromText(text, (topic.level || 1) + 1) : null;
     }
-    text = String(text || '').trim();
-    if (!text) {
+    if (!pastedTopic || !String(pastedTopic.text || '').trim()) {
       new Notice(this.t('notice.topicClipboardEmpty'));
       return false;
     }
 
-    const pastedTopic = createTopicFromText(text, (topic.level || 1) + 1);
     topic.subtopics.push(pastedTopic);
     this.collapsedIds.delete(topic.id);
     assignIds(this.root, '0');
@@ -291,27 +289,23 @@ export const topicCommandMethods = {
     return saved ? { saved, topicId } : false;
   },
 
-  async copyTopicWithAttributesForShortcut(topic) {
+  async copyTopicWithAttributes(topic) {
     if (!topic || topic._virtual) return false;
 
-    const topicSnapshot = cloneTopicSubtree(topic, {
-      includeAttributes: true,
-      includeSubtopics: true,
-    });
-    setSharedTopicClipboard(topic.text || '', topicSnapshot);
-    await writeSystemClipboardText(serializeTopic(topicSnapshot, 0));
+    sharedTopicClipboard = createTopicClipboardEntry(
+      topic,
+      TOPIC_CLIPBOARD_MODE.COPY_WITH_ATTRIBUTES
+    );
+    await writeSystemClipboardText(sharedTopicClipboard.systemText);
     new Notice(this.t('notice.topicWithAttributesCopied'));
     return true;
   },
 
-  async pasteTopicWithAttributesForShortcut(topic) {
+  async pasteTopicWithAttributes(topic) {
     if (!this.canEditMindMap()) return false;
     if (!topic || topic._virtual) return false;
 
-    const snapshot = cloneClipboardTopicSnapshot({
-      includeAttributes: true,
-      includeSubtopics: true,
-    });
+    const snapshot = cloneTopicForAttributedPaste(sharedTopicClipboard);
     const pastedTopics = snapshot
       ? [snapshot]
       : await this.createTopicsFromSystemClipboardForPaste(topic);

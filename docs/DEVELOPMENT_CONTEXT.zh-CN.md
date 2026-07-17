@@ -534,7 +534,7 @@ src/config/mindConfig.js
 
 水印配置：
 
-- `watermark.enabled`：是否在导图画布、全屏和导出图片中显示水印。
+- `watermark.enabled`：是否在导图画布、全屏视图和导出图片中显示水印。
 - `watermark.mode`：可选 `signature`（签名水印）或 `normal`（普通水印）。
 - `watermark.signature`：角落签名或顶部/底部水印条配置。
 - `watermark.normal`：文字/图片、单个/平铺及位置、尺寸、透明度、旋转、间距和偏移配置。
@@ -585,7 +585,7 @@ structure:
 重要约定：
 
 - 只有布局类型属于思维导图组的布局才允许用户设置连线线型，其他布局都只有折线。
-- 非思维导图组布局为了保持结构语义，配置界面禁止设置线型，UI 上固定显示折线。
+- 非思维导图组布局为了保持布局结构，配置界面禁止设置线型，UI 上固定显示折线。
 - 树形图、组织结构图、时间轴、鱼骨图等布局内部通常有专用的主干、支线或骨架绘制逻辑，不应简单套用 `structure.connectorStyle`。
 - 如果以后要给某个非思维导图布局开放线型，需要单独设计该布局的语义和视觉规则。
 
@@ -824,9 +824,11 @@ src/i18n/locales/
 
 新增 UI 文案时：
 
-- 至少补 `en`、`zh-CN`、`zh-TW`。
-- 其他语言可通过 `createAdditionalLocale()` 的文本对象补主要入口。
-- 缺失 key 会回退英文，避免显示 `undefined`。
+- `zh-CN` 是完整语义基线；`en`、`zh-TW` 和其他语言各自在独立 JS 文件中维护完整且相同的 key 集合。
+- 每个语言文件都是该语言的唯一翻译源，不使用补丁对象、JSON 副本或提交到仓库的压缩副本。
+- 修改交互语义时同步更新所有语言，不能继续保留过期英文兜底；`test/i18n/messages.test.mjs` 会检查 key、空值和占位符一致性。
+- `locales/index.js` 只维护语言代码到完整语言包的映射；`messages.js` 只提供翻译 API。
+- `scripts/build-js.mjs` 在构建期间把可读语言包替换为临时压缩模块，压缩数据只进入 `dist/main.js`，不进入源码目录。
 
 ---
 
@@ -1014,13 +1016,14 @@ src/i18n/locales/
 快捷键架构约定：
 
 - `src/renderer/interaction/topicKeyboardShortcuts.js` 只负责“按键 -> 命令”的匹配和分发。
-- 真正的主题树增删改仍复用 `src/model/topicCommands.js` 和 `src/model/topicTreeActions.js`。
+- 真正的主题树增删改仍复用 `src/model/topicCommands.js`、`src/model/topicClipboard.js` 和 `src/model/topicTreeActions.js`。
 - `F2` 容易被 Obsidian 占用，插件内不要再绑定为打开主题编辑面板。
 - 主题创建快捷键完成后只移动焦点，不打开编辑框。
 - 创建、编辑、删除类主题快捷键不应在源码模式、阅读视图编辑禁用场景、输入法组合输入中触发。
 - 源码模式保存快捷键由 `src/ui/source/SourceView.js` 在 `window` capture 阶段监听，但必须通过当前源码视图 DOM 边界过滤事件，避免抢走 Obsidian 或其它 `yxmm` 代码块快捷键。
 - 主题导航与折叠属于查看/浏览行为，不要求导图可编辑，但仍只响应来自导图 SVG 的按键事件。
-- 复制主题写入插件内部共享剪贴板和系统剪贴板；同一 Obsidian 会话内，从一个 yxmm 代码块复制后可以粘贴到另一个 yxmm 代码块。系统剪贴板读取失败时不应阻断内部剪贴板粘贴。
+- 普通复制只保存主题文字；剪切保存主题属性和完整子树，普通粘贴必须能够完整恢复；带属性复制仍只在带属性粘贴时恢复完整子树。
+- 主题剪贴板同时写入插件内部共享剪贴板和系统剪贴板；同一 Obsidian 会话内，从一个 yxmm 代码块复制或剪切后可以粘贴到另一个 yxmm 代码块。系统剪贴板读取失败时不应阻断内部剪贴板粘贴。
 - 撤销/重做只覆盖经 `saveTreeToSourceAndFile()` 进入保存流程的主题树操作。源码模式直接编辑、配置保存和非主题树修改不纳入这组历史。
 - 撤销/重做历史按当前 yxmm 代码块身份短期保存在 renderer 类级共享 Map 中，用于抵抗 Obsidian 保存后重建代码块导致的实例内存丢失；它不是持久化历史，过期后提示无可撤销/重做是预期行为。
 - 全屏期间撤销/重做不能直接写 Markdown，否则 Obsidian 重建代码块会打断全屏；应只更新当前实例内存、写入 `_pendingFullscreenSave` 和全屏草稿快照，退出全屏后再统一落盘。
@@ -1185,6 +1188,7 @@ src/
 ├── model/
 │   ├── topicTreeActions.js                  # 主题树底层操作：增删改移、查找上下文、防循环
 │   ├── topicCommands.js                     # 面向 UI 的主题命令：新增子/兄弟主题、删除确认、复制、折叠后保存
+│   ├── topicClipboard.js                    # 主题文字、完整子树剪切和带属性复制的剪贴板语义
 │   ├── topicHistory.js                      # 主题树撤销/重做历史、代码块重建后的短期历史恢复
 │   ├── mindStructures.js                    # 高级结构创建、编辑、选择和控制点/端点拖动交互
 │   ├── relationAnchors.js                   # 关联线 8 锚点坐标、最近点吸附和端点覆盖
@@ -1302,14 +1306,10 @@ src/
 ├── i18n/
 │   ├── messages.js                          # 国际化消息聚合入口
 │   ├── languageOptions.js                   # 语言选项定义
-│   ├── createAdditionalLocale.js            # 补充语言文案的辅助函数
 │   └── locales/
-│       ├── en.js                            # English（兜底语言）
-│       ├── zhCN.js                          # 中文（简体）
-│       ├── zhTW.js                          # 中文（繁體）
-│       ├── eastAsian.js                     # 日/韩等东亚语言
-│       ├── european.js                      # 法/德/西/葡/俄/意等欧洲语言
-│       └── globalSouth.js                   # 印尼/土/越/泰/印地等语言
+│       ├── index.js                         # 语言代码到完整语言包的映射
+│       ├── en.js / zhCN.js / zhTW.js        # 英语、简体中文、繁体中文完整语言包
+│       └── ja.js / ko.js / ... / hi.js      # 其余语言各自的完整语言包
 │
 └── utils/
     ├── color.js                             # 颜色解析、转换、混合工具

@@ -14,8 +14,12 @@ import {
   ICON_EDIT_TOPIC,
   ICON_TOPIC_EDIT_PANEL,
   ICON_COPY_CONTENT,
+  ICON_CUT_TOPIC,
+  ICON_PASTE_TOPIC,
   ICON_COPY_SUBTREE,
   ICON_COPY_INDENTED,
+  ICON_COPY_TOPIC_WITH_ATTRIBUTES,
+  ICON_PASTE_TOPIC_WITH_ATTRIBUTES,
   ICON_ADD_SUBTOPIC,
   ICON_ADD_SIBLING_BEFORE,
   ICON_ADD_SIBLING_AFTER,
@@ -194,6 +198,25 @@ export const topicContextMenuMethods = {
       ICON_COPY_CONTENT,
       () => this.copyTopicContent(topic)
     );
+    if (canHaveSiblingTopic) {
+      this.addTopicContextMenuItem(
+        menu,
+        this.t('configModal.shortcuts.action.cutTopicContent'),
+        ICON_CUT_TOPIC,
+        () => this.cutTopicContent(topic)
+      );
+    }
+    this.addTopicContextMenuItem(
+      menu,
+      this.t('configModal.shortcuts.action.pasteTopicContent'),
+      ICON_PASTE_TOPIC,
+      async () => {
+        const result = await this.pasteTopicContent(topic);
+        this.focusCreatedTopic(result);
+        return result;
+      }
+    );
+    menu.addSeparator();
     this.addTopicContextMenuItem(
       menu,
       this.t('contextMenu.copySubtreeBody'),
@@ -205,6 +228,23 @@ export const topicContextMenuMethods = {
       this.t('contextMenu.copyIndentedSubtree'),
       ICON_COPY_INDENTED,
       () => this.copyIndentedSubtree(topic)
+    );
+    menu.addSeparator();
+    this.addTopicContextMenuItem(
+      menu,
+      this.t('configModal.shortcuts.action.copyTopicWithAttributes'),
+      ICON_COPY_TOPIC_WITH_ATTRIBUTES,
+      () => this.copyTopicWithAttributes(topic)
+    );
+    this.addTopicContextMenuItem(
+      menu,
+      this.t('configModal.shortcuts.action.pasteTopicWithAttributes'),
+      ICON_PASTE_TOPIC_WITH_ATTRIBUTES,
+      async () => {
+        const result = await this.pasteTopicWithAttributes(topic);
+        this.focusCreatedTopic(result);
+        return result;
+      }
     );
     menu.addSeparator();
 
@@ -250,13 +290,6 @@ export const topicContextMenuMethods = {
       );
     }
 
-    if (canHaveSiblingTopic) {
-      menu.addSeparator();
-      this.addTopicContextMenuItem(menu, this.t('contextMenu.deleteTopic'), ICON_DELETE_TOPIC, () =>
-        this.deleteTopicFromContextMenu(topic)
-      );
-    }
-
     menu.addSeparator();
     this.addTopicContextMenuItem(menu, this.t('contextMenu.createRelation'), ICON_RELATION, () =>
       this.beginStructureSelection('relation', topic)
@@ -267,6 +300,13 @@ export const topicContextMenuMethods = {
     this.addTopicContextMenuItem(menu, this.t('contextMenu.createBoundary'), ICON_BOUNDARY, () =>
       this.beginStructureSelection('boundary', topic)
     );
+
+    if (canHaveSiblingTopic) {
+      menu.addSeparator();
+      this.addTopicContextMenuItem(menu, this.t('contextMenu.deleteTopic'), ICON_DELETE_TOPIC, () =>
+        this.deleteTopicFromContextMenu(topic)
+      );
+    }
 
     menu.showAtMouseEvent(event);
   },

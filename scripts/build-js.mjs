@@ -15,9 +15,47 @@
 
 import * as esbuild from 'esbuild';
 import fs from 'node:fs';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+
+const scriptDir = path.dirname(fileURLToPath(import.meta.url));
+const localeIndexPath = path.resolve(scriptDir, '../src/i18n/locales/index.js');
+const LOCALE_MESSAGES = await loadLocaleMessages();
+// 完整语言包的 LZW 字典会超过 16 位；3 字节足够容纳当前数据且比 32 位更节省包体积。
+const LOCALE_CODE_BYTES = 3;
+const MAX_LOCALE_CODE = 0xffffff;
 
 // build:js 可以单独执行，所以这里先确保 dist/ 已创建。
 fs.mkdirSync('dist', { recursive: true });
+
+async function loadLocaleMessages() {
+  // 先把可读语言文件合成一个临时 ESM 模块，避免在无 type:module 的项目里直接导入 .js。
+  const result = await esbuild.build({
+    entryPoints: [localeIndexPath],
+    bundle: true,
+    format: 'esm',
+    platform: 'neutral',
+    write: false,
+    logLevel: 'silent',
+  });
+  const moduleUrl = `data:text/javascript;base64,${Buffer.from(result.outputFiles[0].contents).toString('base64')}`;
+  const localeModule = await import(moduleUrl);
+  return localeModule.LOCALE_MESSAGES;
+}
+
+// 源码保留完整可读的语言文件；只在打包时把语言数据替换为压缩后的虚拟模块。
+const compressedLocalePlugin = {
+  name: 'compressed-locales',
+  setup(build) {
+    build.onLoad({ filter: /src[/\\]i18n[/\\]locales[/\\]index\.js$/ }, (args) => {
+      if (path.resolve(args.path) !== localeIndexPath) return null;
+      return {
+        contents: createCompressedLocaleModule(LOCALE_MESSAGES),
+        loader: 'js',
+      };
+    });
+  },
+};
 
 await esbuild.build({
   // src/main.js 是源码层入口，所有业务模块都会从这个入口被 esbuild 追踪进 bundle。
@@ -30,6 +68,7 @@ await esbuild.build({
   minify: true,
   // obsidian 由宿主应用提供，不应该被打进插件包。
   external: ['obsidian'],
+  plugins: [compressedLocalePlugin],
   outfile: 'dist/main.js',
   banner: {
     js: [
@@ -41,3 +80,78 @@ await esbuild.build({
   },
   logLevel: 'info',
 });
+
+function createCompressedLocaleModule(localeMessages) {
+  const bytes = new TextEncoder().encode(JSON.stringify(localeMessages));
+  const codes = lzwCompress(bytes);
+  const packed = Buffer.allocUnsafe(codes.length * LOCALE_CODE_BYTES);
+
+  for (let index = 0; index < codes.length; index += 1) {
+    packed.writeUIntBE(codes[index], index * LOCALE_CODE_BYTES, LOCALE_CODE_BYTES);
+  }
+
+  return `
+const COMPRESSED_LOCALE_MESSAGES = ${JSON.stringify(packed.toString('base64'))};
+const LOCALE_CODE_BYTES = ${LOCALE_CODE_BYTES};
+export const LOCALE_MESSAGES = Object.freeze(
+  Object.fromEntries(
+    Object.entries(
+      JSON.parse(new TextDecoder().decode(decompressLocaleBytes(COMPRESSED_LOCALE_MESSAGES)))
+    ).map(([language, messages]) => [language, Object.freeze(messages)])
+  )
+);
+
+function decompressLocaleBytes(base64) {
+  const binary =
+    typeof atob === 'function' ? atob(base64) : Buffer.from(base64, 'base64').toString('binary');
+  const codes = new Uint32Array(binary.length / LOCALE_CODE_BYTES);
+  for (let index = 0; index < codes.length; index += 1) {
+    const offset = index * LOCALE_CODE_BYTES;
+    codes[index] =
+      (binary.charCodeAt(offset) << 16) |
+      (binary.charCodeAt(offset + 1) << 8) |
+      binary.charCodeAt(offset + 2);
+  }
+  if (!codes.length) return new Uint8Array();
+
+  const dictionary = Array.from({ length: 256 }, (_, value) => String.fromCharCode(value));
+  let previous = dictionary[codes[0]];
+  const chunks = [previous];
+  for (let index = 1; index < codes.length; index += 1) {
+    const code = codes[index];
+    const entry = dictionary[code] ?? previous + previous[0];
+    chunks.push(entry);
+    dictionary.push(previous + entry[0]);
+    previous = entry;
+  }
+
+  return Uint8Array.from(chunks.join(''), (character) => character.charCodeAt(0));
+}
+`;
+}
+
+function lzwCompress(input) {
+  if (!input.length) return [];
+  const dictionary = new Map(
+    Array.from({ length: 256 }, (_, value) => [String.fromCharCode(value), value])
+  );
+  const output = [];
+  let nextCode = 256;
+  let phrase = String.fromCharCode(input[0]);
+
+  for (let index = 1; index < input.length; index += 1) {
+    const character = String.fromCharCode(input[index]);
+    const combined = phrase + character;
+    if (dictionary.has(combined)) {
+      phrase = combined;
+      continue;
+    }
+    output.push(dictionary.get(phrase));
+    if (nextCode > MAX_LOCALE_CODE) throw new Error('Locale dictionary exceeded 24-bit capacity');
+    dictionary.set(combined, nextCode);
+    nextCode += 1;
+    phrase = character;
+  }
+  output.push(dictionary.get(phrase));
+  return output;
+}

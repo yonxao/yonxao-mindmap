@@ -1,0 +1,637 @@
+/* de 完整语言包；键集合以 zh-CN 为准。 */
+export const deMessages = Object.freeze({
+  // ── 插件设置页 ──
+  'settings.description':
+    'Hier legst du die globalen Standardwerte des Plugins fest. Der Konfigurationsbereich oberhalb eines einzelnen yxmm-Codeblocks hat weiterhin Vorrang und eignet sich für kartenbezogene Anpassungen.',
+  'settings.language.name': 'Sprache',
+  'settings.language.desc':
+    'Steuert die UI-Texte von yonxao-mindmap. Die anfängliche Standardsprache folgt der aktuellen Obsidian-Sprache.',
+  'settings.globalDefaultValueConfigPanel.name': 'Panel für globale Standardwerte',
+  'settings.globalDefaultValueConfigPanel.desc':
+    'Dient als Basiskonfiguration für alle yxmm-Codeblöcke; der Konfigurationsbereich im Dokument und Themenattribute überschreiben sie weiterhin.',
+  'settings.globalDefaultValueConfigPanel.edit': 'Standardwerte bearbeiten',
+  'settings.globalDefaultValueConfigPanel.reset': 'Auf integrierte Standardwerte zurücksetzen',
+  'settings.globalDefaultValueConfigPanel.resetNotice':
+    'yonxao-mindmap: Die integrierten Plugin-Standardwerte wurden wiederhergestellt.',
+  'settings.globalDefaultValueConfigPanel.savedNotice':
+    'yonxao-mindmap: Globale Standardwertkonfiguration gespeichert.',
+  'settings.globalDefaultValueConfigPanel.empty':
+    'Keine globale Standardkonfiguration gesetzt. Alle Karten verwenden die integrierten Standardwerte.',
+  'settings.globalDefaultValueConfigPanel.summaryTitle': 'Aktuelle globale Standardkonfiguration:',
+  'settings.summary.theme': 'Design',
+  'settings.summary.layout': 'Layout-Typ',
+  'settings.summary.connector': 'Verbindungsstil',
+  'settings.summary.connector.fixedElbow': 'Feste Winkellinie',
+  'settings.summary.branchExpansion': 'Erweiterung der Unterthemen',
+  'settings.summary.branchExpansion.elbowOnly': 'Nur mit Winkellinien verfügbar',
+  'settings.summary.branchExpansion.unsupported': 'Von diesem Layout nicht unterstützt',
+  'settings.summary.wheelZoom': 'Mausrad-Zoom',
+  'settings.summary.enabled': 'Aktiviert',
+  'settings.summary.disabled': 'Deaktiviert',
+  'settings.summary.fontFamily': 'Themen-Schriftart',
+  'settings.summary.fontSize': 'Schriftgröße der Themen',
+
+  // ── 工具栏 ──
+  'toolbar.showSource': 'Quelltext anzeigen',
+  'toolbar.showMap': 'Karte anzeigen',
+  'toolbar.sourceFallback': 'Code',
+  'toolbar.mapFallback': 'Grafik',
+  'toolbar.config': 'Konfiguration',
+  'toolbar.fitView': 'Ansicht anpassen',
+  'toolbar.originalSize': 'Originalgröße',
+  'toolbar.enterFullscreen': 'Vollbild',
+  'toolbar.exitFullscreen': 'Vollbild beenden',
+  'toolbar.zoomIn': 'Vergrößern',
+  'toolbar.zoomOut': 'Verkleinern',
+  'toolbar.resetCollapse': 'Einklappstatus zurücksetzen',
+  'toolbar.dragHandle': 'Werkzeugleiste ziehen',
+
+  // ── 源码视图 ──
+  'source.tab.config': 'Konfiguration',
+  'source.tab.body': 'Textkörper',
+  'source.status.editable':
+    'Der Quelltext kann bearbeitet werden. Zurück zur Karte wechseln oder Ctrl/Cmd+S drücken, um ihn in Markdown zurückzuschreiben.',
+  'source.status.dirty':
+    'Der Quelltext wurde geändert. Zurück zur Karte wechseln oder Ctrl/Cmd+S drücken, um ihn in Markdown zurückzuschreiben.',
+  'source.status.synced': 'Der Quelltext entspricht dem Inhalt der aktuellen Karte.',
+  'source.status.saved': 'Quellcode wurde im aktuellen Markdown-Block gespeichert.',
+  'source.status.saveFailed':
+    'Speichern des Quellcodes fehlgeschlagen. Bitte überprüfen Sie den aktuellen Markdown-Block.',
+  'canvas.resizeHandle': 'Ziehen zum Ändern der Zeichenflächenhöhe',
+
+  // ── 通知消息 ──
+  'notice.configSaved': 'yonxao-mindmap: Konfiguration gespeichert.',
+  'notice.topicCopied': 'yonxao-mindmap: Inhalt kopiert.',
+  'notice.bodyCopied': 'yonxao-mindmap: Textkörper kopiert.',
+  'notice.sourceCopied': 'yonxao-mindmap: Quelle kopiert.',
+  'notice.configCopied': 'yonxao-mindmap: Konfigurationsbereich kopiert.',
+  'notice.imageExported': 'yonxao-mindmap: Bild exportiert.',
+  'notice.imageCopied': 'yonxao-mindmap: Bild kopiert.',
+  'notice.imageClipboardUnsupported':
+    'yonxao-mindmap: Diese Umgebung unterstützt das Kopieren von Bildern in die Zwischenablage nicht.',
+  'notice.imageClipboardFocusRequired':
+    'yonxao-mindmap: Bitte zuerst auf die Karte klicken, dann das Bild erneut kopieren.',
+  'notice.topicContentRequired': 'yonxao-mindmap: Inhalt darf nicht leer sein.',
+  'notice.topicContentSaved': 'Inhalt gespeichert.',
+  'notice.subtopicAdded': 'Unterthema hinzugefügt.',
+  'notice.siblingTopicAdded': 'Gleichrangiges Thema hinzugefügt.',
+  'notice.topicDeleted': 'Thema gelöscht.',
+  'notice.rootCannotAddSibling':
+    'yonxao-mindmap: Zum Stammthema kann kein gleichrangiges Thema hinzugefügt werden.',
+  'notice.structureSelectRelation':
+    'Bitte wählen Sie ein anderes Thema aus, um die Verknüpfung abzuschließen.',
+  'notice.structureSelectMulti':
+    'Klicken Sie auf weitere Themen für eine Mehrfachauswahl und schließen Sie die Struktur über die Aktionsleiste am unteren Rand ab.',
+  'notice.structureMinimumTopics': '{type} benötigt mindestens {minimum} Themen.',
+  'notice.structureCreated': '{type} wurde erstellt.',
+  'notice.structureSaved': '{type} wurde gespeichert.',
+  'notice.structureDeleted': '{type} wurde gelöscht.',
+  'notice.structureControlAdjusted': 'Verbindungslinie angepasst.',
+  'structureSelection.status': '{type}: {count} Themen ausgewählt',
+  'structureSelection.type.summary': 'Zusammenfassung',
+  'structureSelection.type.boundary': 'Rahmen',
+  'structureSelection.cancel': 'Abbrechen',
+  'structureSelection.create': 'Erstellen',
+  'structureSelection.minimum': 'Bitte wählen Sie mindestens {minimum} Themen aus.',
+  'structureSelection.summarySameParent':
+    'Für die Zusammenfassung dürfen nur Themen unter demselben übergeordneten Thema ausgewählt werden.',
+  'structureSelection.summaryContiguous':
+    'Für die Zusammenfassung dürfen nur aufeinanderfolgende Themen auf derselben Ebene ausgewählt werden.',
+  'structureSelection.summaryReady': 'Auswahl gültig, Zusammenfassung kann abgeschlossen werden.',
+  'structureSelection.boundaryReady':
+    'Sie können weitere Themen auswählen oder den Rahmen direkt abschließen.',
+  'notice.rootCannotDeleteInMap':
+    'yonxao-mindmap: Das Stammthema kann in der Kartenansicht nicht gelöscht werden.',
+  'notice.rootCannotDelete': 'yonxao-mindmap: Das Stammthema kann nicht gelöscht werden.',
+
+  // ── 编辑器菜单 ──
+  'editorMenu.insertMindMap': 'Mindmap einfügen',
+
+  // ── 确认弹窗 ──
+  'confirm.deleteTopic': '"{topic}" löschen?',
+  'confirm.deleteTopicWithDescendants': '"{topic}" und seine {count} Unterthemen löschen?',
+  'confirm.cutTopic': '„{topic}“ ausschneiden?',
+  'confirm.cutTopicWithDescendants': '„{topic}“ und seine {count} Unterthemen ausschneiden?',
+
+  // ── 主题编辑面板 ──
+  'topicEditor.title': 'Bearbeitungsbereich für Themen',
+  'topicEditor.content': 'Inhalt',
+  'topicEditor.expandText': 'Großen Texteditor öffnen',
+  'topicEditor.contentEditorTitle': 'Inhalt bearbeiten',
+  'topicEditor.applyText': 'Speichern',
+  'topicEditor.color': 'Themenfarbe',
+  'topicEditor.icon': 'Themensymbol',
+  'topicEditor.noIcon': 'Kein Symbol',
+  'topicEditor.fontFamily': 'Schriftart',
+  'topicEditor.fontSize': 'Schriftgröße des Themas',
+  'topicEditor.fontWeight': 'Schriftstärke',
+  'topicEditor.lineHeight': 'Zeilenhöhe',
+  'topicEditor.align': 'Ausrichtung',
+  'topicEditor.maxWidth': 'Maximale Breite',
+  'topicEditor.fontCustomPlaceholder': "'Noto Sans', sans-serif",
+  'topicEditor.fontFamily.invalid':
+    "Bitte geben Sie eine gültige CSS-font-family-Liste ein, z. B. 'Noto Serif', serif",
+  'topicEditor.editContentAria': 'Inhalt bearbeiten',
+  'topicEditor.save': 'Speichern',
+  'topicEditor.cancel': 'Abbrechen',
+
+  // ── 主题按钮 ──
+  'topicButton.addSiblingLeft': 'Gleichrangiges Thema links hinzufügen',
+  'topicButton.addSiblingRight': 'Gleichrangiges Thema rechts hinzufügen',
+  'topicButton.addSiblingBefore': 'Gleichrangiges Thema davor hinzufügen',
+  'topicButton.addSiblingAfter': 'Gleichrangiges Thema danach hinzufügen',
+  'topicButton.addSubtopic': 'Unterthema hinzufügen',
+  'topicButton.editTopic': 'Bearbeiten',
+
+  // ── 右键菜单 ──
+  'contextMenu.editTopic': 'Bearbeiten',
+  'contextMenu.topicEditPanel': 'Bearbeitungsbereich für Themen',
+  'contextMenu.copyTopicContent': 'Inhalt kopieren',
+  'contextMenu.copySubtreeBody': 'Unterbaum kopieren',
+  'contextMenu.copyIndentedSubtree': 'Eingerückten Unterbaum kopieren',
+  'contextMenu.addSubtopic': 'Unterthema hinzufügen',
+  'contextMenu.addSiblingBefore': 'Gleichrangiges Thema davor hinzufügen',
+  'contextMenu.addSiblingAfter': 'Gleichrangiges Thema danach hinzufügen',
+  'contextMenu.expandSubtopics': 'Unterthemen erweitern',
+  'contextMenu.collapseSubtopics': 'Unterthemen einklappen',
+  'contextMenu.expandAllSubtopics': 'Alle Unterthemen erweitern',
+  'contextMenu.collapseAllSubtopics': 'Alle Unterthemen einklappen',
+  'contextMenu.deleteTopic': 'Thema löschen',
+  'contextMenu.editStructure': 'Struktur bearbeiten',
+  'contextMenu.deleteStructure': 'Struktur löschen',
+  'contextMenu.finishStructure': 'Struktur abschließen',
+  'contextMenu.cancelStructureSelection': 'Strukturauswahl abbrechen',
+  'contextMenu.createRelation': 'Verknüpfung erstellen',
+  'contextMenu.createSummary': 'Zusammenfassung erstellen',
+  'contextMenu.createBoundary': 'Rahmen erstellen',
+  'contextMenu.copyBody': 'Textkörper kopieren',
+  'contextMenu.copyIndentedBody': 'Eingerückten Textkörper kopieren',
+  'contextMenu.copySource': 'Quelle kopieren',
+  'contextMenu.copyConfig': 'Konfigurationsbereich kopieren',
+  'contextMenu.exportPng': 'Als PNG exportieren',
+  'contextMenu.copyPng': 'Als PNG kopieren',
+  'contextMenu.deleteMindMap': 'Mindmap löschen',
+
+  // ── 结构编辑弹窗 ──
+  'structureEditor.title.relation': 'Verknüpfungseinstellungen',
+  'structureEditor.title.summary': 'Zusammenfassungseinstellungen',
+  'structureEditor.title.boundary': 'Rahmeneinstellungen',
+  'structureEditor.label.text': 'Text',
+  'structureEditor.label.direction': 'Richtung',
+  'structureEditor.label.lineStyle': 'Linientyp',
+  'structureEditor.direction.none': 'Keine Richtung',
+  'structureEditor.direction.forward': 'Vorwärts',
+  'structureEditor.direction.backward': 'Rückwärts',
+  'structureEditor.direction.both': 'Beidseitig',
+  'structureEditor.lineStyle.curve': 'Kurve',
+  'structureEditor.lineStyle.straight': 'Gerade Linie',
+  'structureEditor.lineStyle.elbow': 'Winkellinie',
+  'structureEditor.action.cancel': 'Abbrechen',
+  'structureEditor.action.save': 'Speichern',
+  'structureEditor.placeholder.text': 'Kann leer gelassen werden',
+  'structureEditor.placeholder.textMultiline':
+    'Kann leer gelassen werden; Zeilenumbrüche werden unterstützt und entsprechend angezeigt.',
+
+  // ── 配置面板：标题、标签页、操作、状态 ──
+  'configModal.title': 'Konfigurationspanel',
+  'configModal.globalDefaultValueTitle': 'Panel für globale Standardwerte',
+  'configModal.info.label': 'Erläuterung der Konfigurationsregeln',
+  'configModal.info.tooltip':
+    'Priorität der Konfiguration:\nThemenattribute > Konfigurationsbereich des Codeblocks > Globale Plugin-Standardwerte > Integrierte Plugin-Standardwerte\n\nPriorität der Farben:\nThemenattribut color > Standard-Themenfarbe > Farbschema\n\nSpeicherlogik:\nWenn ein Konfigurationswert dem wirksamen Standardwert entspricht (aus den globalen Plugin-Standardwerten oder den integrierten Standardwerten), wird er beim Speichern aus dem Konfigurationsbereich ausgelassen, damit die Konfiguration knapp bleibt.',
+  'configModal.tabs.display': 'Anzeige',
+  'configModal.tabs.structure': 'Struktur',
+  'configModal.tabs.color': 'Farben',
+  'configModal.tabs.font': 'Schriftart',
+  'configModal.tabs.interaction': 'Interaktion',
+  'configModal.tabs.advanced': 'Erweitert',
+  'configModal.actions.apply': 'Anwenden',
+  'configModal.actions.saveAndClose': 'Speichern und schließen',
+  'configModal.actions.cancel': 'Abbrechen',
+  'configModal.actions.close': 'Schließen',
+  'configModal.status.saved': 'Konfiguration gespeichert.',
+  'configModal.status.valid': 'Konfigurationssyntax ist gültig.',
+  'configModal.status.invalid': 'Konfigurationssyntaxfehler: {message}',
+  'configModal.footer.star':
+    'Wenn dir das Plugin hilft, gib dem Projekt gern einen kostenlosen Star. Das motiviert den Autor.',
+
+  // ── 配置面板：占位符 ──
+  'configModal.placeholder.auto': 'Automatisch',
+  'configModal.placeholder.default': 'Standard',
+
+  // ── 配置面板：显示标签页 ──
+  'configModal.display.mapSection': 'Kartenbereich',
+  'configModal.display.canvasHeight': 'Kartenhöhe',
+  'configModal.display.canvasHeight.help':
+    'Leer lassen für automatische Höhe. Ziehen am unteren Rand der Zeichenfläche schreibt diesen Wert ebenfalls.',
+  'configModal.display.viewFit': 'Ansichtsanpassung',
+  'configModal.display.viewFit.help':
+    'Steuert den anfänglichen Zoom beim Öffnen der Karte. Originalgröße hält die Schrift stabil; Ansicht anpassen versucht, die gesamte Karte anzuzeigen.',
+  'configModal.display.fitViewNoUpscale': 'Beim Anpassen der Ansicht nicht vergrößern',
+  'configModal.display.fitViewNoUpscale.help':
+    'Wenn aktiviert, verkleinert die Ansichtsanpassung nur zu große Karten; kleine Karten bleiben nahe an ihrer Originalskalierung und werden nicht vergrößert.',
+  'configModal.display.fitViewMaxScale': 'Maximale Skalierung der Ansichtsanpassung',
+  'configModal.display.fitViewMaxScale.help':
+    'Gilt, wenn „Beim Anpassen der Ansicht nicht vergrößern“ deaktiviert ist, und begrenzt die maximale Vergrößerung kleiner Karten.',
+  'configModal.display.sourceSection': 'Quelltextbereich',
+  'configModal.display.sourceHeight': 'Quelltexthöhe',
+  'configModal.display.sourceHeight.help':
+    'Der Quellmodus hat eine unabhängige Höhe und beeinflusst die Kartenhöhe nicht.',
+  'configModal.display.saveFullConfig': 'Alle Konfigurationselemente speichern',
+  'configModal.display.saveFullConfig.help':
+    'Wenn aktiviert, werden alle Konfigurationswerte einschließlich Standardwerte gespeichert, damit Darstellung beim Teilen oder Migrieren konsistent bleibt. Wenn deaktiviert, werden nur von den Standardwerten abweichende Werte gespeichert.',
+  'configModal.viewFit.original': 'Originalgröße',
+  'configModal.viewFit.fit': 'Ansicht anpassen',
+  'configModal.topicControlVisibility.always': 'Immer alle Schaltflächen anzeigen',
+  'configModal.topicControlVisibility.toggle-always':
+    'Einklappschaltfläche immer anzeigen, andere beim Darüberfahren',
+  'configModal.topicControlVisibility.hover': 'Alle Schaltflächen nur beim Darüberfahren anzeigen',
+
+  // ── 配置面板：颜色标签页 ──
+  'configModal.color.schemeSection': 'Farbschema',
+  'configModal.color.customColor': 'Benutzerdefinierte Farbe',
+  'configModal.color.scheme': 'Farbschema',
+  'configModal.color.defaultTopicColor': 'Standard-Themenfarbe',
+  'configModal.color.defaultTopicColor.help':
+    'Leer lassen, um die automatische Farbvergabe des aktuellen Farbschemas zu verwenden. Ein eingetragener Wert überschreibt diese automatische Farbvergabe, aber das Themenattribut color hat weiterhin Vorrang.',
+  'configModal.color.overrideWarning':
+    'Das aktuelle Farbschema vergibt Farben automatisch nach Zweig. Eine Standard-Themenfarbe blendet diese Zweigfarben aus.',
+  'configModal.color.buttonSection': 'Schaltflächenfarbe',
+  'configModal.color.buttonColorMode': 'Schaltflächenfarbe',
+  'configModal.color.buttonColorMode.help':
+    'Farbmodus für Einklapp-, Bearbeitungs- und Hinzufügen-Schaltflächen.',
+  'configModal.color.buttonColor.inherit-accent': 'Akzentfarbe erben',
+  'configModal.color.buttonColor.subtle': 'Dezent',
+  'configModal.color.buttonColor.topic': 'Themenfarbe',
+  'configModal.color.buttonColor.custom': 'Benutzerdefiniert',
+  'configModal.color.buttonColor': 'Benutzerdefinierte Schaltflächenfarbe',
+  'configModal.color.buttonColor.help':
+    'Benutzerdefinierte Farbe für Schaltflächen, nur im Modus Benutzerdefiniert gültig.',
+  'configModal.color.advancedStructureSection': 'Farben erweiterter Strukturen',
+  'configModal.color.advancedStructure.relation': 'Farbe für Verknüpfungen',
+  'configModal.color.advancedStructure.summary': 'Zusammenfassungsfarbe',
+  'configModal.color.advancedStructure.boundary': 'Rahmenfarbe',
+  'configModal.color.advancedStructure.help':
+    'Legt die Standardfarbe für diese Art erweiterter Struktur fest; die color-Eigenschaft einer einzelnen erweiterten Struktur hat weiterhin Vorrang.',
+
+  // ── 配置面板：结构标签页 ──
+  'configModal.structure.layoutSection': 'Layout',
+  'configModal.structure.layout': 'Layouttyp',
+  'configModal.structure.connectorSection': 'Verbindungen und Erweiterung',
+  'configModal.structure.connectorStyle': 'Verbindungsstil',
+  'configModal.structure.connectorStyle.fixedHelp':
+    'Nur Mindmap-Layouts können den Verbindungsstil wählen. Andere Layouts verwenden eine feste Winkellinie, um ihre Struktur zu erhalten.',
+  'configModal.structure.branchExpansion': 'Erweiterung der Unterthemen',
+  'configModal.structure.branchExpansion.elbowOnlyHelp':
+    'Die Erweiterung der Unterthemen gilt nur, wenn der tatsächliche Verbinder eine Winkellinie ist.',
+  'configModal.structure.topicMaxWidthSection': 'Maximale Breite der Themen',
+  'configModal.structure.topicMaxWidth.help': 'Bereich: 120-2000 px.',
+  'configModal.structure.topicMaxWidthGlobal': 'Global',
+  'configModal.structure.topicMaxWidthLevel1': 'Ebene 1',
+  'configModal.structure.topicMaxWidthLevel2': 'Ebene 2',
+  'configModal.structure.topicMaxWidthLevel3': 'Ebene 3',
+  'configModal.branchExpansion.side': 'Natürliche Erweiterung',
+  'configModal.branchExpansion.hanging': 'Hängende Erweiterung',
+
+  // ── 配置面板：字体标签页 ──
+  'configModal.font.globalSection': 'Globale Themenschrift',
+  'configModal.font.family': 'Themenschrift',
+  'configModal.font.family.help':
+    'Verwendet standardmäßig die Obsidian-Textschrift. Wähle eine Voreinstellung oder „Benutzerdefiniert“ und gib eine CSS-font-family ein.',
+  'configModal.font.size': 'Schriftgröße der Themen',
+  'configModal.font.size.help': 'Die Einheit ist px und steuert die Größe des Themeninhalts.',
+  'configModal.font.weight': 'Schriftstärke der Themen',
+  'configModal.font.weight.help': 'Die Schriftstärke folgt dem CSS-Standardbereich 100 bis 900.',
+  'configModal.font.lineHeight': 'Zeilenhöhe der Themen',
+  'configModal.font.lineHeight.help':
+    'Die Zeilenhöhe ist der SVG-Textzeilenabstand in px. Ein praktischer Wert ist normalerweise das 1,3- bis 1,5-fache der Schriftgröße.',
+  'configModal.font.align': 'Textausrichtung',
+  'configModal.font.align.help':
+    'Die Standardausrichtung folgt der Layoutrichtung. Linksbündig, Zentriert und Rechtsbündig überschreiben den normalen Absatztext; Listen und Codeblöcke bleiben linksbündig.',
+  'configModal.font.align.auto': 'Standardausrichtung',
+  'configModal.font.align.left': 'Linksbündig',
+  'configModal.font.align.center': 'Zentriert',
+  'configModal.font.align.right': 'Rechtsbündig',
+  'configModal.font.levelSection': 'Überschreibungen nach Themenebene',
+  'configModal.font.levelTitle1': 'Thema Ebene 1',
+  'configModal.font.levelTitle2': 'Thema Ebene 2',
+  'configModal.font.levelTitle3': 'Thema Ebene 3',
+  'configModal.font.clearLevel': 'Diese Ebene löschen',
+
+  // ── 配置面板：交互标签页 ──
+  'configModal.interaction.toolbarSection': 'Werkzeugleiste',
+  'configModal.interaction.toolbarCorner': 'Ecke der Werkzeugleiste',
+  'configModal.interaction.toolbarPlacement': 'Position der Werkzeugleiste',
+  'configModal.toolbarCorner.topLeft': 'Oben links',
+  'configModal.toolbarCorner.topRight': 'Oben rechts',
+  'configModal.toolbarCorner.bottomLeft': 'Unten links',
+  'configModal.toolbarCorner.bottomRight': 'Unten rechts',
+  'configModal.toolbarPlacement.inside': 'Innen',
+  'configModal.toolbarPlacement.outside': 'Außen',
+  'configModal.interaction.topicButtonSection': 'Themenschaltflächen',
+  'configModal.interaction.topicControlVisibility': 'Sichtbarkeit der Themenschaltflächen',
+  'configModal.interaction.topicControlVisibility.help':
+    'Steuert, wann Bearbeitungs-, Einklapp- und Hinzufügen-Schaltflächen in der Karte angezeigt werden. Bearbeitungsschaltflächen bleiben im Lesemodus deaktiviert.',
+  'configModal.interaction.inputSection': 'Maus und Tastatur',
+  'configModal.interaction.wheelZoom': 'Mausrad-Zoom',
+  'configModal.interaction.wheelZoom.help':
+    'Wenn deaktiviert, scrollt das Mausrad die Obsidian-Seite. Wenn aktiviert, zoomt das Mausrad die aktuelle Karte.',
+  'configModal.interaction.tabIndent': 'Tab-Taste ändert Themenebene',
+  'configModal.interaction.tabIndent.help':
+    'Wenn aktiviert, passen Tab und Shift+Tab im Quellmodus die Themenebene der aktuellen Zeile an.',
+
+  // ── 配置面板：布局分组 ──
+  'configModal.layout.group.mindmap': 'Mindmap',
+  'configModal.layout.group.tree': 'Baumdiagramm',
+  'configModal.layout.group.org': 'Organigramm',
+  'configModal.layout.group.timeline': 'Zeitachse',
+  'configModal.layout.group.radial': 'Radiale Karte',
+  'configModal.layout.group.fishbone': 'Fischgrätendiagramm',
+  'configModal.layout.group.treeTable': 'Baumtabelle',
+  'configModal.layout.mindmapRight': 'Mindmap nach rechts',
+  'configModal.layout.mindmapLeft': 'Mindmap nach links',
+  'configModal.layout.mindmapBidirectional': 'Bidirektionale Mindmap',
+  'configModal.layout.mindmapUp': 'Mindmap nach oben',
+  'configModal.layout.mindmapDown': 'Mindmap nach unten',
+  'configModal.layout.mindmapVertical': 'Vertikale bidirektionale Mindmap',
+  'configModal.layout.tree': 'Baumdiagramm',
+  'configModal.layout.treeRight': 'Baumdiagramm nach rechts',
+  'configModal.layout.treeLeft': 'Baumdiagramm nach links',
+  'configModal.layout.org': 'Organigramm',
+  'configModal.layout.orgRight': 'Organigramm nach rechts',
+  'configModal.layout.timeline': 'Zeitachse',
+  'configModal.layout.timelineUp': 'Obere Zeitachse',
+  'configModal.layout.timelineDown': 'Untere Zeitachse',
+  'configModal.layout.radial': 'Radiale Karte',
+  'configModal.layout.fishboneLeft': 'Fischgrätendiagramm nach links',
+  'configModal.layout.fishboneRight': 'Fischgrätendiagramm nach rechts',
+  'configModal.layout.treeTable': 'Baumtabelle',
+  'configModal.layout.treeTableStepped': 'Gestufte Baumtabelle',
+  'configModal.connector.curve': 'Kurve',
+  'configModal.connector.straight': 'Gerade Linie',
+  'configModal.connector.elbow': 'Winkellinie',
+
+  // ── 配置面板：主题选择 ──
+  'configModal.color.default': 'Standard: Obsidian folgen',
+  'configModal.color.ocean': 'Ozean: blau-cyan technisch',
+  'configModal.color.forest': 'Wald: Grün zum Lernen',
+  'configModal.color.sunset': 'Sonnenuntergang: kreatives Orange-Rot',
+  'configModal.color.mono': 'Mono: formelle Dokumente',
+  'configModal.color.rainbow': 'Regenbogen: Standard mit hoher Sättigung',
+  'configModal.color.pastelRainbow': 'Pastell-Regenbogen: langes Lesen',
+  'configModal.color.neonRainbow': 'Neon-Regenbogen: dunkle Präsentation',
+
+  // ── 字体下拉 ──
+  'font.group.inherit': 'Vererbung und Anpassung',
+  'font.group.obsidian': 'Obsidian',
+  'font.group.chinese': 'Chinesische Schriftarten',
+  'font.group.system': 'Systemschriftarten',
+  'font.group.monospace': 'Schriftarten mit fester Breite',
+  'font.inherit': 'Globale Schriftart erben',
+  'font.custom': 'Benutzerdefiniert',
+  'font.obsidian.interface': 'Obsidian-Oberflächenschrift',
+  'font.obsidian.text': 'Obsidian-Textschrift',
+  'font.obsidian.monospace': 'Obsidian-Schrift mit fester Breite',
+  'font.chinese.sans': 'Chinesische Sans-Serif',
+  'font.chinese.serif': 'Chinesische Serif',
+  'font.chinese.kaiti': 'Chinesisch KaiTi',
+  'font.chinese.fangsong': 'Chinesisch FangSong',
+  'font.chinese.microsoftYaHei': 'Microsoft YaHei',
+  'font.chinese.pingFang': 'PingFang',
+  'font.chinese.sourceHanSans': 'Source Han Sans',
+  'font.chinese.sourceHanSerif': 'Source Han Serif',
+  'font.chinese.lxgwWenkai': 'LXGW WenKai',
+  'font.system.sans': 'System-Sans-Serif',
+  'font.system.serif': 'System-Serif',
+  'font.system.monospace': 'Systemschrift mit fester Breite',
+  'font.monospace.cjkStack': 'CJK-Schriftstapel mit fester Breite',
+  'font.monospace.sarasa': 'Sarasa Gothic',
+  'font.monospace.lxgwwenkai': 'LXGW WenKai Mono',
+  'font.monospace.jetbrains': 'JetBrains Mono',
+  'font.monospace.cascadia': 'Cascadia Mono',
+
+  // ── 配置面板：高级标签页 ──
+  'configModal.advanced.section': 'Konfigurationsquelle',
+  'toolbar.enterWindowFullscreen': 'Fenster im Vollbildmodus',
+  'toolbar.exitWindowFullscreen': 'Fenster aus dem Vollbildmodus beenden',
+  'notice.attachmentCopied': 'yonxao-mindmap: Anhangsadresse wurde kopiert.',
+  'notice.attachmentCopyUnsupported':
+    'yonxao-mindmap: Die aktuelle Umgebung unterstützt das Kopieren von Anhangsadressen nicht.',
+  'notice.attachmentMissing':
+    'yonxao-mindmap: Anhang existiert nicht oder kann nicht geöffnet werden.',
+  'notice.topicCut': 'Thema wurde ausgeschnitten.',
+  'notice.topicPasted': 'Thema wurde eingefügt.',
+  'notice.topicWithAttributesCopied': 'Thema und Attribute wurden kopiert.',
+  'notice.topicClipboardEmpty': 'yonxao-mindmap: Zwischenablage ist leer.',
+  'notice.undoApplied': 'Rückgängig gemacht.',
+  'notice.redoApplied': 'Wiederholt.',
+  'notice.undoUnavailable': 'yonxao-mindmap: Keine rückgängig zu machenden Aktionen vorhanden.',
+  'notice.redoUnavailable': 'yonxao-mindmap: Keine wiederholbaren Aktionen vorhanden.',
+
+  // ── 附件浮层 ──
+  'attachment.open': 'Öffnen',
+  'attachment.copy': 'Kopieren',
+
+  // ── 全屏编辑恢复 ──
+  'fullscreenDraftRecovery.message':
+    'Beim letzten Mal wurde ein ungewöhnliches Beenden festgestellt. Einige Bearbeitungen wurden möglicherweise nicht gespeichert. Du kannst sie als neue Mindmap unter der aktuellen Mindmap wiederherstellen oder den wiederherstellbaren Quelltext in die Zwischenablage kopieren.',
+  'fullscreenDraftRecovery.createMap': 'Neue Mindmap erstellen',
+  'fullscreenDraftRecovery.copySource': 'Quellcode kopieren',
+  'fullscreenDraftRecovery.inserted': 'yonxao-mindmap: Wiederherstellungs-Mindmap wurde erstellt.',
+  'fullscreenDraftRecovery.copied': 'yonxao-mindmap: Wiederherstellbarer Quelltext wurde kopiert.',
+  'fullscreenDraftRecovery.insertFailed':
+    'yonxao-mindmap: Erstellung der Wiederherstellungs-Mindmap fehlgeschlagen.',
+  'fullscreenDraftRecovery.copyFailed':
+    'yonxao-mindmap: Kopieren des wiederherstellbaren Quelltexts fehlgeschlagen.',
+  'fullscreenDraftRecovery.insertUnsupported':
+    'yonxao-mindmap: Die aktuelle Editorumgebung unterstützt das automatische Erstellen einer Wiederherstellungs-Mindmap derzeit nicht. Bitte kopiere den Quelltext.',
+
+  // 富文本编辑工具栏提示
+  'topicEditor.richText.bold': 'Markierten Text fett formatieren',
+  'topicEditor.richText.italic': 'Markierten Text kursiv formatieren',
+  'topicEditor.richText.strike': 'Markierten Text durchgestrichen formatieren',
+  'topicEditor.richText.underline': 'Ausgewählten Text unterstreichen',
+  'topicEditor.richText.clear': 'Formatierung des Inhalts löschen',
+  'topicEditor.richText.tag': 'Tag einfügen',
+  'topicEditor.richText.link': 'Link einfügen',
+  'topicEditor.richText.unorderedList': 'Ungeordnete Liste einfügen',
+  'topicEditor.richText.orderedList': 'Geordnete Liste einfügen',
+  'topicEditor.richText.task': 'Aufgabe einfügen',
+  'topicEditor.richText.image': 'Bild einfügen',
+  'topicEditor.richText.note': 'Anmerkung einfügen',
+  'topicEditor.richText.attachment': 'Anhang einfügen',
+  'topicEditor.richText.equation': 'Formel einfügen',
+  'topicEditor.richText.codeBlock': 'Codeblock einfügen',
+  'topicEditor.richText.colorNamed': 'Ausgewählten Text auf {color} setzen',
+  'topicEditor.richText.colorCustom': 'Farbe für ausgewählten Text festlegen',
+  'topicEditor.richText.placeholder': 'Text',
+  'configModal.tabs.shortcuts': 'Tastenkürzel',
+  'configModal.tabs.watermark': 'Wasserzeichen',
+  'configModal.watermark.locked.title': 'Wasserzeichen-Funktion noch nicht freigeschaltet',
+  'configModal.watermark.locked.description':
+    'Wenn Yonxao Mind Map für dich hilfreich ist, kannst du die Entwicklung unterstützen, indem du dem Projekt auf GitHub einen Star gibst. Danach kannst du die Funktion kostenlos freischalten. Das Plugin liest oder überprüft dein GitHub-Konto nicht.',
+  'configModal.watermark.locked.step.star.title': 'Zum GitHub-Projekt',
+  'configModal.watermark.locked.step.star.description':
+    'Öffne die Projektseite und klicke oben rechts auf „Star“.',
+  'configModal.watermark.locked.step.unlock.title':
+    'Zurück hierher, um die Freischaltung abzuschließen',
+  'configModal.watermark.locked.step.unlock.description':
+    'Nachdem du auf Star geklickt hast, kehre zu diesem Fenster zurück und bestätige die Freischaltung selbst.',
+  'configModal.watermark.locked.star': 'Gehe zu GitHub und klicke auf Star',
+  'configModal.watermark.locked.reopen': 'GitHub erneut öffnen',
+  'configModal.watermark.locked.unlock': 'Ich habe auf Star geklickt, freischalten',
+  'configModal.watermark.locked.existingSupport':
+    'Bereits früher mit einem Stern markiert? Direkt bestätigen und freischalten',
+  'configModal.watermark.locked.unlocking': 'Wird freigeschaltet…',
+  'configModal.watermark.locked.success':
+    'Wasserzeichen-Funktion freigeschaltet, danke für deine Unterstützung!',
+  'configModal.watermark.locked.failed':
+    'Speichern des Freischaltstatus fehlgeschlagen, bitte erneut versuchen.',
+  'configModal.watermark.enabled': 'Wasserzeichen aktivieren',
+  'configModal.watermark.enabled.help':
+    'Nach der Aktivierung wird es sofort auf der Canvas, im Vollbildmodus und in exportierten Bildern angezeigt.',
+  'configModal.watermark.mode': 'Wasserzeichen-Modus',
+  'configModal.watermark.mode.signature': 'Signatur-Wasserzeichen',
+  'configModal.watermark.mode.normal': 'Standard-Wasserzeichen',
+  'configModal.watermark.signature.section': 'Signatur-Wasserzeichen',
+  'configModal.watermark.normal.section': 'Standard-Wasserzeichen',
+  'configModal.watermark.signature.style': 'Signaturstil',
+  'configModal.watermark.signature.style.corner': 'Eckensignatur',
+  'configModal.watermark.signature.style.bar': 'Wasserzeichenleiste',
+  'configModal.watermark.content': 'Wasserzeicheninhalt',
+  'configModal.watermark.position': 'Anzeigeposition',
+  'configModal.watermark.color': 'Farbe',
+  'configModal.watermark.backgroundColor': 'Hintergrundfarbe',
+  'configModal.watermark.fontSize': 'Schriftgröße',
+  'configModal.watermark.opacity': 'Deckkraft',
+  'configModal.watermark.barHeight': 'Höhe der Wasserzeichenleiste',
+  'configModal.watermark.padding': 'Innenabstand',
+  'configModal.watermark.appearance': 'Aussehen',
+  'configModal.watermark.spacing': 'Größe und Abstand',
+  'configModal.watermark.size': 'Wasserzeichengröße',
+  'configModal.watermark.offset': 'Positionsversatz',
+  'configModal.watermark.gap': 'Kachelabstand',
+  'configModal.watermark.transparent': 'Transparent',
+  'configModal.watermark.value': 'Wert',
+  'configModal.watermark.decrease': 'Verringern',
+  'configModal.watermark.increase': 'Vergrößern',
+  'configModal.watermark.range': 'Erlaubter Bereich:',
+  'configModal.watermark.type': 'Wasserzeichentyp',
+  'configModal.watermark.type.text': 'Text-Wasserzeichen',
+  'configModal.watermark.type.image': 'Bild-Wasserzeichen',
+  'configModal.watermark.arrangement': 'Anordnung',
+  'configModal.watermark.arrangement.single': 'Einzeln',
+  'configModal.watermark.arrangement.tiled': 'Kacheln',
+  'configModal.watermark.rotation': 'Drehwinkel',
+  'configModal.watermark.width': 'Breite',
+  'configModal.watermark.height': 'Höhe',
+  'configModal.watermark.gapX': 'Horizontaler Abstand',
+  'configModal.watermark.gapY': 'Vertikaler Abstand',
+  'configModal.watermark.offsetX': 'Horizontaler Versatz',
+  'configModal.watermark.offsetY': 'Vertikaler Versatz',
+  'configModal.watermark.imageSourceType': 'Bildquelle',
+  'configModal.watermark.imageSourceType.url': 'Bild-URL',
+  'configModal.watermark.imageSourceType.vault': 'Aktueller Tresor',
+  'configModal.watermark.imageSource': 'Bildadresse',
+  'configModal.watermark.imageSource.placeholder': 'https://… oder assets/watermark.png',
+  'configModal.watermark.image.chooseVault': 'Aus dem aktuellen Tresor auswählen',
+  'configModal.watermark.image.searchPlaceholder': 'Bilddateien im aktuellen Tresor suchen',
+  'configModal.watermark.image.upload': 'In den Tresor importieren',
+  'configModal.watermark.image.uploaded':
+    'yonxao-mindmap: Wasserzeichenbild wurde in den Tresor importiert.',
+  'configModal.watermark.image.uploadFailed':
+    'yonxao-mindmap: Import des Wasserzeichenbildes fehlgeschlagen:',
+  'configModal.watermark.position.topLeft': 'Oben links',
+  'configModal.watermark.position.topCenter': 'Oben mittig',
+  'configModal.watermark.position.topRight': 'Oben rechts',
+  'configModal.watermark.position.centerLeft': 'Links mittig',
+  'configModal.watermark.position.center': 'Mittig',
+  'configModal.watermark.position.centerRight': 'Rechts mittig',
+  'configModal.watermark.position.bottomLeft': 'Unten links',
+  'configModal.watermark.position.bottomCenter': 'Unten mittig',
+  'configModal.watermark.position.bottomRight': 'Unten rechts',
+  'configModal.watermark.position.top': 'Oben',
+  'configModal.watermark.position.bottom': 'Unten',
+
+  // ── 配置面板：快捷键标签页 ──
+  'configModal.shortcuts.help':
+    'Die aktuellen Tastenkürzel sind schreibgeschützt und können derzeit nicht geändert werden.',
+  'configModal.shortcuts.topicCreateDeleteSection': 'Themen erstellen und löschen',
+  'configModal.shortcuts.topicEditSection': 'Themen bearbeiten',
+  'configModal.shortcuts.topicNavigateCollapseSection': 'Themennavigation und Einklappen',
+  'configModal.shortcuts.topicClipboardHistorySection':
+    'Kopieren, Einfügen sowie Rückgängig und Wiederholen',
+  'configModal.shortcuts.mapControlSection': 'Kartensteuerung',
+  'configModal.shortcuts.viewControlSection': 'Ansichtssteuerung',
+  'configModal.shortcuts.header.action': 'Aktionen',
+  'configModal.shortcuts.header.windows': 'Windows',
+  'configModal.shortcuts.header.mac': 'Mac',
+  'configModal.shortcuts.header.description': 'Beschreibung',
+  'configModal.shortcuts.action.addSubtopic': 'Unterthema einfügen',
+  'configModal.shortcuts.action.addSiblingAfter': 'Nächstes gleichrangiges Thema einfügen',
+  'configModal.shortcuts.action.addSiblingBefore': 'Vorheriges gleichrangiges Thema einfügen',
+  'configModal.shortcuts.action.deleteTopic': 'Thema löschen',
+  'configModal.shortcuts.action.openTopicEditor': 'Bearbeitungsbereich für Thema öffnen',
+  'configModal.shortcuts.action.openInlineEditor': 'Schnelles Inline-Bearbeiten',
+  'configModal.shortcuts.action.inlineNewline': 'Zeilenumbruch beim Inline-Bearbeiten',
+  'configModal.shortcuts.action.inlineSubmit': 'Bestätigen beim Inline-Bearbeiten',
+  'configModal.shortcuts.action.inlineCancel': 'Abbrechen beim Inline-Bearbeiten',
+  'configModal.shortcuts.action.topicEditorSave': 'Speichern im Bearbeitungsbereich für Themen',
+  'configModal.shortcuts.action.contentEditorSave': 'Langtext-Popup speichern',
+  'configModal.shortcuts.action.navigateTopic': 'Ausgewähltes Thema wechseln',
+  'configModal.shortcuts.action.toggleCollapse': 'Unterthema ausklappen/einklappen',
+  'configModal.shortcuts.action.copyTopicContent': 'Themeninhalt kopieren',
+  'configModal.shortcuts.action.cutTopicContent': 'Thema ausschneiden',
+  'configModal.shortcuts.action.pasteTopicContent': 'Thema einfügen',
+  'configModal.shortcuts.action.copyTopicWithAttributes': 'Thema und Attribute kopieren',
+  'configModal.shortcuts.action.pasteTopicWithAttributes': 'Thema und Attribute einfügen',
+  'configModal.shortcuts.action.undoTopicChange': 'Rückgängig',
+  'configModal.shortcuts.action.redoTopicChange': 'Wiederholen',
+  'configModal.shortcuts.action.zoomIn': 'Ansicht vergrößern',
+  'configModal.shortcuts.action.zoomOut': 'Ansicht verkleinern',
+  'configModal.shortcuts.action.fitView': 'Ansicht anpassen',
+  'configModal.shortcuts.action.originalSize': 'Originalgröße',
+  'configModal.shortcuts.action.windowFullscreen': 'Fenster im Vollbildmodus',
+  'configModal.shortcuts.action.fullscreen': 'Vollbild',
+  'configModal.shortcuts.action.openConfigModal': 'Konfigurationspanel öffnen',
+  'configModal.shortcuts.description.addSubtopic': 'Unterthema für das aktuelle Thema erstellen',
+  'configModal.shortcuts.description.addSiblingAfter':
+    'Gleichrangiges Thema nach dem aktuellen Thema erstellen',
+  'configModal.shortcuts.description.addSiblingBefore':
+    'Gleichrangiges Thema vor dem aktuellen Thema erstellen',
+  'configModal.shortcuts.description.deleteTopic': 'Aktuelles Thema löschen',
+  'configModal.shortcuts.description.openTopicEditor':
+    'Bearbeitungsbereich des aktuellen Themas öffnen',
+  'configModal.shortcuts.description.openInlineEditor':
+    'Text des aktuellen Themas schnell bearbeiten',
+  'configModal.shortcuts.description.inlineNewline': 'Zeilenumbruch im Thema-Text einfügen',
+  'configModal.shortcuts.description.inlineSubmit':
+    'Text speichern und zum aktuellen Thema zurückkehren',
+  'configModal.shortcuts.description.inlineCancel':
+    'Änderungen verwerfen und zum aktuellen Thema zurückkehren',
+  'configModal.shortcuts.description.topicEditorSave':
+    'Alle Änderungen im Bearbeitungsbereich des Themas speichern',
+  'configModal.shortcuts.description.contentEditorSave':
+    'Nur das Langtext-Popup speichern, nicht den gesamten Bearbeitungsbereich des Themas',
+  'configModal.shortcuts.description.navigateTopic':
+    'Ausgewähltes Thema wechseln; Mindmaps navigieren nach Eltern-/Kind- und Gleichrangigkeitsbeziehungen, andere Layouts nach räumlicher Richtung',
+  'configModal.shortcuts.description.toggleCollapse': 'Unterthema ausklappen oder einklappen',
+  'configModal.shortcuts.description.copyTopicContent': 'Inhalt des ausgewählten Themas kopieren',
+  'configModal.shortcuts.description.cutTopicContent':
+    'Ausgewähltes Thema mit Attributen und Unterthemen ausschneiden',
+  'configModal.shortcuts.description.pasteTopicContent':
+    'Als Unterthema des aktuellen Themas einfügen',
+  'configModal.shortcuts.description.copyTopicWithAttributes':
+    'Ausgewähltes Thema mit Attributen und Unterthemen kopieren',
+  'configModal.shortcuts.description.pasteTopicWithAttributes':
+    'Thema mit Attributen und Unterthemen einfügen',
+  'configModal.shortcuts.description.undoTopicChange': 'Letzte Aktion rückgängig machen',
+  'configModal.shortcuts.description.redoTopicChange': 'Rückgängig gemachte Aktion wiederholen',
+  'configModal.shortcuts.description.zoomIn': 'Ansicht vergrößern',
+  'configModal.shortcuts.description.zoomOut': 'Ansicht verkleinern',
+  'configModal.shortcuts.description.fitView': 'Ansicht an den aktuellen Viewport anpassen',
+  'configModal.shortcuts.description.originalSize': 'Ansicht auf Originalgröße umschalten',
+  'configModal.shortcuts.description.windowFullscreen':
+    'Fenster-Vollbildmodus aktivieren/deaktivieren',
+  'configModal.shortcuts.description.fullscreen': 'Vollbildmodus aktivieren/deaktivieren',
+  'configModal.shortcuts.description.openConfigModal': 'Konfigurationspanel öffnen',
+});

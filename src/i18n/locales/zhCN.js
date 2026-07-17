@@ -1,3 +1,4 @@
+/* zh-CN 完整语言包；键集合以 zh-CN 为准。 */
 export const zhCNMessages = Object.freeze({
   // ── 插件设置页 ──
   'settings.description':
@@ -50,7 +51,7 @@ export const zhCNMessages = Object.freeze({
   'source.tab.body': '正文区',
   'source.status.editable': '源码可编辑，切回导图或按 Ctrl/Cmd+S 写回 Markdown。',
   'source.status.dirty': '源码已修改，切回导图或按 Ctrl/Cmd+S 写回 Markdown。',
-  'source.status.synced': '源码实时同步到当前 Markdown 代码块。',
+  'source.status.synced': '源码与当前导图内容一致。',
   'source.status.saved': '源码已保存到当前 Markdown 代码块。',
   'source.status.saveFailed': '源码保存失败，请检查当前 Markdown 代码块。',
   'canvas.resizeHandle': '拖拽调整幕布高度',
@@ -112,9 +113,9 @@ export const zhCNMessages = Object.freeze({
   'fullscreenDraftRecovery.createMap': '创建新导图',
   'fullscreenDraftRecovery.copySource': '复制源码',
   'fullscreenDraftRecovery.inserted': 'yonxao-mindmap: 已创建恢复导图。',
-  'fullscreenDraftRecovery.copied': 'yonxao-mindmap: 残留源码已复制。',
+  'fullscreenDraftRecovery.copied': 'yonxao-mindmap: 可恢复源码已复制。',
   'fullscreenDraftRecovery.insertFailed': 'yonxao-mindmap: 创建恢复导图失败。',
-  'fullscreenDraftRecovery.copyFailed': 'yonxao-mindmap: 复制残留源码失败。',
+  'fullscreenDraftRecovery.copyFailed': 'yonxao-mindmap: 复制可恢复源码失败。',
   'fullscreenDraftRecovery.insertUnsupported':
     'yonxao-mindmap: 当前编辑器环境暂不支持自动创建恢复导图，请复制源码。',
 
@@ -124,6 +125,8 @@ export const zhCNMessages = Object.freeze({
   // ── 确认弹窗 ──
   'confirm.deleteTopic': '确定删除“{topic}”吗？',
   'confirm.deleteTopicWithDescendants': '确定删除“{topic}”及其 {count} 个子主题吗？',
+  'confirm.cutTopic': '确定剪切“{topic}”吗？',
+  'confirm.cutTopicWithDescendants': '确定剪切“{topic}”及其 {count} 个子主题吗？',
 
   // ── 主题编辑面板 ──
   'topicEditor.title': '主题编辑面板',
@@ -144,10 +147,11 @@ export const zhCNMessages = Object.freeze({
   'topicEditor.fontFamily.invalid':
     "请输入合法的 CSS font-family 列表，例如：'SimSun', 'Songti SC', serif",
   'topicEditor.editContentAria': '编辑内容',
+
   // 富文本编辑工具栏提示
   'topicEditor.richText.bold': '加粗选中文字',
-  'topicEditor.richText.italic': '倾斜选中文字',
-  'topicEditor.richText.strike': '给选中文字加中划线',
+  'topicEditor.richText.italic': '将选中文字设为斜体',
+  'topicEditor.richText.strike': '给选中文字添加删除线',
   'topicEditor.richText.underline': '给选中文字加下划线',
   'topicEditor.richText.clear': '清除内容样式',
   'topicEditor.richText.tag': '插入标签',
@@ -178,8 +182,8 @@ export const zhCNMessages = Object.freeze({
   'contextMenu.editTopic': '编辑',
   'contextMenu.topicEditPanel': '主题编辑面板',
   'contextMenu.copyTopicContent': '复制内容',
-  'contextMenu.copySubtreeBody': '复制子树',
-  'contextMenu.copyIndentedSubtree': '复制缩进子树',
+  'contextMenu.copySubtreeBody': '复制子树内容',
+  'contextMenu.copyIndentedSubtree': '复制缩进子树内容',
   'contextMenu.addSubtopic': '添加子主题',
   'contextMenu.addSiblingBefore': '在前方添加兄弟主题',
   'contextMenu.addSiblingAfter': '在后方添加兄弟主题',
@@ -195,7 +199,6 @@ export const zhCNMessages = Object.freeze({
   'contextMenu.createRelation': '创建关联',
   'contextMenu.createSummary': '创建概要',
   'contextMenu.createBoundary': '创建外框',
-
   'contextMenu.copyBody': '复制正文',
   'contextMenu.copyIndentedBody': '复制缩进正文',
   'contextMenu.copySource': '复制源码',
@@ -228,7 +231,7 @@ export const zhCNMessages = Object.freeze({
   'configModal.globalDefaultValueTitle': '全局默认值配置面板',
   'configModal.info.label': '配置规则说明',
   'configModal.info.tooltip':
-    '配置生效优先级：\n主题属性 > 代码块配置区 > 插件全局默认值配置 > 插件内置默认值\n\n颜色优先级：\n主题属性 color > 默认主题颜色 > 主题方案\n\n配置值保存逻辑：\n当配置值与默认值（插件全局默认值配置或插件内置默认值中生效的值）相同，配置值会被消除以保持配置简洁。',
+    '配置生效优先级：\n主题属性 > 代码块配置区 > 插件全局默认值配置 > 插件内置默认值\n\n颜色优先级：\n主题属性 color > 默认主题颜色 > 主题方案\n\n配置值保存逻辑：\n当配置值与默认值（插件全局默认值配置或插件内置默认值中生效的值）相同，保存时会从配置区省略该值，以保持配置简洁。',
   'configModal.tabs.display': '显示',
   'configModal.tabs.structure': '结构',
   'configModal.tabs.color': '配色',
@@ -253,7 +256,7 @@ export const zhCNMessages = Object.freeze({
   'configModal.watermark.locked.success': '水印功能已解锁，感谢支持！',
   'configModal.watermark.locked.failed': '解锁状态保存失败，请重试。',
   'configModal.watermark.enabled': '启用水印',
-  'configModal.watermark.enabled.help': '启用后立即显示在导图画布、全屏和导出图片中。',
+  'configModal.watermark.enabled.help': '启用后立即显示在导图画布、全屏视图和导出图片中。',
   'configModal.watermark.mode': '水印模式',
   'configModal.watermark.mode.signature': '签名水印',
   'configModal.watermark.mode.normal': '普通水印',
@@ -300,8 +303,8 @@ export const zhCNMessages = Object.freeze({
   'configModal.watermark.imageSource.placeholder': 'https://… 或 assets/watermark.png',
   'configModal.watermark.image.chooseVault': '从当前仓库选择',
   'configModal.watermark.image.searchPlaceholder': '搜索当前仓库中的图片文件',
-  'configModal.watermark.image.upload': '上传到仓库',
-  'configModal.watermark.image.uploaded': 'yonxao-mindmap: 水印图片已上传到仓库。',
+  'configModal.watermark.image.upload': '导入到仓库',
+  'configModal.watermark.image.uploaded': 'yonxao-mindmap: 水印图片已导入到仓库。',
   'configModal.watermark.image.uploadFailed': 'yonxao-mindmap: 水印图片上传失败：',
   'configModal.watermark.position.topLeft': '左上',
   'configModal.watermark.position.topCenter': '上方居中',
@@ -336,43 +339,36 @@ export const zhCNMessages = Object.freeze({
   'configModal.shortcuts.header.mac': 'Mac',
   'configModal.shortcuts.header.description': '说明',
   'configModal.shortcuts.action.addSubtopic': '插入子主题',
-  'configModal.shortcuts.action.addSiblingAfter': '插入弟主题',
-  'configModal.shortcuts.action.addSiblingBefore': '插入兄主题',
+  'configModal.shortcuts.action.addSiblingAfter': '插入后一个同级主题',
+  'configModal.shortcuts.action.addSiblingBefore': '插入前一个同级主题',
   'configModal.shortcuts.action.deleteTopic': '删除主题',
-
   'configModal.shortcuts.action.openTopicEditor': '打开主题编辑面板',
-  'configModal.shortcuts.action.openInlineEditor': '快速内联编辑',
+  'configModal.shortcuts.action.openInlineEditor': '快速编辑主题',
   'configModal.shortcuts.action.inlineNewline': '内联编辑中换行',
-  'configModal.shortcuts.action.inlineSubmit': '内联编辑中提交',
+  'configModal.shortcuts.action.inlineSubmit': '保存内联编辑',
   'configModal.shortcuts.action.inlineCancel': '内联编辑中取消',
   'configModal.shortcuts.action.topicEditorSave': '主题编辑面板保存',
   'configModal.shortcuts.action.contentEditorSave': '长文本编辑浮层保存',
-
-  'configModal.shortcuts.action.navigateTopic': '移动选中状态',
+  'configModal.shortcuts.action.navigateTopic': '切换选中主题',
   'configModal.shortcuts.action.toggleCollapse': '展开/折叠子主题',
-
-  'configModal.shortcuts.action.copyTopicContent': '复制主题',
+  'configModal.shortcuts.action.copyTopicContent': '复制主题内容',
   'configModal.shortcuts.action.cutTopicContent': '剪切主题',
   'configModal.shortcuts.action.pasteTopicContent': '粘贴主题',
   'configModal.shortcuts.action.copyTopicWithAttributes': '复制主题及属性',
   'configModal.shortcuts.action.pasteTopicWithAttributes': '粘贴主题及属性',
   'configModal.shortcuts.action.undoTopicChange': '撤销',
   'configModal.shortcuts.action.redoTopicChange': '重做',
-
   'configModal.shortcuts.action.zoomIn': '放大视图',
   'configModal.shortcuts.action.zoomOut': '缩小视图',
   'configModal.shortcuts.action.fitView': '适配视图',
-  'configModal.shortcuts.action.originalSize': '原始视图',
+  'configModal.shortcuts.action.originalSize': '原始大小',
   'configModal.shortcuts.action.windowFullscreen': '窗口全屏',
   'configModal.shortcuts.action.fullscreen': '全屏',
-
   'configModal.shortcuts.action.openConfigModal': '打开配置面板',
-
   'configModal.shortcuts.description.addSubtopic': '给当前主题创建子主题',
   'configModal.shortcuts.description.addSiblingAfter': '在当前主题后创建同级主题',
   'configModal.shortcuts.description.addSiblingBefore': '在当前主题前创建同级主题',
   'configModal.shortcuts.description.deleteTopic': '删除当前主题',
-
   'configModal.shortcuts.description.openTopicEditor': '打开当前主题的编辑面板',
   'configModal.shortcuts.description.openInlineEditor': '快速编辑当前主题文本',
   'configModal.shortcuts.description.inlineNewline': '在主题文本内插入换行',
@@ -381,26 +377,22 @@ export const zhCNMessages = Object.freeze({
   'configModal.shortcuts.description.topicEditorSave': '保存主题编辑面板中的全部改动',
   'configModal.shortcuts.description.contentEditorSave':
     '只保存长文本编辑浮层，不保存整个主题编辑面板',
-
   'configModal.shortcuts.description.navigateTopic':
-    '移动主题选中状态；思维导图按父子/同级关系导航，其他布局按空间方向导航',
+    '切换选中主题；思维导图按父子/同级关系导航，其他布局按空间方向导航',
   'configModal.shortcuts.description.toggleCollapse': '展开或折叠子主题',
-
   'configModal.shortcuts.description.copyTopicContent': '复制选中主题内容',
-  'configModal.shortcuts.description.cutTopicContent': '剪切选中主题内容',
+  'configModal.shortcuts.description.cutTopicContent': '剪切选中主题、属性及其子主题',
   'configModal.shortcuts.description.pasteTopicContent': '粘贴为当前主题的子主题',
-  'configModal.shortcuts.description.copyTopicWithAttributes': '复制主题',
-  'configModal.shortcuts.description.pasteTopicWithAttributes': '粘贴主题',
+  'configModal.shortcuts.description.copyTopicWithAttributes': '复制选中主题、属性及其子主题',
+  'configModal.shortcuts.description.pasteTopicWithAttributes': '粘贴主题、属性及其子主题',
   'configModal.shortcuts.description.undoTopicChange': '撤销上一步操作',
   'configModal.shortcuts.description.redoTopicChange': '恢复已撤销的操作',
-
   'configModal.shortcuts.description.zoomIn': '放大视图',
   'configModal.shortcuts.description.zoomOut': '缩小视图',
   'configModal.shortcuts.description.fitView': '适配视图，以当前视口进行缩放',
   'configModal.shortcuts.description.originalSize': '切换视图为原始大小',
   'configModal.shortcuts.description.windowFullscreen': '进入/退出窗口全屏模式',
   'configModal.shortcuts.description.fullscreen': '进入/退出全屏模式',
-
   'configModal.shortcuts.description.openConfigModal': '打开配置面板',
 
   // ── 配置面板：占位符 ──
@@ -429,8 +421,8 @@ export const zhCNMessages = Object.freeze({
   'configModal.viewFit.original': '原始大小',
   'configModal.viewFit.fit': '适配视图',
   'configModal.topicControlVisibility.always': '始终显示全部按钮',
-  'configModal.topicControlVisibility.toggle-always': '折叠按钮常显，其余悬浮显示',
-  'configModal.topicControlVisibility.hover': '全部按钮悬浮显示',
+  'configModal.topicControlVisibility.toggle-always': '折叠按钮常显，其余悬停时显示',
+  'configModal.topicControlVisibility.hover': '全部按钮悬停时显示',
 
   // ── 配置面板：交互标签页 ──
   'configModal.interaction.toolbarSection': '工具栏',
@@ -460,13 +452,13 @@ export const zhCNMessages = Object.freeze({
   'configModal.color.scheme': '配色方案',
   'configModal.color.defaultTopicColor': '默认主题颜色',
   'configModal.color.defaultTopicColor.help':
-    '留空则使用当前主题的自动配色。填写后会覆盖主题自动配色，但主题属性 color 仍然优先。',
+    '留空则使用当前配色方案的自动配色。填写后会覆盖配色方案的自动配色，但主题属性 color 仍然优先。',
   'configModal.color.overrideWarning':
-    '当前主题会按分支自动配色；填写默认主题颜色后，主题的彩虹分支色将不会显示。',
+    '当前配色方案会按分支自动配色；填写默认主题颜色后，彩虹分支色将不会显示。',
   'configModal.color.buttonSection': '按钮颜色',
   'configModal.color.buttonColorMode': '按钮颜色',
   'configModal.color.buttonColorMode.help': '折叠、编辑和新增按钮的颜色模式。',
-  'configModal.color.buttonColor.inherit-accent': '继承Obsidian强调色',
+  'configModal.color.buttonColor.inherit-accent': '继承 Obsidian 强调色',
   'configModal.color.buttonColor.subtle': '低调色',
   'configModal.color.buttonColor.topic': '主题色',
   'configModal.color.buttonColor.custom': '自定义',
@@ -485,7 +477,7 @@ export const zhCNMessages = Object.freeze({
   'configModal.structure.connectorSection': '连线和展开',
   'configModal.structure.connectorStyle': '连线线型',
   'configModal.structure.connectorStyle.fixedHelp':
-    '只有思维导图布局可以选择连线线型；其他布局为了保持结构语义，统一使用固定折线。',
+    '只有思维导图布局可以选择连线线型；其他布局为了保持布局结构，统一使用固定折线。',
   'configModal.structure.branchExpansion': '子主题展开方式',
   'configModal.structure.branchExpansion.elbowOnlyHelp':
     '子主题展开方式仅在实际连线线型为折线时生效。',
