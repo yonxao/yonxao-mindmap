@@ -9,6 +9,48 @@ All notable changes to this project will be documented in this file.
 <!-- The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), -->
 <!-- and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html). -->
 
+## [1.5.3] - 2026-07-18
+
+### Added
+
+- Added topic cut and paste support. Right-click a topic to use the new **Cut Topic** and **Paste Topic** actions, or press `Ctrl/Cmd+X` and `Ctrl/Cmd+V`. Cutting a topic preserves its full subtree on paste, while plain paste still inserts only the topic text as a subtopic of the focused topic.
+- Added **Copy Topic with Attributes** and **Paste Topic with Attributes** actions to the topic context menu. Attribute-aware paste restores the copied topic's attributes and entire subtree.
+- Added **Undo** and **Redo** entries to the canvas context menu for quick access to topic-tree history operations without using keyboard shortcuts.
+
+### Changed
+
+- Reorganized i18n locale files into a unified entry, with all locale modules bundled and minified through the JS build pipeline instead of being concatenated at runtime.
+- Extracted source-mode shortcuts into a dedicated `sourceShortcuts.js` module and unified focus management across the topic editing flows.
+- Introduced a shared `sessionMemory` utility that provides TTL, LRU, and capacity-budget controls for renderer state, topic history, and image caches, replacing the previous manual Map operations.
+- Added a topic-history memory trimmer that caps the number of undo entries and total memory usage, preventing unbounded growth during long editing sessions.
+- Unified cache-key generation through a new `codeBlockMemoryKey` helper that covers line number, editor offset, and source-prefix positioning strategies, reused by topic history and renderer state.
+- Upgraded the `esbuild` build dependency from `0.27.7` to `0.28.1`.
+
+### Fixed
+
+- Fixed the relationship structure selection menu always showing a "Finish member selection" item for relation types, even though the second target topic already auto-creates the relationship.
+- Fixed native `window.confirm()` dialogs triggered by deleting or cutting a topic inside fullscreen mode exiting the browser's physical fullscreen. Fullscreen now uses an in-canvas custom confirmation overlay that preserves the fullscreen state.
+
+### 新增
+
+- 主题新增剪切和粘贴功能：右键主题菜单新增 **剪切主题** 和 **粘贴主题**，也可使用 `Ctrl/Cmd+X` 与 `Ctrl/Cmd+V`。剪切后再粘贴会恢复完整子树；普通粘贴仍按原有行为，仅把主题文字作为当前焦点主题的子主题插入。
+- 主题右键菜单新增 **复制主题及属性** 与 **粘贴主题及属性**。带属性粘贴会按剪贴板快照恢复当前可用的属性和完整子主题。
+- 画布右键菜单新增 **撤销** 和 **重做** 菜单项，无需快捷键即可操作主题树历史。
+
+### 调整
+
+- 重构国际化语言包管理：将分散的多语言文件合并为统一入口，所有语言模块通过 JS 构建流程打包压缩，不再运行时拼接。
+- 抽离源码模式快捷键逻辑到独立的 `sourceShortcuts.js` 模块，统一主题编辑流程中的焦点管理逻辑。
+- 新增通用 `sessionMemory` 会话内存管理模块，提供 TTL、LRU 和容量预算控制，统一主题历史、视图状态和图片缓存的内存管理，替换原有的手动 Map 操作。
+- 新增主题历史内存裁剪工具，限制撤销历史的条目数和总内存占用，避免长时间编辑导致内存无限增长。
+- 统一缓存键生成逻辑，新增 `codeBlockMemoryKey` 通用函数，覆盖行号、编辑器偏移和源码前缀三种定位策略，主题历史和渲染状态共同复用。
+- 升级 `esbuild` 构建依赖从 `0.27.7` 到 `0.28.1` 版本。
+
+### 修复
+
+- 修复关联结构选择菜单对所有结构类型都显示"完成成员选取"选项的问题。关联类型在第二个目标主题选中后会自动创建，不需要"完成成员选取"步骤，该菜单项此前会冗余出现。
+- 修复全屏模式下删除或剪切主题时，原生 `window.confirm()` 弹窗会让浏览器退出物理全屏的问题。全屏模式下改用画布内的自定义确认浮层，确保全屏状态不被打断。
+
 ## [1.5.2] - 2026-07-14
 
 ### Added
