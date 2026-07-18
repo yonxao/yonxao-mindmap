@@ -1,7 +1,7 @@
 {
   "id": "yonxao-mindmap",
   "name": "Yonxao Mind Map",
-  "version": "1.5.4",
+  "version": "1.5.5",
   "minAppVersion": "1.12.7",
   "description": "A feature-rich mind map plugin that renders `yxmm` code blocks as interactive SVG mind maps. Supports 20+ layouts, interactive editing, multiple themes, and rich customization options.",
   "author": "yonxao",

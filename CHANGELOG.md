@@ -9,6 +9,32 @@ All notable changes to this project will be documented in this file.
 <!-- The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), -->
 <!-- and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html). -->
 
+## [1.5.5] - 2026-07-19
+
+### Changed
+
+- Split the signature watermark's single `padding` option into separate `paddingX` (horizontal) and `paddingY` (vertical) options, so corner watermarks can fine-tune their distance from each canvas edge independently. Legacy `padding` values are automatically migrated on config normalization.
+- Enhanced watermark config normalization and validation: the canonicalize phase preserves the legacy `padding` field for migration, and the normalize phase maps it to `paddingX`/`paddingY` with proper min/max clamping (`WATERMARK_GAP_MIN` / `WATERMARK_GAP_MAX`).
+- Updated the watermark config panel UI: the signature padding field is now a horizontal/vertical number pair, with axis-aware labels ("水平边距" / "垂直边距" in Chinese, "Padding X" / "Padding Y" in other locales).
+- Optimized normal watermark size handling: single text watermarks now estimate their size from text length and font size (using `NORMAL_TEXT_WIDTH_FACTOR` and `NORMAL_TEXT_HEIGHT_FACTOR`) and hide the explicit width/height inputs, while image and tiled watermarks keep the explicit size controls with context-aware labels ("Image size" / "Tile cell").
+- Added automatic position correction when switching signature watermark styles: corner style keeps all 9 positions, but bar style auto-clamps to `top-right` or `bottom-right` to avoid invalid empty options.
+
+### Fixed
+
+- Fixed corner signature watermark text being centered inside its background box instead of aligned to the corresponding edge. Text now uses SVG `text-anchor` and `dominant-baseline` values derived from the `position` option (left→`start`, right→`end`, top→`text-before-edge`, bottom→`text-after-edge`), so corner watermarks sit flush against their intended edge.
+
+### 调整
+
+- 将签名水印的单个 `padding` 边距配置拆分为水平边距（`paddingX`）和垂直边距（`paddingY`），让角落水印可以独立调整距画布水平和垂直边缘的距离。旧版 `padding` 配置在归一化时会自动迁移。
+- 完善水印配置的归一化和校验逻辑：canonicalize 阶段保留旧版 `padding` 字段用于迁移，normalize 阶段将其映射到 `paddingX`/`paddingY` 并按 `WATERMARK_GAP_MIN` / `WATERMARK_GAP_MAX` 做边界夹紧。
+- 更新水印配置面板 UI：签名水印边距字段拆分为水平/垂直数字对，标签按轴方向显示（中文为"水平边距"/"垂直边距"，其他语言回退为"Padding X"/"Padding Y"）。
+- 优化普通水印尺寸处理：单个文字水印根据文本长度和字号估算尺寸（使用 `NORMAL_TEXT_WIDTH_FACTOR` 和 `NORMAL_TEXT_HEIGHT_FACTOR`）并隐藏显式宽高输入；图片和平铺水印保留显式尺寸控件，标签按类型显示（"图片尺寸" / "平铺单元"）。
+- 签名水印切换样式时自动校正 position：角落样式保留全部 9 个位置，水印条样式自动收敛为 `top-right` 或 `bottom-right`，避免出现空选项。
+
+### 修复
+
+- 修复角落签名水印文字居中在背景框内、没有对齐到对应边缘的问题。文字现在根据 `position` 选项使用对应的 SVG `text-anchor` 和 `dominant-baseline` 值（left→`start`、right→`end`、top→`text-before-edge`、bottom→`text-after-edge`），角落水印会贴到目标边缘显示。
+
 ## [1.5.4] - 2026-07-19
 
 ### Added
