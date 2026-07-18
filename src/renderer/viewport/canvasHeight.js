@@ -20,6 +20,10 @@ import {
   MANUAL_HEIGHT_VIEWPORT_MULTIPLIER,
 } from '../../shared/rendererShared.js';
 
+// 移动端触摸容易扫到底部热区；触摸只允许从明确抓手启动，避免滚动页面时误改配置。
+const HEIGHT_RESIZE_TOUCH_POINTER_TYPE = 'touch';
+const HEIGHT_RESIZE_GRIP_SELECTOR = '.yonxao-mindmap-height-resize-grip';
+
 export const canvasHeightMethods = {
   applyConfiguredCanvasHeight() {
     if (!this.containerEl) return;
@@ -43,6 +47,13 @@ export const canvasHeightMethods = {
     this.heightResizeHandleEl.setAttribute('aria-orientation', 'horizontal');
     this.heightResizeHandleEl.setAttribute('aria-label', this.t('canvas.resizeHandle'));
     this.heightResizeHandleEl.setAttribute('title', this.t('canvas.resizeHandle'));
+
+    const gripEl = document.createElement('div');
+    gripEl.className = 'yonxao-mindmap-height-resize-grip';
+    gripEl.setAttribute('aria-hidden', 'true');
+    gripEl.setAttribute('title', this.t('canvas.resizeHandle'));
+    this.heightResizeHandleEl.appendChild(gripEl);
+
     this.containerEl.appendChild(this.heightResizeHandleEl);
 
     this.registerDomEvent(this.heightResizeHandleEl, 'pointerdown', (event) => {
@@ -66,6 +77,7 @@ export const canvasHeightMethods = {
 
   handleHeightResizePointerDown(event) {
     if (!this.containerEl) return;
+    if (!this.canStartHeightResizeFromPointer(event)) return;
 
     event.preventDefault();
     event.stopPropagation();
@@ -87,6 +99,11 @@ export const canvasHeightMethods = {
     } catch (_error) {
       // 旧版 WebView 可能不支持 Pointer Capture，不影响基本拖拽。
     }
+  },
+
+  canStartHeightResizeFromPointer(event) {
+    if (event.pointerType !== HEIGHT_RESIZE_TOUCH_POINTER_TYPE) return true;
+    return Boolean(event.target?.closest?.(HEIGHT_RESIZE_GRIP_SELECTOR));
   },
 
   handleHeightResizePointerMove(event) {

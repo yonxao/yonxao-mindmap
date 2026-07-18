@@ -82,6 +82,26 @@
 
 /*
  * 作用：
+ * 移动端专用的明确高度抓手。普通底部热区用于鼠标，触摸只从这个短横启动拖拽。
+ */
+.yonxao-mindmap-height-resize-grip {
+  position: absolute;
+  left: 50%;
+  bottom: 0;
+  display: none;
+  width: 72px;
+  height: 20px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  cursor: ns-resize;
+  touch-action: none;
+  transform: translateX(-50%);
+}
+
+/*
+ * 作用：
  * 高度拖拽条的视觉提示条。
  */
 .yonxao-mindmap-height-resize-handle::before {
@@ -89,6 +109,20 @@
   position: absolute;
   left: 50%;
   bottom: 4px;
+  width: 52px;
+  height: 3px;
+  border-radius: 999px;
+  background: var(--background-modifier-border-hover);
+  opacity: 0;
+  transform: translateX(-50%);
+  transition: opacity 120ms ease;
+}
+
+.yonxao-mindmap-height-resize-grip::before {
+  content: '';
+  position: absolute;
+  left: 50%;
+  bottom: 7px;
   width: 52px;
   height: 3px;
   border-radius: 999px;
@@ -114,6 +148,28 @@
  */
 .yonxao-mindmap-container.is-resizing {
   user-select: none;
+}
+
+@media (pointer: coarse) {
+  .yonxao-mindmap-height-resize-handle {
+    height: 24px;
+    cursor: default;
+    pointer-events: none;
+    touch-action: pan-y;
+  }
+
+  .yonxao-mindmap-height-resize-handle::before {
+    display: none;
+  }
+
+  .yonxao-mindmap-height-resize-grip {
+    display: block;
+    pointer-events: auto;
+  }
+
+  .yonxao-mindmap-container.is-resizing .yonxao-mindmap-height-resize-grip::before {
+    opacity: 0.9;
+  }
 }
 
 /*
