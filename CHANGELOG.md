@@ -9,6 +9,54 @@ All notable changes to this project will be documented in this file.
 <!-- The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), -->
 <!-- and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html). -->
 
+## [1.5.4] - 2026-07-19
+
+### Added
+
+- Added mobile safe-area adaptation. A new `safeArea.js` utility reads system status bar and home indicator insets (supporting both CSS `env()` and WebView CSS variables), so floating elements stay tappable on notched devices.
+- Updated config modal dimensions and drag boundaries to respect safe-area insets on mobile, preventing the modal header or bottom edge from being unreachable behind the status bar or home indicator.
+- Updated floating toolbar positioning and fullscreen layout to avoid overlapping the system safe area, including toolbar drag boundary clamping and fullscreen viewport padding.
+- Added auto-hide logic for floating toolbars when multiple mind maps exist on the same page, so leftover toolbars from previous renders no longer accumulate.
+- Added view-operation entries to the canvas right-click menu, including **Toggle Source / Map**, **Open Config Panel**, **Fit View**, **Original Size**, **Zoom In**, **Zoom Out**, **Window Fullscreen**, **Fullscreen**, and **Reset Collapsed Topics** — all accessible without keyboard shortcuts.
+- Added a shared `resetCollapsedTopics` method that uniformly restores the collapsed state, reused by the floating toolbar and the canvas context menu to avoid duplicate logic.
+
+### Changed
+
+- Optimized mobile touch-gesture handling: adjusted SVG `touch-action` to preserve normal page scrolling, and refined the pan-zoom controller to correctly distinguish touch-pan from tap interactions.
+- Refactored floating toolbar collapse-reset calls to use the shared `resetCollapsedTopics` method, reducing code duplication.
+- Added a dedicated mobile height-resize grip at the bottom center of the canvas; touch-based height resizing now starts only from this grip, while mouse resizing still uses the full bottom hot zone.
+- Adjusted config modal responsive sizing and drag boundaries for better mobile usability, paired with safe-area inset handling.
+- Refactored toolbar position calculation to use unified safe-area utilities, keeping boundary clamping consistent across toolbar drag, fullscreen, and normal view modes.
+- Added Chinese comments for safe-area calculation and touch gesture logic to improve code readability.
+
+### Fixed
+
+- Fixed mobile canvas height resizing being accidentally triggered while scrolling the page. Touch events now require an explicit grip handle to start a resize, so swiping near the bottom no longer changes the canvas height.
+- Fixed fit-view not being properly centered in fullscreen mode. The fullscreen fit-view logic now computes the centered viewBox based on the viewport aspect ratio, so long or wide maps stay centered instead of aligning to the top-left.
+
+### 新增
+
+- 移动端安全区域适配：新增 `safeArea.js` 工具类读取系统状态栏与手势栏间距（同时兼容 CSS `env()` 与 WebView CSS 变量），确保浮动控件在刘海屏设备上仍可正常点击。
+- 调整配置面板的宽高与拖拽边界，在移动端避让系统安全区域，避免面板顶部被状态栏遮挡、底部被手势栏挡住无法操作。
+- 调整悬浮工具栏定位与全屏布局，避开系统安全区域，包括工具栏拖拽边界夹紧和全屏视口内边距处理。
+- 新增多导图页面悬浮工具栏自动隐藏逻辑，避免上一次渲染残留的工具栏在页面上不断累积。
+- 画布右键菜单新增视图操作项，包括 **切换源码 / 导图视图**、**打开配置面板**、**适配视图**、**原始大小**、**放大**、**缩小**、**窗口全屏**、**全屏**、**重置折叠**，无需快捷键即可操作。
+- 新增 `resetCollapsedTopics` 统一重置折叠状态方法，悬浮工具栏与画布右键菜单共同复用，减少重复代码。
+
+### 调整
+
+- 优化移动端触摸手势处理：调整 SVG `touch-action` 以保留正常页面滚动能力，优化平移缩放控制器以正确区分触摸平移与点击交互。
+- 重构悬浮工具栏折叠重置调用，改用统一的 `resetCollapsedTopics` 方法，减少重复逻辑。
+- 画布底部新增移动端专用高度调整抓手；触摸方式下仅从该抓手启动高度调整，鼠标方式下仍保留完整底部热区。
+- 调整配置面板响应式尺寸与拖拽边界，配合安全区域避让，提升移动端可用性。
+- 重构工具栏位置计算逻辑，统一使用安全区域工具，保持工具栏拖拽、全屏和普通视图模式下边界夹紧的一致性。
+- 为安全区域计算和触摸手势逻辑补充中文注释，提升代码可读性。
+
+### 修复
+
+- 修复移动端滚动页面时容易误触发画布高度调整的问题。触摸事件现在必须从明确的抓手启动高度调整，底部滑动不再意外改变画布高度。
+- 修复全屏模式下适配视图没有正确居中的问题。全屏适配视图逻辑现在按视口宽高比计算居中的 viewBox，长图或宽图都会保持居中而不是贴靠左上角。
+
 ## [1.5.3] - 2026-07-18
 
 ### Added
