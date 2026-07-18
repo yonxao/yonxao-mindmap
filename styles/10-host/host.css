@@ -163,7 +163,10 @@
   width: 100vw;
   height: 100vh;
   box-sizing: border-box;
-  padding: 16px;
+  padding: calc(16px + var(--yonxao-mindmap-safe-area-top))
+    calc(16px + var(--yonxao-mindmap-safe-area-right))
+    calc(16px + var(--yonxao-mindmap-safe-area-bottom))
+    calc(16px + var(--yonxao-mindmap-safe-area-left));
   background: var(--background-primary);
   overflow: hidden;
 }
@@ -175,7 +178,9 @@
 .yonxao-mindmap-host.is-fullscreen .yonxao-mindmap-container,
 .yonxao-mindmap-host:fullscreen .yonxao-mindmap-container {
   /* stylelint-disable-next-line declaration-no-important */
-  height: calc(100vh - 32px) !important;
+  height: calc(
+    100vh - 32px - var(--yonxao-mindmap-safe-area-top) - var(--yonxao-mindmap-safe-area-bottom)
+  ) !important;
   max-height: none;
 }
 
@@ -202,7 +207,10 @@
   inset: 0;
   z-index: 9999;
   background: var(--background-primary);
-  padding: 16px;
+  padding: calc(16px + var(--yonxao-mindmap-safe-area-top))
+    calc(16px + var(--yonxao-mindmap-safe-area-right))
+    calc(16px + var(--yonxao-mindmap-safe-area-bottom))
+    calc(16px + var(--yonxao-mindmap-safe-area-left));
   overflow: hidden;
 }
 
@@ -258,7 +266,10 @@
   inset: 0;
   z-index: 9998;
   background: var(--background-primary);
-  padding: 16px;
+  padding: calc(16px + var(--yonxao-mindmap-safe-area-top))
+    calc(16px + var(--yonxao-mindmap-safe-area-right))
+    calc(16px + var(--yonxao-mindmap-safe-area-bottom))
+    calc(16px + var(--yonxao-mindmap-safe-area-left));
   overflow: hidden;
 }
 
@@ -278,7 +289,7 @@
  */
 .yonxao-mindmap-wf-overlay .yonxao-mindmap-container {
   /* stylelint-disable-next-line declaration-no-important */
-  height: calc(100vh - 32px) !important;
+  height: 100% !important;
   max-height: none;
 }
 
@@ -292,7 +303,10 @@
   inset: 0;
   z-index: 9998;
   box-sizing: border-box;
-  padding: 16px;
+  padding: calc(16px + var(--yonxao-mindmap-safe-area-top))
+    calc(16px + var(--yonxao-mindmap-safe-area-right))
+    calc(16px + var(--yonxao-mindmap-safe-area-bottom))
+    calc(16px + var(--yonxao-mindmap-safe-area-left));
   background: var(--background-primary);
   overflow: hidden;
 }
@@ -303,6 +317,8 @@
  */
 .yonxao-mindmap-host.is-window-fullscreen .yonxao-mindmap-container {
   /* stylelint-disable-next-line declaration-no-important */
-  height: calc(100vh - 32px) !important;
+  height: calc(
+    100vh - 32px - var(--yonxao-mindmap-safe-area-top) - var(--yonxao-mindmap-safe-area-bottom)
+  ) !important;
   max-height: none;
 }

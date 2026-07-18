@@ -18,8 +18,25 @@ import {
   clamp,
 } from '../../shared/rendererShared.js';
 import { ICON_DRAG_HANDLE } from '../../icons/iconNames.js';
+import { readViewportSafeAreaInsets } from '../../utils/safeArea.js';
 
 const TOOLBAR_POSITION_GAP = 8;
+
+function toolbarViewportBounds(toolbarRect) {
+  const safeArea = readViewportSafeAreaInsets();
+  const minLeft = TOOLBAR_POSITION_GAP + safeArea.left;
+  const minTop = TOOLBAR_POSITION_GAP + safeArea.top;
+  const maxLeft = Math.max(
+    minLeft,
+    window.innerWidth - toolbarRect.width - TOOLBAR_POSITION_GAP - safeArea.right
+  );
+  const maxTop = Math.max(
+    minTop,
+    window.innerHeight - toolbarRect.height - TOOLBAR_POSITION_GAP - safeArea.bottom
+  );
+
+  return { minLeft, minTop, maxLeft, maxTop };
+}
 
 export const toolbarPositionMethods = {
   createToolbarDragHandle(toolbar) {
@@ -141,16 +158,9 @@ export const toolbarPositionMethods = {
       return;
     }
 
-    const maxLeft = Math.max(
-      TOOLBAR_POSITION_GAP,
-      window.innerWidth - toolbarRect.width - TOOLBAR_POSITION_GAP
-    );
-    const maxTop = Math.max(
-      TOOLBAR_POSITION_GAP,
-      window.innerHeight - toolbarRect.height - TOOLBAR_POSITION_GAP
-    );
-    const left = clamp(hostRect.left + x, TOOLBAR_POSITION_GAP, maxLeft);
-    const top = clamp(hostRect.top + y, TOOLBAR_POSITION_GAP, maxTop);
+    const bounds = toolbarViewportBounds(toolbarRect);
+    const left = clamp(hostRect.left + x, bounds.minLeft, bounds.maxLeft);
+    const top = clamp(hostRect.top + y, bounds.minTop, bounds.maxTop);
 
     this.toolbarEl.style.left = `${Math.round(left)}px`;
     this.toolbarEl.style.top = `${Math.round(top)}px`;
@@ -192,17 +202,10 @@ export const toolbarPositionMethods = {
         : hostRect.top - toolbarRect.height - TOOLBAR_POSITION_GAP;
     }
 
-    const maxLeft = Math.max(
-      TOOLBAR_POSITION_GAP,
-      window.innerWidth - toolbarRect.width - TOOLBAR_POSITION_GAP
-    );
-    const maxTop = Math.max(
-      TOOLBAR_POSITION_GAP,
-      window.innerHeight - toolbarRect.height - TOOLBAR_POSITION_GAP
-    );
+    const bounds = toolbarViewportBounds(toolbarRect);
     return {
-      left: clamp(left, TOOLBAR_POSITION_GAP, maxLeft),
-      top: clamp(top, TOOLBAR_POSITION_GAP, maxTop),
+      left: clamp(left, bounds.minLeft, bounds.maxLeft),
+      top: clamp(top, bounds.minTop, bounds.maxTop),
     };
   },
 

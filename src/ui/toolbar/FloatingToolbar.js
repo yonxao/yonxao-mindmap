@@ -186,6 +186,7 @@ export const floatingToolbarMethods = {
       return;
     }
     this.applyToolbarPosition();
+    this.hideOtherMindmapToolbars();
     this.toolbarEl.classList.add('is-visible');
     this.scheduleApplyToolbarPosition();
   },
@@ -203,6 +204,20 @@ export const floatingToolbarMethods = {
 
   hideToolbar() {
     this.toolbarEl?.classList.remove('is-visible');
+  },
+
+  hideOtherMindmapToolbars() {
+    if (typeof document === 'undefined' || !this.toolbarEl) return;
+
+    /*
+     * 移动端没有可靠的 hover/leave 事件。退出全屏或点击另一张导图时，
+     * 上一个 renderer 的 body 级工具栏可能仍保持可见，这里保证同一页面只显示当前工具栏。
+     */
+    for (const toolbarEl of document.querySelectorAll('.yonxao-mindmap-toolbar.is-visible')) {
+      if (toolbarEl !== this.toolbarEl) {
+        toolbarEl.classList.remove('is-visible');
+      }
+    }
   },
 
   shouldKeepToolbarVisible() {

@@ -24,6 +24,7 @@ import {
 } from './configModalShared.js';
 import { DEFAULT_MIND_CONFIG } from '../../config/defaultMindConfig.js';
 import { ICON_CONFIG_INFO } from '../../icons/iconNames.js';
+import { readViewportSafeAreaInsets } from '../../utils/safeArea.js';
 
 // 配置模态框拖动时距离视口边缘的最小间隙，防止模态框被拖到屏幕外完全看不见。
 const MODAL_POSITION_GAP = 12;
@@ -214,12 +215,16 @@ export const configModalStateMethods = {
 
   clampModalPosition(left, top) {
     const gap = MODAL_POSITION_GAP;
+    // 移动端状态栏/手势栏属于不可点击区域，拖拽边界要和 CSS 安全区保持一致。
+    const safeArea = readViewportSafeAreaInsets();
     const rect = this.modalEl.getBoundingClientRect();
-    const maxLeft = Math.max(gap, window.innerWidth - rect.width - gap);
-    const maxTop = Math.max(gap, window.innerHeight - rect.height - gap);
+    const minLeft = gap + safeArea.left;
+    const minTop = gap + safeArea.top;
+    const maxLeft = Math.max(minLeft, window.innerWidth - rect.width - gap - safeArea.right);
+    const maxTop = Math.max(minTop, window.innerHeight - rect.height - gap - safeArea.bottom);
     return {
-      left: clamp(left, gap, maxLeft),
-      top: clamp(top, gap, maxTop),
+      left: clamp(left, minLeft, maxLeft),
+      top: clamp(top, minTop, maxTop),
     };
   },
 

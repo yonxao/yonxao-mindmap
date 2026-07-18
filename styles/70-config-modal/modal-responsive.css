@@ -56,10 +56,18 @@
  */
 @media (width <= 640px) {
   .yonxao-mindmap-config-modal-host {
-    width: calc(100vw - 24px);
-    max-width: calc(100vw - 24px);
-    height: calc(100vh - 24px);
-    max-height: calc(100vh - 24px);
+    width: calc(
+      100vw - 24px - var(--yonxao-mindmap-safe-area-left) - var(--yonxao-mindmap-safe-area-right)
+    );
+    max-width: calc(
+      100vw - 24px - var(--yonxao-mindmap-safe-area-left) - var(--yonxao-mindmap-safe-area-right)
+    );
+    height: calc(
+      100vh - 24px - var(--yonxao-mindmap-safe-area-top) - var(--yonxao-mindmap-safe-area-bottom)
+    );
+    max-height: calc(
+      100vh - 24px - var(--yonxao-mindmap-safe-area-top) - var(--yonxao-mindmap-safe-area-bottom)
+    );
   }
 
   .yonxao-mindmap-config-field {

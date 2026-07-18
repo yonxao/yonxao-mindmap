@@ -49,4 +49,25 @@
   --yonxao-mindmap-gap-sm: 6px;
   --yonxao-mindmap-gap-md: 8px;
   --yonxao-mindmap-gap-lg: 10px;
+
+  /*
+   * 移动端 Obsidian 会为状态栏、手势栏提供安全区变量；浏览器环境再用 env() 兜底。
+   * 插件自己的 body 级浮层不能只按 100vh/inset:0 贴边，否则顶部按钮会落入不可点击区域。
+   */
+  --yonxao-mindmap-safe-area-top: max(
+    var(--safe-area-inset-top, 0px),
+    env(safe-area-inset-top, 0px)
+  );
+  --yonxao-mindmap-safe-area-right: max(
+    var(--safe-area-inset-right, 0px),
+    env(safe-area-inset-right, 0px)
+  );
+  --yonxao-mindmap-safe-area-bottom: max(
+    var(--safe-area-inset-bottom, 0px),
+    env(safe-area-inset-bottom, 0px)
+  );
+  --yonxao-mindmap-safe-area-left: max(
+    var(--safe-area-inset-left, 0px),
+    env(safe-area-inset-left, 0px)
+  );
 }

@@ -16,9 +16,13 @@
  */
 .yonxao-mindmap-config-modal-host {
   width: clamp(720px, 72vw, 820px);
-  max-width: calc(100vw - 48px);
+  max-width: calc(
+    100vw - 48px - var(--yonxao-mindmap-safe-area-left) - var(--yonxao-mindmap-safe-area-right)
+  );
   height: clamp(560px, 74vh, 720px);
-  max-height: calc(100vh - 48px);
+  max-height: calc(
+    100vh - 48px - var(--yonxao-mindmap-safe-area-top) - var(--yonxao-mindmap-safe-area-bottom)
+  );
 }
 
 /*

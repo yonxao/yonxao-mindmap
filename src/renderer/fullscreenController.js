@@ -338,6 +338,7 @@ export const fullscreenControllerMethods = {
    * 因此物理全屏在 cleanupFullscreenOverlay() 已恢复过浮层时再次调用也安全。
    */
   applyFullscreenViewExited() {
+    this.hideToolbar();
     this.scheduleFitView();
     this.scheduleApplyToolbarPosition();
     this._restoreBodyFloatPanelsToBody();
