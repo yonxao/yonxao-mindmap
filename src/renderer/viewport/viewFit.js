@@ -216,15 +216,44 @@ export const viewFitMethods = {
   },
 
   getFitViewBox(contentViewBox) {
-    if (isFullscreenViewport(this) || !this.containerEl) return contentViewBox;
+    if (!this.containerEl) return contentViewBox;
 
     const rect = this.containerEl.getBoundingClientRect();
     if (!rect.width) return contentViewBox;
+    if (isFullscreenViewport(this)) {
+      return this.getFullscreenFitViewBox(contentViewBox, rect);
+    }
 
     const maxScale = this.config.view.fitNoUpscale ? 1 : this.config.view.fitMaxScale;
     const minWidthForScale = rect.width / maxScale;
     const width = Math.max(contentViewBox.width, minWidthForScale);
 
+    return {
+      x: contentViewBox.x - (width - contentViewBox.width) / 2,
+      y: contentViewBox.y,
+      width,
+      height: contentViewBox.height,
+    };
+  },
+
+  getFullscreenFitViewBox(contentViewBox, rect) {
+    if (!rect.height || !contentViewBox.width || !contentViewBox.height) return contentViewBox;
+
+    const viewportRatio = rect.width / rect.height;
+    const contentRatio = contentViewBox.width / contentViewBox.height;
+    if (!Number.isFinite(viewportRatio) || !Number.isFinite(contentRatio)) return contentViewBox;
+
+    if (contentRatio > viewportRatio) {
+      const height = contentViewBox.width / viewportRatio;
+      return {
+        x: contentViewBox.x,
+        y: contentViewBox.y - (height - contentViewBox.height) / 2,
+        width: contentViewBox.width,
+        height,
+      };
+    }
+
+    const width = contentViewBox.height * viewportRatio;
     return {
       x: contentViewBox.x - (width - contentViewBox.width) / 2,
       y: contentViewBox.y,
