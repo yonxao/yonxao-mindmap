@@ -114,6 +114,31 @@ test('watermark config survives YAML round trip', () => {
   assert.deepEqual(parseSimpleYaml(stringifySimpleYaml(raw).split('\n')), raw);
 });
 
+test('signature watermark padding supports horizontal and vertical values', () => {
+  const config = normalizeMindConfig({
+    watermark: {
+      signature: {
+        padding: 12,
+        paddingX: 24,
+        paddingY: 9999,
+      },
+    },
+  });
+
+  assert.equal(config.watermark.signature.paddingX, 24);
+  assert.equal(config.watermark.signature.paddingY, 2000);
+
+  const legacyConfig = normalizeMindConfig({
+    watermark: {
+      signature: {
+        padding: 18,
+      },
+    },
+  });
+  assert.equal(legacyConfig.watermark.signature.paddingX, 18);
+  assert.equal(legacyConfig.watermark.signature.paddingY, 18);
+});
+
 test('normalizeMindConfig resolves advanced structure colors with per-type defaults', () => {
   const config = normalizeMindConfig({
     color: {

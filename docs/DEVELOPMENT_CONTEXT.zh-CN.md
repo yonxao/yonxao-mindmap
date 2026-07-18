@@ -536,7 +536,7 @@ src/config/mindConfig.js
 
 - `watermark.enabled`：是否在导图画布、全屏视图和导出图片中显示水印。
 - `watermark.mode`：可选 `signature`（签名水印）或 `normal`（普通水印）。
-- `watermark.signature`：角落签名或顶部/底部水印条配置。
+- `watermark.signature`：角落签名或顶部/底部水印条配置；边距拆为 `paddingX` / `paddingY`，旧 `padding` 只作为读入兼容。
 - `watermark.normal`：文字/图片、单个/平铺及位置、尺寸、透明度、旋转、间距和偏移配置。
 - 水印解锁采用用户自行确认：插件只持久化 `data.json` 中的插件级布尔状态，不读取或验证 GitHub 账号，也不写入 `yxmm` 配置；运行时只有“已解锁且已启用”才绘制。
 - 普通水印绑定导图内容边界并位于内容下方；角落签名和水印条绑定当前视口，位于内容上方、编辑控件下方。水印图层统一禁用指针事件，导出直接复用当前 SVG 图层。

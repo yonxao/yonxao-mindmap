@@ -8,6 +8,7 @@ import { Notice } from 'obsidian';
 import { PROJECT_REPOSITORY_URL } from '../../constants.js';
 
 const WATERMARK_UNLOCK_CONFIRM_STEP = 'confirm';
+const WATERMARK_UNLOCK_CONFIRM_DELAY_MS = 60 * 1000;
 
 export const watermarkUnlockMethods = {
   renderLockedWatermarkTab() {
@@ -39,12 +40,15 @@ export const watermarkUnlockMethods = {
         type: 'button',
       });
       unlockButton.classList.add('mod-cta');
+      this.configureWatermarkUnlockCountdown(unlockButton);
       unlockButton.addEventListener('click', () => this.confirmWatermarkUnlock(unlockButton));
       const reopenButton = actionsEl.createEl('button', {
         text: this.t('configModal.watermark.locked.reopen'),
         type: 'button',
       });
       reopenButton.addEventListener('click', () => this.openWatermarkStarPage(false));
+
+      // 保留“已 Star 用户直接确认”的文案和解锁逻辑，但默认不渲染入口，避免流程过于显眼。
       return;
     }
 
@@ -54,15 +58,6 @@ export const watermarkUnlockMethods = {
     });
     starButton.classList.add('mod-cta');
     starButton.addEventListener('click', () => this.openWatermarkStarPage(true));
-
-    const existingSupportButton = lockedEl.createEl('button', {
-      cls: 'yonxao-mindmap-watermark-existing-support',
-      text: this.t('configModal.watermark.locked.existingSupport'),
-      type: 'button',
-    });
-    existingSupportButton.addEventListener('click', () =>
-      this.confirmWatermarkUnlock(existingSupportButton)
-    );
   },
 
   createWatermarkUnlockStep(parentEl, number, title, description, stateClass) {
@@ -81,7 +76,37 @@ export const watermarkUnlockMethods = {
     window.open(PROJECT_REPOSITORY_URL, '_blank', 'noopener');
     if (!advanceStep) return;
     this.watermarkUnlockStep = WATERMARK_UNLOCK_CONFIRM_STEP;
+    this.watermarkUnlockConfirmAvailableAt = Date.now() + WATERMARK_UNLOCK_CONFIRM_DELAY_MS;
     this.render();
+  },
+
+  configureWatermarkUnlockCountdown(button) {
+    const updateButtonState = () => {
+      const remainingMs = Number(this.watermarkUnlockConfirmAvailableAt || 0) - Date.now();
+      const remainingSeconds = Math.ceil(Math.max(0, remainingMs) / 1000);
+      button.disabled = remainingSeconds > 0;
+      button.textContent = this.t('configModal.watermark.locked.unlock');
+      return remainingSeconds;
+    };
+
+    // 只限制刚从“前往 GitHub”进入的主确认按钮；已支持过的用户仍可走下方自行确认入口。
+    if (updateButtonState() <= 0) return;
+    this.watermarkUnlockCountdownTimer = window.setInterval(() => {
+      if (updateButtonState() > 0) return;
+      this.clearWatermarkUnlockCountdown();
+    }, 1000);
+  },
+
+  /*
+   * 清理解锁倒计时定时器。幂等调用安全：
+   * - ConfigModal.onClose 触发一次
+   * - ConfigModal.render 在每次重渲染前触发一次
+   * - configureWatermarkUnlockCountdown 在倒计时归零后自清理一次
+   */
+  clearWatermarkUnlockCountdown() {
+    if (!this.watermarkUnlockCountdownTimer) return;
+    window.clearInterval(this.watermarkUnlockCountdownTimer);
+    this.watermarkUnlockCountdownTimer = null;
   },
 
   async confirmWatermarkUnlock(button) {

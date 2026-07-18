@@ -230,6 +230,11 @@ function normalizeWatermarkConfig(rawConfig) {
   const signature = isPlainObject(raw.signature) ? raw.signature : {};
   const normal = isPlainObject(raw.normal) ? raw.normal : {};
   const defaults = DEFAULT_MIND_CONFIG.watermark;
+  const legacySignaturePadding = normalizeOptionalNumber(
+    signature.padding,
+    WATERMARK_GAP_MIN,
+    WATERMARK_GAP_MAX
+  );
   const enumValue = (value, values, fallback) =>
     values.includes(String(value || '')) ? String(value) : fallback;
   const text = (value, fallback) => {
@@ -258,9 +263,14 @@ function normalizeWatermarkConfig(rawConfig) {
       barHeight:
         normalizeOptionalNumber(signature.barHeight, WATERMARK_SIZE_MIN, WATERMARK_SIZE_MAX) ||
         defaults.signature.barHeight,
-      padding:
-        normalizeOptionalNumber(signature.padding, WATERMARK_GAP_MIN, WATERMARK_GAP_MAX) ??
-        defaults.signature.padding,
+      paddingX:
+        normalizeOptionalNumber(signature.paddingX, WATERMARK_GAP_MIN, WATERMARK_GAP_MAX) ??
+        legacySignaturePadding ??
+        defaults.signature.paddingX,
+      paddingY:
+        normalizeOptionalNumber(signature.paddingY, WATERMARK_GAP_MIN, WATERMARK_GAP_MAX) ??
+        legacySignaturePadding ??
+        defaults.signature.paddingY,
     },
     normal: {
       type: enumValue(normal.type, WATERMARK_TYPES, defaults.normal.type),

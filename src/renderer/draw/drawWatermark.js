@@ -16,6 +16,9 @@ const NORMAL_WATERMARK_POSITION_PADDING = 16;
 const SIGNATURE_TEXT_MIN_WIDTH_UNITS = 4;
 const SIGNATURE_TEXT_WIDTH_FACTOR = 0.62;
 const SIGNATURE_TEXT_HEIGHT_FACTOR = 1.5;
+const NORMAL_TEXT_MIN_WIDTH_UNITS = 2;
+const NORMAL_TEXT_WIDTH_FACTOR = 0.62;
+const NORMAL_TEXT_HEIGHT_FACTOR = 1.35;
 const SIGNATURE_CORNER_RADIUS_MAX = 8;
 const SIGNATURE_BACKGROUND_OPACITY_FACTOR = 0.72;
 const SIGNATURE_BAR_TINT_OPACITY_FACTOR = 0.18;
@@ -56,7 +59,8 @@ export const watermarkDrawMethods = {
       config.position,
       textWidth,
       textHeight,
-      config.padding
+      config.paddingX,
+      config.paddingY
     );
     layer.appendChild(
       svg('rect', {
@@ -72,12 +76,14 @@ export const watermarkDrawMethods = {
     );
     const textEl = this.createWatermarkText(
       config.text,
-      point.x + textWidth / 2,
-      point.y + textHeight / 2,
+      this.watermarkCornerTextX(point.x, textWidth, config.position),
+      this.watermarkCornerTextY(point.y, textHeight, config.position),
       {
         color: colors.text,
         fontSize: config.fontSize,
         opacity: config.opacity,
+        anchor: this.watermarkCornerTextAnchor(config.position),
+        baseline: this.watermarkCornerTextBaseline(config.position),
       }
     );
     textEl.setAttribute('data-watermark-corner-text', 'true');
@@ -135,7 +141,7 @@ export const watermarkDrawMethods = {
     );
     const textEl = this.createWatermarkText(
       config.text,
-      bounds.maxX - config.padding,
+      bounds.maxX - config.paddingX,
       barY + config.barHeight / 2,
       {
         color: colors.text,
@@ -194,7 +200,7 @@ export const watermarkDrawMethods = {
       backgroundEl.setAttribute('height', config.barHeight);
     }
     const textEl = layer.querySelector('[data-watermark-bar-text]');
-    textEl?.setAttribute('x', viewport.x + viewport.width - config.padding);
+    textEl?.setAttribute('x', viewport.x + viewport.width - config.paddingX);
     textEl?.setAttribute('y', y + config.barHeight / 2);
 
     const contentClipEl = layer.querySelector('[data-watermark-bar-content-clip]');
@@ -230,12 +236,15 @@ export const watermarkDrawMethods = {
       config.position,
       width,
       height,
-      config.padding
+      config.paddingX,
+      config.paddingY
     );
     backgroundEl.setAttribute('x', point.x);
     backgroundEl.setAttribute('y', point.y);
-    textEl.setAttribute('x', point.x + width / 2);
-    textEl.setAttribute('y', point.y + height / 2);
+    textEl.setAttribute('x', this.watermarkCornerTextX(point.x, width, config.position));
+    textEl.setAttribute('text-anchor', this.watermarkCornerTextAnchor(config.position));
+    textEl.setAttribute('y', this.watermarkCornerTextY(point.y, height, config.position));
+    textEl.setAttribute('dominant-baseline', this.watermarkCornerTextBaseline(config.position));
   },
 
   syncSignatureWatermarkToViewBox(root = this.mapEl, viewport = this.viewBox) {
@@ -275,11 +284,12 @@ export const watermarkDrawMethods = {
     if (config.arrangement === 'tiled') {
       this.appendTiledWatermarks(contentLayer, bounds, config, imageHref);
     } else {
+      const size = this.normalWatermarkElementSize(config);
       const point = this.watermarkPositionPoint(
         bounds,
         config.position,
-        config.width,
-        config.height,
+        size.width,
+        size.height,
         NORMAL_WATERMARK_POSITION_PADDING
       );
       contentLayer.appendChild(
@@ -287,8 +297,8 @@ export const watermarkDrawMethods = {
           config,
           point.x + config.offsetX,
           point.y + config.offsetY,
-          config.width,
-          config.height,
+          size.width,
+          size.height,
           imageHref
         )
       );
@@ -364,6 +374,25 @@ export const watermarkDrawMethods = {
     return group;
   },
 
+  normalWatermarkElementSize(config) {
+    if (config.type === 'image' || config.arrangement === 'tiled') {
+      return { width: config.width, height: config.height };
+    }
+
+    /*
+     * 单个文字水印没有显式尺寸控件，尺寸只用于定位和旋转中心。
+     * 用文本和字号估算，避免隐藏的 width/height 继续制造不可见占位。
+     */
+    const textLength = [...String(config.text || '')].length;
+    return {
+      width: Math.max(
+        config.fontSize * NORMAL_TEXT_MIN_WIDTH_UNITS,
+        textLength * config.fontSize * NORMAL_TEXT_WIDTH_FACTOR
+      ),
+      height: config.fontSize * NORMAL_TEXT_HEIGHT_FACTOR,
+    };
+  },
+
   createWatermarkText(text, x, y, options = {}) {
     const textEl = svg('text', {
       x,
@@ -372,14 +401,14 @@ export const watermarkDrawMethods = {
       'font-size': options.fontSize,
       'font-family': 'var(--font-text, system-ui, sans-serif)',
       'text-anchor': options.anchor || 'middle',
-      'dominant-baseline': 'middle',
+      'dominant-baseline': options.baseline || 'middle',
       opacity: options.opacity,
     });
     textEl.textContent = text;
     return textEl;
   },
 
-  watermarkPositionPoint(bounds, position, width, height, padding) {
+  watermarkPositionPoint(bounds, position, width, height, paddingX, paddingY = paddingX) {
     const horizontal = position.endsWith('left')
       ? 'left'
       : position.endsWith('right')
@@ -392,16 +421,58 @@ export const watermarkDrawMethods = {
         : 'center';
     const x =
       horizontal === 'left'
-        ? bounds.minX + padding
+        ? bounds.minX + paddingX
         : horizontal === 'right'
-          ? bounds.maxX - width - padding
+          ? bounds.maxX - width - paddingX
           : (bounds.minX + bounds.maxX - width) / 2;
     const y =
       vertical === 'top'
-        ? bounds.minY + padding
+        ? bounds.minY + paddingY
         : vertical === 'bottom'
-          ? bounds.maxY - height - padding
+          ? bounds.maxY - height - paddingY
           : (bounds.minY + bounds.maxY - height) / 2;
     return { x, y };
+  },
+
+  /*
+   * 根据 position 语义将 SVG text-anchor 映射为标准值。
+   * left→start（左对齐）、right→end（右对齐）、其余→middle（居中）。
+   */
+  watermarkCornerTextAnchor(position) {
+    if (position.endsWith('left')) return 'start';
+    if (position.endsWith('right')) return 'end';
+    return 'middle';
+  },
+
+  /*
+   * 根据锚点对齐模式计算文字的 x 坐标。
+   * start 对齐时文字左侧与背景左侧对齐，end 对齐时文字右侧与背景右侧对齐。
+   */
+  watermarkCornerTextX(x, width, position) {
+    const anchor = this.watermarkCornerTextAnchor(position);
+    if (anchor === 'start') return x;
+    if (anchor === 'end') return x + width;
+    return x + width / 2;
+  },
+
+  /*
+   * 根据 position 语义将 SVG dominant-baseline 映射为标准值。
+   * top→text-before-edge（顶对齐）、bottom→text-after-edge（底对齐）、其余→middle（居中）。
+   */
+  watermarkCornerTextBaseline(position) {
+    if (position.startsWith('top')) return 'text-before-edge';
+    if (position.startsWith('bottom')) return 'text-after-edge';
+    return 'middle';
+  },
+
+  /*
+   * 根据基线对齐模式计算文字的 y 坐标。
+   * text-before-edge 时文字顶部与背景顶部对齐，text-after-edge 时文字底部与背景底部对齐。
+   */
+  watermarkCornerTextY(y, height, position) {
+    const baseline = this.watermarkCornerTextBaseline(position);
+    if (baseline === 'text-before-edge') return y;
+    if (baseline === 'text-after-edge') return y + height;
+    return y + height / 2;
   },
 };

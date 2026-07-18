@@ -190,7 +190,8 @@ export const WATERMARK_SIGNATURE_CONFIG_KEYS = Object.freeze([
   'fontSize',
   'opacity',
   'barHeight',
-  'padding',
+  'paddingX',
+  'paddingY',
 ]);
 export const WATERMARK_NORMAL_CONFIG_KEYS = Object.freeze([
   'type',
@@ -407,7 +408,8 @@ export const DEFAULT_MIND_CONFIG = Object.freeze({
       fontSize: 14,
       opacity: 0.7,
       barHeight: 36,
-      padding: 16,
+      paddingX: 16,
+      paddingY: 16,
     }),
     normal: Object.freeze({
       type: 'text',

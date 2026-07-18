@@ -7,13 +7,14 @@
  * - 字段和组合输入改为单列布局，避免标签挤压输入框
  */
 
-/*
- * 状态文本预留最小高度，避免"配置已保存"出现时按钮区上下跳动。
- */
 .yonxao-mindmap-config-status {
-  min-height: 18px;
   color: var(--text-muted);
   font-size: var(--font-ui-smaller);
+  line-height: 1.4;
+}
+
+.yonxao-mindmap-config-status:empty {
+  display: none;
 }
 
 .yonxao-mindmap-config-status.is-error {

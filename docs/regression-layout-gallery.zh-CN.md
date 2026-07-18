@@ -1742,6 +1742,8 @@ watermark:
     style: bar
     text: "Made with Yonxao Mind Map"
     position: bottom-right
+    paddingX: 16
+    paddingY: 16
 ---
 
 # 水印条回归

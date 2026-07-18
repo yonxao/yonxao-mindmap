@@ -108,13 +108,16 @@
   display: inline-flex;
   width: fit-content;
   max-width: 100%;
+  height: 30px;
   overflow: hidden;
   border: 1px solid var(--background-modifier-border);
   border-radius: var(--yonxao-mindmap-radius-md);
+  box-sizing: border-box;
 }
 
 .yonxao-mindmap-watermark-choice {
   position: relative;
+  display: inline-flex;
   cursor: pointer;
 }
 
@@ -136,9 +139,13 @@
 }
 
 .yonxao-mindmap-watermark-choice span {
-  display: block;
-  padding: 6px 14px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 14px;
   color: var(--text-muted);
+  font-size: var(--font-ui-small);
+  line-height: 1;
   background: var(--background-primary);
 }
 

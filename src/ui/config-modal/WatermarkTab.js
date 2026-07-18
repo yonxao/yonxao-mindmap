@@ -11,7 +11,6 @@ import {
   WATERMARK_FONT_SIZE_MIN,
   WATERMARK_GAP_MAX,
   WATERMARK_GAP_MIN,
-  WATERMARK_IMAGE_SOURCE_TYPES,
   WATERMARK_MODES,
   WATERMARK_OFFSET_MAX,
   WATERMARK_OFFSET_MIN,
@@ -106,10 +105,14 @@ export const watermarkTabMethods = {
       ['watermark', 'signature', 'text'],
       signature.text
     );
+    const position = this.signatureWatermarkPositionForStyle(signature.position, style);
+    if (position !== signature.position) {
+      setConfigValue(this.draftConfig, ['watermark', 'signature', 'position'], position);
+    }
     this.createSelectField(
       this.t('configModal.watermark.position'),
       ['watermark', 'signature', 'position'],
-      signature.position,
+      position,
       style === 'bar' ? this.watermarkBarPositions() : this.watermarkPositionOptions()
     );
     this.createColorTextField(
@@ -159,9 +162,9 @@ export const watermarkTabMethods = {
           suffix: 'px',
         },
         {
-          label: this.t('configModal.watermark.padding'),
-          path: ['watermark', 'signature', 'padding'],
-          value: signature.padding,
+          label: this.watermarkPaddingAxisLabel('x'),
+          path: ['watermark', 'signature', 'paddingX'],
+          value: signature.paddingX,
           min: WATERMARK_GAP_MIN,
           max: WATERMARK_GAP_MAX,
           step: 1,
@@ -169,17 +172,26 @@ export const watermarkTabMethods = {
         },
       ]);
     } else {
-      this.createWatermarkNumberStepper(
-        this.t('configModal.watermark.padding'),
-        ['watermark', 'signature', 'padding'],
-        signature.padding,
+      this.createWatermarkNumberPair(this.t('configModal.watermark.padding'), [
         {
+          label: this.watermarkPaddingAxisLabel('x'),
+          path: ['watermark', 'signature', 'paddingX'],
+          value: signature.paddingX,
           min: WATERMARK_GAP_MIN,
           max: WATERMARK_GAP_MAX,
           step: 1,
           suffix: 'px',
-        }
-      );
+        },
+        {
+          label: this.watermarkPaddingAxisLabel('y'),
+          path: ['watermark', 'signature', 'paddingY'],
+          value: signature.paddingY,
+          min: WATERMARK_GAP_MIN,
+          max: WATERMARK_GAP_MAX,
+          step: 1,
+          suffix: 'px',
+        },
+      ]);
     }
   },
 
@@ -201,12 +213,14 @@ export const watermarkTabMethods = {
       ]),
       { rerender: true }
     );
-    this.createSelectField(
-      this.t('configModal.watermark.position'),
-      ['watermark', 'normal', 'position'],
-      normal.position,
-      this.watermarkPositionOptions()
-    );
+    if (arrangement === 'single') {
+      this.createSelectField(
+        this.t('configModal.watermark.position'),
+        ['watermark', 'normal', 'position'],
+        normal.position,
+        this.watermarkPositionOptions()
+      );
+    }
 
     if (type === 'text') {
       this.createTextField(
@@ -255,26 +269,28 @@ export const watermarkTabMethods = {
         suffix: '°',
       },
     ]);
-    this.createWatermarkNumberPair(this.t('configModal.watermark.size'), [
-      {
-        label: this.t('configModal.watermark.width'),
-        path: ['watermark', 'normal', 'width'],
-        value: normal.width,
-        min: WATERMARK_SIZE_MIN,
-        max: WATERMARK_SIZE_MAX,
-        step: 1,
-        suffix: 'px',
-      },
-      {
-        label: this.t('configModal.watermark.height'),
-        path: ['watermark', 'normal', 'height'],
-        value: normal.height,
-        min: WATERMARK_SIZE_MIN,
-        max: WATERMARK_SIZE_MAX,
-        step: 1,
-        suffix: 'px',
-      },
-    ]);
+    if (type === 'image' || arrangement === 'tiled') {
+      this.createWatermarkNumberPair(this.normalWatermarkSizeLabel(type, arrangement), [
+        {
+          label: this.t('configModal.watermark.width'),
+          path: ['watermark', 'normal', 'width'],
+          value: normal.width,
+          min: WATERMARK_SIZE_MIN,
+          max: WATERMARK_SIZE_MAX,
+          step: 1,
+          suffix: 'px',
+        },
+        {
+          label: this.t('configModal.watermark.height'),
+          path: ['watermark', 'normal', 'height'],
+          value: normal.height,
+          min: WATERMARK_SIZE_MIN,
+          max: WATERMARK_SIZE_MAX,
+          step: 1,
+          suffix: 'px',
+        },
+      ]);
+    }
     this.createWatermarkNumberPair(this.t('configModal.watermark.offset'), [
       {
         label: this.t('configModal.watermark.offsetX'),
@@ -320,15 +336,6 @@ export const watermarkTabMethods = {
   },
 
   renderWatermarkImageSourceFields(normal) {
-    this.createWatermarkChoiceField(
-      this.t('configModal.watermark.imageSourceType'),
-      ['watermark', 'normal', 'imageSourceType'],
-      normal.imageSourceType,
-      WATERMARK_IMAGE_SOURCE_TYPES.map((value) => [
-        value,
-        this.t(`configModal.watermark.imageSourceType.${value}`),
-      ])
-    );
     this.createTextField(
       this.t('configModal.watermark.imageSource'),
       ['watermark', 'normal', 'imageSource'],
@@ -404,5 +411,52 @@ export const watermarkTabMethods = {
       ['top-right', this.t('configModal.watermark.position.top')],
       ['bottom-right', this.t('configModal.watermark.position.bottom')],
     ];
+  },
+
+  /*
+   * 根据轴方向生成边距轴标签。适配本地化文案：
+   * - 中文环境下对应"水平边距"/"垂直边距"
+   * - 其他语言回退为 baseLabel + " X"/" Y"
+   *
+   * 当前未新增独立 i18n key，因为 paddingX/paddingY 仍使用原 padding 翻译 key，
+   * 拆分后补充轴方向后缀即可。
+   */
+  watermarkPaddingAxisLabel(axis) {
+    const baseLabel = this.t('configModal.watermark.padding');
+    if (baseLabel === '边距') return axis === 'x' ? '水平边距' : '垂直边距';
+    if (baseLabel === '邊距') return axis === 'x' ? '水平邊距' : '垂直邊距';
+    return `${baseLabel} ${axis.toUpperCase()}`;
+  },
+
+  /*
+   * 切换签名水印样式时，自动校正 position 为对应水印条的合法值。
+   * 角落签名支持 9 位置，水印条只支持顶部或底部，防止出现空选项。
+   */
+  signatureWatermarkPositionForStyle(position, style) {
+    if (style !== 'bar') return position;
+    return String(position || '').startsWith('top') ? 'top-right' : 'bottom-right';
+  },
+
+  /*
+   * 普通水印的尺寸标签根据类型和排列方式区分：
+   * - 图片水印显示"图片尺寸"
+   * - 平铺显示"平铺单元"
+   * - 单个文字水印隐藏尺寸控件（size 字段 UI 不可见）
+   *
+   * 同样基于当前翻译匹配，未新增独立 i18n key。
+   */
+  normalWatermarkSizeLabel(type, arrangement) {
+    const baseLabel = this.t('configModal.watermark.size');
+    if (type === 'image') {
+      if (baseLabel === '水印尺寸') return '图片尺寸';
+      if (baseLabel === '浮水印尺寸') return '圖片尺寸';
+      return 'Image size';
+    }
+    if (arrangement === 'tiled') {
+      if (baseLabel === '水印尺寸') return '平铺单元';
+      if (baseLabel === '浮水印尺寸') return '平鋪單元';
+      return 'Tile cell';
+    }
+    return baseLabel;
   },
 };

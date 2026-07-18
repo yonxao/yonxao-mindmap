@@ -140,6 +140,7 @@ export class ConfigModal extends Modal {
   }
 
   onClose() {
+    this.clearWatermarkUnlockCountdown?.();
     this.dragState = null;
     this.modalEl.classList.remove('is-dragging-config-modal');
     this.modalEl.style.position = '';
@@ -153,6 +154,7 @@ export class ConfigModal extends Modal {
   render() {
     if (!this.formEl) return;
 
+    this.clearWatermarkUnlockCountdown?.();
     this.formEl.empty();
     this.formEl.classList.toggle('is-advanced', this.activeTab === 'advanced');
     const normalized = normalizeMindConfig(this.effectiveDraftConfig());

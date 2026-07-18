@@ -99,6 +99,8 @@ export function canonicalizeMindConfig(rawConfig) {
   const normal = isPlainObject(watermark.normal) ? watermark.normal : {};
   setConfigValueIfPresent(next, ['watermark', 'enabled'], watermark.enabled);
   setConfigValueIfPresent(next, ['watermark', 'mode'], watermark.mode);
+  // 旧版签名水印使用单个 padding；保留到归一化阶段迁移为 paddingX/paddingY。
+  setConfigValueIfPresent(next, ['watermark', 'signature', 'padding'], signature.padding);
   for (const key of WATERMARK_SIGNATURE_CONFIG_KEYS) {
     setConfigValueIfPresent(next, ['watermark', 'signature', key], signature[key]);
   }
