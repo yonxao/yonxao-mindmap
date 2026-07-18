@@ -22,6 +22,10 @@ import { readViewportSafeAreaInsets } from '../../utils/safeArea.js';
 
 const TOOLBAR_POSITION_GAP = 8;
 
+/*
+ * 根据工具栏尺寸和视口安全区计算工具栏可放置的边界范围。
+ * 移动端状态栏/手势栏属于不可点击区域，拖拽边界不能按 0 计算。
+ */
 function toolbarViewportBounds(toolbarRect) {
   const safeArea = readViewportSafeAreaInsets();
   const minLeft = TOOLBAR_POSITION_GAP + safeArea.left;

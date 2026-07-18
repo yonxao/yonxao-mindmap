@@ -19,6 +19,12 @@ function isTouchPointer(event) {
   return event.pointerType === 'touch';
 }
 
+/*
+ * 停止 Obsidian 页面级触摸手势。
+ *
+ * 非全屏状态下触摸导图不应触发 Obsidian 下拉命令面板、返回等页面手势，
+ * 利用 stopPropagation 阻断事件冒泡到 Obsidian 容器。
+ */
 export const panZoomControllerMethods = {
   handleWheel(event) {
     if (!this.viewBox) return;
@@ -32,10 +38,18 @@ export const panZoomControllerMethods = {
     this.zoomViewBox(factor, point.x, point.y);
   },
 
+  /*
+   * 仅在全屏/窗口全屏激活时响应触摸平移。
+   * 普通页面中触摸导图应优先滚动 Obsidian 页面，不启动 SVG 平移。
+   */
   shouldHandleTouchPan() {
     return Boolean(this.isFullscreenViewportActive?.());
   },
 
+  /*
+   * 阻断 Obsidian 页面级触摸手势冒泡。
+   * 仅对触摸事件生效，不影响鼠标/笔 pointer 事件。
+   */
   stopObsidianTouchGesture(event) {
     if (!isTouchPointer(event)) return;
     event.stopPropagation();

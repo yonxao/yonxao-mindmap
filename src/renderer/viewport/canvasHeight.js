@@ -51,7 +51,6 @@ export const canvasHeightMethods = {
     const gripEl = document.createElement('div');
     gripEl.className = 'yonxao-mindmap-height-resize-grip';
     gripEl.setAttribute('aria-hidden', 'true');
-    gripEl.setAttribute('title', this.t('canvas.resizeHandle'));
     this.heightResizeHandleEl.appendChild(gripEl);
 
     this.containerEl.appendChild(this.heightResizeHandleEl);
