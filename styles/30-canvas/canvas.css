@@ -15,7 +15,7 @@
  * SVG 主幕布，承载所有主题、连线和交互区域。
  *
  * 关键点：
- * touch-action: none 避免触摸设备默认滚动手势干扰平移。
+ * 普通移动端页面中允许纵向滚动，避免导图抢走整页滚动；全屏态另行禁用默认触摸手势。
  */
 .yonxao-mindmap-svg {
   /*
@@ -43,6 +43,13 @@
   height: 100%;
   color: var(--text-muted);
   cursor: grab;
+  touch-action: pan-y;
+}
+
+.yonxao-mindmap-host.is-fullscreen .yonxao-mindmap-svg,
+.yonxao-mindmap-host.is-window-fullscreen .yonxao-mindmap-svg,
+.yonxao-mindmap-fs-overlay .yonxao-mindmap-svg,
+.yonxao-mindmap-wf-overlay .yonxao-mindmap-svg {
   touch-action: none;
 }
 

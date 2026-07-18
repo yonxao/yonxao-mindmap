@@ -10,6 +10,7 @@
  */
 
 import { Menu, Notice, CODE_BLOCK_NAME, findFenceBySection } from '../../shared/rendererShared.js';
+import { ZOOM_IN_FACTOR, ZOOM_OUT_FACTOR } from '../../constants.js';
 import {
   ICON_UNDO_TOPIC_CHANGE,
   ICON_REDO_TOPIC_CHANGE,
@@ -19,8 +20,18 @@ import {
   ICON_COPY_CONFIG,
   ICON_EXPORT_PNG,
   ICON_COPY_PNG,
+  ICON_TOGGLE_SOURCE,
+  ICON_TOGGLE_MAP,
+  ICON_CONFIG,
   ICON_FIT_VIEW,
   ICON_ORIGINAL_SIZE,
+  ICON_WINDOW_FULLSCREEN_ENTER,
+  ICON_WINDOW_FULLSCREEN_EXIT,
+  ICON_FULLSCREEN_ENTER,
+  ICON_FULLSCREEN_EXIT,
+  ICON_ZOOM_IN,
+  ICON_ZOOM_OUT,
+  ICON_RESET_COLLAPSE,
   ICON_DELETE_MINDMAP,
 } from '../../icons/iconNames.js';
 
@@ -52,6 +63,9 @@ export const mapContextMenuMethods = {
       menu.addSeparator();
     }
 
+    this.addMapViewContextMenuItems(menu);
+    menu.addSeparator();
+
     this.addTopicContextMenuItem(menu, this.t('contextMenu.copyBody'), ICON_COPY_BODY, () =>
       this.copyPlainBody()
     );
@@ -77,14 +91,6 @@ export const mapContextMenuMethods = {
     );
     menu.addSeparator();
 
-    this.addTopicContextMenuItem(menu, this.t('toolbar.fitView'), ICON_FIT_VIEW, () =>
-      this.fitView()
-    );
-    this.addTopicContextMenuItem(menu, this.t('toolbar.originalSize'), ICON_ORIGINAL_SIZE, () =>
-      this.showOriginalSizeView()
-    );
-    menu.addSeparator();
-
     this.addTopicContextMenuItem(
       menu,
       this.t('contextMenu.deleteMindMap'),
@@ -93,6 +99,51 @@ export const mapContextMenuMethods = {
     );
 
     menu.showAtMouseEvent(event);
+  },
+
+  addMapViewContextMenuItems(menu) {
+    const toggleViewLabel = this.isSourceMode
+      ? this.t('toolbar.showMap')
+      : this.t('toolbar.showSource');
+    const toggleViewIcon = this.isSourceMode ? ICON_TOGGLE_MAP : ICON_TOGGLE_SOURCE;
+    const windowFullscreenLabel = this.isWindowFullscreen
+      ? this.t('toolbar.exitWindowFullscreen')
+      : this.t('toolbar.enterWindowFullscreen');
+    const windowFullscreenIcon = this.isWindowFullscreen
+      ? ICON_WINDOW_FULLSCREEN_EXIT
+      : ICON_WINDOW_FULLSCREEN_ENTER;
+    const fullscreenLabel = this.isFullscreen
+      ? this.t('toolbar.exitFullscreen')
+      : this.t('toolbar.enterFullscreen');
+    const fullscreenIcon = this.isFullscreen ? ICON_FULLSCREEN_EXIT : ICON_FULLSCREEN_ENTER;
+
+    this.addTopicContextMenuItem(menu, toggleViewLabel, toggleViewIcon, () =>
+      this.toggleSourceMode()
+    );
+    this.addTopicContextMenuItem(menu, this.t('toolbar.config'), ICON_CONFIG, () =>
+      this.openConfigModal()
+    );
+    this.addTopicContextMenuItem(menu, this.t('toolbar.fitView'), ICON_FIT_VIEW, () =>
+      this.fitView()
+    );
+    this.addTopicContextMenuItem(menu, this.t('toolbar.originalSize'), ICON_ORIGINAL_SIZE, () =>
+      this.showOriginalSizeView()
+    );
+    this.addTopicContextMenuItem(menu, windowFullscreenLabel, windowFullscreenIcon, () =>
+      this.toggleWindowFullscreen()
+    );
+    this.addTopicContextMenuItem(menu, fullscreenLabel, fullscreenIcon, () =>
+      this.toggleFullscreen()
+    );
+    this.addTopicContextMenuItem(menu, this.t('toolbar.zoomIn'), ICON_ZOOM_IN, () =>
+      this.zoomAtCenter(ZOOM_IN_FACTOR)
+    );
+    this.addTopicContextMenuItem(menu, this.t('toolbar.zoomOut'), ICON_ZOOM_OUT, () =>
+      this.zoomAtCenter(ZOOM_OUT_FACTOR)
+    );
+    this.addTopicContextMenuItem(menu, this.t('toolbar.resetCollapse'), ICON_RESET_COLLAPSE, () =>
+      this.resetCollapsedTopics()
+    );
   },
 
   /*

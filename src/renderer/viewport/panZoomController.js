@@ -15,6 +15,10 @@ import {
   WHEEL_ZOOM_FACTOR_IN,
 } from '../../shared/rendererShared.js';
 
+function isTouchPointer(event) {
+  return event.pointerType === 'touch';
+}
+
 export const panZoomControllerMethods = {
   handleWheel(event) {
     if (!this.viewBox) return;
@@ -28,8 +32,22 @@ export const panZoomControllerMethods = {
     this.zoomViewBox(factor, point.x, point.y);
   },
 
+  shouldHandleTouchPan() {
+    return Boolean(this.isFullscreenViewportActive?.());
+  },
+
+  stopObsidianTouchGesture(event) {
+    if (!isTouchPointer(event)) return;
+    event.stopPropagation();
+  },
+
   handlePanPointerDown(event) {
     if (event.button !== 0 || !this.viewBox) return;
+
+    this.stopObsidianTouchGesture(event);
+    if (isTouchPointer(event) && !this.shouldHandleTouchPan()) {
+      return;
+    }
 
     const target = event.target;
     const isTopicControl =
@@ -42,10 +60,15 @@ export const panZoomControllerMethods = {
 
     const topicEl = target && target.closest ? target.closest('.yonxao-mindmap-topic') : null;
     if (topicEl) {
-      if (this.canEditMindMap()) {
+      if (!isTouchPointer(event) && this.canEditMindMap()) {
         this.startPendingTopicDrag(event, topicEl);
       }
       return;
+    }
+
+    if (isTouchPointer(event)) {
+      // 全屏里触摸拖动用于平移导图，并阻断 Obsidian 自身下拉/返回类手势。
+      event.preventDefault();
     }
 
     this.panState = {
@@ -64,12 +87,17 @@ export const panZoomControllerMethods = {
   },
 
   handlePanPointerMove(event) {
+    this.stopObsidianTouchGesture(event);
     if (this.topicDragState) {
       this.handleTopicDragMove(event);
       return;
     }
 
     if (!this.panState || !this.viewBox) return;
+    if (isTouchPointer(event)) {
+      event.preventDefault();
+    }
+
     const rect = this.svgEl.getBoundingClientRect();
     if (!rect.width || !rect.height) return;
 
@@ -86,6 +114,7 @@ export const panZoomControllerMethods = {
   },
 
   handlePanPointerUp(event) {
+    this.stopObsidianTouchGesture(event);
     if (this.topicDragState) {
       Promise.resolve(this.finishTopicDrag(event)).catch((error) => {
         new Notice(`yonxao-mindmap: ${error.message || String(error)}`);

@@ -87,14 +87,8 @@ export const floatingToolbarMethods = {
       )
     );
     this.mapActionButtons.push(
-      this.createToolbarButton(
-        toolbar,
-        this.t('toolbar.resetCollapse'),
-        ICON_RESET_COLLAPSE,
-        () => {
-          this.collapsedIds.clear();
-          this.renderMap(true);
-        }
+      this.createToolbarButton(toolbar, this.t('toolbar.resetCollapse'), ICON_RESET_COLLAPSE, () =>
+        this.resetCollapsedTopics()
       )
     );
 

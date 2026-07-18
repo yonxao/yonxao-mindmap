@@ -37,6 +37,11 @@ export const collapseStateMethods = {
     this.renderMap(true);
   },
 
+  resetCollapsedTopics() {
+    this.collapsedIds.clear();
+    this.renderMap(true);
+  },
+
   forEachTopicWithSubtopics(topic, callback) {
     if (!topic || !topic.subtopics.length) return;
 
