@@ -25,6 +25,9 @@
 
 - 命令脚本：`scripts/clean.mjs`、`scripts/build-js.mjs`、`scripts/build-css.mjs`、`scripts/prepare-plugin-dir.mjs`、`scripts/copy-hotreload.mjs`、`scripts/generate-release-body.mjs`
 - 插件入口：`src/main.js`
+- 公共核心：`packages/core/`（完整文档和主题内容语法、配置契约、主题树、编辑/导出语义、视觉主题和统一布局）
+- SVG 几何：`packages/svg-renderer/`（连接线、控件、高级结构、视口和水印几何）
+- 跨端方案：`docs/CROSS_PLATFORM_ARCHITECTURE.zh-CN.md`
 - 配置相关：`src/config/`
 - 布局相关：`src/layout/`
 - 渲染相关：`src/renderer/`
@@ -37,6 +40,7 @@
 ### 0.4 按任务阅读指南
 
 - 项目入口、发布产物、许可证：见“1. 项目基础”。
+- 开源/闭源仓库关系、Electron/Web/移动技术栈和各端产物：见 `docs/CROSS_PLATFORM_ARCHITECTURE.zh-CN.md`。
 - 改代码前的执行边界、改动要求、验证方式：见“2. 协作与验证”。
 - yxmm 语法和术语规范：见“3. 语法与数据模型”。
 - 配置项、布局类型、国际化：见“4. 配置系统”。
@@ -62,7 +66,9 @@
 
 ### 1.2 发布产物
 
-Obsidian 插件安装目录只需要核心发布文件：
+仓库包含三套用途不同的构建产物。
+
+Obsidian 插件安装目录只需要：
 
 - `main.js`
 - `styles.css`
@@ -73,6 +79,14 @@ Obsidian 插件安装目录只需要核心发布文件：
 - `dist/main.js`：由源码构建生成。
 - `dist/styles.css`：由 `styles/index.css` 和分文件 CSS 构建生成。
 - `dist/manifest.json`：由根目录 `manifest.json` 准备到发布目录。
+
+两个公共 npm 包分别由 `packages/core/package.json` 和 `packages/svg-renderer/package.json` 定义，构建到各自的 `dist/`：
+
+- `index.js`：ESM 公共入口。
+- `index.d.ts`：TypeScript 类型入口。
+- 其余 `*.js`、`*.d.ts` 和映射文件：按模块生成的实现、声明与调试映射。
+
+公共包的 `dist/` 不复制到 Obsidian 安装目录；插件构建会按 core、svg-renderer 的顺序构建，再把二者打进根 `dist/main.js`。运行 `npm pack` 或发布任一公共包时，`prepack` 会先重新构建该包。
 
 本地调试和用户设置文件：
 
@@ -118,11 +132,12 @@ package license 字段：
 
 ### 2.3 验证命令
 
-- AI 日常验证只处理本次修改：使用 `format:file` 处理变动文件，JS 使用 `lint:file`，CSS 使用 `lint:css:file`，相关测试使用 `test:file`。
+- AI 日常验证只处理本次修改：使用 `format:file` 处理变动文件，JS/TS 使用 `lint:file`，CSS 使用 `lint:css:file`，相关测试使用 `test:file`。
 - CSS 检查以 `stylelint-config-standard` 为基线，构建器、Obsidian 宿主和 MathJax 兼容例外统一维护在 `stylelint.config.mjs`。
 - CSS 以 `minAppVersion: 1.12.7` 的现代运行时为基线，不为旧 Electron/WebView 保留弃用属性或旧语法回退。
 - 任务开始前已有暂存或未暂存改动的文件只运行格式检查，不执行整文件自动格式化。
 - JS 改动影响插件入口时运行 `npm run build:js && npm run build:check:js`；只改 CSS 时运行 `npm run build:css && npm run build:check:css`。
+- 修改公共包时先运行 `typecheck` 和对应包测试；`build:js` 会先构建 core、svg-renderer，再生成插件入口。
 - 准备提交时运行 `npm run verify`，执行全量测试、构建、lint 和格式检查。
 - GitHub Actions 使用 `npm run release` 完成质量检查、产物生成和发布门禁；AI 需要本地 Obsidian 调试产物时运行 `npm run dev`，人工需要完整检查时运行 `npm run dev:check`。
 - 如果无法运行验证，交付时必须说明原因和已做的替代检查。
@@ -131,22 +146,23 @@ npm 命令面向开发者任务，内部辅助脚本不要求一一暴露。基�
 
 基础命令：
 
-| 职责     | 命令                                                         | 范围与用途                                   |
-| -------- | ------------------------------------------------------------ | -------------------------------------------- |
-| 清理     | `clean`                                                      | 删除整个 `dist/`                             |
-| 构建     | `build:js`、`build:css`                                      | 分别生成 `dist/main.js` 和 `dist/styles.css` |
-| 产物检查 | `build:check:js`、`build:check:css`、`build:check`           | 分别检查生成的 JS、CSS 语法，或同时检查两者  |
-| 测试     | `test`、`test:file`                                          | 运行全部测试或指定测试文件                   |
-| 代码检查 | `lint`、`lint:file`、`lint:css:file`、`lint:fix`             | 全量检查、按 JS/CSS 文件检查或全量自动修复   |
-| 格式化   | `format`、`format:file`、`format:check`、`format:check:file` | 全量或按文件写入格式，以及对应的只读格式检查 |
-| 发布正文 | `release:body`                                               | 生成 `dist/release-body.md`                  |
+| 职责     | 命令                                                                      | 范围与用途                                   |
+| -------- | ------------------------------------------------------------------------- | -------------------------------------------- |
+| 清理     | `clean`                                                                   | 删除插件和两个公共包的 `dist/`               |
+| 构建     | `build:core`、`build:renderer`、`build:packages`、`build:js`、`build:css` | 构建单个/全部公共包，或生成插件 JS/CSS 产物  |
+| 产物检查 | `build:check:js`、`build:check:css`、`build:check`                        | 分别检查生成的 JS、CSS 语法，或同时检查两者  |
+| 测试     | `test`、`test:file`                                                       | 运行全部测试或指定测试文件                   |
+| 类型检查 | `typecheck`                                                               | 检查两个公共包的 TypeScript，不写入产物      |
+| 代码检查 | `lint`、`lint:file`、`lint:css:file`、`lint:fix`                          | 全量检查、按 JS/CSS 文件检查或全量自动修复   |
+| 格式化   | `format`、`format:file`、`format:check`、`format:check:file`              | 全量或按文件写入格式，以及对应的只读格式检查 |
+| 发布正文 | `release:body`                                                            | 生成 `dist/release-body.md`                  |
 
 流程命令：
 
 | 层级     | 命令        | 组合职责                                                            |
 | -------- | ----------- | ------------------------------------------------------------------- |
 | 完整构建 | `build`     | 依次执行 JS 和 CSS 构建                                             |
-| 质量检查 | `check`     | 全量测试、lint 和只读格式检查，不生成构建产物                       |
+| 质量检查 | `check`     | 构建核心后执行全量测试、类型检查、lint 和只读格式检查               |
 | 提交门禁 | `verify`    | 质量检查、完整构建和构建产物语法检查                                |
 | 本地开发 | `dev`       | 完整构建并检查产物，准备插件目录并复制 `.hotreload`；不清理 `dist/` |
 | 人工开发 | `dev:check` | 先执行完整质量检查，再运行 `dev`                                    |
@@ -158,6 +174,7 @@ npm 命令面向开发者任务，内部辅助脚本不要求一一暴露。基�
 npm run format:file -- src/parser/parseMind.js test/parser/parseMind.test.mjs
 npm run format:check:file -- src/parser/parseMind.js
 npm run lint:file -- src/parser/parseMind.js test/parser/parseMind.test.mjs
+npm run typecheck
 npm run lint:css:file -- styles/50-map/topics.css
 npm run test:file -- test/parser/parseMind.test.mjs
 ```
@@ -360,7 +377,7 @@ SVG 渲染时再按片段生成不同样式的 `tspan`。
 - 方程式先按源码预估高度参与布局，再异步尝试 Obsidian/MathJax 渲染；渲染失败时显示公式源码。
 - 主题编辑面板内容工具栏分两行：第一行是加粗、斜体、下划线、中划线、字体颜色、标签、链接、清除格式；第二行是无序列表、有序列表、任务列表、方程式、代码块、图片、备注、附件。工具栏按钮只写入内容轻量标记，不写入主题属性；附件按钮插入 `@[名称](地址)` 模板，渲染后图标点击打开，浮层提供打开和复制地址。
 
-语义色固定映射在 `src/utils/richText.js` 中，当前包括 `red`、`green`、`blue`、`yellow`、`orange`、`purple`、`pink`、`gray`、`black`、`white`。未知语义色、非法颜色和未闭合标记都按普通文本显示，避免用户输入被静默吞掉。
+内容标记、块类型、图片尺寸提示和语义色固定映射统一在 `packages/core/src/model/topicContent.ts` 中；富文本折行、列表编号、代码/公式预估、图片尺寸约束、装饰块统计和内容盒模型统一在 `packages/core/src/model/topicRichLayout.ts` 中。`src/utils/richText.js` 只保留稳定兼容出口，图片是否存在和自然尺寸由插件在调用时通过回调注入。语义色当前包括 `red`、`green`、`blue`、`yellow`、`orange`、`purple`、`pink`、`gray`、`black`、`white`。未知语义色、非法颜色和未闭合标记都按普通文本显示，避免用户输入被静默吞掉。
 
 #### 3.2.4 布局结构
 
@@ -471,7 +488,20 @@ SVG 渲染时再按片段生成不同样式的 `tspan`。
 
 ### 4.2 配置代码入口
 
-运行时默认值、配置范围和可选值集合定义在：
+跨端共享的文档字段白名单、路径读写、来源级继承和保存裁剪定义在：
+
+```text
+packages/core/src/model/configDocument.ts
+```
+
+跨端共享的产品默认值、枚举、数值边界和运行时映射定义在：
+
+```text
+packages/core/src/model/configDefaults.ts
+packages/core/src/model/configRuntime.ts
+```
+
+Obsidian 设置面板分组、字体选项和预设色板定义在：
 
 ```text
 src/config/defaultMindConfig.js
@@ -483,16 +513,16 @@ src/config/defaultMindConfig.js
 src/config/mindConfig.js
 ```
 
-具体实现已按职责拆分：
+插件配置模块按职责拆分，其中兼容出口不再维护产品规则：
 
-- `configAccessors.js`
-- `configCanonicalize.js`
-- `configNormalize.js`
-- `configSerialize.js`
-- `yamlConfig.js`
+- `configAccessors.js`：公共配置对象操作的兼容出口。
+- `configCanonicalize.js`：公共文档字段白名单的兼容出口。
+- `configNormalize.js`：公共运行时配置规范化的兼容出口。
+- `configSerialize.js`：公共配置区裁剪和源码拼接的兼容出口。
+- `yamlConfig.js`：公共 YAML API 的兼容出口。
 - `runtimeConfigSave.js`
 
-配置面板需要展示选项时，应优先复用 `src/config/defaultMindConfig.js` 中的值集合，再在 UI 层映射为本地化文案。
+配置面板需要展示产品枚举时，应优先复用公共核心；只有字体下拉分组、预设色板等 UI 元数据放在 `src/config/defaultMindConfig.js`，并在 UI 层映射为本地化文案。
 
 ### 4.3 配置项总览
 
@@ -619,11 +649,13 @@ structure:
 
 ### 4.7 主题、配色与图标
 
-主题定义在：
+主题名称、调色板、自动配色、填充透明度和连线透明度定义在：
 
 ```text
-src/theme/mindThemes.js
+packages/core/src/model/theme.ts
 ```
+
+`src/theme/mindThemes.js` 只保留公共主题 API 的插件兼容出口和 Obsidian 配置面板中文标签。
 
 当前内置主题：
 
@@ -633,8 +665,9 @@ src/theme/mindThemes.js
 
 - 中心主题颜色应和分支颜色区分开。
 - 主题属性 `color` 只修改当前主题的颜色，不应改变它与父主题之间的连线颜色。
-- 彩虹类主题按分支主题自动分配颜色。
+- 彩虹类主题按一级分支自动分配颜色，灰阶主题按主题层级分配颜色。
 - `color.defaultTopicColor` 会覆盖主题自动配色，但主题属性 `color` 仍然优先。
+- 主题属性 `color` 只覆盖当前主题，父子连线忽略该属性；该优先级由公共核心统一。
 - 配置区中的十六进制颜色建议加引号，例如 `defaultColor: '#66ed0c'`。
 
 当前内置了一些图标，图标数据保存在：
@@ -678,7 +711,7 @@ font:
 主题属性 align > font.align > 插件默认值 auto
 ```
 
-字号、字重、行高有范围限制，范围定义在 `src/config/defaultMindConfig.js`：
+字号、字重、行高有范围限制，范围定义在 `packages/core/src/model/configDefaults.ts`：
 
 - `size`：字号，范围 `9` 到 `96`。
 - `weight`：字重，范围 `100` 到 `900`，遵循 CSS 字重标准。
@@ -834,6 +867,10 @@ src/i18n/locales/
 ---
 
 ## 5. 布局系统
+
+`packages/core` 负责宿主无关的文档/运行时配置契约、主题内容语法、确定性文本估宽/换行、富内容盒模型、主题编辑/折叠/剪贴板/大纲导出、Markdown 围栏操作、视觉主题、19 种布局和产品语义。`packages/svg-renderer` 只依赖 core，负责连接线锚点与 path、主题控件语义点、高级结构路径/边界、水印布局、画布坐标转换和 viewBox 适配。插件向公共包注入图片资源状态和自然尺寸，并完成真实字体、图标和结构标签测量；设置存储与 UI 文案/选项元数据、资源解析、权限与按钮显隐、DOM/SVG 元素创建、CSS、事件和 Obsidian API 留在 `src/`。
+
+布局或渲染几何规则不能在插件和公共包各维护一份。`src/layout/`、`src/renderer/draw/*Geometry.js`、`connectorPaths.js` 和 `viewportMath.js` 只保留配置转换或兼容出口；闭源 Web/App 仓库同时消费 `@yonxao/mindmap-core` 和 `@yonxao/mindmap-svg-renderer`。
 
 ### 5.1 主干上色规则
 
@@ -1071,6 +1108,8 @@ src/i18n/locales/
 
 主题按钮不要再放回主题本体层。按钮层只读取主题布局结果和语义点位，负责按钮显示、定位、冲突避让和事件命中。
 
+三层中的纯几何统一来自 `@yonxao/mindmap-svg-renderer`，其主题模型和布局类型来自 `@yonxao/mindmap-core`。连线层仍在插件中创建 SVG path 元素并决定颜色；主题控件层仍在插件中绑定事件，但边界投影和点位冲突判定不能依赖 DOM，也不能在宿主层复制算法。
+
 #### 6.2.2 语义点位
 
 每个主题框周围存在 4 个语义点位：
@@ -1083,6 +1122,10 @@ src/i18n/locales/
 普通右向思维导图中，父线入口是左侧中点，子线出口是右侧中点，兄主题插入点是上侧中点，弟主题插入点是下侧中点。
 
 下挂展开时，子线出口必须跟随实际连接线交点。例如右向布局中子主题向下挂出时，子线出口应变为下侧中点，而不是继续使用右侧中点。
+
+主题控件层通过 `resolveTopicControlPoints()` 获取父线入口、子线出口和兄弟插入点。双向根主题、时间轴时间点、鱼骨大分支、放射角度和下挂拐点等规则属于公共语义；插件只叠加“当前是否可编辑”“该按钮是否显示”和国际化标签。
+
+外框、概要和关联分别通过 `boundaryGeometry()`、`summaryGeometry()`、`relationGeometry()` 获取框体、路径、标签点和整体边界。标签宽度由宿主测量后传入；邻接避让、障碍路由、手动锚点、直角补点和贝塞尔控制点属于 `@yonxao/mindmap-svg-renderer`。
 
 #### 6.2.3 绑定与显示规则
 
@@ -1177,6 +1220,27 @@ CSS/浮层补充约定：
 #### 7.1.2 源码结构
 
 ```
+packages/
+├── core/                                     # 文档、模型、序列化和布局核心
+│   ├── src/
+│   │   ├── parser/                           # YAML、主题、结构和完整文档解析
+│   │   ├── model/                            # 配置、内容、主题树、编辑和主题规则
+│   │   ├── layout/                           # 19 种布局、公共尺寸和碰撞几何
+│   │   ├── serializer/                       # 主题与 Markdown 围栏序列化
+│   │   └── index.ts                          # core 公共入口
+│   └── test/                                 # core 契约和插件兼容测试
+└── svg-renderer/                             # SVG 与视口纯几何
+    ├── src/
+    │   ├── connectorGeometry.ts              # 连接线锚点、裁剪和拐点
+    │   ├── connectorPaths.ts                 # 直线、折线、曲线路径
+    │   ├── topicPointGeometry.ts             # 主题边界点与控件冲突
+    │   ├── topicControlGeometry.ts           # 父线/子线/兄弟插入点
+    │   ├── structureGeometry.ts              # 外框、概要和关联几何
+    │   ├── viewportGeometry.ts               # 坐标、适配视图和缩放
+    │   ├── watermarkGeometry.ts              # 水印定位、平铺和签名条
+    │   └── index.ts                          # svg-renderer 公共入口
+    └── test/                                 # 渲染几何和插件兼容测试
+
 src/
 ├── main.js                                  # 插件入口，只导出插件类
 ├── constants.js                             # 全局常量定义
@@ -1191,8 +1255,9 @@ src/
 │   └── embed.js                             # Obsidian 嵌入相关 DOM 标记、错误渲染、宿主兼容辅助
 │
 ├── parser/
-│   ├── parseMind.js                         # 解析完整 yxmm 文档，生成配置对象和主题树
-│   └── serializeMind.js                     # 将主题树和配置区重新序列化为 yxmm 文本
+│   ├── parseMind.js                         # 核心文档解析结果追加插件运行时配置
+│   ├── serializeMind.js                     # 应用插件配置保存策略后调用核心写回文档
+│   └── mindStructures.js                    # 高级结构公共核心的兼容导出入口
 │
 ├── model/
 │   ├── topicTreeActions.js                  # 主题树底层操作：增删改移、查找上下文、防循环
@@ -1205,21 +1270,21 @@ src/
 │   └── collapseState.js                     # 折叠状态集合读写、后代折叠/展开、重置折叠
 │
 ├── config/
-│   ├── defaultMindConfig.js                 # 用户配置层默认值、枚举值、数值范围定义
+│   ├── defaultMindConfig.js                 # Obsidian 字体选项、预设色板和布局下拉分组
 │   ├── pluginSettings.js                    # Obsidian data.json 插件设置的规范化
 │   ├── configDraft.js                       # 配置面板草稿对象读写
 │   ├── mindConfig.js                        # 对外聚合配置 API，保持旧 import 入口稳定
 │   ├── runtimeConfigSave.js                 # 运行时配置保存前的合并、转换、默认值裁剪
-│   ├── configAccessors.js                   # getPath/setPath/deletePath/clone/merge 配置对象访问工具
-│   ├── configCanonicalize.js                # 配置规范化/标准化处理
-│   ├── configNormalize.js                   # normalizeMindConfig() 及字体/布局/主题/按钮子配置规范化
-│   ├── configSerialize.js                   # 配置区保存结构、无意义配置清理、配置区文本生成
-│   └── yamlConfig.js                        # 简化 YAML 解析、序列化、注释处理
+│   ├── configAccessors.js                   # 公共配置对象操作的插件兼容出口
+│   ├── configCanonicalize.js                # 公共文档配置白名单的插件兼容出口
+│   ├── configNormalize.js                   # 公共运行时配置规范化的插件兼容出口
+│   ├── configSerialize.js                   # 公共配置区裁剪和源码拼接的插件兼容出口
+│   └── yamlConfig.js                        # 公共核心 YAML API 的插件兼容出口
 │
 ├── layout/
-│   ├── layoutTree.js                        # 统一布局入口，调用各布局组，导出对外 API
-│   ├── layoutTypes.js                       # 布局类型集合、布局组判断、连线/下挂能力判断
-│   ├── layoutShared.js                      # 主题准备、可见子主题、通用间距和树遍历辅助
+│   ├── layoutTree.js                        # 插件布局适配：规范化配置、测量主题、调用核心
+│   ├── layoutTypes.js                       # 插件配置到核心布局选项的转换规则
+│   ├── layoutShared.js                      # 富文本、图标和字体测量适配
 │   ├── layoutBounds.js                      # 包围盒、extent、visible bounds、布局平移辅助
 │   ├── mindmapLayout.js                     # 横向/竖向/双向思维导图布局
 │   ├── treeLayout.js                        # 树形图、左右树形图布局
@@ -1241,19 +1306,20 @@ src/
 │   ├── draw/
 │   │   ├── drawTopic.js                     # 主题卡片、背景、边框、基础 topic group 绘制
 │   │   ├── drawTopicControls.js             # 编辑/折叠/展开/新增子/兄弟主题按钮绘制
-│   │   ├── topicControlPoints.js            # 父线入口、子线出口、兄/弟主题插入点语义点位计算
-│   │   ├── topicPointGeometry.js            # 点位几何计算辅助
+│   │   ├── topicControlPoints.js            # 公共控件语义点的编辑权限/显隐/标签适配
+│   │   ├── topicPointGeometry.js            # 公共主题点位几何的插件兼容出口
+│   │   ├── drawStructures.js                # 公共结构几何的标签测量、SVG 和交互适配
 │   │   ├── drawConnector.js                 # 普通父子连线绘制，调用几何路径计算
-│   │   ├── connectorGeometry.js             # 连线锚点裁剪、曲线/直线/折线路径、round cap 修正
-│   │   ├── connectorPaths.js                # 连线路径生成
+│   │   ├── connectorGeometry.js             # 公共连接线锚点与裁剪几何的插件兼容出口
+│   │   ├── connectorPaths.js                # 公共 SVG path 算法的插件线型适配出口
 │   │   ├── drawBranchTrunks.js              # 树形图/组织结构图/思维导图共享主干分段上色
 │   │   ├── drawTrunkSegments.js             # 主干分段绘制辅助
 │   │   ├── drawTimeline.js                  # 时间轴主轴、详情分支主干和专用结构线
 │   │   ├── drawFishbone.js                  # 鱼骨图主骨、鱼尾、大骨/斜骨相关绘制
 │   │   └── drawTreeTable.js                 # 树形表格专用主题框和表格边界绘制（预留）
 │   ├── viewport/
-│   │   ├── viewportMath.js                  # 坐标转换、缩放中心、原始大小焦点比例等纯计算
-│   │   ├── viewFit.js                       # 适配视图、原始大小、禁止放大、最大放大倍数计算
+│   │   ├── viewportMath.js                  # 公共坐标转换几何的插件兼容出口
+│   │   ├── viewFit.js                       # DOM 测量、视口状态和公共 viewBox 几何调度
 │   │   ├── panZoomController.js             # wheel、pointer pan、缩放事件绑定和状态更新
 │   │   └── canvasHeight.js                  # 自动高度、手动高度、高度拖拽、双击恢复自动高度
 │   ├── export/
@@ -1306,7 +1372,7 @@ src/
 │   └── sessionMemory.js                     # 会话级短期缓存：TTL、LRU 自动淘汰、容量预算
 │
 ├── theme/
-│   └── mindThemes.js                        # 内置主题色系定义
+│   └── mindThemes.js                        # 公共主题 API 与 Obsidian 选项标签兼容出口
 │
 ├── icons/
 │   ├── iconPaths.js                         # 内置图标 SVG path 数据
@@ -1328,10 +1394,10 @@ src/
     ├── dom.js                               # DOM 操作工具
     ├── equationSvg.js                       # 轻量 TeX→SVG 渲染器（PNG 导出公式兜底）
     ├── math.js                              # 数学计算工具
-    ├── richText.js                          # 主题内容局部样式解析、颜色语义和富文本折行
+    ├── richText.js                          # 核心内容语义和盒模型的兼容出口
     ├── safeArea.js                          # 移动端状态栏/手势栏安全区像素读取
     ├── svg.js                               # SVG 操作工具
-    └── text.js                              # 文本换行、截断、测量工具
+    └── text.js                              # 核心文本语义兼容出口
 ```
 
 #### 7.1.3 按功能快速定位
@@ -1340,8 +1406,10 @@ src/
 要改主题卡片外观 → src/renderer/draw/drawTopic.js
                    styles/50-map/topics.css
 
-要改内容局部样式 → src/utils/richText.js
-                   src/utils/equationSvg.js
+要改内容语法语义 → packages/core/src/model/topicContent.ts
+要改文本估宽换行 → packages/core/src/model/topicText.ts
+要改内容盒模型   → packages/core/src/model/topicRichLayout.ts
+要改内容宿主绘制 → src/utils/equationSvg.js
                    src/renderer/draw/drawTopic.js
                    src/ui/topic-editor/TopicEditorFields.js
 
@@ -1351,8 +1419,10 @@ src/
                    src/renderer/draw/connectorGeometry.js
                    styles/50-map/connectors.css
 
-要改布局算法     → src/layout/{layoutType}Layout.js
-                   入口: src/layout/layoutTree.js
+要改统一布局入口 → packages/core/src/layout/layoutTree.ts
+                   src/layout/layoutTree.js  # 插件配置和测量适配
+
+要改具体布局算法 → packages/core/src/layout/{layoutType}Layout.ts
 
 要改主题交互     → src/renderer/interaction/topicInteraction.js
                    src/renderer/interaction/topicKeyboardShortcuts.js
@@ -1363,8 +1433,20 @@ src/
                     src/model/topicHistory.js
                     src/model/topicClipboard.js
 
-要改剪贴板语义   → src/model/topicClipboard.js
-                    src/model/topicCommands.js
+要改剪贴板数据语义 → packages/core/src/model/topicClipboard.ts
+                      src/model/topicCommands.js  # 浏览器剪贴板和 UI 命令
+
+要改折叠集合语义 → packages/core/src/model/topicCollapse.ts
+                   src/model/collapseState.js  # 插件会话状态适配
+
+要改级别/任务源码编辑 → packages/core/src/model/topicEditing.ts
+                        src/source/topicLevelKeys.js
+
+要改纯文本大纲导出 → packages/core/src/model/topicPlainText.ts
+                     src/renderer/export/copyText.js
+
+要改 Markdown 围栏 → packages/core/src/serializer/markdownFence.ts
+                     src/markdown/codeBlock.js
 
 要改会话缓存     → src/shared/sessionMemory.js
 
@@ -1374,19 +1456,70 @@ src/
 要改工具栏       → src/ui/toolbar/FloatingToolbar.js
                    styles/20-toolbar/toolbar.css
 
-要改配置系统     → src/config/defaultMindConfig.js  (默认值/枚举)
-                   src/config/mindConfig.js          (聚合入口)
+要改产品配置默认值 → packages/core/src/model/configDefaults.ts
+                     packages/core/src/model/configRuntime.ts
+
+要改配置面板选项 → src/config/defaultMindConfig.js
+                   src/config/mindConfig.js
 
 要改国际化文案   → src/i18n/locales/{language}.js
                    入口: src/i18n/messages.js
 
-要改主题色系     → src/theme/mindThemes.js
+要改主题色系规则 → packages/core/src/model/theme.ts
+                   src/theme/mindThemes.js  # Obsidian 选项标签
 
 要改源码模式     → src/ui/source/SourceView.js
                     src/ui/source/sourceCodeEditor.js
                     src/ui/source/sourceShortcuts.js
 
-要改解析/序列化  → src/parser/parseMind.js
+要改主题语法核心 → packages/core/src/parser/topicParser.ts
+                   packages/core/src/serializer/topicSerializer.ts
+                   packages/core/src/parser/mindStructures.ts
+
+要改完整文档语法 → packages/core/src/parser/mindDocument.ts
+                   packages/core/src/parser/simpleYaml.ts
+
+要改文档配置契约 → packages/core/src/model/configDocument.ts
+
+要改主题树操作   → packages/core/src/model/topicTreeActions.ts
+                   packages/core/src/model/topicTraversal.ts
+
+要改关联线锚点   → packages/core/src/model/relationAnchors.ts
+
+要改水印布局几何 → packages/svg-renderer/src/watermarkGeometry.ts
+                   src/renderer/draw/drawWatermark.js  # SVG 与资源适配
+
+要改布局公共几何 → packages/core/src/layout/layoutBounds.ts
+                   packages/core/src/layout/layoutConstants.ts
+                   packages/core/src/layout/layoutGeometry.ts
+                   packages/core/src/layout/radialGeometry.ts
+                   packages/core/src/layout/layoutTypes.ts
+
+要改思维导图布局 → packages/core/src/layout/mindmapLayout.ts
+
+要改放射布局     → packages/core/src/layout/radialLayout.ts
+
+要改树形图布局   → packages/core/src/layout/treeLayout.ts
+
+要改树形表格布局 → packages/core/src/layout/treeTableLayout.ts
+
+要改组织结构布局 → packages/core/src/layout/orgLayout.ts
+
+要改时间轴布局   → packages/core/src/layout/timelineLayout.ts
+
+要改鱼骨图布局   → packages/core/src/layout/fishboneLayout.ts
+
+要改布局枚举     → packages/core/src/layout/layoutTree.ts
+                   src/config/defaultMindConfig.js  # UI 分组名称
+
+要改历史容量预算 → packages/core/src/model/topicHistoryMemory.ts
+                   src/model/topicHistory.js  # Obsidian 会话缓存和撤销/重做
+
+要改运行时配置映射 → packages/core/src/model/configRuntime.ts
+
+要改 Obsidian 配置保存 → src/config/runtimeConfigSave.js
+
+要改插件文档适配 → src/parser/parseMind.js
                    src/parser/serializeMind.js
 
 要改 Markdown 集成 → src/markdown/codeBlock.js
@@ -1400,41 +1533,60 @@ Markdown 文档
   │
   └─→ src/markdown/codeBlock.js          # 提取 yxmm 代码块
         │
-        └─→ src/parser/parseMind.js       # 解析为配置对象 + 主题树
+        └─→ packages/core/src/parser/mindDocument.ts # 原始配置、主题和高级结构
               │
-              ├─→ src/config/mindConfig.js # 配置规范化/合并
-              │
-              └─→ src/layout/layoutTree.js # 布局计算
+              └─→ src/parser/parseMind.js   # 追加插件配置规范化
                     │
-                    └─→ src/renderer/mapRenderer.js  # SVG 绘制
+                    ├─→ src/config/mindConfig.js # 默认值、继承和字段策略
+                    │
+                    └─→ src/layout/layoutTree.js # 主题测量和布局选项适配
                           │
-                          ├─→ src/renderer/draw/     # 连线、主题、控件
-                          ├─→ src/renderer/viewport/ # 视口、缩放、高度
-                          └─→ src/ui/                # 工具栏、面板、编辑
+                          └─→ packages/core/src/layout/layoutTree.ts # 布局、收集和边界
                                 │
-                                └─→ src/parser/serializeMind.js  # 写回 Markdown
+                                └─→ src/renderer/mapRenderer.js # SVG 绘制
                                       │
-                                      └─→ src/markdown/codeBlock.js
+                                      ├─→ src/renderer/draw/     # 连线、主题、控件
+                                      ├─→ src/renderer/viewport/ # 视口、缩放、高度
+                                      └─→ src/ui/                # 工具栏、面板、编辑
+                                            │
+                                            └─→ src/parser/serializeMind.js
+                                                  │
+                                                  └─→ packages/core/src/parser/mindDocument.ts
 ```
 
 #### 7.1.5 架构层级
 
 ```
+packages/core/                  # 层0: 文档、模型、语义和布局
+packages/svg-renderer/          # 层1: 只依赖 core 的 SVG/视口几何
 src/
-├── main.js + plugin/           # 层0: Obsidian 宿主接入
-├── markdown/ + obsidian/       # 层1: Markdown ↔ 插件桥接
-├── parser/ + model/            # 层2: 解析/序列化 + 数据模型
-├── config/                     # 层3: 配置系统
-├── layout/                     # 层4: 布局计算（纯数据，不涉及 DOM）
-├── renderer/                   # 层5: 渲染调度 + 绘制 + 视口 + 导出
-│   ├── draw/                   #   5a: SVG 绘制
-│   ├── viewport/               #   5b: 视口/缩放/平移
-│   ├── export/                 #   5c: 导出/Copy
-│   └── interaction/            #   5d: 交互事件
-├── ui/                         # 层6: UI 面板（工具栏/源码/编辑/配置）
-├── theme/ + icons/ + i18n/     # 层7: 横向资源
-└── utils/ + shared/            # 层8: 通用工具
+├── main.js + plugin/           # 层2: Obsidian 宿主接入
+├── markdown/ + obsidian/       # 层3: Markdown ↔ 插件桥接
+├── parser/ + model/            # 层4: 文档包装 + 核心兼容出口 + 插件状态
+├── config/                     # 层5: Obsidian 配置适配
+├── layout/                     # 层6: 测量/配置适配 + 核心兼容出口
+├── renderer/                   # 层7: 渲染调度 + 绘制 + 视口 + 导出
+│   ├── draw/                   #   6a: SVG 绘制
+│   ├── viewport/               #   6b: 视口/缩放/平移
+│   ├── export/                 #   6c: 导出/Copy
+│   └── interaction/            #   6d: 交互事件
+├── ui/                         # 层8: UI 面板（工具栏/源码/编辑/配置）
+├── theme/ + icons/ + i18n/     # 层9: 横向资源
+└── utils/ + shared/            # 层10: 通用工具
 ```
+
+`src/config/{configAccessors,configCanonicalize,configNormalize,configSerialize,yamlConfig}.js`、
+`src/parser/{parseMind,serializeMind,mindStructures}.js`、
+`src/model/{topicTreeActions,topicClipboard,relationAnchors,topicHistoryMemory}.js` 和
+`src/layout/{layoutBounds,radialGeometry,mindmapLayout,radialLayout,treeLayout,treeTableLayout,orgLayout,timelineLayout,fishboneLayout}.js`
+是为插件内部旧 import 路径保留的稳定兼容出口，真实实现归属 `packages/core/src/`。折叠集合的状态转换属于核心；
+当前会话中的集合持有、浏览器剪贴板访问、撤销/重做调度仍留在插件层，只调用核心纯函数。
+
+应用复用层已覆盖完整文档/主题内容语法、文档/运行时配置契约、视觉主题、布局和语义渲染核心：公共核心无损
+读写原始 YAML 配置、主题和高级结构，并负责配置字段白名单/来源继承/保存裁剪、产品默认值/
+数值边界/运行时映射、内容标记/富内容块解析和盒模型、确定性文本估宽/换行、编辑/折叠/剪贴板/导出语义、主题表/自动配色/颜色优先级、19 种布局调度、折叠过滤、可见主题/连线收集、
+布局结果由 core 产生；主题控件语义点、高级结构路径/边界和水印布局由 svg-renderer 产生。插件层只保留宿主设置存储、UI 文案和选项元数据、
+真实字体/图标和结构标签测量、图片资源状态/自然尺寸注入、资源解析、权限与显隐、SVG/DOM 绘制、Obsidian 交互和持久化调度。
 
 ## 8. 常见问题
 

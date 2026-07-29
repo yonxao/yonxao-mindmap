@@ -5,7 +5,9 @@
 ## 技术边界
 
 - 使用 npm 和 `package-lock.json`；不要改用 pnpm、yarn 或其他包管理器。
-- 源码使用 ESM；不要在 `package.json` 中新增 `"type": "module"`。
+- 根插件源码使用 ESM；不要在根 `package.json` 中新增 `"type": "module"`。
+- `packages/core` 使用 TypeScript，承载完整 yxmm 文档语法、文档/运行时配置契约、主题树操作、内容盒模型、编辑/导出语义、视觉主题规则和统一布局。
+- `packages/svg-renderer` 使用 TypeScript，只依赖 `@yonxao/mindmap-core`，承载连接线、控件、高级结构、视口和水印的宿主无关 SVG 几何；两个公共包都不得依赖 Obsidian、Electron、Node.js 文件系统、DOM 或 UI 框架。
 - Obsidian 发布入口必须保持 CommonJS，由 `scripts/build-js.mjs` 打包到 `dist/main.js`。
 - `obsidian` 是宿主运行时提供的 external 依赖，不要打进 bundle。
 
@@ -19,6 +21,7 @@
 
 - 用户文档：`README.md`、`README.zh-CN.md`
 - 开发上下文、术语表、代码地图：`docs/DEVELOPMENT_CONTEXT.zh-CN.md`
+- 跨端仓库、技术栈、源码边界和产物：`docs/CROSS_PLATFORM_ARCHITECTURE.zh-CN.md`
 - 人工回归清单：`docs/REGRESSION_TEST_CHECKLIST.zh-CN.md`
 - 人工回归样例：`docs/regression-layout-gallery.zh-CN.md`
 - 发布流程：`.github/workflows/release.yml`
@@ -36,7 +39,8 @@
 
 ## 测试与验证
 
-- AI 默认只格式化、检查本次修改的文件，并运行直接相关的测试；JS 使用 `lint:file`，CSS 使用 `lint:css:file`，不要默认运行全量 `verify`。
+- AI 默认只格式化、检查本次修改的文件，并运行直接相关的测试；JS/TS 使用 `lint:file`，CSS 使用 `lint:css:file`，不要默认运行全量 `verify`。
+- 修改公共包时运行 `npm run typecheck`、对应包测试以及 `npm run build:js && npm run build:check:js`。
 - JS 改动影响插件入口时运行 `npm run build:js && npm run build:check:js`；只改 CSS 时运行 `npm run build:css && npm run build:check:css`。
 - CSS 以 `stylelint-config-standard` 和 `minAppVersion` 对应的现代运行时为准，不为更旧 Electron/WebView 保留弃用回退。
 - AI 需要本地调试产物时运行 `npm run dev`；`npm run dev:check` 供人工执行完整质量检查后再准备调试产物。
@@ -64,7 +68,7 @@
 
 ## 项目特有陷阱
 
-- `npm run release` 会检查源码、清理并重建 `dist/`，可能移除 `dist/.hotreload`。
+- `npm run release` 会检查源码、清理并重建插件与两个公共包的 `dist/`，可能移除根 `dist/.hotreload`。
 - `npm run dev` 会构建并检查 JS/CSS 产物，不清理 `dist/`、不生成发布正文，但需要根目录存在 `.hotreload`。
 - 阅读视图应禁用编辑类功能，Live Preview / 编辑视图应保留编辑能力。
 - Obsidian 内部链接和附件打开前要先解析目标，避免自动创建不存在的文档。

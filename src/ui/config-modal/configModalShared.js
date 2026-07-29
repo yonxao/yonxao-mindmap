@@ -17,6 +17,7 @@ import {
   BRANCH_EXPANSION_UNSUPPORTED_LAYOUTS,
   CONNECTOR_STYLE_CONFIGURABLE_LAYOUTS,
 } from '../../config/mindConfig.js';
+import { RAINBOW_THEME_NAMES as CORE_RAINBOW_THEME_NAMES } from '@yonxao/mindmap-core';
 export {
   BRANCH_EXPANSION_UNSUPPORTED_LAYOUTS,
   BRANCH_EXPANSIONS,
@@ -82,7 +83,7 @@ export {
 } from '../fontOptions.js';
 export { clamp } from '../../utils/math.js';
 
-export const RAINBOW_THEME_NAMES = new Set(['rainbow', 'pastel-rainbow', 'neon-rainbow']);
+export const RAINBOW_THEME_NAMES = new Set(CORE_RAINBOW_THEME_NAMES);
 
 export function isConnectorStyleConfigurableLayout(layout) {
   return CONNECTOR_STYLE_CONFIGURABLE_LAYOUTS.includes(String(layout || ''));

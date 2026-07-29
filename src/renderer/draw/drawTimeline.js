@@ -10,31 +10,16 @@
  */
 
 import {
-  TOPIC_PADDING_X,
   themeConnectorOpacity,
   connectorColor,
   svg,
   DEFAULT_CONNECTOR_STROKE,
-  TIMELINE_MIN_TRUNK_X,
 } from '../../shared/rendererShared.js';
+import { timelineDetailBranchX } from '@yonxao/mindmap-svg-renderer';
 
 export const timelineDrawMethods = {
   timelineDetailBranchX(parentBox, subtopicBoxes = []) {
-    if (parentBox.side !== 'timeline-detail-top' && parentBox.side !== 'timeline-detail-bottom') {
-      return parentBox.x;
-    }
-
-    const parentRight = parentBox.x + parentBox.width / 2;
-    const preferredX = parentRight + TOPIC_PADDING_X;
-    if (!subtopicBoxes.length) return preferredX;
-
-    const firstSubtopicLeft = Math.min(...subtopicBoxes.map((box) => box.x - box.width / 2));
-    const available = firstSubtopicLeft - parentRight;
-    if (available <= TOPIC_PADDING_X) {
-      return parentRight + Math.max(TIMELINE_MIN_TRUNK_X, available / 2);
-    }
-
-    return Math.min(preferredX, firstSubtopicLeft - TOPIC_PADDING_X / 2);
+    return timelineDetailBranchX(parentBox, subtopicBoxes);
   },
 
   renderTimelineAxis(layout) {

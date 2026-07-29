@@ -3,16 +3,23 @@
   "version": "1.5.5",
   "description": "Obsidian plugin for rendering Markdown topic-level mind maps from yxmm code blocks.",
   "main": "dist/main.js",
+  "workspaces": [
+    "packages/*"
+  ],
   "scripts": {
     "clean": "node scripts/clean.mjs",
-    "build:js": "node scripts/build-js.mjs",
+    "build:core": "tsc -p packages/core/tsconfig.json",
+    "build:renderer": "tsc -p packages/svg-renderer/tsconfig.json",
+    "build:packages": "npm run build:core && npm run build:renderer",
+    "build:js": "npm run build:packages && node scripts/build-js.mjs",
     "build:css": "node scripts/build-css.mjs",
     "build": "npm run build:js && npm run build:css",
     "build:check:js": "node --check dist/main.js",
     "build:check:css": "stylelint dist/styles.css",
     "build:check": "npm run build:check:js && npm run build:check:css",
-    "test": "node --no-warnings --test test/**/*.test.mjs",
-    "test:file": "node --no-warnings --test",
+    "test": "npm run build:packages && node --no-warnings --test test/**/*.test.mjs packages/core/test/*.test.mjs packages/svg-renderer/test/*.test.mjs",
+    "test:file": "npm run build:packages && node --no-warnings --test",
+    "typecheck": "npm run typecheck --workspace @yonxao/mindmap-core && npm run typecheck --workspace @yonxao/mindmap-svg-renderer",
     "lint": "eslint . && stylelint \"styles/**/*.css\"",
     "lint:file": "eslint",
     "lint:css:file": "stylelint",
@@ -21,7 +28,7 @@
     "format:file": "prettier --write",
     "format:check": "prettier . --check",
     "format:check:file": "prettier --check",
-    "check": "npm run test && npm run lint && npm run format:check",
+    "check": "npm run test && npm run typecheck && npm run lint && npm run format:check",
     "verify": "npm run check && npm run build && npm run build:check",
     "dev": "npm run build && npm run build:check && node scripts/prepare-plugin-dir.mjs && node scripts/copy-hotreload.mjs",
     "dev:check": "npm run check && npm run dev",
@@ -53,7 +60,9 @@
     "globals": "^17.6.0",
     "prettier": "^3.6.2",
     "stylelint": "^17.14.0",
-    "stylelint-config-standard": "^40.0.0"
+    "stylelint-config-standard": "^40.0.0",
+    "typescript": "^6.0.3",
+    "typescript-eslint": "^8.65.0"
   },
   "private": true,
   "repository": {

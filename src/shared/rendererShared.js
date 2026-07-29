@@ -25,6 +25,27 @@ export {
   LEVEL_GAP,
 } from '../constants.js';
 
+// 宿主无关的渲染几何常量统一由 svg-renderer 维护，插件仅保留稳定转发入口。
+export {
+  CONNECTOR_AXIS_EPSILON,
+  CONNECTOR_ROUND_CAP_EXTENSION,
+  CONNECTOR_STROKE_WIDTH,
+  CURVE_BEND_RATIO,
+  CURVE_MIN_BEND,
+  EDIT_BUTTON_SIZE,
+  FOCUS_RATIO_BIASED,
+  FOCUS_RATIO_BIAS_THRESHOLD,
+  FOCUS_RATIO_CENTER,
+  TIMELINE_MIN_TRUNK_X,
+  TOPIC_CONTROL_AVOID_GAP,
+  TOPIC_CONTROL_AVOID_OFFSET,
+  TOPIC_SIBLING_BUTTON_RADIUS,
+  TOPIC_SUBTOPIC_BUTTON_RADIUS,
+  TOPIC_TOGGLE_BUTTON_RADIUS,
+  VIEWBOX_MAX_DIMENSION,
+  VIEWBOX_MIN_DIMENSION,
+} from '@yonxao/mindmap-svg-renderer';
+
 export {
   canonicalizeMindConfig,
   BUTTON_COLOR_PRESETS,
@@ -126,28 +147,10 @@ export const DOCUMENT_CONFIG_DEFAULT_PRUNE_PATHS = Object.freeze([
   ['font', 'align'],
 ]);
 
-// 折叠/展开按钮半径，参与按钮碰撞避让计算。
-export const TOPIC_TOGGLE_BUTTON_RADIUS = 8;
-// 新增兄弟主题按钮半径，参与同级主题之间的安全间距计算。
-export const TOPIC_SIBLING_BUTTON_RADIUS = 8;
-// 新增子主题按钮半径，和折叠按钮互斥显示但共享出口点位。
-export const TOPIC_SUBTOPIC_BUTTON_RADIUS = 8;
-// 多个主题控件发生局部冲突时保留的最小可见间隙。
-export const TOPIC_CONTROL_AVOID_GAP = 3;
-// 两个相邻按钮中心之间的避让偏移，等于两个按钮半径加最小可见间隙。
-export const TOPIC_CONTROL_AVOID_OFFSET =
-  TOPIC_TOGGLE_BUTTON_RADIUS + TOPIC_SIBLING_BUTTON_RADIUS + TOPIC_CONTROL_AVOID_GAP;
-
-// 普通连接线默认描边宽度，导出和渲染路径都复用这一视觉基准。
-export const CONNECTOR_STROKE_WIDTH = 2.2;
-// 圆头线帽需要额外延伸半个描边宽度，避免视觉上比几何端点略短。
-export const CONNECTOR_ROUND_CAP_EXTENSION = CONNECTOR_STROKE_WIDTH / 2;
 // 默认连接线颜色 CSS 变量，实际值由主题 CSS 注入。
 export const DEFAULT_CONNECTOR_STROKE = 'var(--yonxao-mindmap-default-connector)';
 // 默认主题按钮颜色 CSS 变量，实际值由主题 CSS 或 Obsidian accent 决定。
 export const DEFAULT_TOPIC_BUTTON_COLOR = 'var(--yonxao-mindmap-default-button-color)';
-// 判断横纵轴对齐时使用的小阈值，避免浮点误差造成路径分支抖动。
-export const CONNECTOR_AXIS_EPSILON = 0.5;
 
 // 自动高度上限，避免超大导图把 Obsidian 页面撑得过长。
 export const AUTO_CANVAS_MAX_HEIGHT = 800;
@@ -172,18 +175,10 @@ export const DROP_AFTER_THRESHOLD = 0.75;
 export const MAX_VIEW_FIT_RETRY = 5;
 // 适应视图的最小视口宽度（像素）。
 export const MIN_FIT_VIEWPORT_WIDTH = 240;
-// viewBox 缩放钳制最小/最大尺寸。
-export const VIEWBOX_MIN_DIMENSION = 80;
-export const VIEWBOX_MAX_DIMENSION = 8000;
 // 适应视图重试延迟（毫秒），首次适配完成后额外调度一次修正。
 export const VIEW_FIT_REFRESH_DELAY_MS = 80;
 // 全屏时容器边缘与视口的间距（像素）。
 export const FULLSCREEN_VIEWPORT_OFFSET = 32;
-// 焦点偏移判定比例阈值，超过此值时采用偏置焦点而非居中。
-export const FOCUS_RATIO_BIAS_THRESHOLD = 1.25;
-// 焦点在视口中的位置比例（偏置/居中）。
-export const FOCUS_RATIO_BIASED = 0.32;
-export const FOCUS_RATIO_CENTER = 0.5;
 
 // ── 滚轮缩放 ────────────────────────────────────────────
 // 滚轮缩放系数：向下滚动（放大）和向上滚动（缩小）。
@@ -202,8 +197,6 @@ export const FISHBONE_TAIL_EXTEND_FACTOR = 1.7;
 export const GEOMETRY_EPSILON = 0.0001;
 // 连线线段截断阈值，小于该值的线段视为零长度不绘制。
 export const SEGMENT_LENGTH_EPSILON = 0.001;
-// 时间轴详情分支的最小横向偏移量（像素）。
-export const TIMELINE_MIN_TRUNK_X = 6;
 
 // ── 导出 ────────────────────────────────────────────────
 // 导出图片画布的最大边长（像素）。
@@ -215,15 +208,8 @@ export const EXPORT_MIN_PIXEL_SCALE = 0.25;
 export const EXPORT_FILENAME_MAX_LENGTH = 80;
 
 // ── 按钮控件 ────────────────────────────────────────────
-// 编辑按钮尺寸（宽度和高度）及其圆角半径。
-export const EDIT_BUTTON_SIZE = 20;
+// 编辑按钮圆角半径。
 export const EDIT_BUTTON_BORDER_RADIUS = 5;
-
-// ── 连线路径 ────────────────────────────────────────────
-// 曲线连线的最小弯曲量（像素），确保短距离连线仍可见弯曲。
-export const CURVE_MIN_BEND = 44;
-// 曲线连线的弯曲比例（相对两端点距离的系数）。
-export const CURVE_BEND_RATIO = 0.46;
 
 // ── 手动高度 ────────────────────────────────────────────
 // 取不到真实视口高度时的手动高度兜底值。

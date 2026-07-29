@@ -1,0 +1,148 @@
+export {
+  connectorAnchors,
+  connectorBendPoint,
+  normalizedVector,
+  orgRightBranchX,
+  radialConnectorPoint,
+  timelineDetailBranchX,
+  trimConnectorAlongVectors,
+  trimConnectorAnchors,
+} from './connectorGeometry.js';
+export {
+  axisLinePath,
+  connectorPath,
+  elbowPath,
+  hangingHorizontalPath,
+  hangingVerticalPath,
+} from './connectorPaths.js';
+export {
+  CONNECTOR_AXIS_EPSILON,
+  CONNECTOR_ROUND_CAP_EXTENSION,
+  CONNECTOR_STROKE_WIDTH,
+  CURVE_BEND_RATIO,
+  CURVE_MIN_BEND,
+  EDIT_BUTTON_SIZE,
+  FOCUS_RATIO_BIASED,
+  FOCUS_RATIO_BIAS_THRESHOLD,
+  FOCUS_RATIO_CENTER,
+  TIMELINE_MIN_TRUNK_X,
+  TOPIC_CONTROL_AVOID_GAP,
+  TOPIC_CONTROL_AVOID_OFFSET,
+  TOPIC_SIBLING_BUTTON_RADIUS,
+  TOPIC_SUBTOPIC_BUTTON_RADIUS,
+  TOPIC_TOGGLE_BUTTON_RADIUS,
+  VIEWBOX_MARGIN_X,
+  VIEWBOX_MARGIN_Y,
+  VIEWBOX_MAX_DIMENSION,
+  VIEWBOX_MIN_DIMENSION,
+} from './renderConstants.js';
+export {
+  BOUNDARY_LABEL_HEIGHT,
+  BOUNDARY_LABEL_HORIZONTAL_PADDING,
+  BOUNDARY_LABEL_LEFT_OFFSET,
+  BOUNDARY_LABEL_NEIGHBOR_GAP,
+  BOUNDARY_PADDING,
+  STRUCTURE_LABEL_LINE_HEIGHT,
+  boundaryAvailablePadding,
+  boundaryGeometry,
+  boxesOverlap,
+  controlPointFromValue,
+  cubicBezierPoint,
+  curveRouteGeometry,
+  defaultCurveControls,
+  directRelationPoints,
+  elbowRoutePath,
+  mergeBounds,
+  normalizedRoutePoints,
+  orthogonalRelationPoints,
+  rangesOverlap,
+  relationGeometry,
+  relationRoute,
+  reserveBoundaryLabelVerticalSpace,
+  routeBounds,
+  routeCollisionCount,
+  routeLength,
+  segmentIntersectsBox,
+  straightRoutePath,
+  summaryGeometry,
+  topicLayoutBox,
+  topicObstacleBox,
+  unionTopicBoxes,
+} from './structureGeometry.js';
+export {
+  avoidSiblingInsertionPoint,
+  defaultChildConnectorOutletPoint,
+  defaultChildConnectorOutletSide,
+  findParentLayoutTopic,
+  resolveTopicControlPoints,
+} from './topicControlGeometry.js';
+export {
+  globalPointToTopicPoint,
+  nearestTopicBorderSide,
+  oppositeTopicSide,
+  pointToButtonPosition,
+  projectTopicPointToBorder,
+  sameTopicControlPoint,
+  topicBorderPoint,
+  topicControlPointsConflict,
+} from './topicPointGeometry.js';
+export {
+  canvasToMapX,
+  canvasToMapY,
+  fitViewBox,
+  fullscreenFitViewBox,
+  originalSizeAxisStart,
+  originalSizeFocusRatio,
+  originalSizeViewBox,
+  rootFocusPoint,
+  zoomViewBox,
+} from './viewportGeometry.js';
+export {
+  normalWatermarkElementSize,
+  signatureCornerWatermarkGeometry,
+  signatureWatermarkBarGeometry,
+  signatureWatermarkBarViewportGeometry,
+  tiledWatermarkPlacements,
+  watermarkCornerTextAnchor,
+  watermarkCornerTextBaseline,
+  watermarkCornerTextPoint,
+  watermarkPositionPoint,
+} from './watermarkGeometry.js';
+
+export type { ConnectorLayoutBox } from './connectorGeometry.js';
+export type {
+  ConnectorAnchors,
+  ConnectorAxis,
+  ConnectorDirection,
+  ConnectorKind,
+  ConnectorStyle,
+} from './connectorPaths.js';
+export type {
+  BoundaryGeometry,
+  BoxPadding,
+  CurveRouteGeometry,
+  RelationGeometry,
+  RelationGeometryAttributes,
+  RelationLineStyle,
+  RelationRoute,
+  StructureGeometryTopic,
+  SummaryGeometry,
+} from './structureGeometry.js';
+export type {
+  SiblingPlacement,
+  TopicControlGeometryOptions,
+  TopicControlPoint,
+  TopicControlPoints,
+} from './topicControlGeometry.js';
+export type { Size, TopicBorderPoint, TopicBorderSide } from './topicPointGeometry.js';
+export type { ViewBox, ViewportSize } from './viewportGeometry.js';
+export type {
+  NormalWatermarkGeometryConfig,
+  SignatureBarGeometry,
+  SignatureCornerGeometry,
+  SignatureWatermarkGeometryConfig,
+  WatermarkBounds,
+  WatermarkPoint,
+  WatermarkSize,
+  WatermarkViewport,
+} from './watermarkGeometry.js';

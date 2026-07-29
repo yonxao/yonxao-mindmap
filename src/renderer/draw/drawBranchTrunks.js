@@ -15,7 +15,7 @@ import {
   svg,
   DEFAULT_CONNECTOR_STROKE,
 } from '../../shared/rendererShared.js';
-import { nearestRelationAnchorForAngle } from '../../model/relationAnchors.js';
+import { radialConnectorPoint } from '@yonxao/mindmap-svg-renderer';
 
 export const branchTrunkDrawMethods = {
   renderTreeTrunk(layout) {
@@ -224,7 +224,6 @@ export const branchTrunkDrawMethods = {
      * 放射线仍先按分支角度找到真实边界交点，再吸附到最近的固定锚点。
      * 这样不会改变分支所在方向，同一方向的子线出口却能归拢到与关联线相同的 8 个点位。
      */
-    const anchor = nearestRelationAnchorForAngle(box, angle);
-    return { x: anchor.x, y: anchor.y };
+    return radialConnectorPoint(box, angle);
   },
 };
