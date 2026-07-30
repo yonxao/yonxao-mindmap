@@ -45,7 +45,8 @@ Web / Electron / Capacitor / HarmonyOS 适配层
 分支：
 
 - `main`：稳定开源主线和插件发布来源。
-- `codex/oss-core-prep`：本次核心抽取与插件适配的准备分支。验证完成后通过正常评审合入 `main`，不作为产品仓库的长期基线。
+- `codex/oss-core-prep`：核心抽取期间使用的历史准备分支；其内容已于
+  2026-07-30 合入 `main`，不作为产品仓库的长期基线。
 - 后续功能分支从 `main` 创建，完成后合回 `main`；不要建立永久的“开源分支”和“闭源分支”。
 
 ### 2.2 闭源产品仓库
@@ -185,12 +186,14 @@ apps/harmony/            # HarmonyOS 工程与 HAP/App Pack
 - 文档、配置、主题树、内容语义、布局、编辑和导出规则已迁入 core；SVG 与视口几何已迁入 svg-renderer。
 - 插件对应模块已收缩为宿主适配或兼容出口。
 - 自动测试会检查两个包的发布入口、声明文件、依赖方向和宿主导入边界。
+- `main` 已包含两个公共包及插件适配，`.github/workflows/check.yml` 会在 PR 和
+  `main` 推送时运行完整 `npm run verify`。
 - 闭源产品仓库 `yonxao/yonxao-mindmap-product` 已建立，并在
-  `feature/web-mvp` 完成第一版 npm workspace、React + Vite Web 应用、
-  平台能力契约、公共包本地联调入口和 21 个产品契约测试。
-- Web MVP 已通过类型检查、测试和生产构建，但尚未完成人工视觉回归；
-  两个公共 alpha 包也尚未发布，因此产品仓库的普通独立安装仍受阻。
+  `codex/platform-foundation` 收口 Web、Electron、Capacitor、HarmonyOS、
+  平台能力契约、公共包本地联调入口和产品契约测试。
+- 两个公共 alpha 包尚未发布，因此产品仓库的普通独立安装仍受阻；基础 CI
+  从本仓库 `main` 检出源码并安装本地打包产物。
 
-下一项公共仓库工作是评审并合入 `codex/oss-core-prep`，随后发布或提供可锁定的
-`0.1.0-alpha.0` 公共包。产品仓库应在公共包可用且 Web MVP 合入 `main` 后，
-再从最新 `main` 开始 Electron、Capacitor 和 HarmonyOS 平台分支。
+下一项公共仓库工作是发布可锁定的 `0.1.0-alpha.0` 公共包。产品仓库完成
+`codex/platform-foundation` 验证并合入后，后续跨端功能统一从产品 `main`
+创建短期功能分支。
