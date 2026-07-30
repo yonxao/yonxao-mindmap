@@ -10,7 +10,7 @@
  * YonxaoMindmapRenderer.renderTopic()/renderConnector() -> topicColor()/transparentColor()
  */
 
-import { themeColorForTopic } from '../theme/mindThemes.js';
+import { normalizeMindColor, resolveConnectorColor, resolveTopicColor } from '@yonxao/mindmap-core';
 
 /*
  * 作用：
@@ -20,11 +20,7 @@ import { themeColorForTopic } from '../theme/mindThemes.js';
  * 主题属性 color > 配置区 topic.defaultColor > 当前主题自动配色。
  */
 export function topicColor(topic, config) {
-  return (
-    normalizeColor(topic.attributes.color) ||
-    normalizeColor(config?.topic?.defaultColor) ||
-    normalizeColor(themeColorForTopic(topic, config))
-  );
+  return resolveTopicColor(topic, config);
 }
 
 /*
@@ -39,9 +35,7 @@ export function topicColor(topic, config) {
  * 配置区 topic.defaultColor > 当前主题自动配色。
  */
 export function connectorColor(topic, config) {
-  return (
-    normalizeColor(config?.topic?.defaultColor) || normalizeColor(themeColorForTopic(topic, config))
-  );
+  return resolveConnectorColor(topic, config);
 }
 
 /*
@@ -52,13 +46,7 @@ export function connectorColor(topic, config) {
  * 支持 #rgb/#rrggbb、无 # 的 hex，以及简单 CSS 颜色名。
  */
 export function normalizeColor(color) {
-  const value = String(color || '').trim();
-  if (!value) return '';
-  // 只接受常见 CSS 颜色名和 hex，避免把任意字符串塞到 SVG 属性里。
-  if (/^#[0-9a-f]{3}([0-9a-f]{3})?$/i.test(value)) return value;
-  if (/^[0-9a-f]{3}([0-9a-f]{3})?$/i.test(value)) return `#${value}`;
-  if (/^[a-z][a-z0-9-]*$/i.test(value)) return value;
-  return '';
+  return normalizeMindColor(color);
 }
 
 /*

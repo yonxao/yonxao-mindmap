@@ -9,45 +9,35 @@
  * YonxaoMindmapRenderer -> collapseStateMethods -> 渲染层/右键菜单/工具栏折叠命令。
  */
 
+import {
+  collapseTopicDescendants,
+  expandTopicDescendants,
+  forEachTopicWithSubtopics,
+  resetCollapsedTopics,
+  toggleTopicCollapsed,
+} from '@yonxao/mindmap-core';
+
 export const collapseStateMethods = {
   toggleTopicCollapse(topic) {
-    if (!topic || !topic.subtopics.length) return;
-
-    const id = topic.id;
-    // 折叠状态只保存主题 id，不改原始树。这样重置和重新布局都很直接。
-    if (this.collapsedIds.has(id)) {
-      this.collapsedIds.delete(id);
-    } else {
-      this.collapsedIds.add(id);
-    }
-    this.renderMap(true);
+    if (toggleTopicCollapsed(this.collapsedIds, topic)) this.renderMap(true);
   },
 
   collapseTopicDescendants(topic) {
-    this.forEachTopicWithSubtopics(topic, (current) => {
-      this.collapsedIds.add(current.id);
-    });
+    collapseTopicDescendants(this.collapsedIds, topic);
     this.renderMap(true);
   },
 
   expandTopicDescendants(topic) {
-    this.forEachTopicWithSubtopics(topic, (current) => {
-      this.collapsedIds.delete(current.id);
-    });
+    expandTopicDescendants(this.collapsedIds, topic);
     this.renderMap(true);
   },
 
   resetCollapsedTopics() {
-    this.collapsedIds.clear();
+    resetCollapsedTopics(this.collapsedIds);
     this.renderMap(true);
   },
 
   forEachTopicWithSubtopics(topic, callback) {
-    if (!topic || !topic.subtopics.length) return;
-
-    callback(topic);
-    for (const subtopic of topic.subtopics) {
-      this.forEachTopicWithSubtopics(subtopic, callback);
-    }
+    forEachTopicWithSubtopics(topic, callback);
   },
 };

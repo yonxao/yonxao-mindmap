@@ -3,8 +3,8 @@
  * 这个脚本负责把 src/main.js 入口开始的 ESM 源码打包成 dist/main.js。
  *
  * 执行逻辑：
- * 1. npm run build:js 会调用本文件。
- * 2. esbuild 从 src/main.js 出发，沿着 import 链把 src/plugin、src/renderer、src/parser 等模块打进一个文件。
+ * 1. npm run build:js 会先构建 core 和 svg-renderer，再调用本文件。
+ * 2. esbuild 从 src/main.js 出发，沿着 import 链把插件源码和两个公共包打进一个文件。
  * 3. obsidian 被标记为 external，因为它不是 npm 依赖，而是 Obsidian 运行时提供的宿主 API。
  * 4. 输出格式仍然是 cjs，目的是让 Obsidian/Electron 以传统插件入口方式稳定加载 main.js。
  * 5. 输出目录使用 dist/，让开发源码和发布产物分开。

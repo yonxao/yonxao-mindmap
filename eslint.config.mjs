@@ -10,6 +10,7 @@
 
 import js from '@eslint/js';
 import globals from 'globals';
+import tseslint from 'typescript-eslint';
 
 const sharedGlobals = {
   // 浏览器全局变量，例如 window、document、HTMLElement、console 等。
@@ -95,7 +96,7 @@ export default [
   {
     ignores: [
       'node_modules/**',
-      'dist/**',
+      '**/dist/**',
       'build/**',
       'coverage/**',
       '.cache/**',
@@ -110,6 +111,12 @@ export default [
   // ESLint 官方推荐规则。
   // 主要用于发现常见 JS 问题，例如未定义变量、不可达代码、重复声明等。
   js.configs.recommended,
+  // typescript-eslint 的部分推荐配置默认没有 files 范围，这里显式限制到公共核心，
+  // 避免 TypeScript 规则接管现有 JavaScript 文件。
+  ...tseslint.configs.recommended.map((config) => ({
+    ...config,
+    files: ['packages/**/*.ts'],
+  })),
 
   // 业务源码使用 ESM。
   // 这部分文件会被 esbuild 打包成 dist/main.js，所以可以放心使用 import/export。
@@ -130,6 +137,32 @@ export default [
     },
 
     rules: projectRules,
+  },
+
+  // 公共核心使用 TypeScript；类型语义交给 typescript-eslint，避免重复启用 JS 专用规则。
+  {
+    files: ['packages/**/*.ts'],
+
+    languageOptions: {
+      ecmaVersion: 'latest',
+      sourceType: 'module',
+      globals: sharedGlobals,
+    },
+
+    rules: {
+      ...projectRules,
+      'no-undef': 'off',
+      'no-redeclare': 'off',
+      'no-unused-vars': 'off',
+      '@typescript-eslint/no-unused-vars': [
+        'warn',
+        {
+          argsIgnorePattern: '^_',
+          varsIgnorePattern: '^_',
+          caughtErrorsIgnorePattern: '^_',
+        },
+      ],
+    },
   },
 
   // 工具配置和脚本使用 ESM 的 .mjs 后缀。

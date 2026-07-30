@@ -10,6 +10,11 @@
  */
 
 import { Notice } from '../../shared/rendererShared.js';
+import {
+  plainBodyToIndentedText,
+  serializePlainBody,
+  serializePlainTopic,
+} from '@yonxao/mindmap-core';
 import { formatFencedMindMapSource } from './sourceFence.js';
 
 export const copyTextMethods = {
@@ -66,41 +71,14 @@ export const copyTextMethods = {
   },
 
   serializePlainBody() {
-    if (!this.root) return '';
-    const topics = this.root._virtual ? this.root.subtopics : [this.root];
-    return topics
-      .map((topic) => this.serializePlainTopic(topic, 0))
-      .join('\n')
-      .trim();
+    return serializePlainBody(this.root);
   },
 
   serializePlainTopic(topic, depth) {
-    const topicLevelMarker = '#'.repeat(depth + 1);
-    const textLines = String(topic.text || '').split(/\r?\n/);
-    const firstTextLine = textLines.shift() || '';
-    const currentLine = `${topicLevelMarker} ${firstTextLine}`;
-    const continuationLines = textLines.map((line) => line.trimEnd());
-    const subtopicLines = topic.subtopics.map((subtopic) =>
-      this.serializePlainTopic(subtopic, depth + 1)
-    );
-    return [currentLine, ...continuationLines, ...subtopicLines].join('\n');
+    return serializePlainTopic(topic, depth);
   },
 
   plainBodyToIndentedText(body) {
-    let currentLevel = 1;
-    return String(body || '')
-      .split(/\r?\n/)
-      .map((line) => {
-        const match = line.match(/^(#{1,6})\s+(.*)$/);
-        if (match) {
-          currentLevel = match[1].length;
-          return `${'  '.repeat(currentLevel - 1)}${match[2]}`;
-        }
-
-        if (!line.trim()) return '';
-        return `${'  '.repeat(Math.max(0, currentLevel - 1))}${line}`;
-      })
-      .join('\n')
-      .trim();
+    return plainBodyToIndentedText(body);
   },
 };

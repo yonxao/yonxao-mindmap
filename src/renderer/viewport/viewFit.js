@@ -23,16 +23,20 @@ import {
   AUTO_CANVAS_VIEWPORT_HEIGHT_RATIO,
   MAX_VIEW_FIT_RETRY,
   MIN_FIT_VIEWPORT_WIDTH,
-  VIEWBOX_MIN_DIMENSION,
-  VIEWBOX_MAX_DIMENSION,
   VIEW_FIT_REFRESH_DELAY_MS,
   FULLSCREEN_VIEWPORT_OFFSET,
-  FOCUS_RATIO_BIAS_THRESHOLD,
-  FOCUS_RATIO_BIASED,
-  FOCUS_RATIO_CENTER,
   RESIZE_WIDTH_EPSILON,
 } from '../../shared/rendererShared.js';
 import { canvasToMapX, canvasToMapY } from './viewportMath.js';
+import {
+  fitViewBox,
+  fullscreenFitViewBox,
+  originalSizeAxisStart,
+  originalSizeFocusRatio,
+  originalSizeViewBox,
+  rootFocusPoint,
+  zoomViewBox,
+} from '@yonxao/mindmap-svg-renderer';
 
 /* A4 默认边距下单页可用高度的保守值，用于区分整页展示和自然跨页。 */
 const PRINT_SINGLE_PAGE_CONTENT_HEIGHT = 1000;
@@ -97,59 +101,15 @@ export const viewFitMethods = {
   },
 
   getRootFocusPoint(bounds) {
-    const rootBox = this.root?._layout;
-    if (rootBox) {
-      return {
-        x: rootBox.x + rootBox.width / 2,
-        y: rootBox.y + rootBox.height / 2,
-      };
-    }
-
-    return {
-      x: (bounds.minX + bounds.maxX) / 2,
-      y: (bounds.minY + bounds.maxY) / 2,
-    };
+    return rootFocusPoint(bounds, this.root?._layout);
   },
 
   getOriginalSizeViewBox(bounds, rect, focusX, focusY) {
-    const width = rect.width;
-    const height = rect.height;
-    const minX = bounds.minX - VIEWBOX_MARGIN_X;
-    const maxX = bounds.maxX + VIEWBOX_MARGIN_X;
-    const minY = bounds.minY - VIEWBOX_MARGIN_Y;
-    const maxY = bounds.maxY + VIEWBOX_MARGIN_Y;
-    const leftSpan = Math.max(0, focusX - minX);
-    const rightSpan = Math.max(0, maxX - focusX);
-    const topSpan = Math.max(0, focusY - minY);
-    const bottomSpan = Math.max(0, maxY - focusY);
-
-    return {
-      x: this.getOriginalSizeAxisStart(
-        minX,
-        maxX,
-        width,
-        focusX,
-        this.getOriginalSizeFocusRatio(leftSpan, rightSpan)
-      ),
-      y: this.getOriginalSizeAxisStart(
-        minY,
-        maxY,
-        height,
-        focusY,
-        this.getOriginalSizeFocusRatio(topSpan, bottomSpan)
-      ),
-      width,
-      height,
-    };
+    return originalSizeViewBox(bounds, rect, focusX, focusY);
   },
 
   getOriginalSizeAxisStart(min, max, viewportSize, focus, focusRatio) {
-    const contentSize = max - min;
-    if (contentSize <= viewportSize) {
-      return min - (viewportSize - contentSize) / 2;
-    }
-
-    return clamp(focus - viewportSize * focusRatio, min, max - viewportSize);
+    return originalSizeAxisStart(min, max, viewportSize, focus, focusRatio);
   },
 
   /*
@@ -162,9 +122,7 @@ export const viewFitMethods = {
    * - 两侧相对均衡时焦点居中（50%）。
    */
   getOriginalSizeFocusRatio(negativeSpan, positiveSpan) {
-    if (positiveSpan > negativeSpan * FOCUS_RATIO_BIAS_THRESHOLD) return FOCUS_RATIO_BIASED;
-    if (negativeSpan > positiveSpan * FOCUS_RATIO_BIAS_THRESHOLD) return 1 - FOCUS_RATIO_BIASED;
-    return FOCUS_RATIO_CENTER;
+    return originalSizeFocusRatio(negativeSpan, positiveSpan);
   },
 
   updateOriginalSizeContainerHeight(bounds, options = {}) {
@@ -225,41 +183,11 @@ export const viewFitMethods = {
     }
 
     const maxScale = this.config.view.fitNoUpscale ? 1 : this.config.view.fitMaxScale;
-    const minWidthForScale = rect.width / maxScale;
-    const width = Math.max(contentViewBox.width, minWidthForScale);
-
-    return {
-      x: contentViewBox.x - (width - contentViewBox.width) / 2,
-      y: contentViewBox.y,
-      width,
-      height: contentViewBox.height,
-    };
+    return fitViewBox(contentViewBox, rect.width, maxScale);
   },
 
   getFullscreenFitViewBox(contentViewBox, rect) {
-    if (!rect.height || !contentViewBox.width || !contentViewBox.height) return contentViewBox;
-
-    const viewportRatio = rect.width / rect.height;
-    const contentRatio = contentViewBox.width / contentViewBox.height;
-    if (!Number.isFinite(viewportRatio) || !Number.isFinite(contentRatio)) return contentViewBox;
-
-    if (contentRatio > viewportRatio) {
-      const height = contentViewBox.width / viewportRatio;
-      return {
-        x: contentViewBox.x,
-        y: contentViewBox.y - (height - contentViewBox.height) / 2,
-        width: contentViewBox.width,
-        height,
-      };
-    }
-
-    const width = contentViewBox.height * viewportRatio;
-    return {
-      x: contentViewBox.x - (width - contentViewBox.width) / 2,
-      y: contentViewBox.y,
-      width,
-      height: contentViewBox.height,
-    };
+    return fullscreenFitViewBox(contentViewBox, rect);
   },
 
   getAutoCanvasMaxHeight() {
@@ -364,25 +292,7 @@ export const viewFitMethods = {
   },
 
   zoomViewBox(factor, centerX, centerY) {
-    const nextWidth = clamp(
-      this.viewBox.width * factor,
-      VIEWBOX_MIN_DIMENSION,
-      VIEWBOX_MAX_DIMENSION
-    );
-    const nextHeight = clamp(
-      this.viewBox.height * factor,
-      VIEWBOX_MIN_DIMENSION,
-      VIEWBOX_MAX_DIMENSION
-    );
-    const widthRatio = nextWidth / this.viewBox.width;
-    const heightRatio = nextHeight / this.viewBox.height;
-
-    this.viewBox = {
-      x: centerX - (centerX - this.viewBox.x) * widthRatio,
-      y: centerY - (centerY - this.viewBox.y) * heightRatio,
-      width: nextWidth,
-      height: nextHeight,
-    };
+    this.viewBox = zoomViewBox(this.viewBox, factor, centerX, centerY);
     this.applyViewBox();
   },
 

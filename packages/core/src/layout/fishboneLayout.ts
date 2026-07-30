@@ -1,0 +1,399 @@
+/*
+ * 文件作用：
+ * 鱼骨图主骨、大骨和鱼刺主题布局。
+ */
+
+import {
+  BRANCH_GAP,
+  FISHBONE_PRIMARY_BONE_MIN_EDGE_OFFSET,
+  FISHBONE_PRIMARY_BONE_SLOPE,
+  HANGING_SIBLING_GAP,
+  LEVEL_GAP,
+  SIBLING_GAP,
+} from './layoutConstants.js';
+import {
+  horizontalHangingStartOffset,
+  horizontalHangingSubtreeWidth,
+  shouldUseHangingExpansion,
+  verticalBlockTopicY,
+} from './layoutGeometry.js';
+import type { BranchExpansion } from './layoutGeometry.js';
+import type { FishboneDirection, LayoutTopic } from './layoutTypes.js';
+import { visibleSubtopics } from '../model/topicTraversal.js';
+
+export type FishboneLayoutMode = 'fishbone-left' | 'fishbone-right';
+
+/*
+ * 鱼骨图上下两侧大分支斜骨起点在水平方向上的错开比例，
+ * 使上下分支的斜骨根部不重叠，阅读时更容易区分上下两侧的内容。
+ */
+const FISHBONE_SIDE_CURSOR_STAGGER_RATIO = 0.45;
+/*
+ * 大分支斜骨末端（主骨到分支主题）的安全余量乘数，
+ * 在子树高度的基础上额外增加 SIBLING_GAP 的倍数，防止鱼刺扎到相邻分支。
+ */
+const FISHBONE_PRIMARY_BONE_EDGE_MULTIPLIER = 2.5;
+/*
+ * 鱼刺主题在斜骨线上的可用区间中，除去父主题自身高度后的安全边距倍数。
+ */
+const FISHBONE_USABLE_HEIGHT_MARGIN = 2;
+/*
+ * 同侧相邻大分支沿主骨推进时的安全水平间距。
+ * 它作用在上一棵可见子树的鱼尾方向边界之后，防止下一条大分支的主题卡片压住前一分支末端。
+ */
+const FISHBONE_PRIMARY_BONE_SAFE_RUN_GAP = Math.max(BRANCH_GAP, Math.round(LEVEL_GAP * 0.55));
+
+export function fishboneLayoutDirection(mode: FishboneLayoutMode): FishboneDirection {
+  return mode === 'fishbone-left' ? -1 : 1;
+}
+
+export function layoutFishbone(
+  root: LayoutTopic,
+  collapsedIds: ReadonlySet<string>,
+  mode: FishboneLayoutMode = 'fishbone-left',
+  branchExpansion: BranchExpansion = 'side'
+): void {
+  const rootBox = root._layout;
+  const subtopics = visibleSubtopics(root, collapsedIds);
+  if (!subtopics.length) return;
+
+  const direction = fishboneLayoutDirection(mode);
+  const firstAttachX = rootBox.x + direction * (rootBox.width / 2 + LEVEL_GAP);
+  const sideCursors: Record<'top' | 'bottom', number> = {
+    top: firstAttachX,
+    bottom: firstAttachX + direction * LEVEL_GAP * FISHBONE_SIDE_CURSOR_STAGGER_RATIO,
+  };
+
+  rootBox.fishboneDirection = direction;
+
+  subtopics.forEach((subtopic, index) => {
+    const subtopicBox = subtopic._layout;
+    const sign: FishboneDirection = index % 2 === 0 ? -1 : 1;
+    const sideKey = sign < 0 ? 'top' : 'bottom';
+    // 大分支的子树高度决定它离主骨多远，避免上下两侧的鱼刺主题互相压住。
+    const primaryBoneHeight = fishbonePrimaryBoneSubtreeHeight(
+      subtopic,
+      collapsedIds,
+      branchExpansion
+    );
+    const attachX = sideCursors[sideKey];
+    /*
+     * 大分支斜骨使用固定倾角，避免不同分支因为自身高度不同而出现忽陡忽缓的观感。
+     * 先根据子树高度算出大分支主题靠近主骨一侧边缘的纵向偏移，
+     * 再用固定斜率反推水平投影，这样斜骨线角度稳定，仍然给高分支留出足够空间。
+     */
+    const primaryBoneEdgeOffset = Math.max(
+      FISHBONE_PRIMARY_BONE_MIN_EDGE_OFFSET,
+      primaryBoneHeight + SIBLING_GAP * FISHBONE_PRIMARY_BONE_EDGE_MULTIPLIER
+    );
+    const primaryBoneRun = primaryBoneEdgeOffset / FISHBONE_PRIMARY_BONE_SLOPE;
+
+    subtopicBox.side = sign < 0 ? 'fishbone-top' : 'fishbone-bottom';
+    subtopicBox.fishboneSign = sign;
+    subtopicBox.fishboneDirection = direction;
+    // 大分支挂到主骨上的 x 坐标，渲染主骨分段时也依赖它来确定每段颜色。
+    subtopicBox.fishboneMainSpineAttachX = attachX;
+    subtopicBox.x = attachX + direction * primaryBoneRun;
+    subtopicBox.y = rootBox.y + sign * (primaryBoneEdgeOffset + subtopicBox.height / 2);
+    // 斜骨线从主骨挂点出发，终点落在大分支主题靠近主骨的一侧边框中点。
+    subtopicBox.fishboneDiagonalBoneStartX = attachX;
+    subtopicBox.fishboneDiagonalBoneStartY = rootBox.y;
+    subtopicBox.fishboneDiagonalBoneEndX = subtopicBox.x;
+    subtopicBox.fishboneDiagonalBoneEndY =
+      sign < 0 ? subtopicBox.y + subtopicBox.height / 2 : subtopicBox.y - subtopicBox.height / 2;
+
+    placeFishboneRibTopics(subtopic, sign, direction, collapsedIds, branchExpansion);
+    /*
+     * 同侧下一条大分支的挂点，落在上一条大分支可见子树末端垂线与主骨的交点上。
+     * 这比使用“预估宽度 + 安全间距”更贴近鱼骨图语义，也避免主骨上出现过大的空白段。
+     */
+    sideCursors[sideKey] =
+      fishboneVisibleSubtreeHorizontalBoundary(subtopic, direction, collapsedIds) +
+      direction * FISHBONE_PRIMARY_BONE_SAFE_RUN_GAP;
+  });
+}
+
+/*
+ * 作用：
+ * 摆放鱼骨图中挂在斜骨线上的鱼刺主题。
+ *
+ * 实现逻辑：
+ * 鱼刺主题不是按普通树从大分支主题右侧长出，而是先沿着斜骨线寻找挂点；
+ * 挂点的 y 坐标由鱼刺主题子树高度决定，挂点的 x 坐标再通过斜骨线线性插值得到。
+ */
+export function placeFishboneRibTopics(
+  parent: LayoutTopic,
+  sign: FishboneDirection,
+  direction: FishboneDirection,
+  collapsedIds: ReadonlySet<string>,
+  branchExpansion: BranchExpansion
+): void {
+  const subtopics = visibleSubtopics(parent, collapsedIds);
+  if (!subtopics.length) return;
+
+  const parentBox = parent._layout;
+  const diagonalBoneStartX = parentBox.fishboneDiagonalBoneStartX!;
+  const diagonalBoneStartY = parentBox.fishboneDiagonalBoneStartY!;
+  const diagonalBoneEndX = parentBox.fishboneDiagonalBoneEndX!;
+  const diagonalBoneEndY = parentBox.fishboneDiagonalBoneEndY!;
+  const ribTopicHeights = subtopics.map((subtopic) =>
+    fishboneRibTopicSubtreeHeight(subtopic, collapsedIds, branchExpansion)
+  );
+  const totalRibHeight =
+    ribTopicHeights.reduce((sum, height) => sum + height, 0) +
+    Math.max(0, subtopics.length - 1) * SIBLING_GAP;
+  const diagonalBoneHeight = Math.abs(diagonalBoneEndY - diagonalBoneStartY);
+  const usableHeight = Math.max(
+    1,
+    diagonalBoneHeight - parentBox.height - SIBLING_GAP * FISHBONE_USABLE_HEIGHT_MARGIN
+  );
+  const contentStart = SIBLING_GAP + Math.max(0, (usableHeight - totalRibHeight) / 2);
+  let offset = 0;
+
+  subtopics.forEach((subtopic, index) => {
+    const subtopicBox = subtopic._layout;
+    const height = ribTopicHeights[index];
+    const blockStartOnDiagonal = contentStart + offset;
+    const blockEndOnDiagonal = blockStartOnDiagonal + height;
+    const blockStartY = diagonalBoneEndY - sign * blockStartOnDiagonal;
+    const blockEndY = diagonalBoneEndY - sign * blockEndOnDiagonal;
+    const blockTopY = Math.min(blockStartY, blockEndY);
+    const subtopicY = verticalBlockTopicY(blockTopY, height, subtopic, branchExpansion);
+    const ratio = clamp(
+      (subtopicY - diagonalBoneStartY) / (diagonalBoneEndY - diagonalBoneStartY || 1),
+      0,
+      1
+    );
+    const attachX = diagonalBoneStartX + (diagonalBoneEndX - diagonalBoneStartX) * ratio;
+    const attachY = subtopicY;
+
+    subtopicBox.side = 'fishbone-rib-topic';
+    subtopicBox.fishboneSign = sign;
+    subtopicBox.fishboneDirection = direction;
+    // 鱼刺主题挂到斜骨线上的交点，渲染连线和折叠点都会用到。
+    subtopicBox.fishboneDiagonalBoneAttachX = attachX;
+    subtopicBox.fishboneDiagonalBoneAttachY = attachY;
+    subtopicBox.x = attachX + direction * (LEVEL_GAP + subtopicBox.width / 2);
+    subtopicBox.y = subtopicY;
+
+    placeFishboneRibDescendants(subtopic, sign, direction, collapsedIds, branchExpansion);
+    offset += height + SIBLING_GAP;
+  });
+}
+
+/*
+ * 作用：
+ * 摆放鱼刺主题的后代主题。
+ */
+export function placeFishboneRibDescendants(
+  parent: LayoutTopic,
+  sign: FishboneDirection,
+  direction: FishboneDirection,
+  collapsedIds: ReadonlySet<string>,
+  branchExpansion: BranchExpansion = 'side'
+): void {
+  const subtopics = visibleSubtopics(parent, collapsedIds);
+  if (!subtopics.length) return;
+
+  if (shouldUseHangingExpansion(parent, branchExpansion)) {
+    placeFishboneHangingRibDescendants(parent, sign, direction, collapsedIds, branchExpansion);
+    return;
+  }
+
+  const parentBox = parent._layout;
+  const heights = subtopics.map((subtopic) =>
+    fishboneRibTopicSubtreeHeight(subtopic, collapsedIds, branchExpansion)
+  );
+  const totalHeight =
+    heights.reduce((sum, height) => sum + height, 0) +
+    Math.max(0, subtopics.length - 1) * SIBLING_GAP;
+  let y = parentBox.y - totalHeight / 2;
+
+  subtopics.forEach((subtopic, index) => {
+    const subtopicBox = subtopic._layout;
+    const height = heights[index];
+
+    subtopicBox.side = 'fishbone-rib-descendant';
+    subtopicBox.fishboneSign = sign;
+    subtopicBox.fishboneDirection = direction;
+    subtopicBox.x =
+      parentBox.x + direction * (parentBox.width / 2 + LEVEL_GAP + subtopicBox.width / 2);
+    subtopicBox.y = verticalBlockTopicY(y, height, subtopic, branchExpansion);
+
+    placeFishboneRibDescendants(subtopic, sign, direction, collapsedIds, branchExpansion);
+    y += height + SIBLING_GAP;
+  });
+}
+
+/*
+ * 作用：
+ * 鱼刺后代的下挂展开：从鱼刺主题下方出线，再朝鱼尾方向接到子主题。
+ */
+export function placeFishboneHangingRibDescendants(
+  parent: LayoutTopic,
+  sign: FishboneDirection,
+  direction: FishboneDirection,
+  collapsedIds: ReadonlySet<string>,
+  branchExpansion: BranchExpansion
+): void {
+  const subtopics = visibleSubtopics(parent, collapsedIds);
+  if (!subtopics.length) return;
+
+  const parentBox = parent._layout;
+  parentBox.childBranchExpansion = 'hanging-horizontal';
+  const heights = subtopics.map((subtopic) =>
+    fishboneRibTopicSubtreeHeight(subtopic, collapsedIds, branchExpansion)
+  );
+  let y = parentBox.y + parentBox.height / 2 + HANGING_SIBLING_GAP;
+
+  subtopics.forEach((subtopic, index) => {
+    const subtopicBox = subtopic._layout;
+    const height = heights[index];
+
+    subtopicBox.side = 'fishbone-rib-descendant';
+    subtopicBox.branchExpansion = 'hanging';
+    subtopicBox.fishboneSign = sign;
+    subtopicBox.fishboneDirection = direction;
+    subtopicBox.x =
+      parentBox.x +
+      direction * (horizontalHangingStartOffset(parentBox, subtopicBox) + subtopicBox.width / 2);
+    subtopicBox.y = verticalBlockTopicY(y, height, subtopic, branchExpansion);
+
+    placeFishboneRibDescendants(subtopic, sign, direction, collapsedIds, branchExpansion);
+    y += height + HANGING_SIBLING_GAP;
+  });
+}
+
+/*
+ * 作用：
+ * 计算鱼骨图大分支子树需要占用的垂直高度。
+ */
+export function fishbonePrimaryBoneSubtreeHeight(
+  topic: LayoutTopic,
+  collapsedIds: ReadonlySet<string>,
+  branchExpansion: BranchExpansion = 'side'
+): number {
+  const box = topic._layout;
+  const subtopics = visibleSubtopics(topic, collapsedIds);
+  if (!subtopics.length) return box.height;
+
+  const ribHeight =
+    subtopics.reduce(
+      (sum, subtopic) =>
+        sum + fishboneRibTopicSubtreeHeight(subtopic, collapsedIds, branchExpansion),
+      0
+    ) +
+    Math.max(0, subtopics.length - 1) * SIBLING_GAP;
+
+  return Math.max(box.height, ribHeight);
+}
+
+/*
+ * 作用：
+ * 计算鱼刺主题及其后代需要占用的垂直高度。
+ */
+export function fishboneRibTopicSubtreeHeight(
+  topic: LayoutTopic,
+  collapsedIds: ReadonlySet<string>,
+  branchExpansion: BranchExpansion = 'side'
+): number {
+  const box = topic._layout;
+  const subtopics = visibleSubtopics(topic, collapsedIds);
+  if (!subtopics.length) return box.height;
+
+  const subtopicHeight =
+    subtopics.reduce(
+      (sum, subtopic) =>
+        sum + fishboneRibTopicSubtreeHeight(subtopic, collapsedIds, branchExpansion),
+      0
+    ) +
+    Math.max(0, subtopics.length - 1) *
+      (shouldUseHangingExpansion(topic, branchExpansion) ? HANGING_SIBLING_GAP : SIBLING_GAP);
+
+  if (shouldUseHangingExpansion(topic, branchExpansion)) {
+    return box.height + HANGING_SIBLING_GAP + subtopicHeight;
+  }
+
+  return Math.max(box.height, subtopicHeight);
+}
+
+/*
+ * 作用：
+ * 计算鱼骨图大分支子树向鱼尾方向延伸的宽度。
+ */
+export function fishbonePrimaryBoneSubtreeWidth(
+  topic: LayoutTopic,
+  collapsedIds: ReadonlySet<string>,
+  branchExpansion: BranchExpansion = 'side'
+): number {
+  const box = topic._layout;
+  const subtopics = visibleSubtopics(topic, collapsedIds);
+  if (!subtopics.length) return box.width;
+
+  const subtopicWidth = subtopics.reduce(
+    (max, subtopic) =>
+      Math.max(max, fishboneRibTopicSubtreeWidth(subtopic, collapsedIds, branchExpansion)),
+    0
+  );
+
+  return Math.max(box.width, LEVEL_GAP + subtopicWidth);
+}
+
+/*
+ * 作用：
+ * 计算鱼刺主题及其后代向鱼尾方向延伸的宽度。
+ */
+export function fishboneRibTopicSubtreeWidth(
+  topic: LayoutTopic,
+  collapsedIds: ReadonlySet<string>,
+  branchExpansion: BranchExpansion = 'side'
+): number {
+  const box = topic._layout;
+  const subtopics = visibleSubtopics(topic, collapsedIds);
+  if (!subtopics.length) return box.width;
+
+  const subtopicWidth = subtopics.reduce(
+    (max, subtopic) =>
+      Math.max(max, fishboneRibTopicSubtreeWidth(subtopic, collapsedIds, branchExpansion)),
+    0
+  );
+
+  if (shouldUseHangingExpansion(topic, branchExpansion)) {
+    return horizontalHangingSubtreeWidth(box, subtopicWidth, subtopics[0]?._layout);
+  }
+
+  return box.width + LEVEL_GAP + subtopicWidth;
+}
+
+/*
+ * 作用：
+ * 计算鱼骨图某条大分支可见子树在鱼尾方向上的水平边界。
+ *
+ * 使用场景：
+ * 同侧下一条大分支的斜骨起点，应放在上一条大分支末端垂线和主骨的交点上。
+ * 这个“末端垂线”就是整棵可见子树在鱼尾方向上的最远边界。
+ */
+export function fishboneVisibleSubtreeHorizontalBoundary(
+  topic: LayoutTopic,
+  direction: FishboneDirection,
+  collapsedIds: ReadonlySet<string>
+): number {
+  const box = topic._layout;
+  let boundary = direction > 0 ? box.x + box.width / 2 : box.x - box.width / 2;
+
+  for (const subtopic of visibleSubtopics(topic, collapsedIds)) {
+    const subtopicBoundary = fishboneVisibleSubtreeHorizontalBoundary(
+      subtopic,
+      direction,
+      collapsedIds
+    );
+    boundary =
+      direction > 0 ? Math.max(boundary, subtopicBoundary) : Math.min(boundary, subtopicBoundary);
+  }
+
+  return boundary;
+}
+
+function clamp(value: number, min: number, max: number): number {
+  return Math.min(max, Math.max(min, value));
+}

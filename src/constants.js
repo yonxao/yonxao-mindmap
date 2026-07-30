@@ -10,6 +10,37 @@
  * renderer/layout/icons/svg 等模块都会从这里读取配置值，不直接修改这里的值。
  */
 
+import {
+  BRANCH_GAP,
+  ICON_GAP,
+  ICON_SIZE,
+  LEVEL_GAP,
+  LINE_HEIGHT,
+  SIBLING_GAP,
+  TOPIC_MAX_WIDTH,
+  TOPIC_MIN_HEIGHT,
+  TOPIC_MIN_WIDTH,
+  TOPIC_PADDING_X,
+  TOPIC_PADDING_Y,
+} from '@yonxao/mindmap-core';
+import { VIEWBOX_MARGIN_X, VIEWBOX_MARGIN_Y } from '@yonxao/mindmap-svg-renderer';
+
+export {
+  BRANCH_GAP,
+  ICON_GAP,
+  ICON_SIZE,
+  LEVEL_GAP,
+  LINE_HEIGHT,
+  SIBLING_GAP,
+  TOPIC_MAX_WIDTH,
+  TOPIC_MIN_HEIGHT,
+  TOPIC_MIN_WIDTH,
+  TOPIC_PADDING_X,
+  TOPIC_PADDING_Y,
+  VIEWBOX_MARGIN_X,
+  VIEWBOX_MARGIN_Y,
+};
+
 export const SVG_NS = 'http://www.w3.org/2000/svg';
 export const CODE_BLOCK_NAME = 'yxmm';
 
@@ -21,20 +52,6 @@ export const PROJECT_README_ZH_CN_URL = `${PROJECT_REPOSITORY_URL}/blob/main/REA
 // 水印条只裁剪导图内容层，不应覆盖编辑控件或其他 SVG 定义。
 export const MAP_CONTENT_LAYER_ATTRIBUTE = 'data-yonxao-map-content-layer';
 
-// 布局常量集中放在这里，后面做设置页时可以直接把这些值抽成用户配置。
-export const LEVEL_GAP = 84;
-export const SIBLING_GAP = 18;
-export const BRANCH_GAP = 28;
-export const TOPIC_PADDING_X = 16;
-export const TOPIC_PADDING_Y = 10;
-export const TOPIC_MIN_WIDTH = 92;
-export const TOPIC_MAX_WIDTH = 240;
-export const TOPIC_MIN_HEIGHT = 42;
-export const LINE_HEIGHT = 18;
-export const ICON_SIZE = 16;
-export const ICON_GAP = 8;
-export const VIEWBOX_MARGIN_X = 36;
-export const VIEWBOX_MARGIN_Y = LINE_HEIGHT;
 export const CANVAS_MIN_HEIGHT = 96;
 export const CANVAS_MAX_HEIGHT = 1800;
 

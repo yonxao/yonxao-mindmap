@@ -8,18 +8,19 @@ import {
   MAP_CONTENT_LAYER_ATTRIBUTE,
   svg,
 } from '../../shared/rendererShared.js';
+import {
+  normalWatermarkElementSize as coreNormalWatermarkElementSize,
+  signatureCornerWatermarkGeometry,
+  signatureWatermarkBarGeometry,
+  signatureWatermarkBarViewportGeometry,
+  tiledWatermarkPlacements,
+  watermarkCornerTextAnchor as coreWatermarkCornerTextAnchor,
+  watermarkCornerTextBaseline as coreWatermarkCornerTextBaseline,
+  watermarkCornerTextPoint,
+  watermarkPositionPoint as coreWatermarkPositionPoint,
+} from '@yonxao/mindmap-svg-renderer';
 
-// 超大导图和极密间距下限制单次创建的平铺元素数量，避免水印拖慢主渲染。
-const MAX_TILED_WATERMARK_COUNT = 500;
-const MIN_TILE_STEP = 1;
 const NORMAL_WATERMARK_POSITION_PADDING = 16;
-const SIGNATURE_TEXT_MIN_WIDTH_UNITS = 4;
-const SIGNATURE_TEXT_WIDTH_FACTOR = 0.62;
-const SIGNATURE_TEXT_HEIGHT_FACTOR = 1.5;
-const NORMAL_TEXT_MIN_WIDTH_UNITS = 2;
-const NORMAL_TEXT_WIDTH_FACTOR = 0.62;
-const NORMAL_TEXT_HEIGHT_FACTOR = 1.35;
-const SIGNATURE_CORNER_RADIUS_MAX = 8;
 const SIGNATURE_BACKGROUND_OPACITY_FACTOR = 0.72;
 const SIGNATURE_BAR_TINT_OPACITY_FACTOR = 0.18;
 const SIGNATURE_BAR_TINT_OPACITY_MAX = 0.12;
@@ -49,52 +50,33 @@ export const watermarkDrawMethods = {
     }
     layer.classList.add('is-corner');
 
-    const textWidth = Math.max(
-      config.fontSize * SIGNATURE_TEXT_MIN_WIDTH_UNITS,
-      [...config.text].length * config.fontSize * SIGNATURE_TEXT_WIDTH_FACTOR
-    );
-    const textHeight = config.fontSize * SIGNATURE_TEXT_HEIGHT_FACTOR;
-    const point = this.watermarkPositionPoint(
-      bounds,
-      config.position,
-      textWidth,
-      textHeight,
-      config.paddingX,
-      config.paddingY
-    );
+    const geometry = signatureCornerWatermarkGeometry(bounds, config);
     layer.appendChild(
       svg('rect', {
         'data-watermark-corner-background': 'true',
-        x: point.x,
-        y: point.y,
-        width: textWidth,
-        height: textHeight,
-        rx: Math.min(SIGNATURE_CORNER_RADIUS_MAX, textHeight / 3),
+        x: geometry.point.x,
+        y: geometry.point.y,
+        width: geometry.size.width,
+        height: geometry.size.height,
+        rx: geometry.radius,
         fill: colors.background,
         opacity: config.opacity * SIGNATURE_BACKGROUND_OPACITY_FACTOR,
       })
     );
-    const textEl = this.createWatermarkText(
-      config.text,
-      this.watermarkCornerTextX(point.x, textWidth, config.position),
-      this.watermarkCornerTextY(point.y, textHeight, config.position),
-      {
-        color: colors.text,
-        fontSize: config.fontSize,
-        opacity: config.opacity,
-        anchor: this.watermarkCornerTextAnchor(config.position),
-        baseline: this.watermarkCornerTextBaseline(config.position),
-      }
-    );
+    const textEl = this.createWatermarkText(config.text, geometry.text.x, geometry.text.y, {
+      color: colors.text,
+      fontSize: config.fontSize,
+      opacity: config.opacity,
+      anchor: geometry.text.anchor,
+      baseline: geometry.text.baseline,
+    });
     textEl.setAttribute('data-watermark-corner-text', 'true');
     layer.appendChild(textEl);
     return { layer, bounds: { ...bounds } };
   },
 
   renderSignatureWatermarkBar(layer, bounds, config, colors) {
-    const isTop = config.position.startsWith('top');
-    const barY = isTop ? bounds.minY - config.barHeight : bounds.maxY;
-    const barWidth = bounds.maxX - bounds.minX;
+    const geometry = signatureWatermarkBarGeometry(bounds, config);
     layer.classList.add('is-bar');
     const contentClipId = `${this.sourceViewIdPrefix}-watermark-bar-content-clip`;
     const defs = svg('defs');
@@ -102,10 +84,7 @@ export const watermarkDrawMethods = {
     contentClipPath.appendChild(
       svg('rect', {
         'data-watermark-bar-content-clip': 'true',
-        x: bounds.minX,
-        y: bounds.minY,
-        width: barWidth,
-        height: bounds.maxY - bounds.minY,
+        ...geometry.contentClip,
       })
     );
     defs.appendChild(contentClipPath);
@@ -113,10 +92,7 @@ export const watermarkDrawMethods = {
     layer.appendChild(
       svg('rect', {
         'data-watermark-bar-background': 'true',
-        x: bounds.minX,
-        y: barY,
-        width: barWidth,
-        height: config.barHeight,
+        ...geometry.bar,
         fill: colors.background,
         opacity: config.opacity,
       })
@@ -128,10 +104,7 @@ export const watermarkDrawMethods = {
     layer.appendChild(
       svg('rect', {
         'data-watermark-bar-background': 'true',
-        x: bounds.minX,
-        y: barY,
-        width: barWidth,
-        height: config.barHeight,
+        ...geometry.bar,
         fill: colors.text,
         opacity: Math.min(
           SIGNATURE_BAR_TINT_OPACITY_MAX,
@@ -139,27 +112,15 @@ export const watermarkDrawMethods = {
         ),
       })
     );
-    const textEl = this.createWatermarkText(
-      config.text,
-      bounds.maxX - config.paddingX,
-      barY + config.barHeight / 2,
-      {
-        color: colors.text,
-        fontSize: config.fontSize,
-        opacity: config.opacity,
-        anchor: 'end',
-      }
-    );
+    const textEl = this.createWatermarkText(config.text, geometry.text.x, geometry.text.y, {
+      color: colors.text,
+      fontSize: config.fontSize,
+      opacity: config.opacity,
+      anchor: 'end',
+    });
     textEl.setAttribute('data-watermark-bar-text', 'true');
     layer.appendChild(textEl);
-    return {
-      layer,
-      bounds: {
-        ...bounds,
-        minY: isTop ? barY : bounds.minY,
-        maxY: isTop ? bounds.maxY : bounds.maxY + config.barHeight,
-      },
-    };
+    return { layer, bounds: geometry.bounds };
   },
 
   /*
@@ -188,26 +149,23 @@ export const watermarkDrawMethods = {
     if (!layer || !viewport) return;
     const config = this.config.watermark?.signature;
     if (!config) return;
-    const isTop = config.position.startsWith('top');
-    const y = isTop ? viewport.y : viewport.y + viewport.height - config.barHeight;
-    const contentY = isTop ? viewport.y + config.barHeight : viewport.y;
-    const contentHeight = Math.max(0, viewport.height - config.barHeight);
+    const geometry = signatureWatermarkBarViewportGeometry(viewport, config);
 
     for (const backgroundEl of layer.querySelectorAll('[data-watermark-bar-background]')) {
-      backgroundEl.setAttribute('x', viewport.x);
-      backgroundEl.setAttribute('y', y);
-      backgroundEl.setAttribute('width', viewport.width);
-      backgroundEl.setAttribute('height', config.barHeight);
+      backgroundEl.setAttribute('x', geometry.bar.x);
+      backgroundEl.setAttribute('y', geometry.bar.y);
+      backgroundEl.setAttribute('width', geometry.bar.width);
+      backgroundEl.setAttribute('height', geometry.bar.height);
     }
     const textEl = layer.querySelector('[data-watermark-bar-text]');
-    textEl?.setAttribute('x', viewport.x + viewport.width - config.paddingX);
-    textEl?.setAttribute('y', y + config.barHeight / 2);
+    textEl?.setAttribute('x', geometry.text.x);
+    textEl?.setAttribute('y', geometry.text.y);
 
     const contentClipEl = layer.querySelector('[data-watermark-bar-content-clip]');
-    contentClipEl?.setAttribute('x', viewport.x);
-    contentClipEl?.setAttribute('y', contentY);
-    contentClipEl?.setAttribute('width', viewport.width);
-    contentClipEl?.setAttribute('height', contentHeight);
+    contentClipEl?.setAttribute('x', geometry.contentClip.x);
+    contentClipEl?.setAttribute('y', geometry.contentClip.y);
+    contentClipEl?.setAttribute('width', geometry.contentClip.width);
+    contentClipEl?.setAttribute('height', geometry.contentClip.height);
     const clipId = contentClipEl?.parentElement?.getAttribute('id');
     if (!clipId || !layer.parentElement) return;
     for (const child of layer.parentElement.children) {
@@ -226,7 +184,7 @@ export const watermarkDrawMethods = {
     if (!config || !backgroundEl || !textEl) return;
     const width = Number(backgroundEl.getAttribute('width')) || 0;
     const height = Number(backgroundEl.getAttribute('height')) || 0;
-    const point = this.watermarkPositionPoint(
+    const point = coreWatermarkPositionPoint(
       {
         minX: viewport.x,
         minY: viewport.y,
@@ -239,12 +197,13 @@ export const watermarkDrawMethods = {
       config.paddingX,
       config.paddingY
     );
+    const textPoint = watermarkCornerTextPoint(point, { width, height }, config.position);
     backgroundEl.setAttribute('x', point.x);
     backgroundEl.setAttribute('y', point.y);
-    textEl.setAttribute('x', this.watermarkCornerTextX(point.x, width, config.position));
-    textEl.setAttribute('text-anchor', this.watermarkCornerTextAnchor(config.position));
-    textEl.setAttribute('y', this.watermarkCornerTextY(point.y, height, config.position));
-    textEl.setAttribute('dominant-baseline', this.watermarkCornerTextBaseline(config.position));
+    textEl.setAttribute('x', textPoint.x);
+    textEl.setAttribute('text-anchor', textPoint.anchor);
+    textEl.setAttribute('y', textPoint.y);
+    textEl.setAttribute('dominant-baseline', textPoint.baseline);
   },
 
   syncSignatureWatermarkToViewBox(root = this.mapEl, viewport = this.viewBox) {
@@ -308,39 +267,10 @@ export const watermarkDrawMethods = {
   },
 
   appendTiledWatermarks(layer, bounds, config, imageHref) {
-    const stepX = Math.max(MIN_TILE_STEP, config.width + config.gapX);
-    const stepY = Math.max(MIN_TILE_STEP, config.height + config.gapY);
-    const estimatedColumns = Math.ceil((bounds.maxX - bounds.minX + config.width * 2) / stepX);
-    const estimatedRows = Math.ceil((bounds.maxY - bounds.minY + config.height * 2) / stepY);
-    const densityScale = Math.max(
-      1,
-      Math.ceil(Math.sqrt((estimatedColumns * estimatedRows) / MAX_TILED_WATERMARK_COUNT))
-    );
-    const safeStepX = stepX * densityScale;
-    const safeStepY = stepY * densityScale;
-    const anchor = this.watermarkPositionPoint(
-      bounds,
-      config.position,
-      config.width,
-      config.height,
-      0
-    );
-    let startX = anchor.x + config.offsetX;
-    let startY = anchor.y + config.offsetY;
-    while (startX > bounds.minX - config.width) startX -= safeStepX;
-    while (startY > bounds.minY - config.height) startY -= safeStepY;
-    while (startX + safeStepX <= bounds.minX - config.width) startX += safeStepX;
-    while (startY + safeStepY <= bounds.minY - config.height) startY += safeStepY;
-
-    let renderedCount = 0;
-    for (let y = startY; y <= bounds.maxY + config.height; y += safeStepY) {
-      for (let x = startX; x <= bounds.maxX + config.width; x += safeStepX) {
-        if (renderedCount >= MAX_TILED_WATERMARK_COUNT) return;
-        layer.appendChild(
-          this.createNormalWatermarkElement(config, x, y, config.width, config.height, imageHref)
-        );
-        renderedCount += 1;
-      }
+    for (const { x, y } of tiledWatermarkPlacements(bounds, config)) {
+      layer.appendChild(
+        this.createNormalWatermarkElement(config, x, y, config.width, config.height, imageHref)
+      );
     }
   },
 
@@ -375,22 +305,7 @@ export const watermarkDrawMethods = {
   },
 
   normalWatermarkElementSize(config) {
-    if (config.type === 'image' || config.arrangement === 'tiled') {
-      return { width: config.width, height: config.height };
-    }
-
-    /*
-     * 单个文字水印没有显式尺寸控件，尺寸只用于定位和旋转中心。
-     * 用文本和字号估算，避免隐藏的 width/height 继续制造不可见占位。
-     */
-    const textLength = [...String(config.text || '')].length;
-    return {
-      width: Math.max(
-        config.fontSize * NORMAL_TEXT_MIN_WIDTH_UNITS,
-        textLength * config.fontSize * NORMAL_TEXT_WIDTH_FACTOR
-      ),
-      height: config.fontSize * NORMAL_TEXT_HEIGHT_FACTOR,
-    };
+    return coreNormalWatermarkElementSize(config);
   },
 
   createWatermarkText(text, x, y, options = {}) {
@@ -409,29 +324,7 @@ export const watermarkDrawMethods = {
   },
 
   watermarkPositionPoint(bounds, position, width, height, paddingX, paddingY = paddingX) {
-    const horizontal = position.endsWith('left')
-      ? 'left'
-      : position.endsWith('right')
-        ? 'right'
-        : 'center';
-    const vertical = position.startsWith('top')
-      ? 'top'
-      : position.startsWith('bottom')
-        ? 'bottom'
-        : 'center';
-    const x =
-      horizontal === 'left'
-        ? bounds.minX + paddingX
-        : horizontal === 'right'
-          ? bounds.maxX - width - paddingX
-          : (bounds.minX + bounds.maxX - width) / 2;
-    const y =
-      vertical === 'top'
-        ? bounds.minY + paddingY
-        : vertical === 'bottom'
-          ? bounds.maxY - height - paddingY
-          : (bounds.minY + bounds.maxY - height) / 2;
-    return { x, y };
+    return coreWatermarkPositionPoint(bounds, position, width, height, paddingX, paddingY);
   },
 
   /*
@@ -439,9 +332,7 @@ export const watermarkDrawMethods = {
    * left→start（左对齐）、right→end（右对齐）、其余→middle（居中）。
    */
   watermarkCornerTextAnchor(position) {
-    if (position.endsWith('left')) return 'start';
-    if (position.endsWith('right')) return 'end';
-    return 'middle';
+    return coreWatermarkCornerTextAnchor(position);
   },
 
   /*
@@ -449,10 +340,7 @@ export const watermarkDrawMethods = {
    * start 对齐时文字左侧与背景左侧对齐，end 对齐时文字右侧与背景右侧对齐。
    */
   watermarkCornerTextX(x, width, position) {
-    const anchor = this.watermarkCornerTextAnchor(position);
-    if (anchor === 'start') return x;
-    if (anchor === 'end') return x + width;
-    return x + width / 2;
+    return watermarkCornerTextPoint({ x, y: 0 }, { width, height: 0 }, position).x;
   },
 
   /*
@@ -460,9 +348,7 @@ export const watermarkDrawMethods = {
    * top→text-before-edge（顶对齐）、bottom→text-after-edge（底对齐）、其余→middle（居中）。
    */
   watermarkCornerTextBaseline(position) {
-    if (position.startsWith('top')) return 'text-before-edge';
-    if (position.startsWith('bottom')) return 'text-after-edge';
-    return 'middle';
+    return coreWatermarkCornerTextBaseline(position);
   },
 
   /*
@@ -470,9 +356,6 @@ export const watermarkDrawMethods = {
    * text-before-edge 时文字顶部与背景顶部对齐，text-after-edge 时文字底部与背景底部对齐。
    */
   watermarkCornerTextY(y, height, position) {
-    const baseline = this.watermarkCornerTextBaseline(position);
-    if (baseline === 'text-before-edge') return y;
-    if (baseline === 'text-after-edge') return y + height;
-    return y + height / 2;
+    return watermarkCornerTextPoint({ x: 0, y }, { width: 0, height }, position).y;
   },
 };

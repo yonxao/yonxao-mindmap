@@ -1,22 +1,10 @@
 /*
- * 文件作用：
- * 生成可直接粘贴到 Markdown 中的完整 yxmm 代码块文本。
- *
- * 调用链：
- * copyTextMethods.copyFullSource() -> formatFencedMindMapSource() -> Clipboard API。
+ * 插件兼容出口：生成 Markdown yxmm 围栏文本的规则由公共核心统一。
  */
+import { formatFencedMindMapSource as formatCoreFencedMindMapSource } from '@yonxao/mindmap-core';
 
 import { CODE_BLOCK_NAME } from '../../constants.js';
 
 export function formatFencedMindMapSource(source) {
-  const openingFence = `\`\`\`${CODE_BLOCK_NAME}`;
-  const normalizedSource = String(source || '')
-    .replace(/\r\n?/g, '\n')
-    .replace(/\n*$/, '');
-
-  if (!normalizedSource) {
-    return `${openingFence}\n\`\`\``;
-  }
-
-  return `${openingFence}\n${normalizedSource}\n\`\`\``;
+  return formatCoreFencedMindMapSource(source, CODE_BLOCK_NAME);
 }

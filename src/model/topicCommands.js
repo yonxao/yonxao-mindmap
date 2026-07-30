@@ -12,34 +12,24 @@
 import {
   Notice,
   countTopicDescendants,
-  cloneTopicSubtree,
   insertSiblingTopic,
   removeTopicById,
   assignIds,
   createMindTopic,
-  parseMindDocument,
   refreshTreeLevels,
 } from '../shared/rendererShared.js';
+import { toggleTopicTaskItemText } from '@yonxao/mindmap-core';
 import {
   TOPIC_CLIPBOARD_MODE,
   cloneTopicForAttributedPaste,
   cloneTopicForStandardPaste,
+  createTopicFromText,
   createTopicClipboardEntry,
+  parseTopicsFromClipboardText,
 } from './topicClipboard.js';
 
 // 新增主题时的默认显示文字
 const DEFAULT_NEW_TOPIC_TEXT = '新主题';
-/*
- * 任务列表切换正则。
- *
- * 分组 1：原始缩进、列表符号和左方括号，例如 "  - ["。
- * 分组 2：任务状态字符，只允许空格、x、X。
- * 分组 3：右方括号、后续空格和任务正文。
- *
- * 只替换分组 2，可以最大限度保留用户原始书写格式。
- */
-const TASK_LIST_TOGGLE_PATTERN = /^(\s*[-*+]\s+\[)([ xX])(\]\s+.+)$/;
-
 let sharedTopicClipboard = null;
 
 async function writeSystemClipboardText(text) {
@@ -63,30 +53,6 @@ async function readSystemClipboardText() {
   }
 }
 
-function createTopicFromText(text, level) {
-  return createMindTopic(String(text || '').trim(), {}, [], 0, level);
-}
-
-function parseTopicsFromClipboardText(text, options = {}) {
-  const source = String(text || '').trim();
-  if (!source) return [];
-
-  try {
-    const document = parseMindDocument(source);
-    const topics = document.root?._virtual ? document.root.subtopics : [document.root];
-    return topics
-      .map((topic) =>
-        cloneTopicSubtree(topic, {
-          includeAttributes: Boolean(options.includeAttributes),
-          includeSubtopics: Boolean(options.includeSubtopics),
-        })
-      )
-      .filter(Boolean);
-  } catch (_error) {
-    return [];
-  }
-}
-
 export const topicCommandMethods = {
   /*
    * 切换主题内容中的某一行任务项。
@@ -100,29 +66,12 @@ export const topicCommandMethods = {
     // 虚拟主题不是用户真实输入内容，不能写回某一行任务状态。
     if (!topic || topic._virtual) return false;
 
-    // lineIndex 是 topic.text 的行号；先转成 Number，避免字符串参与后续数组访问。
-    const lineIndex = Number(sourceLineIndex);
-    // 行号必须是非负整数；无效行号说明解析数据不能安全写回。
-    if (!Number.isInteger(lineIndex) || lineIndex < 0) return false;
-
     // previousText 用于保存失败时恢复内存树。
     const previousText = topic.text || '';
-    // 按硬换行拆分，确保 sourceLineIndex 能直接对应 topic.text 的原始行。
-    const lines = String(previousText).split('\n');
-    // 取出目标行；如果行号越界，后续正则不会匹配并安全返回 false。
-    const line = lines[lineIndex] || '';
-    // 只允许任务列表行被切换，普通无序列表或段落不能被误改。
-    const match = line.match(TASK_LIST_TOGGLE_PATTERN);
-    // 目标行不是任务项时直接放弃，避免把用户正文改坏。
-    if (!match) return false;
-
-    // 只替换方括号里的状态字符，其他空格、列表符号和正文全部保持原样。
-    // x/X 都视为已完成；切回未完成时统一写为空格。
-    const nextMarker = match[2].toLowerCase() === 'x' ? ' ' : 'x';
-    // 用保留下来的分组重新拼回原行，只改变任务状态字符。
-    lines[lineIndex] = `${match[1]}${nextMarker}${match[3]}`;
+    const nextText = toggleTopicTaskItemText(previousText, sourceLineIndex);
+    if (nextText === null) return false;
     // 先更新内存树，后续 serializeMindDocument 会从 this.root 生成新源码。
-    topic.text = lines.join('\n');
+    topic.text = nextText;
 
     // 如果正在内联编辑同一个主题，先关闭编辑框，避免编辑框里的旧内容覆盖勾选结果。
     this.closeInlineTextEditor(false);

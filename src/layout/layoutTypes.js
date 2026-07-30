@@ -5,15 +5,14 @@
  * LAYOUT_TYPES 从 defaultMindConfig.js 导入，避免和配置系统的布局列表不一致。
  */
 
+import {
+  fishboneLayoutDirection as coreFishboneLayoutDirection,
+  isBranchExpansionSupportedLayout,
+  isMindMapLayoutType,
+} from '@yonxao/mindmap-core';
 import { LAYOUT_TYPES } from '../config/defaultMindConfig.js';
 
-export { LAYOUT_TYPES };
-
-export function isBranchExpansionSupportedLayout(layoutType) {
-  return (
-    layoutType !== 'radial' && layoutType !== 'tree-table' && layoutType !== 'tree-table-stepped'
-  );
-}
+export { LAYOUT_TYPES, isBranchExpansionSupportedLayout, isMindMapLayoutType };
 
 /*
  * 作用：
@@ -38,21 +37,6 @@ export function resolveEffectiveBranchExpansion(layoutType, config) {
 
 /*
  * 作用：
- * 判断布局是否属于“思维导图”分组。
- */
-export function isMindMapLayoutType(layoutType) {
-  return (
-    layoutType === 'mindmap-right' ||
-    layoutType === 'mindmap-left' ||
-    layoutType === 'mindmap-bidirectional' ||
-    layoutType === 'mindmap-down' ||
-    layoutType === 'mindmap-up' ||
-    layoutType === 'mindmap-vertical'
-  );
-}
-
-/*
- * 作用：
  * 返回鱼骨图主骨和内容的水平展开方向。
  *
  * 规则：
@@ -61,7 +45,7 @@ export function isMindMapLayoutType(layoutType) {
  * - fishbone-left: 鱼头在右，主骨向左，返回 -1。
  */
 export function fishboneLayoutDirection(layoutType) {
-  return normalizeLayoutType(layoutType) === 'fishbone-left' ? -1 : 1;
+  return coreFishboneLayoutDirection(normalizeLayoutType(layoutType));
 }
 
 export function fishboneHeadSideForLayout(layoutType) {

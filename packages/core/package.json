@@ -1,0 +1,48 @@
+{
+  "name": "@yonxao/mindmap-core",
+  "version": "0.1.0-alpha.0",
+  "description": "Host-independent yxmm document, topic model, and layout core.",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "prepack": "npm run build"
+  },
+  "keywords": [
+    "mindmap",
+    "markdown",
+    "yxmm",
+    "layout",
+    "typescript"
+  ],
+  "author": "yonxao",
+  "sideEffects": false,
+  "license": "(AGPL-3.0-only OR LicenseRef-Commercial)",
+  "engines": {
+    "node": ">=20.19.0"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/yonxao/yonxao-mindmap.git",
+    "directory": "packages/core"
+  },
+  "bugs": {
+    "url": "https://github.com/yonxao/yonxao-mindmap/issues"
+  },
+  "homepage": "https://github.com/yonxao/yonxao-mindmap/tree/main/packages/core#readme"
+}
