@@ -4,10 +4,13 @@ import test from 'node:test';
 import {
   TOPIC_CLIPBOARD_MODE,
   applyRelationAnchorEndpoints,
+  cleanupMindStructures,
   cloneTopicForAttributedPaste,
   countTopicDescendants,
+  createMindStructureId,
   createMindTopic,
   createTopicClipboardEntry,
+  ensureStableTopicId,
   forEachTopicWithSubtopics,
   moveTopicInTree,
   parseMindStructures,
@@ -103,4 +106,7 @@ test('public core exposes reusable topic model and geometry operations', () => {
     ]
   );
   assert.equal(topicHistoryStacksByteSize(['abcd'], ['xy']), 12);
+  assert.equal(typeof createMindStructureId, 'function');
+  assert.equal(typeof ensureStableTopicId, 'function');
+  assert.equal(typeof cleanupMindStructures, 'function');
 });

@@ -27,6 +27,66 @@ export const STRUCTURE_ID_PREFIXES: Record<MindStructureType, string> = {
   summary: 's-',
   boundary: 'b-',
 };
+export const STRUCTURE_ID_LIMIT = 1000;
+export const TOPIC_STABLE_ID_PREFIX = 't-';
+export const TOPIC_STABLE_ID_LIMIT = 1000;
+
+export interface MindIdAllocationOptions {
+  limit?: number;
+  random?: () => number;
+}
+
+function nextAvailableNumericId(
+  used: ReadonlySet<string>,
+  prefix: string,
+  options: MindIdAllocationOptions,
+  defaultLimit: number
+): string {
+  const limit = Math.max(1, Math.floor(options.limit ?? defaultLimit));
+  const randomValue = options.random?.() ?? Math.random();
+  const start = Number.isFinite(randomValue)
+    ? Math.floor(Math.abs(randomValue) * limit) % limit
+    : 0;
+
+  // 从随机起点线性探测，既避免每次从 000 开始，也保证未满时一定能找到空位。
+  for (let offset = 0; offset < limit; offset += 1) {
+    const number = (start + offset) % limit;
+    const id = `${prefix}${String(number).padStart(3, '0')}`;
+    if (!used.has(id)) return id;
+  }
+  throw new Error(`${prefix} 三位 ID 已用完。`);
+}
+
+export function createMindStructureId(
+  structures: readonly MindStructure[],
+  type: MindStructureType,
+  options: MindIdAllocationOptions = {}
+): string {
+  const used = new Set((structures || []).map((structure) => structure.id));
+  return nextAvailableNumericId(used, STRUCTURE_ID_PREFIXES[type], options, STRUCTURE_ID_LIMIT);
+}
+
+export function ensureStableTopicId(
+  root: MindTopic,
+  topic: MindTopic,
+  options: MindIdAllocationOptions = {}
+): string {
+  const existingId = String(topic.attributes?.id || '');
+  if (existingId) return existingId;
+
+  const used = new Set<string>();
+  const visit = (current: MindTopic): void => {
+    const stableId = String(current.attributes?.id || '');
+    if (stableId) used.add(stableId);
+    for (const child of current.subtopics || []) visit(child);
+  };
+  visit(root);
+
+  const id = nextAvailableNumericId(used, TOPIC_STABLE_ID_PREFIX, options, TOPIC_STABLE_ID_LIMIT);
+  topic.attributes ||= {};
+  topic.attributes.id = id;
+  return id;
+}
 
 function parseQuotedStructureValue(value: string): string {
   return value.replace(/\\(n|r|\\|"|')/g, (_match, escaped: string) => {
@@ -259,4 +319,33 @@ export function findTopicByStableId(root: MindTopic | null, stableId: string): M
     if (match) return match;
   }
   return null;
+}
+
+export function cleanupMindStructures(
+  root: MindTopic,
+  structures: readonly MindStructure[]
+): MindStructure[] {
+  const validIds = new Set<string>();
+  const visit = (topic: MindTopic): void => {
+    const stableId = String(topic.attributes?.id || '');
+    if (stableId) validIds.add(stableId);
+    for (const child of topic.subtopics || []) visit(child);
+  };
+  visit(root);
+
+  return (structures || [])
+    .map((structure) => ({
+      ...structure,
+      topicIds: structure.topicIds.filter((id) => validIds.has(id)),
+      attributes: { ...structure.attributes },
+    }))
+    .filter((structure) => structure.topicIds.length >= (structure.type === 'boundary' ? 1 : 2))
+    .filter((structure) => {
+      try {
+        validateMindStructures(root, [structure]);
+        return true;
+      } catch {
+        return false;
+      }
+    });
 }

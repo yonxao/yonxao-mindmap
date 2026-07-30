@@ -9,6 +9,8 @@ const coreRoot = path.join(projectRoot, 'packages/core');
 const packageJson = JSON.parse(fs.readFileSync(path.join(coreRoot, 'package.json'), 'utf8'));
 const forbiddenCoreImports =
   /^(?:node:|obsidian$|electron$|react$|react-dom(?:\/|$)|@yonxao\/mindmap-svg-renderer$)/;
+const forbiddenHostGlobalPattern =
+  /\b(?:(?:globalThis\.)?(?:window|navigator)\s*\.|(?:globalThis\.)?document\s*\.\s*(?:createElement|createElementNS|querySelector|addEventListener|removeEventListener)|localStorage|sessionStorage|HTMLElement|SVGElement|CanvasRenderingContext2D|MutationObserver|ResizeObserver)\b/;
 const staticImportPattern =
   /(?:import|export)\s+(?:type\s+)?(?:[^'"]*?\s+from\s+)?['"]([^'"]+)['"]/g;
 
@@ -42,6 +44,19 @@ test('core source has no static host or Node runtime imports', () => {
       if (forbiddenCoreImports.test(match[1])) {
         violations.push(`${path.relative(projectRoot, file)} -> ${match[1]}`);
       }
+    }
+  }
+
+  assert.deepEqual(violations, []);
+});
+
+test('core source has no DOM or browser runtime globals', () => {
+  const violations = [];
+
+  for (const file of collectFiles(path.join(coreRoot, 'src'), '.ts')) {
+    const source = fs.readFileSync(file, 'utf8');
+    if (forbiddenHostGlobalPattern.test(source)) {
+      violations.push(path.relative(projectRoot, file));
     }
   }
 

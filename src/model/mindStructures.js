@@ -19,60 +19,17 @@
  */
 import { Modal } from 'obsidian';
 import {
+  cleanupMindStructures,
+  createMindStructureId,
+  ensureStableTopicId as ensureCoreStableTopicId,
   RELATION_DEFAULT_DIRECTION,
   RELATION_DEFAULT_LINE_STYLE,
-  STRUCTURE_ID_PREFIXES,
 } from '../parser/mindStructures.js';
 import { Notice, findTopicByStableId, validateMindStructures } from '../shared/rendererShared.js';
 import { nearestRelationAnchor } from './relationAnchors.js';
 
-// 结构 ID 池大小：每种结构最多生成 1000 个三位 ID（000-999），超限报错。
-const STRUCTURE_ID_LIMIT = 1000;
-
-// 主题稳定 ID 前缀：格式为 "t-xxx"，与解析器约定的 stableId 格式一致。
-const TOPIC_ID_PREFIX = 't-';
-
-// 主题 ID 池大小：整张导图最多生成 1000 个主题稳定 ID，超限报错。
-const TOPIC_ID_LIMIT = 1000;
-
 // 结构选择操作栏拖拽时与容器边缘保留的最小间距（像素），防止操作栏紧贴或溢出视口。
 const SELECTION_BAR_EDGE_GAP = 6;
-
-/*
- * 为指定类型生成一个未使用的三位结构 ID。
- * 策略：随机取起点，循环探测 000-999 范围内未被占用的 ID。
- * 池满时抛异常，展示用户友好的中文提示。
- */
-function nextStructureId(structures, type) {
-  // 使用 STRUCTURE_ID_PREFIXES（来自解析器）获取该类型的前缀，如 "r-"、"s-"、"b-"。
-  const prefix = STRUCTURE_ID_PREFIXES[type];
-  // 收集已用 ID 加速查找
-  const used = new Set((structures || []).map((structure) => structure.id));
-  const start = Math.floor(Math.random() * STRUCTURE_ID_LIMIT);
-  for (let offset = 0; offset < STRUCTURE_ID_LIMIT; offset += 1) {
-    const number = (start + offset) % STRUCTURE_ID_LIMIT;
-    const id = `${prefix}${String(number).padStart(3, '0')}`;
-    if (!used.has(id)) return id;
-  }
-  throw new Error(
-    `当前导图的 ${{ relation: '关联', summary: '概要', boundary: '外框' }[type] || type} 三位 ID 已用完。`
-  );
-}
-
-/*
- * 生成一个未使用的三位主题稳定 ID。
- * 策略同 nextStructureId，前缀固定为 TOPIC_ID_PREFIX ("t-")。
- * used 为已有 ID 的 Set，由调用方收集传入。
- */
-function nextTopicStableId(used) {
-  const start = Math.floor(Math.random() * TOPIC_ID_LIMIT);
-  for (let offset = 0; offset < TOPIC_ID_LIMIT; offset += 1) {
-    const number = (start + offset) % TOPIC_ID_LIMIT;
-    const id = `${TOPIC_ID_PREFIX}${String(number).padStart(3, '0')}`;
-    if (!used.has(id)) return id;
-  }
-  throw new Error('当前导图的三位主题 ID 已用完。');
-}
 
 /*
  * 弹出结构编辑 Modal，让用户填写文本、方向、线条样式等信息。
@@ -177,20 +134,10 @@ export const mindStructureMethods = {
   /*
    * 为主题分配一个稳定 ID（持久化标识，不随主题位置变化）。
    * stableId 存储在 topic.attributes.id 中，用于结构引用（结构通过 topicIds 记录稳定 ID）。
-   * 已有 ID 直接返回；否则遍历整棵主题树收集已用 ID，然后调用 nextTopicStableId 生成新 ID。
+   * 已有 ID 直接返回；否则委托公共核心遍历主题树并分配未占用的稳定 ID。
    */
   ensureStableTopicId(topic) {
-    if (topic.attributes?.id) return topic.attributes.id;
-    topic.attributes ||= {};
-    const used = new Set();
-    const visit = (current) => {
-      if (current.attributes?.id) used.add(current.attributes.id);
-      for (const child of current.subtopics || []) visit(child);
-    };
-    visit(this.root);
-    const id = nextTopicStableId(used);
-    topic.attributes.id = id;
-    return id;
+    return ensureCoreStableTopicId(this.root, topic);
   },
 
   /*
@@ -265,7 +212,7 @@ export const mindStructureMethods = {
     this.hideStructureSelectionBar();
     const topicIds = topics.map((topic) => this.ensureStableTopicId(topic));
     const structure = {
-      id: nextStructureId(this.structures, selection.type),
+      id: createMindStructureId(this.structures, selection.type),
       type: selection.type,
       topicIds,
       text: '',
@@ -763,27 +710,7 @@ export const mindStructureMethods = {
    * 注意：循环依赖的结构也可能被清理掉。
    */
   cleanupStructuresAfterTopicChange() {
-    const validIds = new Set();
-    const visit = (topic) => {
-      if (topic.attributes?.id) validIds.add(topic.attributes.id);
-      for (const child of topic.subtopics || []) visit(child);
-    };
-    visit(this.root);
-    // 先移除失效引用，再过滤不满足最低数量或校验的结构
-    this.structures = this.structures
-      .map((structure) => ({
-        ...structure,
-        topicIds: structure.topicIds.filter((id) => validIds.has(id)),
-      }))
-      .filter((structure) => structure.topicIds.length >= (structure.type === 'boundary' ? 1 : 2))
-      .filter((structure) => {
-        try {
-          validateMindStructures(this.root, [structure]);
-          return true;
-        } catch (_error) {
-          return false;
-        }
-      });
+    this.structures = cleanupMindStructures(this.root, this.structures);
   },
 
   /*

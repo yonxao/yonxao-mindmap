@@ -9,6 +9,18 @@ All notable changes to this project will be documented in this file.
 <!-- The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), -->
 <!-- and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html). -->
 
+## [Unreleased]
+
+### Changed
+
+- Completed the host-independent public core extraction by moving advanced-structure ID allocation, stable topic ID allocation, and invalid structure cleanup into `@yonxao/mindmap-core`.
+- Added package-boundary checks that reject DOM, browser runtime, Node.js, Obsidian, Electron, and UI-framework dependencies in the public core packages.
+
+### 调整
+
+- 完成宿主无关公共核心抽取：将高级结构 ID 分配、主题稳定 ID 分配和失效结构清理迁入 `@yonxao/mindmap-core`。
+- 增加公共包边界检查，禁止公共核心依赖 DOM、浏览器运行时、Node.js、Obsidian、Electron 和 UI 框架。
+
 ## [1.5.5] - 2026-07-19
 
 ### Changed

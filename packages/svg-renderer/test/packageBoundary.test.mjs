@@ -9,6 +9,8 @@ const packageRoot = path.join(projectRoot, 'packages/svg-renderer');
 const packageJson = JSON.parse(fs.readFileSync(path.join(packageRoot, 'package.json'), 'utf8'));
 const staticImportPattern =
   /(?:import|export)\s+(?:type\s+)?(?:[^'"]*?\s+from\s+)?['"]([^'"]+)['"]/g;
+const forbiddenHostGlobalPattern =
+  /\b(?:(?:globalThis\.)?(?:window|navigator)\s*\.|(?:globalThis\.)?document\s*\.\s*(?:createElement|createElementNS|querySelector|addEventListener|removeEventListener)|localStorage|sessionStorage|HTMLElement|SVGElement|CanvasRenderingContext2D|MutationObserver|ResizeObserver)\b/;
 
 function collectFiles(directory, extension) {
   return fs.readdirSync(directory, { withFileTypes: true }).flatMap((entry) => {
@@ -41,6 +43,19 @@ test('svg renderer source has no host, Node runtime, or UI framework imports', (
       if (!specifier.startsWith('.') && specifier !== '@yonxao/mindmap-core') {
         violations.push(`${path.relative(projectRoot, file)} -> ${match[1]}`);
       }
+    }
+  }
+
+  assert.deepEqual(violations, []);
+});
+
+test('svg renderer source has no DOM or browser runtime globals', () => {
+  const violations = [];
+
+  for (const file of collectFiles(path.join(packageRoot, 'src'), '.ts')) {
+    const source = fs.readFileSync(file, 'utf8');
+    if (forbiddenHostGlobalPattern.test(source)) {
+      violations.push(path.relative(projectRoot, file));
     }
   }
 

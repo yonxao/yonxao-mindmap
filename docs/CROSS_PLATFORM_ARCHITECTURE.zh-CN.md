@@ -81,6 +81,7 @@ Web / Electron / Capacitor / HarmonyOS 适配层
 - 文档配置白名单、默认值、继承、运行时规范化和保存裁剪。
 - 主题内容语义、确定性估宽/换行和富内容盒模型。
 - 主题树增删改移、剪贴板数据、折叠集合、源码级别编辑和任务切换。
+- 高级结构 ID、主题稳定 ID 分配，以及主题变化后的失效结构清理。
 - Markdown 围栏定位/替换、纯文本与缩进大纲导出。
 - 主题与连线颜色规则。
 - 19 种布局及布局所需的纯数据几何。
@@ -181,11 +182,15 @@ apps/harmony/            # HarmonyOS 工程与 HAP/App Pack
 
 ## 7. 当前完成状态
 
+- 公共核心抽取已经完成：宿主无关的文档、配置、主题模型、结构规则、布局和
+  SVG 几何均由两个公共包提供，插件层只保留宿主适配、真实资源测量、DOM 绘制
+  与交互调度。
 - core 与 svg-renderer 两个 TypeScript workspace、分层源码、包内测试、构建入口和类型声明已建立。
 - 插件构建会按 core、svg-renderer 的顺序编译，再将二者打进 Obsidian CommonJS 产物。
 - 文档、配置、主题树、内容语义、布局、编辑和导出规则已迁入 core；SVG 与视口几何已迁入 svg-renderer。
 - 插件对应模块已收缩为宿主适配或兼容出口。
 - 自动测试会检查两个包的发布入口、声明文件、依赖方向和宿主导入边界。
+- 自动测试同时禁止公共包访问 DOM、浏览器运行时全局变量和平台 API。
 - `main` 已包含两个公共包及插件适配，`.github/workflows/check.yml` 会在 PR 和
   `main` 推送时运行完整 `npm run verify`。
 - 闭源产品仓库 `yonxao/yonxao-mindmap-product` 已建立，并在

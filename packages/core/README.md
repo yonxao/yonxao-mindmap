@@ -142,6 +142,22 @@ const lines = wrapTopicTextByWidth(topicRichTextToPlainText('**long topic**'), 1
 
 核心统一内容标记的解释、源行索引、图片尺寸提示、确定性文本估宽和富内容盒模型。宿主根据平台能力解析内部链接和附件，并通过 `isImageResolved`、`resolveImageSize` 回调提供图片资源状态和自然尺寸；宿主仍负责真实字体测量、MathJax、SVG、Canvas 或原生文本绘制。
 
+## 高级结构规则
+
+```ts
+import {
+  cleanupMindStructures,
+  createMindStructureId,
+  ensureStableTopicId,
+} from '@yonxao/mindmap-core';
+
+const stableId = ensureStableTopicId(root, topic);
+const structureId = createMindStructureId(structures, 'relation');
+const nextStructures = cleanupMindStructures(root, structures);
+```
+
+核心统一关联、概要和外框使用的结构 ID、主题稳定 ID，以及主题删除或移动后的失效引用清理。宿主负责结构选择界面、编辑弹窗、拖拽反馈与保存调度。
+
 ## 视觉主题
 
 ```ts

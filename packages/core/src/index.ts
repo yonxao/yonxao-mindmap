@@ -303,13 +303,20 @@ export {
   RELATION_DEFAULT_LINE_STYLE,
   STRUCTURE_BLOCK_END,
   STRUCTURE_BLOCK_START,
+  STRUCTURE_ID_LIMIT,
   STRUCTURE_ID_PREFIXES,
+  TOPIC_STABLE_ID_LIMIT,
+  TOPIC_STABLE_ID_PREFIX,
+  cleanupMindStructures,
+  createMindStructureId,
+  ensureStableTopicId,
   findTopicByStableId,
   parseMindStructures,
   serializeMindStructures,
   splitMindStructureBlock,
   validateMindStructures,
 } from './parser/mindStructures.js';
+export type { MindIdAllocationOptions } from './parser/mindStructures.js';
 export {
   hasMeaningfulConfig,
   parseMindDocument,
